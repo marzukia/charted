@@ -96,35 +96,6 @@ def calculate_viewbox(width: float, height: float) -> str:
     return f"0 0 {width} {height}"
 
 
-def normalise_vector(vector: Vector, length: int, zero_index=True) -> Vector:
-    """Normalise a list of values to a specified range and scale them to a given length.
-
-    Args:
-        vector (Vector): The list of float values to be normalised.
-        length (int): The length to which the normalised values should be scaled.
-        zero_index (bool): If True, the minimum value is treated as zero for normalisation. Defaults to True.
-
-    Returns:
-        Vector: A list of normalised and scaled float values.
-
-    Raises:
-        ValueError: If the input vector list is empty.
-
-    Example:
-        >>> vector = [10, 20, 30, 40, 50]
-        >>> length = 100
-        >>> normalise_values(vector, length)
-        [0.0, 25.0, 50.0, 75.0, 100.0]
-    """
-    max_value = max(vector)
-    min_value = min(vector)
-    if zero_index and min_value > 0:
-        min_value = 0
-    normalised = [(n - min_value) / (max_value - min_value) for n in vector]
-    scaled = [n * length for n in normalised]
-    return scaled
-
-
 def calculate_vector_offsets(vectors: Union[Vector2D, Vector]) -> Vector2D:
     """
     Calculate the cumulative offsets for a list of vectors.
