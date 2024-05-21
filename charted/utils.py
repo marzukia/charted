@@ -193,27 +193,101 @@ def calculate_axis_coordinates(length: float, no_ticks: int) -> Vector:
 def calculate_svg_transform(
     width: float,
     height: float,
-    max_value: float,
     padding: float = 0,
 ) -> str:
     """
-    Calculate the SVG transform string for scaling and translating.
+    Calculate the SVG transform string for scaling and translating an element.
 
     This function calculates the SVG transform string required for scaling and translating
-    based on the provided height and maximum value.
+    an element to fit within a given width and height, considering the maximum value of
+    the data and an optional padding.
 
     Args:
-        height (float): The height value.
-        max_value (float): The maximum value.
+        width (float): The width of the SVG element.
+        height (float): The height of the SVG element.
+        max_value (float): The maximum value of the data to be displayed.
+        padding (float): The padding factor (as a fraction of the width and height) to apply around the element.
 
     Returns:
         str: The SVG transform string.
     """
-    # Calculate the scale and translation values
-    x_scale_factor = 1 - padding
-    y_scale_factor = (height / max_value) - (padding / 2)
-    translation_y = (max_value - height) + (padding * max_value)
-    translation_x = (width * padding) / 2
 
-    # Construct and return the SVG transform string
+    x_pad = width * padding
+    y_pad = height * padding
+
+    target_width = width - (2 * x_pad)
+    target_height = height - (2 * y_pad)
+
+    x_scale_factor = target_width / width
+    y_scale_factor = target_height / height
+
+    translation_x = x_pad / x_scale_factor
+    translation_y = y_pad / y_scale_factor
+
     return f"scale({x_scale_factor}, {y_scale_factor}) translate({translation_x}, {translation_y})"
+
+
+def normalize_vectors(length: float, vectors: Union[Vector2D, Vector]) -> Vector2D:
+    """
+    Normalize a list of vectors to a specified length.
+
+    This function normalizes the input vectors to the given length,
+    scaling the values proportionally between the minimum and maximum values of the vectors.
+
+    Args:
+        length (float): The length to normalize the vectors to.
+        vectors (Union[Vector2D, Vector]): A list of vectors (or a single vector) to be normalized.
+
+    Returns:
+        Vector2D: A list of normalized vectors.
+    """
+    if isinstance(vectors[0], float):
+        vectors = [vectors]
+
+    min_value = float("inf")
+    max_value = float("-inf")
+
+    for vector in vectors:
+        for i in vector:
+            if i < min_value:
+                min_value = i
+            if i > max_value:
+                max_value = i
+
+    normalized = []
+    for vector in vectors:
+        normalized_vector = []
+        for i in vector:
+            normalized_value = (i - min_value) / (max_value - min_value) * length
+            normalized_vector.append(normalized_value)
+        normalized.append(normalized_vector)
+
+    return normalized
+
+
+def calculate_plot_corners(
+    width: float,
+    height: float,
+    padding: float = 0,
+) -> Tuple[float, float, float, float]:
+    """
+    Calculate the corners of a plot area with optional padding.
+
+    This function calculates the coordinates of the corners of a plot area,
+    applying optional padding around the edges.
+
+    Args:
+        width (float): The width of the plot area.
+        height (float): The height of the plot area.
+        padding (float): The padding factor (as a fraction of the width and height) to apply around the plot area.
+
+    Returns:
+        Tuple[float, float, float, float]: The coordinates (x1, x2, y1, y2) of the plot corners.
+    """
+    x_padding = width * padding
+    y_padding = height * padding
+    x1 = x_padding
+    x2 = width - x_padding
+    y1 = y_padding
+    y2 = height - y_padding
+    return (x1, x2, y1, y2)
