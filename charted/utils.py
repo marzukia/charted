@@ -38,7 +38,7 @@ def calculate_column_width(
 def calculate_rect_dimensions(
     width: float,
     no_columns: int,
-    gap: float,
+    gap: float = 0.5,
 ) -> RectDimensions:
     """Calculate the dimensions of a rectangle based on the width, number of columns, and gap.
 
@@ -157,3 +157,34 @@ def calculate_vector_attributes(
         min_value = 0
 
     return min_value, max_value, no_columns
+
+
+def calculate_tick_value(max_value: float, min_value: float) -> float:
+    """
+    Calculate the tick value based on the maximum and minimum values of the axis.
+
+    Args:
+        max_value (float): The maximum value of the axis.
+        min_value (float): The minimum value of the axis.
+
+    Returns:
+        float: The calculated tick value.
+    """
+    value_range = int(abs(min_value - max_value))
+    length = len(str(value_range))
+    return 5**length
+
+
+def calculate_axis_coordinates(length: float, no_ticks: int) -> Vector:
+    """
+    Calculate the coordinates for ticks along the axis.
+
+    Args:
+        length (float): The length of the axis.
+        no_ticks (int): The number of ticks to be placed along the axis.
+
+    Returns:
+        Vector: A list of coordinates for the ticks along the axis.
+    """
+    tick = length / no_ticks
+    return [(i + 1) * tick for i in range(no_ticks)]

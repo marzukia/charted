@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "charted"
 version = "0.1.0"
-description = ""
+description = "Pure & minimal Python chart library to generate beautiful SVG graphs."
 authors = ["Andryo Marzuki <andryo@mrzk.io>"]
 readme = "README.md"
 

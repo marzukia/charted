@@ -1,6 +1,7 @@
 from charted.html.element import G, Line, Rect, Svg
 from charted.html.formatter import format_html
 from charted.utils import (
+    calculate_axis_coordinates,
     calculate_rect_dimensions,
     calculate_svg_transform,
     calculate_vector_attributes,
@@ -20,16 +21,35 @@ colors = ["red", "green", "blue"]
 offsets = calculate_vector_offsets(data)
 min_value, max_value, no_columns = calculate_vector_attributes(data)
 column_width, column_gap, rect_coordinates, centre_coordinates = (
-    calculate_rect_dimensions(width, no_columns, 0.5)
+    calculate_rect_dimensions(width, no_columns)
+)
+y_coordinates = calculate_axis_coordinates(max_value, 5)
+
+
+svg = Svg(
+    viewBox=calculate_viewbox(width, height),
+    width=width,
+    height=height,
+    id="svg",
+)
+plot = G(
+    transform=f"scale(1, {height / max_value}) translate(0 {max_value - height})",
+    id="plot",
 )
 
-svg = Svg(viewBox=calculate_viewbox(width, height), width=width, height=height)
-plot = G(transform=f"scale(1, {height / max_value}) translate(0 {max_value - height})")
-grids = G(transform=calculate_svg_transform(width, height), stroke="#ddd")
-
+grids = G(
+    transform=calculate_svg_transform(width, height),
+    stroke="#ccc",
+    id="grid",
+)
 for x in centre_coordinates:
     line = Line(x1=x, y1=0, x2=x, y2=max_value)
     grids.add_child(line)
+
+for y in y_coordinates:
+    line = Line(x1=0, y1=y, x2=width, y2=y)
+    grids.add_child(line)
+
 plot.add_child(grids)
 
 for i, vector in enumerate(data):
@@ -37,6 +57,7 @@ for i, vector in enumerate(data):
         transform=calculate_svg_transform(width, height),
         fill=colors[i],
         opacity="75%",
+        id=f"series-{i + 1}",
     )
     for j, x in enumerate(rect_coordinates):
         rect = Rect(x=x, y=offsets[i][j], height=vector[j], width=column_width)
