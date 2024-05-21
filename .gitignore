@@ -1,0 +1,36 @@
+__pycache__/
+dist/
+docs/_build/
+.tox/
+.coverage
+.pytest_cache/
+main.py
+docs/_output/
+COMPLAINTS.md
+DONE.md
+FINDINGS.md
+PLAN.md
+PLANS.md
+TODO.md
+AR.md
+coverage.xml
+coverage
+charted/commands/wip.py
+.venv-test/
+
+# Diff files (test artifacts)
+tests/diffs/*.png
+
+# Hermes CI artifacts
+.hermes/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

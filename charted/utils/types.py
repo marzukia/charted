@@ -1,0 +1,44 @@
+from typing import NamedTuple, TypedDict
+
+
+class SeriesStyleConfig(TypedDict, total=False):
+    """Per-series styling overrides."""
+
+    fill: str | None
+    stroke: str | None
+    stroke_width: float | None
+    stroke_dasharray: str | None
+    marker_shape: str | None  # "circle" | "square" | "diamond" | "none"
+    marker_size: float | None
+    fill_opacity: float | None
+    stroke_opacity: float | None
+    area_fill: bool | None
+    area_fill_opacity: float | None
+    show_markers: bool | None
+
+
+Labels = list[str]
+
+Vector = list[float]
+Vector2D = list[Vector]
+
+
+class MeasuredText(NamedTuple):
+    text: str
+    width: float
+    height: float
+
+
+class Coordinate(NamedTuple):
+    x: float
+    y: float
+
+
+class AxisDimension(NamedTuple):
+    min_value: float
+    max_value: float
+    count: float
+
+    @property
+    def value_range(self) -> float:
+        return self.max_value - self.min_value
