@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "charted"
+version = "0.1.0"
+description = ""
+authors = ["Andryo Marzuki <andryo@mrzk.io>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.extras]
+dev = ["pytest", "flake8", "black", "ipython"]
