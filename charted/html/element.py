@@ -26,7 +26,7 @@ class Element(object):
             string += " "
             attributes_array = []
             for k, v in self.kwargs.items():
-                attributes_array.append(f'{k}="{v}"')
+                attributes_array.append(f'{k.replace("_", "-")}="{v}"')
             string += " ".join(attributes_array)
         return string
 
@@ -96,4 +96,3 @@ class G(Element):
 
 class Line(Element):
     tag = "line"
-

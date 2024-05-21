@@ -68,7 +68,7 @@ def calculate_rect_dimensions(
     )
 
 
-def calculate_svg_transform(width: float, height: float) -> str:
+def calculate_svg_rotate(width: float, height: float) -> str:
     """Calculate the SVG transform attribute to rotate the element 180 degrees around its center.
 
     Args:
@@ -188,3 +188,32 @@ def calculate_axis_coordinates(length: float, no_ticks: int) -> Vector:
     """
     tick = length / no_ticks
     return [(i + 1) * tick for i in range(no_ticks)]
+
+
+def calculate_svg_transform(
+    width: float,
+    height: float,
+    max_value: float,
+    padding: float = 0,
+) -> str:
+    """
+    Calculate the SVG transform string for scaling and translating.
+
+    This function calculates the SVG transform string required for scaling and translating
+    based on the provided height and maximum value.
+
+    Args:
+        height (float): The height value.
+        max_value (float): The maximum value.
+
+    Returns:
+        str: The SVG transform string.
+    """
+    # Calculate the scale and translation values
+    x_scale_factor = 1 - padding
+    y_scale_factor = (height / max_value) - (padding / 2)
+    translation_y = (max_value - height) + (padding * max_value)
+    translation_x = (width * padding) / 2
+
+    # Construct and return the SVG transform string
+    return f"scale({x_scale_factor}, {y_scale_factor}) translate({translation_x}, {translation_y})"
