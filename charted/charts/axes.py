@@ -1,0 +1,472 @@
+import math
+
+from charted.constants import DEFAULT_PADDING
+from charted.html.element import G, Path, Text
+from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
+from charted.utils.helpers import (
+    calculate_text_dimensions,
+    common_denominators,
+    round_to_clean_number,
+)
+from charted.utils.transform import rotate, translate
+from charted.utils.types import AxisDimension, MeasuredText, Vector, Vector2D
+
+
+class Axis(G):
+    def __init__(
+        self,
+        parent: object,
+        data: Vector2D | None = None,
+        labels: list[str] | None = None,
+        stacked: bool = False,
+        zero_index: bool = True,
+        config: str | None = None,
+    ):
+        if not data and not labels:
+            raise Exception("Need labels or data.")
+        elif not data and labels:
+            labels = [" ", *labels, " "]
+            data = [[i for i in range(len(labels))]]
+
+        self.stacked = stacked
+        self.data = data
+        self.parent = parent
+        self.values = (data, labels, zero_index)
+        self.labels = labels
+        self.config = config
+        self.add_children(self.grid_lines, self.axis_labels)
+
+    @classmethod
+    def _reproject(
+        cls,
+        value: float,
+        max_value: float,
+        min_value: float,
+        length: float,
+        stacked: bool = False,
+    ) -> float:
+        value_range = max_value - min_value
+        if value_range == 0:
+            return 0.0
+        normalised_value = (value - min_value) / value_range
+        if stacked:
+            normalised_value = value / value_range
+        return normalised_value * length
+
+    @classmethod
+    def _reverse(
+        cls,
+        value: float,
+        max_value: float,
+        min_value: float,
+        length: float,
+    ) -> float:
+        value_range = max_value - min_value
+        normalised_value = (value + min_value) / length
+        if min_value:
+            normalised_value = value / length
+        return normalised_value * value_range
+
+    @classmethod
+    def calculate_axis_dimensions(
+        cls,
+        data: Vector2D | None = None,
+        stacked: bool = False,
+        has_labels: bool = False,
+        zero_index: bool = True,
+    ) -> AxisDimension:
+        count = len(data[0])
+
+        if stacked:
+            min_values = [0] * count
+            max_values = [0] * count
+            for series in data:
+                for n in range(count):
+                    if series[n] < 0:
+                        min_values[n] -= abs(series[n])
+                    else:
+                        max_values[n] += series[n]
+            min_value = min(min_values)
+            max_value = max(max_values)
+        else:
+            agg = [x for arr in data for x in arr]
+            min_value = min(agg)
+            max_value = max(agg)
+
+        if abs(min_value) < 1 and abs(max_value) <= 1:
+            min_value = math.floor(min_value)
+            max_value = math.ceil(max_value)
+
+        if zero_index and min_value > 0:
+            min_value = 0
+
+        if not has_labels:
+            if min_value < 0:
+                min_value = -round_to_clean_number(abs(min_value))
+            else:
+                min_value = round_to_clean_number(min_value, round_down=True)
+            max_value = round_to_clean_number(max_value)
+
+        return AxisDimension(min_value, max_value, count)
+
+    @classmethod
+    def calculate_axis_values(
+        cls,
+        data: Vector2D,
+        labels: list[str] | None = None,
+        zero_index: bool = True,
+        stacked: bool | None = None,
+    ) -> tuple[AxisDimension, list[float]]:
+        axd = cls.calculate_axis_dimensions(
+            data=data,
+            has_labels=labels is not None,
+            zero_index=zero_index,
+            stacked=stacked,
+        )
+
+        if labels is not None:
+            # Use the actual data values as tick positions so that ordinal charts
+            # (synthetically created [[0,1,...,n]] in Axis.__init__) and real-data
+            # xy charts both land in the correct pixel locations.
+            values = list(data[0])
+            # Grid lines use full range from min to max for proper rendering
+            min_val = min(values)
+            max_val = max(values)
+            grid_line_values = list(range(int(min_val), int(max_val) + 1))
+            return (axd, values, grid_line_values)
+
+        denominators = common_denominators(axd.min_value, axd.max_value)
+        value_range = axd.value_range
+        min_value = axd.min_value
+        max_value = axd.max_value
+
+        # Handle values that area -1 to 1.
+        # Round these to -1 and 1.
+        if axd.value_range < 2:
+            value_range = 1
+
+        if min_value > 0 and min_value < 1:
+            min_value = 0
+
+        if max_value > 0 and max_value < 1:
+            max_value = 1
+
+        # Generate all potential grid line positions (full range)
+        all_values = []
+        for denominator in reversed(denominators):
+            count = int(value_range / denominator)
+            all_values = [
+                min_value + (i * denominator) for i in reversed(range(count + 1))
+            ]
+            if len(all_values) > 5:
+                break
+
+        # Preserve original axis range for grid lines
+        original_min = all_values[-1]
+        original_max = all_values[0]
+
+        # Filter for label display only
+        values = all_values.copy()
+        while len(values) > 10 and 0 not in values:
+            values = [x for (i, x) in enumerate(values) if i % 2 == 0]
+            min_value, max_value = values[-1], values[0]
+
+        # Store full range for grid lines, filtered range for labels
+        if min_value > original_min:
+            min_value = original_min
+        if max_value < original_max:
+            max_value = original_max
+
+        # Store all grid line positions separately
+        grid_line_values = all_values
+        while len(grid_line_values) > 10 and 0 not in grid_line_values:
+            grid_line_values = [
+                x for (i, x) in enumerate(grid_line_values) if i % 2 == 0
+            ]
+
+        return AxisDimension(min_value, max_value, axd.count), values, grid_line_values
+
+    def reverse(self, value: float) -> float:
+        raise Exception("reverse not implemented for instance of Axis.")
+
+    @property
+    def zero(self) -> float:
+        return self.reproject(0)
+
+    @property
+    def grid_lines(self) -> Path:
+        raise Exception("grid_lines not implemented for instance of Axis.")
+
+    @property
+    def axis_labels(self) -> G:
+        raise Exception("axis_labels not implemented for instance of Axis.")
+
+    @property
+    def reprojected_values(self):
+        return [self.reproject(v) for v in self.values]
+
+    @property
+    def values(self) -> Vector:
+        return self._values
+
+    @values.setter
+    def values(
+        self,
+        kwargs: tuple[
+            Vector2D,
+            list[str] | None,
+            bool,
+        ],
+    ) -> None:
+        data, labels, zero_index = kwargs
+        self.axis_dimension, self._values, self._grid_line_values = (
+            self.calculate_axis_values(
+                data=data,
+                stacked=self.stacked,
+                labels=labels,
+                zero_index=zero_index,
+            )
+        )
+        # Store grid line values separately (full range, not filtered)
+        all_denominators = common_denominators(
+            self.axis_dimension.min_value, self.axis_dimension.max_value
+        )
+        value_range = self.axis_dimension.max_value - self.axis_dimension.min_value
+        self._grid_line_values = []
+        for denominator in reversed(all_denominators):
+            count = int(value_range / denominator)
+            self._grid_line_values = [
+                self.axis_dimension.min_value + (i * denominator)
+                for i in reversed(range(count + 1))
+            ]
+            if len(self._grid_line_values) > 5:
+                break
+        # Reduce grid lines if too many
+        while len(self._grid_line_values) > 10 and 0 not in self._grid_line_values:
+            self._grid_line_values = [
+                x for (i, x) in enumerate(self._grid_line_values) if i % 2 == 0
+            ]
+
+    @property
+    def labels(self) -> list[MeasuredText]:
+        return self._labels
+
+    @labels.setter
+    def labels(self, labels: Vector | list[str] = None) -> None:
+        if not labels:
+            labels = []
+            precision = 0
+            for label in self.values:
+                if "." in str(label):
+                    decimal_value = str(label).split(".")[-1]
+                    if float(decimal_value) > 0:
+                        precision = 1
+                value = round(label, precision) if precision > 0 else int(label)
+                labels.append(value)
+        else:
+            labels = [*labels]
+        self._labels = [calculate_text_dimensions(label) for label in labels]
+
+    @property
+    def count(self) -> int:
+        return len(self.values)
+
+
+class XAxis(Axis):
+    def reproject(self, value: float) -> float:
+        return self._reproject(
+            value,
+            self.axis_dimension.max_value,
+            self.axis_dimension.min_value,
+            self.parent.plot_width,
+            self.stacked,
+        )
+
+    def reverse(self, value: float) -> float:
+        return self._reverse(
+            value,
+            self.axis_dimension.max_value,
+            self.axis_dimension.min_value,
+            self.parent.plot_width,
+        )
+
+    @property
+    def coordinates(self):
+        return [self.reproject(i) for i in self.values]
+
+    @property
+    def grid_lines(self) -> Path:
+        if not self.config:
+            return None
+
+        # Convert string config (grid_color) to dict for backward compatibility
+        config = self.config
+        if isinstance(config, str):
+            config = {"stroke": config, "stroke_dasharray": "None"}
+
+        # In stacked mode with negative values, the reproject formula is
+        # relative to zero (value/range), so tick coordinates need to be
+        # shifted right by reproject(abs(min_value)) to land at absolute
+        # positions within the plot.
+        dx = 0
+        min_v = self.axis_dimension.min_value
+        if self.stacked and min_v < 0:
+            dx = self.reproject(abs(min_v))
+
+        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in self.coordinates]
+        return Path(
+            **config,
+            d=d,
+            transform=translate(
+                x=self.parent.left_padding,
+                y=self.parent.top_padding,
+            ),
+        )
+
+    @property
+    def axis_labels(self) -> G:
+        labels = G(
+            font_size=DEFAULT_FONT_SIZE,
+            font_family=DEFAULT_FONT,
+            fill=self.parent.theme.title_color
+            if hasattr(self.parent, "theme")
+            else "#444444",
+            transform=translate(
+                x=self.parent.left_padding,
+                y=self.parent.top_padding + DEFAULT_PADDING,
+            ),
+        )
+
+        rotation_angle = 0
+        if self.parent.x_label_rotation:
+            rotation_angle, _ = self.parent.x_label_rotation
+
+        # Same absolute-position compensation as grid_lines.
+        dx = 0
+        min_v = self.axis_dimension.min_value
+        if self.stacked and min_v < 0:
+            dx = self.reproject(abs(min_v))
+
+        y = self.parent.plot_height
+        for x, label in zip(self.coordinates, self.labels):
+            x = x + dx
+            transformations = [translate(-label.width / 2, 0)]
+            if rotation_angle > 0:
+                transformations = [
+                    translate(label.width / len(label.text) * -1, 0),
+                    rotate(rotation_angle, x, y),
+                ]
+            text = Text(
+                x=x,
+                y=y,
+                text=label.text,
+                transform=transformations,
+            )
+            labels.add_child(text)
+
+        return labels
+
+
+class YAxis(Axis):
+    def reproject(self, value: float) -> float:
+        return self._reproject(
+            value,
+            self.axis_dimension.max_value,
+            self.axis_dimension.min_value,
+            self.parent.plot_height,
+            self.stacked,
+        )
+
+    def reverse(self, value: float) -> float:
+        return self._reverse(
+            value,
+            self.axis_dimension.max_value,
+            self.axis_dimension.min_value,
+            self.parent.plot_height,
+        )
+
+    @property
+    def coordinates(self):
+        # For bar/column charts, use values (number of bars) not grid lines
+        bar_height = getattr(self.parent, "y_height", None)
+        if bar_height is not None:
+            values = self.values
+        elif hasattr(self, "_grid_line_values") and self._grid_line_values:
+            values = self._grid_line_values
+        else:
+            values = self.values
+
+        offset = 0
+        if self.stacked and self.axis_dimension.min_value < 0:
+            offset = self.axis_dimension.min_value
+
+        if bar_height is not None:
+            bar_gap = getattr(self.parent, "bar_gap", 0.5)
+            gap = bar_height * bar_gap
+            start_y = bar_height * bar_gap
+            return [
+                start_y + i * (bar_height + gap) + bar_height / 2
+                for i in range(len(values))
+            ]
+
+        return [self.reproject(i + abs(offset)) for i in reversed(values)]
+
+    @property
+    def grid_lines(self) -> Path:
+        if not self.config:
+            return None
+
+        # Convert string config (grid_color) to dict for backward compatibility
+        config = self.config
+        if isinstance(config, str):
+            config = {"stroke": config, "stroke_dasharray": "None"}
+
+        d = [f"M{0} {y} h{self.parent.plot_width}" for y in self.coordinates]
+        return Path(
+            **config,
+            d=d,
+            transform=translate(
+                x=self.parent.left_padding,
+                y=self.parent.top_padding,
+            ),
+        )
+
+    @property
+    def axis_labels(self) -> G:
+        labels = G(
+            font_size=DEFAULT_FONT_SIZE,
+            font_family=DEFAULT_FONT,
+            fill=self.parent.theme.title_color
+            if hasattr(self.parent, "theme")
+            else "#444444",
+            transform=translate(
+                x=(self.parent.left_padding - 6),
+                y=self.parent.top_padding,
+            ),
+        )
+
+        bar_height = getattr(self.parent, "y_height", None)
+        if bar_height is not None:
+            bar_gap = getattr(self.parent, "bar_gap", 0.5)
+            gap = bar_height * bar_gap
+            start_y = bar_height * bar_gap
+            y_positions = [
+                start_y + i * (bar_height + gap) + bar_height / 2
+                for i in range(len(self.labels))
+            ]
+        else:
+            y_positions = self.coordinates
+
+        for y, label in zip(y_positions, self.labels):
+            y_offset = -label.height / 2 if bar_height is not None else label.height / 4
+            text = Text(
+                x=0,
+                y=y,
+                text=label.text,
+                transform=translate(
+                    x=-label.width,
+                    y=y_offset,
+                ),
+            )
+            labels.add_child(text)
+        return labels
