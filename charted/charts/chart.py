@@ -1,0 +1,579 @@
+"""Base chart class with reduced responsibilities.
+
+Refactored to extract validation, layout, and rendering utilities into
+separate modules to address God Class architectural debt (Issue #64).
+"""
+
+from charted.charts.axes import XAxis, YAxis
+from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
+from charted.html.element import G, Path, Svg, Text
+from charted.themes.core import Theme
+from charted.utils.color_manager import ColorManager
+from charted.utils.data_model import DataModel
+from charted.utils.layout_engine import LayoutEngine
+from charted.utils.rendering import (
+    generate_html_wrapper,
+    generate_markdown_image,
+)
+from charted.utils.theme_manager import ThemeManager
+from charted.utils.transform import translate
+from charted.utils.types import (
+    Labels,
+    MeasuredText,
+    SeriesStyleConfig,
+    Vector,
+    Vector2D,
+)
+
+
+class Chart(Svg):
+    """Base class for all SVG chart types.
+
+    Provides common functionality for chart rendering including
+    theme application, data validation, coordinate calculations,
+    and SVG generation. All chart types inherit from this class.
+
+    This class has been refactored to focus on core responsibilities:
+    - Data representation and state management
+    - Coordinate system setup
+    - Delegating utilities to focused modules
+
+    Attributes:
+        x_stacked: If True, stack series along x-axis
+        y_stacked: If True, stack series along y-axis
+        render_axes: Whether to draw axes and grid lines
+        theme: Applied theme configuration
+        colors: Auto-generated color palette for series
+
+    Example:
+        >>> from charted.charts.chart import Chart
+        >>> # Use concrete subclasses instead:
+        >>> from charted import BarChart, LineChart, PieChart
+    """
+
+    x_stacked: bool = False
+    y_stacked: bool = False
+    render_axes: bool = True
+
+    # =========================================================================
+    # Core Representation Methods
+    # =========================================================================
+
+    def _repr_svg_(self) -> str:
+        """Return SVG string for Jupyter notebook display."""
+        return self.svg
+
+    def to_svg(self) -> str:
+        """Get the SVG string representation of the chart."""
+        return self.svg
+
+    def to_markdown(self, alt_text: str | None = None, width: str | None = None) -> str:
+        """Generate markdown markup for the chart."""
+        return generate_markdown_image(
+            self.svg, alt_text, self.title.text if self._title else None, width
+        )
+
+    def _repr_html_(self) -> str:
+        """Return HTML wrapper for the chart."""
+        return generate_html_wrapper(self.svg)
+
+    def save(self, path: str) -> None:
+        """Save the chart to a file."""
+        with open(path, "w") as f:
+            f.write(self.svg)
+
+    # =========================================================================
+    # Initialization
+    # =========================================================================
+
+    def __init__(
+        self,
+        width: float = DEFAULT_CHART_WIDTH,
+        height: float = DEFAULT_CHART_HEIGHT,
+        zero_index: bool = True,
+        x_data: Vector | Vector2D | None = None,
+        y_data: Vector | Vector2D | None = None,
+        series_styles: list[SeriesStyleConfig] | None = None,
+        x_labels: Labels | None = None,
+        y_labels: Labels | None = None,
+        series_names: list[str] | None = None,
+        x_stacked: bool = False,
+        title: str | None = None,
+        theme: Theme | None = None,
+        chart_type: str | None = None,
+    ):
+        super().__init__(
+            width=width,
+            height=height,
+            viewBox=f"0 0 {width} {height}",
+        )
+
+        # Validate and normalize data using DataModel
+        if not x_data and not y_data:
+            raise Exception("No data was provided to the Chart element.")
+
+        # Create default x_labels if not provided (for ordinal charts)
+        if not x_data and not x_labels:
+            # y_data might be Vector (1D) or Vector2D (2D) - handle both
+            if y_data and isinstance(y_data[0], list):
+                array_len = len(y_data[0])
+            elif y_data:
+                array_len = len(y_data)
+            else:
+                array_len = 0
+            x_labels = DataModel.create_default_labels(array_len)
+
+        # Initialize DataModel for data validation and normalization
+        self.data_model = DataModel(
+            x_data=x_data,
+            y_data=y_data,
+            x_labels=x_labels,
+            y_labels=y_labels,
+            zero_index=zero_index,
+        )
+
+        self.series_names = series_names
+        self.series_styles = series_styles
+        self.x_stacked = x_stacked
+        self.zero_index = zero_index
+
+        # Set internal attributes directly (properties are read-only)
+        self._width = width
+        self._height = height
+
+        # Load and apply theme using ThemeManager
+        self.theme = ThemeManager.load_theme(theme, chart_type)
+
+        # Set internal padding attributes directly (properties are read-only)
+        self._h_padding = self.theme.h_padding
+        self._v_padding = self.theme.v_padding
+
+        # Set internal title directly (title property is read-only)
+        from charted.utils.helpers import calculate_text_dimensions
+
+        if title:
+            self._title = calculate_text_dimensions(
+                title,
+                font=self.theme.title_font_family,
+                font_size=self.theme.title_font_size,
+            )
+        else:
+            self._title = None
+
+        # Initialize LayoutEngine for layout calculations
+        self.layout = LayoutEngine(
+            width=width,
+            height=height,
+            h_padding=self.h_padding,
+            v_padding=self.v_padding,
+            x_labels=self.data_model.x_labels,
+            y_labels=self.data_model.y_labels,
+            title=self._title,
+        )
+
+        # Initialize axes
+        self.x_axis = XAxis(
+            parent=self,
+            data=self.x_data,
+            labels=x_labels,
+            stacked=self.x_stacked,
+            zero_index=(
+                False
+                if (x_data is not None and x_labels is not None)
+                else self.zero_index
+            ),
+            config=self.theme.grid_color,
+        )
+
+        self.y_axis = YAxis(
+            parent=self,
+            data=self.y_data,
+            labels=y_labels,
+            stacked=self.y_stacked,
+            zero_index=self.zero_index,
+            config=self.theme.grid_color,
+        )
+
+        # Initialize internal offsets and values directly (properties are read-only)
+        # For ordinal charts (no x_data), generate default x-values [0, 1, 2, ...]
+        if self.x_data:
+            # XY chart: transform x_data through axis reproject
+            self._x_values = [
+                [self.x_axis.reproject(x) for x in arr] for arr in self.x_data
+            ]
+
+            # Calculate stacking offsets for x-axis (for horizontal bar charts)
+            if getattr(self, "x_stacked", False):
+                offsets = []
+                negative_offsets = [0.0] * self.x_count
+                positive_offsets = [0.0] * self.x_count
+
+                for row in self.x_data:
+                    row_offsets = []
+                    for i, x in enumerate(row):
+                        current_offset = 0.0
+                        if x >= 0:
+                            current_offset = positive_offsets[i]
+                            positive_offsets[i] += x
+                        elif x < 0:
+                            current_offset = negative_offsets[i]
+                            negative_offsets[i] -= abs(x)
+                        row_offsets.append(current_offset)
+                    offsets.append(row_offsets)
+
+                self._x_offsets = [
+                    [self.x_axis.reproject(x) for x in arr] for arr in offsets
+                ]
+            else:
+                # Non-stacked: all offsets are zero
+                self._x_offsets = [[0.0] * len(arr) for arr in self.x_data]
+        else:
+            # Ordinal chart: use index-based values transformed through axis
+            indices = [float(i) for i in range(self.x_count)]
+            x_vals = [self.x_axis.reproject(i) for i in indices]
+            # Create one row of x_values per y_data series for multi-series charts
+            num_series = len(self.y_data) if self.y_data else 1
+            self._x_offsets = [[0.0] * self.x_count] * num_series
+            self._x_values = [x_vals] * num_series
+
+        # Transform y_values through y_axis reproject, handling stacking correctly
+        data = []
+        for arr in self.y_data:
+            row = []
+            for y in arr:
+                if not self.y_stacked:
+                    v = self.y_axis.reproject(y)
+                else:
+                    v = self.y_axis.reproject(abs(y))
+                    if y < 0:
+                        v = -v
+                row.append(v)
+            data.append(row)
+        self._y_values = data
+
+        # Calculate stacking offsets (cumulative for stacked charts)
+        offsets = []
+        negative_offsets = [0.0] * self.y_count
+        positive_offsets = [0.0] * self.y_count
+
+        for row in self.y_data:
+            row_offsets = []
+            for i, y in enumerate(row):
+                current_offset = 0.0
+                if y >= 0:
+                    current_offset = positive_offsets[i]
+                    positive_offsets[i] += y
+                elif y < 0:
+                    current_offset = negative_offsets[i]
+                    negative_offsets[i] -= abs(y)
+                row_offsets.append(current_offset)
+            offsets.append(row_offsets)
+
+        # Transform offsets through y_axis
+        self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
+
+        # Initialize ColorManager for automatic color cycling
+        self._color_manager = ColorManager(colors=self.theme.colors)
+
+        # Initialize colors (set internal variable directly since property is read-only)
+        if not hasattr(self, "_colors"):
+            self._colors = self.theme.colors
+
+        # Build SVG children
+        children = [self.container, self.title]
+        if self.render_axes:
+            children += [self.y_axis, self.x_axis, self.zero_line]
+        children += [self.representation, self.legend]
+        self.add_children(*children)
+
+    # =========================================================================
+    # Data Properties (read-only, delegated to DataModel)
+    # =========================================================================
+
+    @property
+    def x_data(self) -> Vector2D:
+        """Get x-axis data from DataModel (read-only)."""
+        return self.data_model.x_data
+
+    @property
+    def y_data(self) -> Vector2D:
+        """Get y-axis data from DataModel (read-only)."""
+        return self.data_model.y_data
+
+    @property
+    def width(self) -> float:
+        """Chart width (read-only)."""
+        return self._width
+
+    @property
+    def height(self) -> float:
+        """Chart height (read-only)."""
+        return self._height
+
+    @property
+    def h_padding(self) -> float:
+        """Horizontal padding fraction (read-only)."""
+        return self._h_padding
+
+    @property
+    def v_padding(self) -> float:
+        """Vertical padding fraction (read-only)."""
+        return self._v_padding
+
+    # =========================================================================
+    # Layout Properties (delegated to layout utilities)
+    # =========================================================================
+
+    @property
+    def plot_width(self) -> float:
+        """Get plot area width from LayoutEngine."""
+        return self.layout.plot_width
+
+    @property
+    def plot_height(self) -> float:
+        """Get plot area height from LayoutEngine."""
+        return self.layout.plot_height
+
+    def get_base_transform(self) -> list:
+        """Get base transformation from LayoutEngine."""
+        return self.layout.get_base_transform()
+
+    def _apply_stacking(self, y: float, y_offset: float) -> float:
+        """Apply y-stacking if enabled."""
+        return y + y_offset if self.y_stacked else y
+
+    @property
+    def x_offset(self) -> float:
+        """Calculate x-offset for charts with x_labels.
+
+        Ordinal charts (no explicit x_data): shift by one tick width so data
+        points sit at the centre of their column.  XY charts (explicit x_data
+        provided): positions are already correct from reproject; offset is 0.
+        """
+        if self.x_labels and not self.data_model.x_data:
+            return self.x_axis.reproject(1)
+        return 0
+
+    # =========================================================================
+    # Padding Calculations (delegated to layout utilities)
+    # =========================================================================
+
+    @property
+    def left_padding(self) -> float:
+        """Get left padding from LayoutEngine."""
+        return self.layout.left_padding
+
+    @property
+    def right_padding(self) -> float:
+        """Get right padding from LayoutEngine."""
+        return self.layout.right_padding
+
+    @property
+    def top_padding(self) -> float:
+        """Get top padding from LayoutEngine."""
+        return self.layout.top_padding
+
+    @property
+    def bottom_padding(self) -> float:
+        """Get bottom padding from LayoutEngine."""
+        return self.layout.bottom_padding
+
+    @property
+    def x_label_rotation(self) -> tuple[float, float] | None:
+        """Get x-label rotation from LayoutEngine."""
+        return self.layout.x_label_rotation
+
+    @property
+    def colors(self) -> list[str]:
+        """Get color palette with automatic cycling (read-only)."""
+        # Expand palette if more colors are needed and return the list
+        return self._color_manager.ensure_palette_size(
+            max(len(self.x_values or []), len(self.y_values or []))
+        )
+
+    @property
+    def title(self) -> MeasuredText | None:
+        if not self._title:
+            return None
+        return Text(
+            transform=[
+                translate(
+                    x=-self._title.width / 2,
+                    y=self._title.height,
+                )
+            ],
+            text=self._title.text,
+            fill=self.theme.title_color,
+            font_family=self.theme.title_font_family,
+            font_weight="normal",
+            font_size=self.theme.title_font_size,
+            x=self.width / 2,
+            y=self.v_pad / 2,
+        )
+
+    @property
+    def v_pad(self) -> float:
+        return self.v_padding * self.height
+
+    @property
+    def h_pad(self) -> float:
+        return self.h_padding * self.width
+
+    @property
+    def container(self) -> Path:
+        """Create chart background rectangle using theme background color."""
+        return Path(
+            fill=self.theme.background_color,
+            d=Path.get_path(0, 0, self.width, self.height),
+        )
+
+    # =========================================================================
+    # Label Properties (read-only, delegated to DataModel)
+    # =========================================================================
+
+    @property
+    def x_labels(self) -> list[MeasuredText] | None:
+        """Get x-axis labels from DataModel (read-only)."""
+        return self.data_model.x_labels
+
+    @property
+    def y_labels(self) -> list[MeasuredText] | None:
+        """Get y-axis labels from DataModel (read-only)."""
+        return self.data_model.y_labels
+
+    # =========================================================================
+    # Count Properties (read-only, delegated to DataModel)
+    # =========================================================================
+
+    @property
+    def x_count(self) -> int:
+        """Get x-axis count from DataModel (read-only)."""
+        return self.data_model.x_count
+
+    @property
+    def y_count(self) -> int:
+        """Get y-axis count from DataModel (read-only)."""
+        return self.data_model.y_count
+
+    # =========================================================================
+    # Stacking Properties (read-only)
+    # =========================================================================
+
+    @property
+    def y_offsets(self) -> Vector2D:
+        """Get y-offsets (read-only)."""
+        return self._y_offsets
+
+    @property
+    def x_offsets(self):
+        """Get x-offsets (read-only)."""
+        return self._x_offsets
+
+    @property
+    def x_width(self) -> float:
+        """Get width per x-label."""
+        return self.plot_width / self.x_count if self.x_count else 0
+
+    @property
+    def y_values(self) -> Vector2D:
+        """Get y-values (read-only)."""
+        return self._y_values
+
+    @property
+    def x_values(self) -> Vector2D:
+        """Get x-values (read-only)."""
+        return self._x_values
+
+    # =========================================================================
+    # Rendering Properties
+    # =========================================================================
+
+    @property
+    def zero_line(self) -> Path:
+        """Create zero line for charts with negative values."""
+        from charted.utils.rendering import create_zero_line_path
+
+        is_bar_chart = getattr(self, "y_height", None) is not None
+        is_xy_line = self.data_model.x_data is not None and not is_bar_chart
+
+        # For stacked axes, the reproject function uses value/value_range instead of
+        # (value - min)/value_range. This causes zero to be at position 0.
+        # For zero lines, we need the actual position of value=0 in the axis range.
+        x_axis_zero = self.x_axis.zero
+        y_axis_zero = self.y_axis.zero
+
+        # If stacked and min < 0, reproject(0) returns 0, but we need (0 - min)/range * length
+        if self.x_stacked and self.x_axis.axis_dimension.min_value < 0:
+            x_range = (
+                self.x_axis.axis_dimension.max_value
+                - self.x_axis.axis_dimension.min_value
+            )
+            x_axis_zero = (
+                (0 - self.x_axis.axis_dimension.min_value) / x_range * self.plot_width
+            )
+
+        if self.y_stacked and self.y_axis.axis_dimension.min_value < 0:
+            y_range = (
+                self.y_axis.axis_dimension.max_value
+                - self.y_axis.axis_dimension.min_value
+            )
+            # For Y-axis with negative values, we need to calculate the zero position
+            # The Y-axis grid lines are inverted (max at top, min at bottom)
+            # But create_zero_line_path expects y_axis_zero from the BOTTOM (like X-axis)
+            # So we calculate: plot_height - ((max - 0) / range * plot_height)
+            # = (plot_height * range - plot_height * (max - 0)) / range
+            # = plot_height * (range - max) / range
+            # = plot_height * (-min) / range  (since range = max - min)
+            y_axis_zero = (
+                self.plot_height * (-self.y_axis.axis_dimension.min_value) / y_range
+            )
+
+        return create_zero_line_path(
+            x_axis_zero=x_axis_zero,
+            y_axis_zero=y_axis_zero,
+            plot_width=self.plot_width,
+            plot_height=self.plot_height,
+            left_padding=self.left_padding,
+            top_padding=self.top_padding,
+            x_stacked=self.x_stacked,
+            y_stacked=self.y_stacked,
+            x_min=self.x_axis.axis_dimension.min_value,
+            y_min=self.y_axis.axis_dimension.min_value,
+            is_bar_chart=is_bar_chart,
+            is_xy_line=is_xy_line,
+        )
+
+    @property
+    def representation(self) -> G:
+        """Subclass must implement this."""
+        raise Exception("representation not implemented for instance of Chart.")
+
+    @property
+    def legend(self):
+        """Create legend element."""
+        from charted.utils.rendering import create_legend
+
+        # Pass legend config as dict or Theme object
+        legend_config = {
+            "font_size": self.theme.legend_font_size,
+            "position": self.theme.legend_position,
+            "font_family": self.theme.legend_font_family,
+        }
+
+        return create_legend(
+            series_names=self.series_names,
+            colors=self.colors,
+            theme_config=legend_config,
+            plot_left=self.left_padding,
+            plot_right=self.left_padding + self.plot_width,
+            top_padding=self.top_padding,
+        )
+
+    @property
+    def svg(self) -> str:
+        """Get SVG string representation of the chart.
+
+        Returns:
+            SVG string with all chart elements rendered.
+        """
+        return self.html
