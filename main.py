@@ -10,5 +10,5 @@ data = [
 ]
 graph = Column(data=data, width=width, height=height, padding=padding)
 
-with open("charted/docs/examples/column.svg", "w") as test:
+with open("docs/examples/column.svg", "w") as test:
     test.write(repr(graph))
