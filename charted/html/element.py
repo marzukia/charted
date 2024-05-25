@@ -1,4 +1,4 @@
-from typing import Dict, List, Self, Type
+from typing import Dict, List, Self, Union
 
 Children = List["Element"]
 
@@ -7,11 +7,24 @@ class Element(object):
     tag: str
     kwargs: Dict[str, str] = {}
     children: Children = []
+    class_name: Union[str, None] = None
 
-    def __new__(cls: Type["Element"], **kwargs) -> "Element":
+    def __init__(self, **kwargs):
+        _kwargs = {k: v for k, v in kwargs.copy().items() if k != "class_name"}
+        class_name = getattr(kwargs, "class_name", None)
+        if class_name:
+            _kwargs["class"] = class_name
+
+        self.kwargs: Dict[str, str] = _kwargs
+
+        if self.class_name:
+            self.kwargs["class"] = self.class_name
+
+        self.children: list = []
+
+    def __new__(cls, *args, **kwargs) -> "Element":
         instance = super().__new__(cls)
-        instance.kwargs = {**(instance.kwargs or {}), **kwargs}
-        instance.children = instance.children or []
+        instance.children = []
         return instance
 
     @property
@@ -62,7 +75,7 @@ class Element(object):
         self.children.append(child)
         return self
 
-    def add_children(self, children: Children) -> Self:
+    def add_children(self, *children: Children) -> Self:
         """Add multiple child elements to the current element.
 
         Args:

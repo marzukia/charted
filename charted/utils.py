@@ -4,11 +4,17 @@ Vector = List[float]
 Vector2D = List[Vector]
 
 
+class Bounds(NamedTuple):
+    x1: float
+    x2: float
+    y1: float
+    y2: float
+
+
 class RectDimensions(NamedTuple):
     column_width: float
     column_gap: float
     rect_coordinates: float
-    centre_coordinates: float
 
 
 def calculate_column_width(
@@ -59,16 +65,10 @@ def calculate_rect_dimensions(
     for i in range(no_columns):
         rect_coordinates.append(current_position)
         current_position += column_width + column_gap
-    centre_coordinates = [i + (column_width / 2) for i in rect_coordinates]
-    return RectDimensions(
-        column_width,
-        column_gap,
-        rect_coordinates,
-        centre_coordinates,
-    )
+    return RectDimensions(column_width, column_gap, rect_coordinates)
 
 
-def calculate_svg_rotate(width: float, height: float) -> str:
+def svg_rotate(width: float, height: float) -> str:
     """Calculate the SVG transform attribute to rotate the element 180 degrees around its center.
 
     Args:
@@ -81,6 +81,27 @@ def calculate_svg_rotate(width: float, height: float) -> str:
     cx = width / 2
     cy = height / 2
     return f"rotate(180, {cx}, {cy})"
+
+
+def svg_translate(x: float, y: float) -> str:
+    """
+    Generate an SVG translation string.
+
+    This function generates an SVG translation string that can be used to translate
+    an SVG element by the specified x and y coordinates.
+
+    Parameters:
+        x (float): The x-coordinate for translation.
+        y (float): The y-coordinate for translation.
+
+    Returns:
+        str: The SVG translation string in the format "translate(x, y)".
+
+    Example:
+        >>> svg_translate(10.0, 20.0)
+        'translate(10.0, 20.0)'
+    """
+    return f"translate({x}, {y})"
 
 
 def calculate_viewbox(width: float, height: float) -> str:
@@ -190,77 +211,29 @@ def calculate_axis_coordinates(length: float, no_ticks: int) -> Vector:
     return [(i + 1) * tick for i in range(no_ticks)]
 
 
-def calculate_svg_transform(
-    width: float,
-    height: float,
-    padding: float = 0,
-) -> str:
-    """
-    Calculate the SVG transform string for scaling and translating an element.
-
-    This function calculates the SVG transform string required for scaling and translating
-    an element to fit within a given width and height, considering the maximum value of
-    the data and an optional padding.
-
-    Args:
-        width (float): The width of the SVG element.
-        height (float): The height of the SVG element.
-        max_value (float): The maximum value of the data to be displayed.
-        padding (float): The padding factor (as a fraction of the width and height) to apply around the element.
-
-    Returns:
-        str: The SVG transform string.
-    """
-
-    x_pad = width * padding
-    y_pad = height * padding
-
-    target_width = width - (2 * x_pad)
-    target_height = height - (2 * y_pad)
-
-    x_scale_factor = target_width / width
-    y_scale_factor = target_height / height
-
-    translation_x = x_pad / x_scale_factor
-    translation_y = y_pad / y_scale_factor
-
-    return f"scale({x_scale_factor}, {y_scale_factor}) translate({translation_x}, {translation_y})"
-
-
-def normalize_vectors(length: float, vectors: Union[Vector2D, Vector]) -> Vector2D:
+def normalise_vectors(length: float, vectors: Union[Vector2D, Vector]) -> Vector2D:
     """
     Normalize a list of vectors to a specified length.
 
-    This function normalizes the input vectors to the given length,
-    scaling the values proportionally between the minimum and maximum values of the vectors.
+    If a single vector is provided, it is normalized and returned as a single-element list.
 
     Args:
-        length (float): The length to normalize the vectors to.
-        vectors (Union[Vector2D, Vector]): A list of vectors (or a single vector) to be normalized.
+        length (float): The length to which the vectors should be normalized.
+        vectors (Union[Vector2D, Vector]): A single vector or a list of vectors to be normalized.
 
     Returns:
-        Vector2D: A list of normalized vectors.
+        Vector2D: A list of normalized vectors, each scaled to the specified length.
     """
     if isinstance(vectors[0], float):
         vectors = [vectors]
 
-    min_value = float("inf")
-    max_value = float("-inf")
-
-    for vector in vectors:
-        for i in vector:
-            if i < min_value:
-                min_value = i
-            if i > max_value:
-                max_value = i
+    min_value, max_value, _ = calculate_vector_attributes(vectors)
 
     normalized = []
     for vector in vectors:
-        normalized_vector = []
-        for i in vector:
-            normalized_value = (i - min_value) / (max_value - min_value) * length
-            normalized_vector.append(normalized_value)
-        normalized.append(normalized_vector)
+        normalized.append(
+            [(i - min_value) / (max_value - min_value) * length for i in vector]
+        )
 
     return normalized
 
@@ -269,25 +242,22 @@ def calculate_plot_corners(
     width: float,
     height: float,
     padding: float = 0,
-) -> Tuple[float, float, float, float]:
+) -> Bounds:
     """
     Calculate the corners of a plot area with optional padding.
-
-    This function calculates the coordinates of the corners of a plot area,
-    applying optional padding around the edges.
 
     Args:
         width (float): The width of the plot area.
         height (float): The height of the plot area.
-        padding (float): The padding factor (as a fraction of the width and height) to apply around the plot area.
+        padding (float, optional): The padding ratio to be applied to all sides of the plot. Defaults to 0.
 
     Returns:
-        Tuple[float, float, float, float]: The coordinates (x1, x2, y1, y2) of the plot corners.
+        Bounds: A tuple containing the coordinates of the corners (x1, x2, y1, y2).
     """
     x_padding = width * padding
     y_padding = height * padding
-    x1 = x_padding
+    x1 = 0 + x_padding
     x2 = width - x_padding
-    y1 = y_padding
+    y1 = 0 + y_padding
     y2 = height - y_padding
-    return (x1, x2, y1, y2)
+    return Bounds(x1, x2, y1, y2)
