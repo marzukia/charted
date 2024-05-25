@@ -1,4 +1,4 @@
-<svg width="500" height="500" viewBox="0 0 500 500">
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
   <g class="plot">
     <rect fill="white" stroke="#bbb" x="50.0" y="50.0" width="400.0" height="400.0"/>
     <g x1="50.0" y1="50.0" transform="translate(50.0, 50.0)" class="plot-grid">

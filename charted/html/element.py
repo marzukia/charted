@@ -15,7 +15,7 @@ class Element(object):
         if class_name:
             _kwargs["class"] = class_name
 
-        self.kwargs: Dict[str, str] = _kwargs
+        self.kwargs: Dict[str, str] = {**self.kwargs, **_kwargs}
 
         if self.class_name:
             self.kwargs["class"] = self.class_name
