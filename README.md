@@ -16,4 +16,4 @@ The initial types of charts that are planned to be created are:
 
 > Work In Progress
 
-![Column Chart](charted/docs/examples/column.svg)
+<img src="./charted/docs/examples/column.svg" />

@@ -1,9 +1,9 @@
 from typing import Tuple, Union
 from charted.html.element import G, Line, Rect
 from charted.utils import (
+    Bounds,
     Vector,
     calculate_axis_coordinates,
-    calculate_plot_corners,
     svg_translate,
 )
 
@@ -61,6 +61,7 @@ class Plot(G):
         width: float,
         height: float,
         padding: float,
+        bounds: Bounds,
         x_coordinates: Vector = None,
         y_coordinates: Vector = None,
         no_x: int = None,
@@ -68,10 +69,9 @@ class Plot(G):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.bounds = calculate_plot_corners(width, height, padding)
-        x1, x2, y1, y2 = self.bounds
-        self.height = abs(y1 - y2)
-        self.width = abs(x1 - x2)
+        self.bounds = bounds
+        self.height = height
+        self.width = width
         self.padding = padding
         self.x_coordinates, self.y_coordinates = self._validate_coordinates(
             x_coordinates,
