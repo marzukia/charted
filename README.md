@@ -16,4 +16,4 @@ The initial types of charts that are planned to be created are:
 
 > Work In Progress
 
-![Column Chart](https://raw.githubusercontent.com/marzukia/charted/main/charted/docs/examples/column.svg)
+<img src="https://raw.githubusercontent.com/marzukia/charted/main/charted/docs/examples/column.svg" alt="Column Chart" />
