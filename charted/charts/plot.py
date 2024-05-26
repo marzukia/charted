@@ -94,13 +94,11 @@ class Plot(G):
         if not y_coordinates and not no_y:
             raise Exception("Requires y_coordinates or no_y")
 
-        x_coordinates = None
         if no_x:
             x_coordinates = calculate_axis_coordinates(self.width, no_x)
         elif x_coordinates:
             x_coordinates = x_coordinates
 
-        y_coordinates = None
         if no_y:
             y_coordinates = calculate_axis_coordinates(self.height, no_y)
         if y_coordinates:
