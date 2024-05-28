@@ -1,11 +1,8 @@
 from typing import Tuple, Union
 from charted.html.element import G, Line, Rect
-from charted.utils import (
-    Bounds,
-    Vector,
-    calculate_axis_coordinates,
-    svg_translate,
-)
+from charted.utils.column import calculate_axis_coordinates
+from charted.utils.transform import translate
+from charted.utils.types import Bounds, Vector
 
 
 class PlotGrid(G):
@@ -126,5 +123,5 @@ class Plot(G):
             y1=self.bounds.y1,
             x_coordinates=self.x_coordinates,
             y_coordinates=self.y_coordinates,
-            transform=svg_translate(self.bounds.x1, self.bounds.y1),
+            transform=translate(self.bounds.x1, self.bounds.y1),
         )

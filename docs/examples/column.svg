@@ -61,4 +61,36 @@
       <rect x="361.290322580645" y="104.25341853913282" height="139.79248264962553" width="25.806451612903224"/>
     </g>
   </g>
+  <g transform="translate(50.0, 12)" class="x-axis">
+    <text x="25.806451612903224" y="450.0" transform="translate(-5.857142857142857, 0) rotate(41.2034989432625, 25.806451612903224, 450.0)" font-size="12" font-family="Verdana">
+      January
+    </text>
+    <text x="64.51612903225806" y="450.0" transform="translate(-5.75, 0) rotate(41.2034989432625, 64.51612903225806, 450.0)" font-size="12" font-family="Verdana">
+      February
+    </text>
+    <text x="103.2258064516129" y="450.0" transform="translate(-6.4, 0) rotate(41.2034989432625, 103.2258064516129, 450.0)" font-size="12" font-family="Verdana">
+      March
+    </text>
+    <text x="141.93548387096772" y="450.0" transform="translate(-4.6, 0) rotate(41.2034989432625, 141.93548387096772, 450.0)" font-size="12" font-family="Verdana">
+      April
+    </text>
+    <text x="180.64516129032253" y="450.0" transform="translate(-7.333333333333333, 0) rotate(41.2034989432625, 180.64516129032253, 450.0)" font-size="12" font-family="Verdana">
+      May
+    </text>
+    <text x="219.35483870967735" y="450.0" transform="translate(-6.25, 0) rotate(41.2034989432625, 219.35483870967735, 450.0)" font-size="12" font-family="Verdana">
+      June
+    </text>
+    <text x="258.06451612903214" y="450.0" transform="translate(-5.25, 0) rotate(41.2034989432625, 258.06451612903214, 450.0)" font-size="12" font-family="Verdana">
+      July
+    </text>
+    <text x="296.77419354838696" y="450.0" transform="translate(-6.0, 0) rotate(41.2034989432625, 296.77419354838696, 450.0)" font-size="12" font-family="Verdana">
+      August
+    </text>
+    <text x="335.4838709677418" y="450.0" transform="translate(-6.222222222222222, 0) rotate(41.2034989432625, 335.4838709677418, 450.0)" font-size="12" font-family="Verdana">
+      September
+    </text>
+    <text x="374.1935483870966" y="450.0" transform="translate(-5.857142857142857, 0) rotate(41.2034989432625, 374.1935483870966, 450.0)" font-size="12" font-family="Verdana">
+      October
+    </text>
+  </g>
 </svg>

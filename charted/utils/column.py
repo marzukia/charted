@@ -1,20 +1,5 @@
-from typing import List, NamedTuple, Tuple, Union
-
-Vector = List[float]
-Vector2D = List[Vector]
-
-
-class Bounds(NamedTuple):
-    x1: float
-    x2: float
-    y1: float
-    y2: float
-
-
-class RectDimensions(NamedTuple):
-    column_width: float
-    column_gap: float
-    rect_coordinates: float
+from typing import Tuple, Union
+from charted.utils.types import RectDimensions, Vector, Vector2D
 
 
 def calculate_column_width(
@@ -66,55 +51,6 @@ def calculate_rect_dimensions(
         rect_coordinates.append(current_position)
         current_position += column_width + column_gap
     return RectDimensions(column_width, column_gap, rect_coordinates)
-
-
-def svg_rotate(width: float, height: float) -> str:
-    """Calculate the SVG transform attribute to rotate the element 180 degrees around its center.
-
-    Args:
-        width (float): The width of the SVG element.
-        height (float): The height of the SVG element.
-
-    Returns:
-        str: The transform attribute string for rotating the SVG element.
-    """
-    cx = width / 2
-    cy = height / 2
-    return f"rotate(180, {cx}, {cy})"
-
-
-def svg_translate(x: float, y: float) -> str:
-    """
-    Generate an SVG translation string.
-
-    This function generates an SVG translation string that can be used to translate
-    an SVG element by the specified x and y coordinates.
-
-    Parameters:
-        x (float): The x-coordinate for translation.
-        y (float): The y-coordinate for translation.
-
-    Returns:
-        str: The SVG translation string in the format "translate(x, y)".
-
-    Example:
-        >>> svg_translate(10.0, 20.0)
-        'translate(10.0, 20.0)'
-    """
-    return f"translate({x}, {y})"
-
-
-def calculate_viewbox(width: float, height: float) -> str:
-    """Calculate the viewBox attribute for an SVG element.
-
-    Args:
-        width (float): The width of the SVG element.
-        height (float): The height of the SVG element.
-
-    Returns:
-        str: The viewBox attribute string in the format "0 0 width height".
-    """
-    return f"0 0 {width} {height}"
 
 
 def calculate_vector_offsets(vectors: Union[Vector2D, Vector]) -> Vector2D:
@@ -236,28 +172,3 @@ def normalise_vectors(length: float, vectors: Union[Vector2D, Vector]) -> Vector
         )
 
     return normalized
-
-
-def calculate_plot_corners(
-    width: float,
-    height: float,
-    padding: float = 0,
-) -> Bounds:
-    """
-    Calculate the corners of a plot area with optional padding.
-
-    Args:
-        width (float): The width of the plot area.
-        height (float): The height of the plot area.
-        padding (float, optional): The padding ratio to be applied to all sides of the plot. Defaults to 0.
-
-    Returns:
-        Bounds: A tuple containing the coordinates of the corners (x1, x2, y1, y2).
-    """
-    x_padding = width * padding
-    y_padding = height * padding
-    x1 = 0 + x_padding
-    x2 = width - x_padding
-    y1 = 0 + y_padding
-    y2 = height - y_padding
-    return Bounds(x1, x2, y1, y2)

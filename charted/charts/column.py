@@ -1,17 +1,16 @@
-from typing import List, Union
+from typing import List, Optional, Union
+from charted.charts.axes import XAxis
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
 from charted.html.element import G, Rect
-from charted.utils import (
-    Vector,
-    Vector2D,
-    calculate_plot_corners,
+from charted.utils.column import (
     calculate_rect_dimensions,
     calculate_vector_offsets,
     normalise_vectors,
-    svg_rotate,
-    svg_translate,
 )
+from charted.utils.plot import calculate_plot_corners
+from charted.utils.transform import rotate, translate
+from charted.utils.types import Labels, Vector, Vector2D
 
 
 class ColumnSeries(G):
@@ -45,10 +44,16 @@ class Column(Chart):
     # TODO: Color generation/theming.
     colors = ["red", "green", "blue"]
 
-    def __init__(self, data: Union[Vector | Vector2D], **kwargs):
+    def __init__(
+        self,
+        data: Union[Vector | Vector2D],
+        labels: Optional[Labels] = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
+        self.labels = labels
         self.data = self._validate_data(data)
-        self.add_children(self.plot, self.series)
+        self.add_children(self.plot, self.series, self.x_axis)
 
     def _validate_data(self, data: Union[Vector, Vector2D]) -> Union[Vector, Vector2D]:
         if len(data) == 0:
@@ -106,7 +111,7 @@ class Column(Chart):
     @property
     def series(self) -> List[ColumnSeries]:
         (x1, _, y1, _) = [i * -1 for i in self.plot.bounds]
-        g = G(transform=svg_translate(x=x1, y=y1))
+        g = G(transform=translate(x=x1, y=y1))
         for offsets, data, color in zip(
             self.offsets,
             self.normalised_data,
@@ -119,7 +124,7 @@ class Column(Chart):
                     rect_coordinates=self.rect_coordinates,
                     color=color,
                     column_width=self.column_width,
-                    transform=svg_rotate(self.width, self.height),
+                    transform=rotate(180, self.width / 2, self.height / 2),
                 )
             )
         return g
@@ -134,4 +139,16 @@ class Column(Chart):
             # TODO: Remove this hardcoded no_y
             no_y=5,
             x_coordinates=self.x_coordinates,
+        )
+
+    @property
+    def x_axis(self) -> XAxis:
+        y = self.height * (1 - self.padding)
+        return XAxis(
+            labels=self.labels,
+            width=self.width,
+            padding=self.padding,
+            no_columns=self.no_columns,
+            column_width=self.column_width,
+            coordinates=[(x, y) for x in self.x_coordinates],
         )

@@ -15,6 +15,10 @@ class Element(object):
         if class_name:
             _kwargs["class"] = class_name
 
+        if "transform" in _kwargs:
+            if type(_kwargs["transform"]) is list:
+                _kwargs["transform"] = " ".join(_kwargs["transform"])
+
         self.kwargs: Dict[str, str] = {**self.kwargs, **_kwargs}
 
         if self.class_name:
@@ -61,7 +65,9 @@ class Element(object):
         Returns:
             str: A string containing the HTML markup for all child elements.
         """
-        return "".join(child.html for child in self.children)
+        return "".join(
+            child.html if type(child) is not str else child for child in self.children
+        )
 
     def add_child(self, child: "Element") -> Self:
         """Add a child element to the current element.
@@ -109,3 +115,11 @@ class G(Element):
 
 class Line(Element):
     tag = "line"
+
+
+class Text(Element):
+    tag = "text"
+
+    def __init__(self, text: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.add_child(text)

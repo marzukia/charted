@@ -1,7 +1,8 @@
 from charted.charts.plot import Plot
 from charted.html.element import Svg
 from charted.html.formatter import format_html
-from charted.utils import calculate_plot_corners, calculate_viewbox
+from charted.utils.plot import calculate_plot_corners
+from charted.utils.svg import calculate_viewbox
 
 
 class Chart(Svg):
