@@ -23,6 +23,7 @@ class RectDimensions(NamedTuple):
 class MeasuredText(NamedTuple):
     text: str
     width: float
+    height: float
 
 
 class Coordinate(NamedTuple):

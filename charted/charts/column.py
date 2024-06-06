@@ -1,6 +1,6 @@
 from collections import defaultdict
 from typing import Optional, Tuple, Union
-from charted.charts.axes import XAxis
+from charted.charts.axes import Axes
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
 from charted.html.element import G, Path
@@ -28,7 +28,7 @@ class Column(Chart):
             self.plot,
             self.series,
             self.zero_line,
-            self.x_axis,
+            self.axes,
         )
 
     def _validate_data(self, data: Union[Vector, Vector2D]) -> Union[Vector, Vector2D]:
@@ -97,6 +97,21 @@ class Column(Chart):
 
     def reproject(self, coordinate: Tuple[float, float]) -> Tuple[float, float]:
         return [self._reproject_x(coordinate[0]), self._reproject_y(coordinate[1])]
+
+    @classmethod
+    def _reverse(
+        cls,
+        value: float,
+        max_value: float,
+        min_value: float,
+        length: float,
+    ) -> float:
+        value_range = max_value - min_value
+        normalised_value = value / length
+        return normalised_value * value_range
+
+    def _reverse_y(self, value: float) -> float:
+        return self._reverse(value, self.max_y, self.min_y, self.plot_height)
 
     @property
     def column_width(self, spacing: float = 0.5) -> float:
@@ -206,14 +221,5 @@ class Column(Chart):
         return Path(fill="white", d=Path.get_path(0, 0, self.width, self.height))
 
     @property
-    def x_axis(self) -> XAxis:
-        y = self.height * (1 - self.padding)
-        return XAxis(
-            parent=self,
-            labels=self.labels,
-            width=self.width,
-            padding=self.padding,
-            no_columns=self.no_columns,
-            column_width=self.column_width,
-            coordinates=[(x + (self.column_width / 2), y) for x in self.x_ticks],
-        )
+    def axes(self) -> Axes:
+        return Axes(parent=self)

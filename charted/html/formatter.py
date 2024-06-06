@@ -41,4 +41,3 @@ def format_html(html: str, indent: int = 2) -> str:
             pretty_lines.append(indent_line(line, level, indent))
 
     return "\n".join(pretty_lines)
-
