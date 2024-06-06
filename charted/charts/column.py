@@ -12,7 +12,7 @@ from charted.utils.types import Bounds, Labels, Vector, Vector2D
 
 class Column(Chart):
     # TODO: Color generation/theming.
-    colors = ["red", "green", "blue"]
+    colors = ["#EF6F6C", "#a74e4c", "#f5a9a7", "#477160", "#324f43", "#91aaa0"]
 
     def __init__(
         self,
@@ -164,7 +164,11 @@ class Column(Chart):
             self.y_values, self.y_offset, self.colors
         ):
             paths = []
-            for x, y, offset in zip(self.x_ticks, y_values, y_offsets):
+            for x, y, offset in zip(
+                self.x_ticks,
+                reversed(y_values),
+                reversed(y_offsets),
+            ):
                 path = get_path(x, offset, self.column_width, y)
                 paths.append(path)
             g.add_child(Path(d=paths, fill=color))
