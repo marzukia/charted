@@ -13,36 +13,58 @@
     <path d="M6.451612903225806 93.34092202618099 h25.806451612903224 v115.65167899829254 h-25.806451612903224 v-115.65167899829254Z M46.45161290322581 177.5754126351736 h25.806451612903224 v65.11098463289699 h-25.806451612903224 v-65.11098463289699Z M86.45161290322581 0.0 h25.806451612903224 v-63.745019920318725 h-25.806451612903224 v63.745019920318725Z M126.45161290322581 -50.76835515082527 h25.806451612903224 v-74.9003984063745 h-25.806451612903224 v74.9003984063745Z M166.4516129032258 -108.36653386454182 h25.806451612903224 v-48.94706886738759 h-25.806451612903224 v48.94706886738759Z M206.4516129032258 -32.783153101878206 h25.806451612903224 v-41.66192373363688 h-25.806451612903224 v41.66192373363688Z M246.4516129032258 0.0 h25.806451612903224 v-6.829823562891292 h-25.806451612903224 v6.829823562891292Z M286.4516129032258 96.30051223676722 h25.806451612903224 v9.78941377347752 h-25.806451612903224 v-9.78941377347752Z M326.4516129032258 0.0 h25.806451612903224 v-9.3340922026181 h-25.806451612903224 v9.3340922026181Z M366.4516129032258 59.19180421172453 h25.806451612903224 v12.521343198634035 h-25.806451612903224 v-12.521343198634035Z" fill="#477160"/>
   </g>
   <path d="M50.0 292.68639726807055 h400.0z" stroke="black"/>
-  <g transform="translate(50.0, 12)" class="x-axis">
-    <text x="19.354838709677416" y="450.0" transform="translate(-5.857142857142857, 0) rotate(41.2034989432625, 19.354838709677416, 450.0)" font-size="12" font-family="Verdana">
-      January
-    </text>
-    <text x="59.35483870967742" y="450.0" transform="translate(-5.75, 0) rotate(41.2034989432625, 59.35483870967742, 450.0)" font-size="12" font-family="Verdana">
-      February
-    </text>
-    <text x="99.35483870967742" y="450.0" transform="translate(-6.4, 0) rotate(41.2034989432625, 99.35483870967742, 450.0)" font-size="12" font-family="Verdana">
-      March
-    </text>
-    <text x="139.3548387096774" y="450.0" transform="translate(-4.6, 0) rotate(41.2034989432625, 139.3548387096774, 450.0)" font-size="12" font-family="Verdana">
-      April
-    </text>
-    <text x="179.3548387096774" y="450.0" transform="translate(-7.333333333333333, 0) rotate(41.2034989432625, 179.3548387096774, 450.0)" font-size="12" font-family="Verdana">
-      May
-    </text>
-    <text x="219.3548387096774" y="450.0" transform="translate(-6.25, 0) rotate(41.2034989432625, 219.3548387096774, 450.0)" font-size="12" font-family="Verdana">
-      June
-    </text>
-    <text x="259.3548387096774" y="450.0" transform="translate(-5.25, 0) rotate(41.2034989432625, 259.3548387096774, 450.0)" font-size="12" font-family="Verdana">
-      July
-    </text>
-    <text x="299.3548387096774" y="450.0" transform="translate(-6.0, 0) rotate(41.2034989432625, 299.3548387096774, 450.0)" font-size="12" font-family="Verdana">
-      August
-    </text>
-    <text x="339.3548387096774" y="450.0" transform="translate(-6.222222222222222, 0) rotate(41.2034989432625, 339.3548387096774, 450.0)" font-size="12" font-family="Verdana">
-      September
-    </text>
-    <text x="379.3548387096774" y="450.0" transform="translate(-5.857142857142857, 0) rotate(41.2034989432625, 379.3548387096774, 450.0)" font-size="12" font-family="Verdana">
-      October
-    </text>
+  <g>
+    <g class="x-axis" transform="translate(50.0, 12)">
+      <text x="19.354838709677416" y="450.0" transform="translate(-5.857142857142857, 0) rotate(41.2034989432625, 19.354838709677416, 450.0)" font-size="12" font-family="Verdana">
+        January
+      </text>
+      <text x="59.35483870967742" y="450.0" transform="translate(-5.75, 0) rotate(41.2034989432625, 59.35483870967742, 450.0)" font-size="12" font-family="Verdana">
+        February
+      </text>
+      <text x="99.35483870967742" y="450.0" transform="translate(-6.4, 0) rotate(41.2034989432625, 99.35483870967742, 450.0)" font-size="12" font-family="Verdana">
+        March
+      </text>
+      <text x="139.3548387096774" y="450.0" transform="translate(-4.6, 0) rotate(41.2034989432625, 139.3548387096774, 450.0)" font-size="12" font-family="Verdana">
+        April
+      </text>
+      <text x="179.3548387096774" y="450.0" transform="translate(-7.333333333333333, 0) rotate(41.2034989432625, 179.3548387096774, 450.0)" font-size="12" font-family="Verdana">
+        May
+      </text>
+      <text x="219.3548387096774" y="450.0" transform="translate(-6.25, 0) rotate(41.2034989432625, 219.3548387096774, 450.0)" font-size="12" font-family="Verdana">
+        June
+      </text>
+      <text x="259.3548387096774" y="450.0" transform="translate(-5.25, 0) rotate(41.2034989432625, 259.3548387096774, 450.0)" font-size="12" font-family="Verdana">
+        July
+      </text>
+      <text x="299.3548387096774" y="450.0" transform="translate(-6.0, 0) rotate(41.2034989432625, 299.3548387096774, 450.0)" font-size="12" font-family="Verdana">
+        August
+      </text>
+      <text x="339.3548387096774" y="450.0" transform="translate(-6.222222222222222, 0) rotate(41.2034989432625, 339.3548387096774, 450.0)" font-size="12" font-family="Verdana">
+        September
+      </text>
+      <text x="379.3548387096774" y="450.0" transform="translate(-5.857142857142857, 0) rotate(41.2034989432625, 379.3548387096774, 450.0)" font-size="12" font-family="Verdana">
+        October
+      </text>
+    </g>
+    <g class="y-axis" transform="translate(50.0, 50.0)">
+      <text x="0" y="48.2863972680706" transform="translate(-32, 7.0)" font-size="12" font-family="Verdana">
+        854
+      </text>
+      <text x="0" y="113.08639726807058" transform="translate(-32, 7.0)" font-size="12" font-family="Verdana">
+        569
+      </text>
+      <text x="0" y="177.8863972680706" transform="translate(-32, 7.0)" font-size="12" font-family="Verdana">
+        285
+      </text>
+      <text x="0" y="307.48639726807056" transform="translate(-35, 7.0)" font-size="12" font-family="Verdana">
+        -285
+      </text>
+      <text x="0" y="372.2863972680706" transform="translate(-35, 7.0)" font-size="12" font-family="Verdana">
+        -569
+      </text>
+      <text x="0" y="242.68639726807058" transform="translate(-19, 7.0)" font-size="12" font-family="Verdana">
+        0
+      </text>
+    </g>
   </g>
 </svg>
