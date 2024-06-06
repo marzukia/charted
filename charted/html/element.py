@@ -15,9 +15,9 @@ class Element(object):
         if class_name:
             _kwargs["class"] = class_name
 
-        if "transform" in _kwargs:
-            if type(_kwargs["transform"]) is list:
-                _kwargs["transform"] = " ".join(_kwargs["transform"])
+        for key, value in _kwargs.items():
+            if type(value) is list:
+                _kwargs[key] = " ".join(value)
 
         self.kwargs: Dict[str, str] = {**self.kwargs, **_kwargs}
 
@@ -111,6 +111,10 @@ class Rect(Element):
 
 class G(Element):
     tag = "g"
+
+
+class Path(Element):
+    tag = "path"
 
 
 class Line(Element):

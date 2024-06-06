@@ -26,7 +26,11 @@ class Chart(Svg):
     @property
     def plot(self) -> Plot:
         return Plot(
-            bounds=calculate_plot_corners(self.width, self.height, self.padding),
+            bounds=calculate_plot_corners(
+                self.width,
+                self.height,
+                self.padding,
+            ),
             width=self.width,
             height=self.height,
             padding=self.padding,
