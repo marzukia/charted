@@ -1,6 +1,6 @@
 from typing import List
 from charted.html.element import G, Text
-from charted.utils.text import TextMeasurer, calculate_rotation_angle
+from charted.utils.text import TextMeasurer
 from charted.utils.transform import rotate, translate
 from charted.utils.types import Coordinate, Labels, MeasuredText, Vector
 
@@ -47,7 +47,10 @@ class XAxis(Axis):
     def axes_labels(self) -> List[Text]:
         total_column_width = self.no_columns * self.column_width
         total_label_width = sum([l.width for l in self.labels])
-        rotation_angle = calculate_rotation_angle(total_label_width, total_column_width)
+        rotation_angle = TextMeasurer.calculate_rotation_angle(
+            total_label_width,
+            total_column_width,
+        )
 
         return [
             Text(

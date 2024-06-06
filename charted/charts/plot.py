@@ -1,7 +1,6 @@
+import math
 from typing import Tuple, Union
-from charted.charts.plane import Plane
 from charted.html.element import G, Path
-from charted.utils.column import calculate_axis_coordinates, get_path
 from charted.utils.transform import translate
 from charted.utils.types import Bounds, Vector
 
@@ -72,6 +71,31 @@ class Plot(G):
         )
         self.add_children(self.plot_area, self.grid)
 
+    @classmethod
+    def calculate_axis_coordinates(
+        cls, length: float, no_ticks: int, zero: float = 0
+    ) -> Vector:
+        positive_length = zero
+        negative_length = length - zero
+
+        tick = length / no_ticks
+        positive_ticks = math.floor(positive_length / tick)
+        negative_ticks = math.floor(negative_length / tick)
+        while no_ticks > (positive_ticks + negative_ticks):
+            positive_ticks = math.floor(positive_length / tick)
+            negative_ticks = math.floor(negative_length / tick)
+            tick = tick * 0.9
+
+        ticks = []
+
+        for i in range(positive_ticks):
+            ticks.append(zero - (tick * (i + 1)))
+
+        for i in range(negative_ticks):
+            ticks.append(zero + (tick * (i + 1)))
+
+        return ticks
+
     def _validate_coordinates(
         self,
         x_coordinates: Union[Vector, None],
@@ -88,29 +112,21 @@ class Plot(G):
             raise Exception("Requires y_coordinates or no_y")
 
         if no_x:
-            x_coordinates = calculate_axis_coordinates(self.width, no_x, x0)
+            x_coordinates = self.calculate_axis_coordinates(self.width, no_x, x0)
         elif x_coordinates:
             x_coordinates = x_coordinates
 
         if no_y:
-            y_coordinates = calculate_axis_coordinates(self.height, no_y, y0)
+            y_coordinates = self.calculate_axis_coordinates(self.height, no_y, y0)
         if y_coordinates:
             y_coordinates = y_coordinates
 
         return (x_coordinates, y_coordinates)
 
     @property
-    def plane(self) -> Plane:
-        return Plane(
-            height=self.height,
-            width=self.width,
-            data=self.data,
-        )
-
-    @property
     def plot_area(self) -> Path:
         return Path(
-            d=get_path(
+            d=Path.get_path(
                 x=self.bounds.x1,
                 y=self.bounds.y1,
                 width=self.width,

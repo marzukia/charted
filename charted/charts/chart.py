@@ -1,8 +1,7 @@
 from charted.charts.plot import Plot
 from charted.html.element import Svg
 from charted.html.formatter import format_html
-from charted.utils.plot import calculate_plot_corners
-from charted.utils.svg import calculate_viewbox
+from charted.utils.types import Bounds
 
 
 class Chart(Svg):
@@ -16,17 +15,33 @@ class Chart(Svg):
         super().__init__(
             width=width,
             height=height,
-            viewBox=calculate_viewbox(width, height),
+            viewBox=self.calculate_viewbox(width, height),
             **kwargs,
         )
         self.width = width
         self.height = height
         self.padding = padding
 
+    @classmethod
+    def calculate_plot_corners(
+        cls,
+        width: float,
+        height: float,
+        padding: float = 0,
+    ) -> Bounds:
+        x_padding = width * padding
+        y_padding = height * padding
+        x1 = 0 + x_padding
+        x2 = width - x_padding
+        y1 = 0 + y_padding
+        y2 = height - y_padding
+        return Bounds(x1, x2, y1, y2)
+
     @property
     def plot(self) -> Plot:
         return Plot(
-            bounds=calculate_plot_corners(
+            parent=self,
+            bounds=self.calculate_plot_corners(
                 self.width,
                 self.height,
                 self.padding,
