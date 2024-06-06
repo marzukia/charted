@@ -57,13 +57,13 @@ class XAxis(Axis):
                 transform=[
                     translate(
                         x=(
-                            l.width / -2
+                            -l.width / 2
                             if not rotation_angle
                             else l.width / len(l.text) * -1
                         ),
                         y=0,
                     ),
-                    rotate(rotation_angle, x, y),
+                    rotate(rotation_angle or 0, x, y),
                 ],
                 # TODO: Remove hardcoded font value
                 font_size=12,

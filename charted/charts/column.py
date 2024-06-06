@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import Optional, Tuple, Union
+from charted.charts.axes import XAxis
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
 from charted.html.element import G, Path
@@ -24,7 +25,13 @@ class Column(Chart):
         validated_data = self._validate_data(data)
         self.data = validated_data
         self.bounds = validated_data
-        self.add_children(self.plot, self.series, self.zero_line)  # self.x_axis
+        self.add_children(
+            self.container,
+            self.plot,
+            self.series,
+            self.zero_line,
+            self.x_axis,
+        )
 
     def _validate_data(self, data: Union[Vector, Vector2D]) -> Union[Vector, Vector2D]:
         if len(data) == 0:
@@ -191,15 +198,18 @@ class Column(Chart):
             x_coordinates=[i - (self.column_width / 4) for i in self.x_ticks],
         )
 
+    @property
+    def container(self) -> Path:
+        return Path(fill="white", d=get_path(0, 0, self.width, self.height))
 
-#    @property
-#    def x_axis(self) -> XAxis:
-#        y = self.height * (1 - self.padding)
-#        return XAxis(
-#            labels=self.labels,
-#            width=self.width,
-#            padding=self.padding,
-#            no_columns=self.no_columns,
-#            column_width=self.column_width,
-#            coordinates=[(x, y) for x in self.x_ticks],
-#        )
+    @property
+    def x_axis(self) -> XAxis:
+        y = self.height * (1 - self.padding)
+        return XAxis(
+            labels=self.labels,
+            width=self.width,
+            padding=self.padding,
+            no_columns=self.no_columns,
+            column_width=self.column_width,
+            coordinates=[(x + (self.column_width / 2), y) for x in self.x_ticks],
+        )
