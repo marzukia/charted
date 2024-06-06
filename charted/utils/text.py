@@ -30,19 +30,20 @@ class TextMeasurer:
             self.root.destroy()
             self.root = None
 
+    @classmethod
+    def calculate_rotation_angle(
+        cls,
+        total_label_width: float,
+        total_permissible_width: float,
+    ) -> Union[float, None]:
+        if total_label_width <= total_permissible_width:
+            return None
 
-def calculate_rotation_angle(
-    total_label_width: float,
-    total_permissible_width: float,
-) -> Union[float, None]:
-    if total_label_width <= total_permissible_width:
-        return None
+        ratio = total_permissible_width / total_label_width
+        if ratio > 1.0 or ratio < 0.0:
+            raise ValueError("Invalid ratio: it should be between 0 and 1.")
 
-    ratio = total_permissible_width / total_label_width
-    if ratio > 1.0 or ratio < 0.0:
-        raise ValueError("Invalid ratio: it should be between 0 and 1.")
+        rotation_angle_radians = math.acos(ratio)
+        rotation_angle_degrees = math.degrees(rotation_angle_radians)
 
-    rotation_angle_radians = math.acos(ratio)
-    rotation_angle_degrees = math.degrees(rotation_angle_radians)
-
-    return rotation_angle_degrees
+        return rotation_angle_degrees

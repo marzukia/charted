@@ -4,8 +4,6 @@ from charted.charts.axes import XAxis
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
 from charted.html.element import G, Path
-from charted.utils.column import get_path
-from charted.utils.plot import calculate_plot_corners
 from charted.utils.transform import rotate, translate
 from charted.utils.types import Bounds, Labels, Vector, Vector2D
 
@@ -169,7 +167,7 @@ class Column(Chart):
                 reversed(y_values),
                 reversed(y_offsets),
             ):
-                path = get_path(x, offset, self.column_width, y)
+                path = Path.get_path(x, offset, self.column_width, y)
                 paths.append(path)
             g.add_child(Path(d=paths, fill=color))
         return g
@@ -187,7 +185,8 @@ class Column(Chart):
     @property
     def plot(self) -> Plot:
         return Plot(
-            bounds=calculate_plot_corners(
+            parent=self,
+            bounds=self.calculate_plot_corners(
                 self.width,
                 self.height,
                 self.padding,
@@ -204,12 +203,13 @@ class Column(Chart):
 
     @property
     def container(self) -> Path:
-        return Path(fill="white", d=get_path(0, 0, self.width, self.height))
+        return Path(fill="white", d=Path.get_path(0, 0, self.width, self.height))
 
     @property
     def x_axis(self) -> XAxis:
         y = self.height * (1 - self.padding)
         return XAxis(
+            parent=self,
             labels=self.labels,
             width=self.width,
             padding=self.padding,

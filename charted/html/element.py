@@ -1,4 +1,4 @@
-from typing import Dict, List, Self, Union
+from typing import Any, Dict, List, Self, Union
 
 Children = List["Element"]
 
@@ -9,7 +9,9 @@ class Element(object):
     children: Children = []
     class_name: Union[str, None] = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, parent: Any = None, **kwargs):
+        self.parent = parent
+
         _kwargs = {k: v for k, v in kwargs.copy().items() if k != "class_name"}
         class_name = getattr(kwargs, "class_name", None)
         if class_name:
@@ -104,6 +106,10 @@ class Svg(Element):
         "xmlns": "http://www.w3.org/2000/svg",
     }
 
+    @classmethod
+    def calculate_viewbox(cls, width: float, height: float) -> str:
+        return f"0 0 {width} {height}"
+
 
 class Rect(Element):
     tag = "rect"
@@ -115,6 +121,18 @@ class G(Element):
 
 class Path(Element):
     tag = "path"
+
+    @classmethod
+    def get_path(cls, x: float, y: float, width: float, height: float) -> List[str]:
+        return " ".join(
+            [
+                f"M{x} {y}",
+                f"h{width}",
+                f"v{height}",
+                f"h{-width}",
+                f"v{-1 * height}Z",
+            ]
+        )
 
 
 class Line(Element):
