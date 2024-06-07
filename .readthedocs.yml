@@ -6,7 +6,7 @@ sphinx:
 
 # Build using Poetry
 build:
-  os: ubuntu-latest
+  os: ubuntu-lts-latest
   tools:
     python: "3.12"
   jobs:
