@@ -1,4 +1,4 @@
-theversion: 2
+version: 2
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -10,9 +10,9 @@ build:
   tools:
     python: "3.12"
   jobs:
-    pre_build:
+    post_install:
       - pip install poetry
       - poetry config virtualenvs.create false
-      - poetry install --no-dev
-    build:
+      - poetry install --with=docs
+    post_build:
       - sphinx-build -b html docs/ _build/html
