@@ -1,8 +1,13 @@
 from typing import List
+from charted.fonts.utils import (
+    DEFAULT_FONT,
+    DEFAULT_FONT_SIZE,
+    calculate_rotation_angle,
+    calculate_text_dimensions,
+)
 from charted.html.element import G, Text
-from charted.utils.text import TextMeasurer
 from charted.utils.transform import rotate, translate
-from charted.utils.types import Labels, MeasuredText, Vector
+from charted.utils.types import Labels, Vector
 
 
 class Axes(G):
@@ -29,8 +34,7 @@ class Axis(G):
 
     @labels.setter
     def labels(self, labels) -> None:
-        with TextMeasurer() as tm:
-            self._labels = [MeasuredText(x, *tm.measure_text(x)) for x in labels]
+        self._labels = [calculate_text_dimensions(x) for x in labels]
 
 
 class YAxis(Axis):
@@ -43,7 +47,7 @@ class YAxis(Axis):
             y=self.parent.padding * self.parent.height,
         )
         self.labels = self.y_labels
-        self.add_children(*self.axes_labels)
+        self.add_child(self.axes_labels)
 
     @property
     def y_coordinates(self) -> Vector:
@@ -63,8 +67,8 @@ class YAxis(Axis):
         return [*labels, "0"]
 
     @property
-    def axes_labels(self) -> List[Text]:
-        arr = []
+    def axes_labels(self) -> G:
+        g = G(font_size=DEFAULT_FONT_SIZE, font_family=DEFAULT_FONT)
         z = self.parent._reproject_y(self.parent.bounds.y2)
         for y, label in zip(
             [*self.y_coordinates, z],
@@ -78,11 +82,9 @@ class YAxis(Axis):
                     x=-(label.width + 12),
                     y=label.height / 2,
                 ),
-                font_size=12,
-                font_family="Verdana",
             )
-            arr.append(text)
-        return arr
+            g.add_child(text)
+        return g
 
 
 class XAxis(Axis):
@@ -95,7 +97,7 @@ class XAxis(Axis):
             x=(self.parent.width * self.parent.padding),
             y="12",
         )
-        self.add_children(*self.axes_labels)
+        self.add_child(self.axes_labels)
 
     @property
     def x_coordinates(self) -> Vector:
@@ -103,33 +105,36 @@ class XAxis(Axis):
         return [(x + (self.parent.column_width / 2), y) for x in self.parent.x_ticks]
 
     @property
-    def axes_labels(self) -> List[Text]:
+    def axes_labels(self) -> G:
+        g = G(font_size=DEFAULT_FONT_SIZE, font_family=DEFAULT_FONT)
+
         total_column_width = self.parent.no_columns * self.parent.column_width
         total_label_width = sum([label.width for label in self.labels])
-        rotation_angle = TextMeasurer.calculate_rotation_angle(
+        rotation_angle = calculate_rotation_angle(
             total_label_width,
             total_column_width,
         )
 
-        return [
-            Text(
-                text=label.text,
-                x=x,
-                y=y,
-                transform=[
-                    translate(
-                        x=(
-                            -label.width / 2
-                            if not rotation_angle
-                            else label.width / len(label.text) * -1
+        g.add_children(
+            *[
+                Text(
+                    text=label.text,
+                    x=x,
+                    y=y,
+                    transform=[
+                        translate(
+                            x=(
+                                -label.width / 2
+                                if not rotation_angle
+                                else label.width / len(label.text) * -1
+                            ),
+                            y=0,
                         ),
-                        y=0,
-                    ),
-                    rotate(rotation_angle or 0, x, y),
-                ],
-                # TODO: Remove hardcoded font value
-                font_size=12,
-                font_family="Verdana",
-            )
-            for label, (x, y) in zip(self.labels, self.x_coordinates)
-        ]
+                        rotate(rotation_angle or 0, x, y),
+                    ],
+                )
+                for label, (x, y) in zip(self.labels, self.x_coordinates)
+            ]
+        )
+
+        return g

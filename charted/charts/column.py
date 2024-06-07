@@ -1,24 +1,38 @@
 from collections import defaultdict
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from charted.charts.axes import Axes
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
-from charted.html.element import G, Path
+from charted.fonts.utils import (
+    DEFAULT_FONT,
+    DEFAULT_TITLE_FONT_SIZE,
+    calculate_text_dimensions,
+)
+from charted.html.element import G, Path, Text
+from charted.utils.colors import generate_complementary_colors
 from charted.utils.transform import rotate, translate
 from charted.utils.types import Bounds, Labels, Vector, Vector2D
 
 
 class Column(Chart):
-    # TODO: Color generation/theming.
-    colors = ["#EF6F6C", "#a74e4c", "#f5a9a7", "#477160", "#324f43", "#91aaa0"]
+    _colors = ["#EF6F6C", "#a74e4c", "#f5a9a7", "#477160", "#324f43", "#91aaa0"]
 
     def __init__(
         self,
         data: Union[Vector | Vector2D],
+        title: str = None,
         labels: Optional[Labels] = None,
+        colors: List[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
+        if colors:
+            self._colors = colors
+
+        self.title_text = calculate_text_dimensions(
+            title,
+            font_size=DEFAULT_TITLE_FONT_SIZE,
+        )
         self.labels = labels
         validated_data = self._validate_data(data)
         self.data = validated_data
@@ -30,6 +44,8 @@ class Column(Chart):
             self.zero_line,
             self.axes,
         )
+        if self.title_text:
+            self.add_child(self.title)
 
     def _validate_data(self, data: Union[Vector, Vector2D]) -> Union[Vector, Vector2D]:
         if len(data) == 0:
@@ -40,6 +56,16 @@ class Column(Chart):
             raise Exception("Not all vectors were same length")
 
         return data
+
+    @property
+    def colors(self) -> List[str]:
+        new_colors = [*self._colors]
+        while self.no_columns > len(new_colors):
+            for color in generate_complementary_colors(self._colors):
+                if len(new_colors) >= self.no_columns:
+                    break
+                new_colors.append(color)
+        return new_colors
 
     @property
     def plot_width(self) -> float:
@@ -76,6 +102,30 @@ class Column(Chart):
     @property
     def no_columns(self) -> int:
         return len(self.data[0])
+
+    @property
+    def v_pad(self) -> float:
+        return self.padding * self.width
+
+    @property
+    def h_pad(self) -> float:
+        return self.padding * self.width
+
+    @property
+    def title(self) -> Text:
+        return Text(
+            transform=[
+                translate(
+                    x=-self.title_text.width / 2,
+                    y=self.title_text.height / 4,
+                )
+            ],
+            text=self.title_text.text,
+            font_family=DEFAULT_FONT,
+            font_size=DEFAULT_TITLE_FONT_SIZE,
+            x=self.width / 2,
+            y=self.v_pad / 2,
+        )
 
     @classmethod
     def _reproject(
@@ -161,8 +211,8 @@ class Column(Chart):
 
     @property
     def series(self) -> G:
-        dx = self.padding * self.width
-        dy = self.padding * self.height
+        dx = self.v_pad
+        dy = self.v_pad
 
         if self.min_y < 0:
             dy += self._reproject_y(abs(self.min_y))
@@ -185,6 +235,7 @@ class Column(Chart):
                 path = Path.get_path(x, offset, self.column_width, y)
                 paths.append(path)
             g.add_child(Path(d=paths, fill=color))
+
         return g
 
     @property
