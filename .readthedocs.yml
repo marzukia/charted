@@ -15,4 +15,4 @@ build:
       - poetry config virtualenvs.create false
       - poetry install --with=docs
     post_build:
-      - sphinx-build -b html docs/ _build/html
+      - sphinx-build -b html docs/ $READTHEDOCS_OUTPUT/html
