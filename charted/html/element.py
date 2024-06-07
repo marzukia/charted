@@ -111,10 +111,6 @@ class Svg(Element):
         return f"0 0 {width} {height}"
 
 
-class Rect(Element):
-    tag = "rect"
-
-
 class G(Element):
     tag = "g"
 
@@ -133,10 +129,6 @@ class Path(Element):
                 f"v{-1 * height}Z",
             ]
         )
-
-
-class Line(Element):
-    tag = "line"
 
 
 class Text(Element):

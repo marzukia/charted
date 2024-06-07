@@ -1,80 +1,82 @@
-from charted.html.element import G, Element, Line, Path, Rect, Svg, Text
+from charted.html.element import G, Element, Path, Svg, Text
 
 
-class ElementTestClass(Element):
-    tag = "test"
+class TestElement:
+    def setup_method(self, method):
+        class ElementTestClass(Element):
+            tag = "test"
+
+        self.cls = ElementTestClass
+        self.tag = self.cls.tag
+
+    def test_html(self):
+        element = self.cls(a="foo", b="bar")
+        expected = f'<{self.tag} a="foo" b="bar"/>'
+        assert element.html == expected
+
+    def test_array_kwargs(self):
+        element = self.cls(a=["foo", "bar"])
+        expected = f'<{self.tag} a="foo bar"/>'
+        assert element.html == expected
+
+    def test_case_handling(self):
+        element = self.cls(foo_bar="foo")
+        expected = f'<{self.tag} foo-bar="foo"/>'
+        assert element.html == expected
+
+    def test_class_override(self):
+        element = self.cls(a="foo", b="bar", **{"class": "foobar"})
+        expected = f'<{self.tag} a="foo" b="bar" class="foobar"/>'
+        assert element.html == expected
+
+    def test_parent_reference(self):
+        parent = self.cls(id="parent")
+        child = self.cls(id="child", parent=parent)
+        assert child.parent.html == f'<{self.tag} id="parent"/>'
+
+    def test_add_child(self):
+        parent = self.cls(id="parent")
+        child = self.cls(id="child", parent=parent)
+        expected = f'<{self.tag} id="parent"><{self.tag} id="child"/></{self.tag}>'
+        parent.add_child(child)
+        assert parent.html == expected
+
+    def test_add_children(self):
+        parent = self.cls(id="parent")
+        child1 = self.cls(id="child1", parent=parent)
+        child2 = self.cls(id="child2", parent=parent)
+        parent.add_children(child1, child2)
+        expected = f'<{self.tag} id="parent"><{self.tag} id="child1"/><{self.tag} id="child2"/></{self.tag}>'
+        assert parent.html == expected
 
 
-def test_element_html():
-    element = ElementTestClass(a="foo", b="bar")
-    assert element.html == '<test a="foo" b="bar"/>'
+class TestSvg:
+    def setup_method(self, method):
+        self.cls = Svg
+        self.tag = self.cls.tag
+
+    def test_html(self):
+        instance = self.cls()
+        assert instance.html == f'<{self.tag} xmlns="http://www.w3.org/2000/svg"/>'
 
 
-def test_element_array_kwargs():
-    element = ElementTestClass(a=["foo", "bar"])
-    assert element.html == '<test a="foo bar"/>'
+class TestG(TestElement):
+    def setup_method(self, method):
+        self.cls = G
+        self.tag = self.cls.tag
 
 
-def test_element_case_handling():
-    element = ElementTestClass(foo_bar="foo")
-    assert element.html == '<test foo-bar="foo"/>'
+class TestPath(TestElement):
+    def setup_method(self, method):
+        self.cls = Path
+        self.tag = self.cls.tag
 
 
-def test_element_class_override():
-    element = ElementTestClass(a="foo", b="bar", **{"class": "foobar"})
-    assert element.html == '<test a="foo" b="bar" class="foobar"/>'
+class TestText:
+    def setup_method(self, method):
+        self.cls = Text
+        self.tag = self.cls.tag
 
-
-def test_element_parent_reference():
-    parent = ElementTestClass(id="parent")
-    child = ElementTestClass(id="child", parent=parent)
-    assert child.parent.html == '<test id="parent"/>'
-
-
-def test_element_add_child():
-    parent = ElementTestClass(id="parent")
-    child = ElementTestClass(id="child", parent=parent)
-    expected = '<test id="parent"><test id="child"/></test>'
-    parent.add_child(child)
-    assert parent.html == expected
-
-
-def test_element_add_children():
-    parent = ElementTestClass(id="parent")
-    child1 = ElementTestClass(id="child1", parent=parent)
-    child2 = ElementTestClass(id="child2", parent=parent)
-    parent.add_children(child1, child2)
-    expected = '<test id="parent"><test id="child1"/><test id="child2"/></test>'
-    assert parent.html == expected
-
-
-def test_svg():
-    instance = Svg()
-    assert instance.html == '<svg xmlns="http://www.w3.org/2000/svg"/>'
-
-
-def test_rect():
-    instance = Rect(x=0, y=0, height=50, width=50)
-    assert instance.html == '<rect x="0" y="0" height="50" width="50"/>'
-
-
-def test_g():
-    instance = G()
-    child = Path(d=["M0 0", "H50", "Z"])
-    instance.add_child(child)
-    assert instance.html == '<g><path d="M0 0 H50 Z"/></g>'
-
-
-def test_path():
-    instance = Path(d=["M0 0", "H50", "Z"])
-    assert instance.html == '<path d="M0 0 H50 Z"/>'
-
-
-def test_line():
-    instance = Line(x1=0, x2=1, y1=0, y2=1)
-    assert instance.html == '<line x1="0" x2="1" y1="0" y2="1"/>'
-
-
-def test_text():
-    instance = Text(text="foobar")
-    assert instance.html == "<text>foobar</text>"
+    def test_text(self):
+        instance = self.cls(text="foobar")
+        assert instance.html == f"<{self.tag}>foobar</{self.tag}>"
