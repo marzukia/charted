@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Self, Union
+from typing import Any, Dict, List, Union
 
 Children = List["Element"]
 
@@ -71,7 +71,7 @@ class Element(object):
             child.html if type(child) is not str else child for child in self.children
         )
 
-    def add_child(self, child: "Element") -> Self:
+    def add_child(self, child: "Element") -> "Element":
         """Add a child element to the current element.
 
         Args:
@@ -83,7 +83,7 @@ class Element(object):
         self.children.append(child)
         return self
 
-    def add_children(self, *children: Children) -> Self:
+    def add_children(self, *children: Children) -> "Element":
         """Add multiple child elements to the current element.
 
         Args:
