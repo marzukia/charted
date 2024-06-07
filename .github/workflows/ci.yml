@@ -25,7 +25,7 @@ jobs:
         run: poetry install
 
       - name: Run Tox
-        run: poetry run tox -e py${{ matrix.python-version | replace('.', '') }}
+        run: poetry run tox -e py${{ matrix.python-version[0] }}${{ matrix.python-version[2] }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
