@@ -18,3 +18,8 @@ pytest = "^8.2.1"
 ipython = "^8.24.0"
 flake8 = "^7.0.0"
 black = "^24.4.2"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
