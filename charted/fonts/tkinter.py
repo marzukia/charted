@@ -1,4 +1,4 @@
-from typing import Optional, Self, Tuple
+from typing import Optional, Tuple
 import tkinter as tk
 from tkinter import font as tkfont
 
@@ -11,7 +11,7 @@ class TextMeasurer:
     def __init__(self) -> None:
         self.root: Optional[tk.Tk] = None
 
-    def __enter__(self: Self) -> Self:
+    def __enter__(self) -> "TextMeasurer":
         self.root = tk.Tk()
         self.root.withdraw()
         return self
