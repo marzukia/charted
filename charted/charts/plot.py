@@ -52,8 +52,6 @@ class Plot(G):
         y_coordinates: Vector = None,
         no_x: int = None,
         no_y: int = None,
-        y0: float = None,
-        x0: float = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -66,8 +64,8 @@ class Plot(G):
             y_coordinates,
             no_x,
             no_y,
-            x0,
-            y0,
+            self.parent.x_zero,
+            self.parent.y_zero,
         )
         self.add_children(self.plot_area, self.grid)
 
@@ -102,8 +100,8 @@ class Plot(G):
         y_coordinates: Union[Vector, None],
         no_x: int,
         no_y: int,
-        x0: float,
-        y0: float,
+        x_zero: float,
+        y_zero: float,
     ) -> Tuple[Vector, Vector]:
         if not x_coordinates and not no_x:
             raise Exception("Requires x_coordinates or no_x")
@@ -112,12 +110,12 @@ class Plot(G):
             raise Exception("Requires y_coordinates or no_y")
 
         if no_x:
-            x_coordinates = self.calculate_axis_coordinates(self.width, no_x, x0)
+            x_coordinates = self.calculate_axis_coordinates(self.width, no_x, x_zero)
         elif x_coordinates:
             x_coordinates = x_coordinates
 
         if no_y:
-            y_coordinates = self.calculate_axis_coordinates(self.height, no_y, y0)
+            y_coordinates = self.calculate_axis_coordinates(self.height, no_y, y_zero)
         if y_coordinates:
             y_coordinates = y_coordinates
 

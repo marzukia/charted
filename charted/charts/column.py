@@ -105,7 +105,7 @@ class Column(Chart):
 
     @property
     def v_pad(self) -> float:
-        return self.padding * self.width
+        return self.padding * self.height
 
     @property
     def h_pad(self) -> float:
@@ -211,7 +211,7 @@ class Column(Chart):
 
     @property
     def series(self) -> G:
-        dx = self.v_pad
+        dx = self.h_pad
         dy = self.v_pad
 
         if self.min_y < 0:
@@ -239,9 +239,16 @@ class Column(Chart):
         return g
 
     @property
+    def y_zero(self) -> float:
+        return self._reproject_y(abs(self.bounds.y2))
+
+    @property
+    def x_zero(self) -> float:
+        return self._reproject_x(abs(self.bounds.x1))
+
+    @property
     def zero_line(self) -> Path:
-        yz = self._reproject_y(abs(0 - self.bounds.y2))
-        dy = self.height * self.padding + yz
+        dy = (self.height * self.padding) + self.y_zero
         dx = self.width * self.padding
         return Path(
             d=[f"M{dx} {dy}", f"h{self.plot_width}z"],
@@ -262,8 +269,6 @@ class Column(Chart):
             padding=self.padding,
             # TODO: Remove this hardcoded no_y
             no_y=5,
-            y0=self._reproject_y(abs(0 - self.bounds.y2)),
-            x0=self._reproject_x(abs(0 - self.bounds.x1)),
             x_coordinates=[i - (self.column_width / 4) for i in self.x_ticks],
         )
 
