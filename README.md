@@ -37,7 +37,7 @@ poetry run python charted/fonts/creator.py Helvetica
 ### Column
 
 ```py
-from charted.charts.column import Column
+from charted import Column
 
 graph = Column(
     title="Example Column Chart",
@@ -72,6 +72,8 @@ graph = Column(
 ### Line
 
 ```py
+from charted import Line
+
 graph = Column(
     title="Example Line Chart",
     data=[
