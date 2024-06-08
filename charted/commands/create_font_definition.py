@@ -21,7 +21,7 @@ if __name__ == "__main__":
         nargs="?",
         type=int,
         help="The maximum font size.",
-        default=16,
+        default=21,
     )
 
     args = parser.parse_args()

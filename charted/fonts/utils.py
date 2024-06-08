@@ -10,7 +10,7 @@ from charted.utils.types import MeasuredText
 BASE_DEFINITIONS_DIR = os.path.join(BASE_DIR, "charted", "fonts", "definitions")
 DEFAULT_FONT = "Helvetica"
 DEFAULT_FONT_SIZE = 12
-DEFAULT_TITLE_FONT_SIZE = 15
+DEFAULT_TITLE_FONT_SIZE = 20
 
 if os.name == "nt":
     DEFAULT_FONT = "Arial"
@@ -19,7 +19,7 @@ if os.name == "nt":
 def create_font_definition(
     font: str,
     min_font_size: int = 8,
-    max_font_size: int = 16,
+    max_font_size: int = 21,
 ) -> None:
     from charted.fonts.tkinter import TextMeasurer
 
