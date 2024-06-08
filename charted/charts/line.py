@@ -54,9 +54,9 @@ class Line(Chart):
                 agg.append(v)
 
         min_x = 0
-        min_y = min(agg)
+        min_y = min(agg) * 1.1
         max_x = n - 1
-        max_y = max(agg)
+        max_y = max(agg) * 1.1
 
         return (min_x, min_y, max_x, max_y)
 

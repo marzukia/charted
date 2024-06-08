@@ -53,9 +53,9 @@ class Column(Chart):
                 agg[i].append(arr[i])
 
         min_x = 0
-        min_y = min([sum([x for x in i if x <= 0]) for i in agg.values()])
+        min_y = min([sum([x for x in i if x <= 0]) for i in agg.values()]) * 1.1
         max_x = n - 1
-        max_y = max([sum([x for x in i if x >= 0]) for i in agg.values()])
+        max_y = max([sum([x for x in i if x >= 0]) for i in agg.values()]) * 1.1
 
         return (min_x, min_y, max_x, max_y)
 
