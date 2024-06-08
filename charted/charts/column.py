@@ -126,6 +126,7 @@ class Column(Chart):
             ],
             text=self.title_text.text,
             font_family=DEFAULT_FONT,
+            font_weight="bold",
             font_size=DEFAULT_TITLE_FONT_SIZE,
             x=self.width / 2,
             y=self.v_pad / 2,
