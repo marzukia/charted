@@ -115,6 +115,10 @@ class G(Element):
     tag = "g"
 
 
+class Circle(Element):
+    tag = "circle"
+
+
 class Path(Element):
     tag = "path"
 

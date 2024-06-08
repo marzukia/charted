@@ -102,18 +102,21 @@ class XAxis(Axis):
     @property
     def x_coordinates(self) -> Vector:
         y = self.parent.height * (1 - self.parent.padding)
+        column_width = self.parent.plot_width / self.parent.no_columns
+        if self.parent.column_width == column_width:
+            return [(x + column_width, y) for x in self.parent.x_ticks]
+
         return [(x + (self.parent.column_width / 2), y) for x in self.parent.x_ticks]
 
     @property
     def axes_labels(self) -> G:
         g = G(font_size=DEFAULT_FONT_SIZE, font_family=DEFAULT_FONT)
+        rotation_angle = 0
 
-        total_column_width = self.parent.no_columns * self.parent.column_width
-        total_label_width = sum([label.width for label in self.labels])
-        rotation_angle = calculate_rotation_angle(
-            total_label_width,
-            total_column_width,
-        )
+        for label in self.labels:
+            angle = calculate_rotation_angle(label.width, self.parent.column_width)
+            if angle and (angle > rotation_angle):
+                rotation_angle = angle
 
         g.add_children(
             *[

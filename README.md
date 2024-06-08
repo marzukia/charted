@@ -36,8 +36,6 @@ poetry run python charted/fonts/creator.py Helvetica
 
 ### Column
 
-> Work In Progress
-
 ```py
 from charted.charts.column import Column
 
@@ -51,7 +49,7 @@ graph = Column(
     ],
     width=800,
     height=500,
-    padding=0.1,
+    padding=0.15,
     labels=[
         "January",
         "February",
@@ -70,3 +68,34 @@ graph = Column(
 ```
 
 ![](/docs/examples/column.svg)
+
+### Line
+
+```py
+graph = Column(
+    title="Example Line Chart",
+    data=[
+        [-240, 53, 91, 291, 98, -476, 235, 313, -150, 139, 134, 170],
+        [235, 98, 189, 166, -17, 214, 163, 537, 455, 32, 251, 50],
+    ],
+    width=800,
+    height=500,
+    padding=0.15,
+    labels=[
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ],
+)
+```
+
+![](/docs/examples/line.svg)
