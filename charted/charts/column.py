@@ -15,7 +15,7 @@ from charted.utils.types import Bounds, Labels, Vector, Vector2D
 
 
 class Column(Chart):
-    _colors = ["#EF6F6C", "#a74e4c", "#f5a9a7", "#477160", "#324f43", "#91aaa0"]
+    _colors = ["#EF6F6C", "#477160", "#a74e4c", "#f5a9a7", "#324f43", "#91aaa0"]
 
     def __init__(
         self,
@@ -47,11 +47,15 @@ class Column(Chart):
         if self.title_text:
             self.add_child(self.title)
 
-    def _validate_data(self, data: Union[Vector, Vector2D]) -> Union[Vector, Vector2D]:
+    def _validate_data(self, data: Union[Vector, Vector2D]) -> Vector2D:
         if len(data) == 0:
             raise Exception("No data provided.")
 
+        if type(data[0]) is not list:
+            data = [data]
+
         max_length = max([len(i) for i in data])
+
         if not all([len(i) == max_length for i in data]):
             raise Exception("Not all vectors were same length")
 

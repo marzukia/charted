@@ -3,3 +3,4 @@ dist/
 docs/_build/
 .tox/
 .pytest_cache/
+main.py
