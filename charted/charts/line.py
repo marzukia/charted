@@ -1,5 +1,5 @@
-from collections import defaultdict
 from typing import List, Optional, Union
+
 from charted.charts.axes import Axes
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
@@ -8,12 +8,13 @@ from charted.fonts.utils import (
     DEFAULT_TITLE_FONT_SIZE,
     calculate_text_dimensions,
 )
-from charted.html.element import G, Path, Text
+from charted.html.element import Circle, G, Path, Text
 from charted.utils.transform import rotate, translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
-class Column(Chart):
+class Line(Chart):
+
     def __init__(
         self,
         data: Union[Vector | Vector2D],
@@ -30,14 +31,14 @@ class Column(Chart):
             title,
             font_size=DEFAULT_TITLE_FONT_SIZE,
         )
-        self.labels = labels
+        self.labels = [*labels, " "]
         validated_data = self._validate_data(data)
         self.data = validated_data
         self.bounds = validated_data
         self.add_children(
             self.container,
             self.plot,
-            self.series,
+            self.points,
             self.zero_line,
             self.axes,
         )
@@ -46,22 +47,22 @@ class Column(Chart):
 
     @classmethod
     def get_bounds(cls, data: Vector2D):
-        agg = defaultdict(list)
+        agg = []
         n = len(data[0])
-        for i in range(n):
-            for arr in data:
-                agg[i].append(arr[i])
+        for arr in data:
+            for v in arr:
+                agg.append(v)
 
         min_x = 0
-        min_y = min([sum([x for x in i if x <= 0]) for i in agg.values()])
+        min_y = min(agg)
         max_x = n - 1
-        max_y = max([sum([x for x in i if x >= 0]) for i in agg.values()])
+        max_y = max(agg)
 
         return (min_x, min_y, max_x, max_y)
 
     @property
     def no_columns(self) -> int:
-        return len(self.data[0])
+        return len(self.data[0]) + 1
 
     @property
     def title(self) -> Text:
@@ -81,15 +82,13 @@ class Column(Chart):
         )
 
     @property
-    def column_width(self, spacing: float = 0.5) -> float:
-        width = self.plot_width / (self.no_columns + (self.no_columns + 1) * spacing)
-        return width
+    def column_width(self) -> float:
+        return self.plot_width / self.no_columns
 
     @property
     def x_ticks(self) -> Vector:
         return [
-            ((self.plot_width / self.no_columns) * i) + (self.column_width / 4)
-            for i in range(0, self.no_columns)
+            (self.plot_width / self.no_columns) * i for i in range(0, self.no_columns)
         ]
 
     @property
@@ -106,28 +105,7 @@ class Column(Chart):
         return data
 
     @property
-    def y_offset(self) -> Vector2D:
-        offsets = []
-        negative_offsets = [0] * self.no_columns
-        positive_offsets = [0] * self.no_columns
-
-        for row in self.data:
-            row_offsets = []
-            for i, y in enumerate(row):
-                current_offset = 0
-                if y >= 0:
-                    current_offset = positive_offsets[i]
-                    positive_offsets[i] += y
-                elif y < 0:
-                    current_offset = negative_offsets[i]
-                    negative_offsets[i] -= abs(y)
-                row_offsets.append(current_offset)
-            offsets.append(row_offsets)
-
-        return [[self._reproject_y(y) for y in arr] for arr in offsets]
-
-    @property
-    def series(self) -> G:
+    def points(self) -> G:
         dx = self.h_pad
         dy = self.v_pad
 
@@ -137,21 +115,24 @@ class Column(Chart):
         g = G(
             transform=[
                 rotate(180, self.width / 2, self.height / 2),
-                translate(x=dx, y=dy),
-            ]
+                translate(x=(dx + self.column_width), y=dy),
+            ],
         )
-        for y_values, y_offsets, color in zip(
-            self.y_values, self.y_offset, self.colors
-        ):
-            paths = []
-            for x, y, offset in zip(
-                self.x_ticks,
-                reversed(y_values),
-                reversed(y_offsets),
-            ):
-                path = Path.get_path(x, offset, self.column_width, y)
-                paths.append(path)
-            g.add_child(Path(d=paths, fill=color))
+
+        for y_values, color in zip(self.y_values, self.colors):
+            series = G(fill="white", stroke=color, stroke_width=2)
+            points = []
+            path = []
+            for i, (x, y) in enumerate(zip(self.x_ticks, y_values)):
+                if i == 0:
+                    path.append(f"M{x} {y}")
+                else:
+                    path.append(f"L{x} {y}")
+                c = Circle(cx=x, cy=y, r=4)
+                points.append(c)
+            line = Path(d=path, fill="none")
+            series.add_children(line, *points)
+            g.add_children(series)
 
         return g
 
@@ -186,7 +167,7 @@ class Column(Chart):
             padding=self.padding,
             # TODO: Remove this hardcoded no_y
             no_y=5,
-            x_coordinates=[i - (self.column_width / 4) for i in self.x_ticks],
+            x_coordinates=self.x_ticks,
         )
 
     @property
