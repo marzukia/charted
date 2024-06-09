@@ -28,6 +28,14 @@ charted.charts.column module
    :undoc-members:
    :show-inheritance:
 
+charted.charts.line module
+--------------------------
+
+.. automodule:: charted.charts.line
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 charted.charts.plot module
 --------------------------
 
