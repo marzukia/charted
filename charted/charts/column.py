@@ -20,19 +20,24 @@ class Column(Chart):
             self.add_child(self.title)
 
     @classmethod
-    def get_bounds(cls, data: Vector2D):
+    def get_bounds(cls, y_data: Vector2D, **kwargs):
         agg = defaultdict(list)
-        n = len(data[0])
+        n = len(y_data[0])
         for i in range(n):
-            for arr in data:
+            for arr in y_data:
                 agg[i].append(arr[i])
 
         min_x = 0
-        min_y = min([sum([x for x in i if x <= 0]) for i in agg.values()]) * 1.1
+        min_y = min([sum([x for x in i if x <= 0]) for i in agg.values()])
         max_x = n - 1
-        max_y = max([sum([x for x in i if x >= 0]) for i in agg.values()]) * 1.1
+        max_y = max([sum([x for x in i if x >= 0]) for i in agg.values()])
 
-        return (min_x, min_y, max_x, max_y)
+        return (
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        )
 
     @property
     def x_count(self) -> int:

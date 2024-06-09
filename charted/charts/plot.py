@@ -71,7 +71,10 @@ class Plot(G):
 
     @classmethod
     def calculate_axis_coordinates(
-        cls, length: float, no_ticks: int, zero: float = 0
+        cls,
+        length: float,
+        no_ticks: int,
+        zero: float = 0,
     ) -> Vector:
         positive_length = zero
         negative_length = length - zero
@@ -111,6 +114,7 @@ class Plot(G):
 
         if no_x:
             x_coordinates = self.calculate_axis_coordinates(self.width, no_x, x_zero)
+
         elif x_coordinates:
             x_coordinates = x_coordinates
 

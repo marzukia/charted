@@ -22,7 +22,9 @@ class Chart(Svg):
         width: float,
         height: float,
         padding: float,
-        data: Union[Vector | Vector2D],
+        data: Union[Vector | Vector2D] = None,
+        x_data: Union[Vector, Vector2D] = None,
+        y_data: Union[Vector, Vector2D] = None,
         labels: Optional[Labels] = None,
         title: str = None,
         colors: List[str] = None,
@@ -35,9 +37,18 @@ class Chart(Svg):
             **kwargs,
         )
         self.labels = labels
-        validated_data = self._validate_data(data)
-        self.data = validated_data
-        self.bounds = validated_data
+
+        if not data and not x_data and not y_data:
+            raise Exception("No data was passed through Chart element.")
+
+        self.data = self._validate_data(data)
+        self.x_data = self._validate_data(x_data)
+        self.y_data = self._validate_data(y_data)
+
+        if not self.data and self.y_data:
+            self.data = self.y_data
+
+        self.bounds = self.data, self.x_data
         self.colors = colors
         self.title_text = title
         self.width = width
@@ -106,11 +117,14 @@ class Chart(Svg):
         length: float,
     ) -> float:
         value_range = max_value - min_value
-        normalised_value = value / length
-        return normalised_value * value_range
+        reversed_value = value / length * value_range
+        return reversed_value
 
     def _reverse_y(self, value: float) -> float:
         return self._reverse(value, self.max_y, self.min_y, self.plot_height)
+
+    def _reverse_x(self, value: float) -> float:
+        return self._reverse(value, self.max_x, self.min_x, self.plot_width)
 
     @property
     def plot_width(self) -> float:
@@ -125,13 +139,47 @@ class Chart(Svg):
         return Bounds(*self._bounds)
 
     @bounds.setter
-    def bounds(self, data: Vector2D) -> None:
-        self._bounds = self.get_bounds(data)
+    def bounds(self, data: Tuple[Vector2D, Vector2D]) -> None:
+        y_data, x_data = data
+        self._bounds = self.get_bounds(y_data=y_data, x_data=x_data)
         self.min_x, self.min_y, self.max_x, self.max_y = self._bounds
 
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data: Union[Vector, Vector2D]):
+        if not data:
+            self._data = data
+        else:
+            self._data = self._validate_data(data)
+
+    @property
+    def x_data(self):
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, data: Union[Vector, Vector2D]):
+        if not data:
+            self._x_data = data
+        else:
+            self._x_data = self._validate_data(data)
+
+    @property
+    def y_data(self):
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, data: Union[Vector, Vector2D]):
+        if not data:
+            self._y_data = data
+        else:
+            self._y_data = self._validate_data(data)
+
     def _validate_data(self, data: Union[Vector, Vector2D]) -> Vector2D:
-        if len(data) == 0:
-            raise Exception("No data provided.")
+        if not data:
+            return None
 
         if type(data[0]) is not list:
             data = [data]

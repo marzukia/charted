@@ -34,7 +34,7 @@ class Axis(G):
 
     @labels.setter
     def labels(self, labels) -> None:
-        self._labels = [calculate_text_dimensions(x) for x in labels]
+        self._labels = [calculate_text_dimensions(x) for x in labels if x is not None]
 
 
 class YAxis(Axis):
@@ -58,7 +58,7 @@ class YAxis(Axis):
     @property
     def y_labels(self) -> List[str]:
         labels = []
-        z = self.parent._reproject_y(self.parent.bounds.y2)
+        z = self.parent.y_zero
         for y in self.y_coordinates:
             v = abs(self.parent._reverse_y(abs(y) - abs(z)))
             if y > z:
@@ -93,6 +93,8 @@ class XAxis(Axis):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.labels = self.parent.labels
+        if self.parent.x_data:
+            self.labels = self.x_labels
         self.kwargs["transform"] = translate(
             x=(self.parent.width * self.parent.padding),
             y="12",
@@ -102,17 +104,37 @@ class XAxis(Axis):
     @property
     def x_coordinates(self) -> Vector:
         y = self.parent.height * (1 - self.parent.padding)
-        x_width = self.parent.plot_width / self.parent.x_count
-        if self.parent.x_width == x_width:
-            return [(x + x_width, y) for x in self.parent.x_ticks]
 
-        return [(x + (self.parent.x_width / 2), y) for x in self.parent.x_ticks]
+        ticks = [*self.parent.plot.x_coordinates]
+
+        if not self.parent.x_data:
+            ticks = self.parent.x_ticks
+            x_width = self.parent.plot_width / self.parent.x_count
+            if self.parent.x_width == x_width:
+                return [(x + x_width, y) for x in self.parent.x_ticks]
+            return [(x + (self.parent.x_width / 2), y) for x in ticks]
+
+        z = self.parent._reproject_x(abs(self.parent.bounds.x1))
+
+        ticks = [(x, y) for x in ticks] + [(z, y)]
+
+        return ticks
+
+    @property
+    def x_labels(self) -> List[str]:
+        labels = []
+        z = self.parent._reproject_x(abs(self.parent.bounds.x1))
+        for x, _ in self.x_coordinates:
+            v = abs(self.parent._reverse_x(abs(x) - abs(z)))
+            if x < z:
+                v = -v
+            labels.append(str(round(v)))
+        return [*labels, "0"]
 
     @property
     def axes_labels(self) -> G:
         g = G(font_size=DEFAULT_FONT_SIZE, font_family=DEFAULT_FONT)
         rotation_angle = 0
-
         for label in self.labels:
             angle = calculate_rotation_angle(label.width, self.parent.x_width)
             if angle and (angle > rotation_angle):
