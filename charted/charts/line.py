@@ -8,13 +8,9 @@ from charted.utils.types import Labels, Vector, Vector2D
 
 
 class Line(Chart):
-    def __init__(
-        self,
-        labels: Optional[Labels] = None,
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.labels = [*labels, " "]
+        self.labels = [*self.labels, " "]
         self.add_children(
             self.container,
             self.plot,
