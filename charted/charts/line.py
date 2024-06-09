@@ -1,10 +1,8 @@
-from typing import Optional
-
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
 from charted.html.element import Circle, G, Path
 from charted.utils.transform import rotate, translate
-from charted.utils.types import Labels, Vector, Vector2D
+from charted.utils.types import Vector, Vector2D
 
 
 class Line(Chart):
