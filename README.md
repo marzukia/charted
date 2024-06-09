@@ -74,7 +74,7 @@ graph = Column(
 ```py
 from charted import Line
 
-graph = Column(
+graph = Line(
     title="Example Line Chart",
     data=[
         [-240, 53, 91, 291, 98, -476, 235, 313, -150, 139, 134, 170],
