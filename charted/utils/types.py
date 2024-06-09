@@ -15,7 +15,7 @@ class Bounds(NamedTuple):
 
 
 class RectDimensions(NamedTuple):
-    column_width: float
+    x_width: float
     column_gap: float
     rect_coordinates: float
 

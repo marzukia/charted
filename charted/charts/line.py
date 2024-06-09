@@ -1,40 +1,20 @@
-from typing import List, Optional, Union
+from typing import Optional
 
-from charted.charts.axes import Axes
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
-from charted.fonts.utils import (
-    DEFAULT_FONT,
-    DEFAULT_TITLE_FONT_SIZE,
-    calculate_text_dimensions,
-)
-from charted.html.element import Circle, G, Path, Text
+from charted.html.element import Circle, G, Path
 from charted.utils.transform import rotate, translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
 class Line(Chart):
-
     def __init__(
         self,
-        data: Union[Vector | Vector2D],
-        title: str = None,
         labels: Optional[Labels] = None,
-        colors: List[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        if colors:
-            self._colors = colors
-
-        self.title_text = calculate_text_dimensions(
-            title,
-            font_size=DEFAULT_TITLE_FONT_SIZE,
-        )
         self.labels = [*labels, " "]
-        validated_data = self._validate_data(data)
-        self.data = validated_data
-        self.bounds = validated_data
         self.add_children(
             self.container,
             self.plot,
@@ -61,35 +41,16 @@ class Line(Chart):
         return (min_x, min_y, max_x, max_y)
 
     @property
-    def no_columns(self) -> int:
+    def x_count(self) -> int:
         return len(self.data[0]) + 1
 
     @property
-    def title(self) -> Text:
-        return Text(
-            transform=[
-                translate(
-                    x=-self.title_text.width / 2,
-                    y=self.title_text.height / 4,
-                )
-            ],
-            text=self.title_text.text,
-            font_family=DEFAULT_FONT,
-            font_weight="bold",
-            font_size=DEFAULT_TITLE_FONT_SIZE,
-            x=self.width / 2,
-            y=self.v_pad / 2,
-        )
-
-    @property
-    def column_width(self) -> float:
-        return self.plot_width / self.no_columns
+    def x_width(self) -> float:
+        return self.plot_width / self.x_count
 
     @property
     def x_ticks(self) -> Vector:
-        return [
-            (self.plot_width / self.no_columns) * i for i in range(0, self.no_columns)
-        ]
+        return [(self.plot_width / self.x_count) * i for i in range(0, self.x_count)]
 
     @property
     def y_values(self) -> Vector2D:
@@ -115,7 +76,7 @@ class Line(Chart):
         g = G(
             transform=[
                 rotate(180, self.width / 2, self.height / 2),
-                translate(x=(dx + self.column_width), y=dy),
+                translate(x=(dx + self.x_width), y=dy),
             ],
         )
 
@@ -135,14 +96,6 @@ class Line(Chart):
             g.add_children(series)
 
         return g
-
-    @property
-    def y_zero(self) -> float:
-        return self._reproject_y(abs(self.bounds.y2))
-
-    @property
-    def x_zero(self) -> float:
-        return self._reproject_x(abs(self.bounds.x1))
 
     @property
     def zero_line(self) -> Path:
@@ -169,11 +122,3 @@ class Line(Chart):
             no_y=5,
             x_coordinates=self.x_ticks,
         )
-
-    @property
-    def container(self) -> Path:
-        return Path(fill="white", d=Path.get_path(0, 0, self.width, self.height))
-
-    @property
-    def axes(self) -> Axes:
-        return Axes(parent=self)
