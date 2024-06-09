@@ -22,7 +22,10 @@ jobs:
         run: curl -sSL https://install.python-poetry.org | python3 -
 
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --with=dev
+
+      - name: Run Linter
+        run: poetry run flake8 charted
 
       - name: Run Tox
         run: poetry run tox -e py${{ matrix.python-version[0] }}${{ matrix.python-version[2] }}
