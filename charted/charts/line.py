@@ -78,7 +78,7 @@ class Line(Chart):
             series = G(fill="white", stroke=color, stroke_width=2)
             points = []
             path = []
-            for i, (x, y) in enumerate(zip(self.x_ticks, y_values)):
+            for i, (x, y) in enumerate(zip(self.x_ticks, reversed(y_values))):
                 if i == 0:
                     path.append(f"M{x} {y}")
                 else:
