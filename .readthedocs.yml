@@ -15,4 +15,5 @@ build:
       - poetry config virtualenvs.create false
       - poetry install --with=docs
     post_build:
+      - sphinx-apidoc -o source/ ../charted
       - sphinx-build -b html docs/ $READTHEDOCS_OUTPUT/html
