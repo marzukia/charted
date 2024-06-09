@@ -1,39 +1,14 @@
 from collections import defaultdict
-from typing import List, Optional, Union
-from charted.charts.axes import Axes
 from charted.charts.chart import Chart
 from charted.charts.plot import Plot
-from charted.fonts.utils import (
-    DEFAULT_FONT,
-    DEFAULT_TITLE_FONT_SIZE,
-    calculate_text_dimensions,
-)
-from charted.html.element import G, Path, Text
+from charted.html.element import G, Path
 from charted.utils.transform import rotate, translate
-from charted.utils.types import Labels, Vector, Vector2D
+from charted.utils.types import Vector, Vector2D
 
 
 class Column(Chart):
-    def __init__(
-        self,
-        data: Union[Vector | Vector2D],
-        title: str = None,
-        labels: Optional[Labels] = None,
-        colors: List[str] = None,
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if colors:
-            self._colors = colors
-
-        self.title_text = calculate_text_dimensions(
-            title,
-            font_size=DEFAULT_TITLE_FONT_SIZE,
-        )
-        self.labels = labels
-        validated_data = self._validate_data(data)
-        self.data = validated_data
-        self.bounds = validated_data
         self.add_children(
             self.container,
             self.plot,
@@ -60,36 +35,19 @@ class Column(Chart):
         return (min_x, min_y, max_x, max_y)
 
     @property
-    def no_columns(self) -> int:
+    def x_count(self) -> int:
         return len(self.data[0])
 
     @property
-    def title(self) -> Text:
-        return Text(
-            transform=[
-                translate(
-                    x=-self.title_text.width / 2,
-                    y=self.title_text.height / 4,
-                )
-            ],
-            text=self.title_text.text,
-            font_family=DEFAULT_FONT,
-            font_weight="bold",
-            font_size=DEFAULT_TITLE_FONT_SIZE,
-            x=self.width / 2,
-            y=self.v_pad / 2,
-        )
-
-    @property
-    def column_width(self, spacing: float = 0.5) -> float:
-        width = self.plot_width / (self.no_columns + (self.no_columns + 1) * spacing)
+    def x_width(self, spacing: float = 0.5) -> float:
+        width = self.plot_width / (self.x_count + (self.x_count + 1) * spacing)
         return width
 
     @property
     def x_ticks(self) -> Vector:
         return [
-            ((self.plot_width / self.no_columns) * i) + (self.column_width / 4)
-            for i in range(0, self.no_columns)
+            ((self.plot_width / self.x_count) * i) + (self.x_width / 4)
+            for i in range(0, self.x_count)
         ]
 
     @property
@@ -108,8 +66,8 @@ class Column(Chart):
     @property
     def y_offset(self) -> Vector2D:
         offsets = []
-        negative_offsets = [0] * self.no_columns
-        positive_offsets = [0] * self.no_columns
+        negative_offsets = [0] * self.x_count
+        positive_offsets = [0] * self.x_count
 
         for row in self.data:
             row_offsets = []
@@ -149,19 +107,11 @@ class Column(Chart):
                 reversed(y_values),
                 reversed(y_offsets),
             ):
-                path = Path.get_path(x, offset, self.column_width, y)
+                path = Path.get_path(x, offset, self.x_width, y)
                 paths.append(path)
             g.add_child(Path(d=paths, fill=color))
 
         return g
-
-    @property
-    def y_zero(self) -> float:
-        return self._reproject_y(abs(self.bounds.y2))
-
-    @property
-    def x_zero(self) -> float:
-        return self._reproject_x(abs(self.bounds.x1))
 
     @property
     def zero_line(self) -> Path:
@@ -186,13 +136,5 @@ class Column(Chart):
             padding=self.padding,
             # TODO: Remove this hardcoded no_y
             no_y=5,
-            x_coordinates=[i - (self.column_width / 4) for i in self.x_ticks],
+            x_coordinates=[i - (self.x_width / 4) for i in self.x_ticks],
         )
-
-    @property
-    def container(self) -> Path:
-        return Path(fill="white", d=Path.get_path(0, 0, self.width, self.height))
-
-    @property
-    def axes(self) -> Axes:
-        return Axes(parent=self)

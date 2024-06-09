@@ -102,11 +102,11 @@ class XAxis(Axis):
     @property
     def x_coordinates(self) -> Vector:
         y = self.parent.height * (1 - self.parent.padding)
-        column_width = self.parent.plot_width / self.parent.no_columns
-        if self.parent.column_width == column_width:
-            return [(x + column_width, y) for x in self.parent.x_ticks]
+        x_width = self.parent.plot_width / self.parent.x_count
+        if self.parent.x_width == x_width:
+            return [(x + x_width, y) for x in self.parent.x_ticks]
 
-        return [(x + (self.parent.column_width / 2), y) for x in self.parent.x_ticks]
+        return [(x + (self.parent.x_width / 2), y) for x in self.parent.x_ticks]
 
     @property
     def axes_labels(self) -> G:
@@ -114,7 +114,7 @@ class XAxis(Axis):
         rotation_angle = 0
 
         for label in self.labels:
-            angle = calculate_rotation_angle(label.width, self.parent.column_width)
+            angle = calculate_rotation_angle(label.width, self.parent.x_width)
             if angle and (angle > rotation_angle):
                 rotation_angle = angle
 
