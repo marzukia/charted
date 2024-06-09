@@ -20,14 +20,6 @@ charted.utils.helpers module
    :undoc-members:
    :show-inheritance:
 
-charted.utils.text module
--------------------------
-
-.. automodule:: charted.utils.text
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 charted.utils.transform module
 ------------------------------
 
