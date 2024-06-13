@@ -1,10 +1,6 @@
-<center>
-
-![charted-logo](./docs/_static/charted-logo.png)
+![charted-logo](https://github.com/marzukia/charted/blob/main/docs/_static/charted-logo.png?raw=true)
 
 [![codecov](https://codecov.io/github/marzukia/charted/graph/badge.svg?token=X5HJF0R2FJ)](https://codecov.io/github/marzukia/charted) [![charted-ci](https://github.com/marzukia/charted/actions/workflows/ci.yml/badge.svg)](https://github.com/marzukia/charted/actions/workflows/ci.yml) [![readthedocs](https://readthedocs.org/projects/charted-py/badge/?version=latest)](https://charted-py.readthedocs.io/en/latest/?badge=latest)
-
-</center>
 
 Charted is a zero dependency SVG chart generator that aims to provide a simple interface for generating beautiful and customisable graphs. This project is inspired by chart libraries like `mermaid.js`.
 
@@ -59,7 +55,7 @@ graph = ColumnChart(
 )
 ```
 
-![](/docs/examples/column.svg)
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/column.svg)
 
 ### Labelled Line Chart
 
@@ -73,7 +69,7 @@ graph = LineChart(
 )
 ```
 
-![](/docs/examples/line.svg)
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line.svg)
 
 ### Dual Axis Line Chart
 
@@ -88,7 +84,7 @@ graph = LineChart(
 )
 ```
 
-![](/docs/examples/xy_line.svg)
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/xy_line.svg)
 
 ### Scatter
 
@@ -113,4 +109,4 @@ graph = ScatterChart(
 )
 ```
 
-![](/docs/examples/scatter.svg)
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter.svg)
