@@ -1,44 +1,51 @@
 import os
-from charted import Column
-from charted.charts.line import Line
-from charted.utils.helpers import BASE_DIR
+import random
+from charted.charts import ColumnChart, LineChart, ScatterChart
+from charted.utils.defaults import EXAMPLES_DIR
 
-config = {
-    "data": [
-        [-240, 53, 91, 291, 98, -476, 235, 313, -150, 139, 134, 170],
-        [235, 98, 189, 166, -17, 214, 163, 537, 455, 32, 251, 50],
-        [25, 198, 143, 236, -127, 434, -223, 207, 325, 239, 260, 30],
-        [55, -41, 43, -30, -183, -215, -329, -280, 286, 508, 150, -44],
-    ],
-    "width": 800,
-    "height": 500,
-    "padding": 0.15,
-    "labels": [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ],
+
+y_data = [
+    [50, 100, 150, 200, 250, 300],
+    [25, 50, 75, 100, 125, 150],
+]
+x_data = [-5, 0, 1, 2, 3, 4]
+labels = ["foo", "bar", "foobar", "dog", "cat", "mouse"]
+
+
+x_scatter = [
+    [random.random() * i for i in range(-25, 25, 1)],
+    [random.random() * i for i in range(-25, 25, 1)],
+]
+
+y_scatter = [
+    [random.random() * i for i in range(-25, 25, 1)],
+    [random.random() * i for i in range(-25, 25, 1)],
+]
+
+
+graphs = {
+    "scatter": ScatterChart(
+        title="Example Scatter Graph",
+        y_data=y_scatter,
+        x_data=x_scatter,
+    ),
+    "column": ColumnChart(
+        title="Example Column Graph",
+        data=y_data,
+        labels=labels,
+    ),
+    "line": LineChart(
+        title="Example Labelled Line Graph",
+        data=y_data,
+        labels=labels,
+    ),
+    "xy_line": LineChart(
+        title="Example XY Line Graph",
+        data=[y_data[0], [-i for i in y_data[1]]],
+        x_data=x_data,
+    ),
 }
 
-if __name__ == "__main__":
-    column = Column(title="Example Column Chart", **config)
-    line = Line(
-        title="Example Line Chart",
-        **{k: v for k, v in config.items() if k != "data"},
-        data=config["data"][:2]
-    )
-
-    with open(os.path.join(BASE_DIR, "docs", "examples", "column.svg"), "w") as test:
-        test.write(repr(column))
-
-    with open(os.path.join(BASE_DIR, "docs", "examples", "line.svg"), "w") as test:
-        test.write(repr(line))
+for key, chart in graphs.items():
+    with open(os.path.join(EXAMPLES_DIR, f"{key}.svg"), "w") as test:
+        test.write(repr(chart))

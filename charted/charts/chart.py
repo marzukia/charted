@@ -1,135 +1,91 @@
-from typing import List, Optional, Tuple, Union
-
-from charted.charts.axes import Axes
-from charted.charts.plot import Plot
-from charted.fonts.utils import (
-    DEFAULT_FONT,
-    DEFAULT_TITLE_FONT_SIZE,
-    calculate_text_dimensions,
-)
-from charted.html.element import Path, Svg, Text
-from charted.html.formatter import format_html
+from charted.charts.axes import XAxis, YAxis
+from charted.html.element import G, Path, Svg, Text
 from charted.utils.colors import generate_complementary_colors
+from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
+from charted.utils.exceptions import InvalidValue
+from charted.utils.helpers import calculate_text_dimensions
 from charted.utils.transform import translate
-from charted.utils.types import Bounds, Labels, MeasuredText, Vector, Vector2D
-
-DEFAULT_COLORS = ["#EF6F6C", "#477160", "#a74e4c", "#f5a9a7", "#324f43", "#91aaa0"]
+from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
 
 class Chart(Svg):
+    x_stacked: bool = False
+    y_stacked: bool = False
+
     def __init__(
         self,
-        width: float,
-        height: float,
-        padding: float,
-        data: Union[Vector | Vector2D],
-        labels: Optional[Labels] = None,
-        title: str = None,
-        colors: List[str] = None,
-        **kwargs,
+        width: float = 500,
+        height: float = 500,
+        h_padding: float = 0.1,
+        v_padding: float = 0.1,
+        x_data: Vector | Vector2D | None = None,
+        y_data: Vector | Vector2D | None = None,
+        x_labels: Labels | None = None,
+        y_labels: Labels | None = None,
+        title: str | None = None,
+        colors: list[str] | None = None,
     ):
         super().__init__(
             width=width,
             height=height,
             viewBox=self.calculate_viewbox(width, height),
-            **kwargs,
         )
-        self.labels = labels
-        validated_data = self._validate_data(data)
-        self.data = validated_data
-        self.bounds = validated_data
-        self.colors = colors
-        self.title_text = title
+
+        if not x_data and not y_data:
+            raise Exception("No data was provided to the Chart element.")
+
+        self.x_labels = x_labels
+        self.y_labels = y_labels
+        self.x_data = x_data
+        self.y_data = y_data
+
         self.width = width
         self.height = height
-        self.padding = padding
+        self.h_padding = h_padding
+        self.v_padding = v_padding
 
-    @classmethod
-    def calculate_plot_corners(
-        cls,
-        width: float,
-        height: float,
-        padding: float = 0,
-    ) -> Bounds:
-        x_padding = width * padding
-        y_padding = height * padding
-        x1 = 0 + x_padding
-        x2 = width - x_padding
-        y1 = 0 + y_padding
-        y2 = height - y_padding
-        return Bounds(x1, x2, y1, y2)
+        self.plot_height = height
+        self.plot_width = width
 
-    @property
-    def plot(self) -> Plot:
-        return Plot(
+        self.x_count = (self.x_data, self.x_labels)
+        self.y_count = (self.y_data, self.y_labels)
+
+        self.x_axis = XAxis(
             parent=self,
-            bounds=self.calculate_plot_corners(
-                self.width,
-                self.height,
-                self.padding,
-            ),
-            width=self.width,
-            height=self.height,
-            padding=self.padding,
+            data=self.x_data,
+            labels=self.x_labels,
+            stacked=self.x_stacked,
         )
 
-    def __repr__(self):
-        return format_html(self.html)
+        self.y_axis = YAxis(
+            parent=self,
+            data=self.y_data,
+            labels=self.y_labels,
+            stacked=self.y_stacked,
+        )
+
+        self.y_offsets = self.y_data
+
+        self.y_values = self.y_data
+        self.x_values = self.x_data
+
+        self.colors = colors
+        self.title = title
+
+        self.add_children(
+            self.container,
+            self.title,
+            self.y_axis,
+            self.x_axis,
+            self.zero_line,
+            self.representation,
+        )
 
     @classmethod
-    def _reproject(
-        cls,
-        value: float,
-        max_value: float,
-        min_value: float,
-        length: float,
-    ) -> float:
-        value_range = max_value - min_value
-        normalised_value = value / value_range
-        return normalised_value * length
+    def _validate_data(cls, data: Vector | Vector2D | None) -> Vector2D:
+        if not data:
+            return None
 
-    def _reproject_x(self, value: float) -> float:
-        return self._reproject(value, self.max_x, self.min_x, self.plot_width)
-
-    def _reproject_y(self, value: float) -> float:
-        return self._reproject(value, self.max_y, self.min_y, self.plot_height)
-
-    def reproject(self, coordinate: Tuple[float, float]) -> Tuple[float, float]:
-        return [self._reproject_x(coordinate[0]), self._reproject_y(coordinate[1])]
-
-    @classmethod
-    def _reverse(
-        cls,
-        value: float,
-        max_value: float,
-        min_value: float,
-        length: float,
-    ) -> float:
-        value_range = max_value - min_value
-        normalised_value = value / length
-        return normalised_value * value_range
-
-    def _reverse_y(self, value: float) -> float:
-        return self._reverse(value, self.max_y, self.min_y, self.plot_height)
-
-    @property
-    def plot_width(self) -> float:
-        return self.width * (1 - (self.padding * 2))
-
-    @property
-    def plot_height(self) -> float:
-        return self.height * (1 - (self.padding * 2))
-
-    @property
-    def bounds(self) -> Tuple[float, float, float, float]:
-        return Bounds(*self._bounds)
-
-    @bounds.setter
-    def bounds(self, data: Vector2D) -> None:
-        self._bounds = self.get_bounds(data)
-        self.min_x, self.min_y, self.max_x, self.max_y = self._bounds
-
-    def _validate_data(self, data: Union[Vector, Vector2D]) -> Vector2D:
         if len(data) == 0:
             raise Exception("No data provided.")
 
@@ -143,16 +99,96 @@ class Chart(Svg):
 
         return data
 
-    @property
-    def v_pad(self) -> float:
-        return self.padding * self.height
+    def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:
+        return self._validate_data(data)
+
+    def validate_y_data(self, data: Vector | Vector2D | None) -> Vector2D:
+        return self._validate_data(data)
+
+    @classmethod
+    def _validate_attribute_value(cls, name: str, value: float):
+        if value <= 0:
+            raise InvalidValue(name, value)
+        return value
 
     @property
-    def h_pad(self) -> float:
-        return self.padding * self.width
+    def x_data(self) -> Vector2D:
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, data: Vector | Vector2D | None = None) -> None:
+        validated_data = self.validate_x_data(data)
+        self._x_data = validated_data
 
     @property
-    def colors(self) -> List[str]:
+    def y_data(self) -> Vector2D:
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, data: Vector | Vector2D | None = None) -> None:
+        validated_data = self.validate_y_data(data)
+        self._y_data = validated_data
+
+    @property
+    def width(self) -> float:
+        return self._width
+
+    @width.setter
+    def width(self, width: float) -> None:
+        self._width = self._validate_attribute_value("width", width)
+
+    @property
+    def height(self) -> float:
+        return self._height
+
+    @height.setter
+    def height(self, height: float) -> None:
+        self._height = self._validate_attribute_value("height", height)
+
+    @property
+    def h_padding(self) -> float:
+        return self._h_padding
+
+    @h_padding.setter
+    def h_padding(self, h_padding: float) -> None:
+        if h_padding > 1:
+            raise InvalidValue("h_padding", h_padding)
+        self._h_padding = self._validate_attribute_value("h_padding", h_padding)
+
+    @property
+    def v_padding(self) -> float:
+        return self._v_padding
+
+    @v_padding.setter
+    def v_padding(self, v_padding: float) -> None:
+        if v_padding > 1:
+            raise InvalidValue("v_padding", v_padding)
+        self._v_padding = self._validate_attribute_value("v_padding", v_padding)
+
+    @property
+    def plot_width(self) -> float:
+        return self._plot_width
+
+    @plot_width.setter
+    def plot_width(self, width: float) -> None:
+        calculated = width - (self.h_pad * 2)
+        if calculated < 0:
+            raise Exception("'calculated' was negative, check width and h_padding.")
+        self._plot_width = calculated
+
+    @property
+    def plot_height(self) -> float:
+        return self.height - (self.v_pad * 2)
+
+    @plot_height.setter
+    def plot_height(self, height: float) -> None:
+        calculated = self.height - (self.v_pad * 2)
+        if calculated < 0:
+            raise Exception("'calculated' was negative, check height and v_padding.")
+        self._plot_height = calculated
+
+    @property
+    def colors(self) -> list[str]:
         return self._colors
 
     @colors.setter
@@ -168,23 +204,17 @@ class Chart(Svg):
         self._colors = new_colors
 
     @property
-    def y_zero(self) -> float:
-        return self._reproject_y(abs(self.bounds.y2))
-
-    @property
-    def x_zero(self) -> float:
-        return self._reproject_x(abs(self.bounds.x1))
-
-    @property
-    def title(self) -> Text:
+    def title(self) -> MeasuredText:
+        if not self._title:
+            return None
         return Text(
             transform=[
                 translate(
-                    x=-self.title_text.width / 2,
-                    y=self.title_text.height / 4,
+                    x=-self._title.width / 2,
+                    y=self._title.height / 4,
                 )
             ],
-            text=self.title_text.text,
+            text=self._title.text,
             font_family=DEFAULT_FONT,
             font_weight="bold",
             font_size=DEFAULT_TITLE_FONT_SIZE,
@@ -192,24 +222,140 @@ class Chart(Svg):
             y=self.v_pad / 2,
         )
 
-    @property
-    def title_text(self) -> MeasuredText:
-        return self._title_text
-
-    @title_text.setter
-    def title_text(self, text: str) -> None:
+    @title.setter
+    def title(self, text: str) -> None:
         if text:
-            self._title_text = calculate_text_dimensions(
+            self._title = calculate_text_dimensions(
                 text,
                 font_size=DEFAULT_TITLE_FONT_SIZE,
             )
         else:
-            self._title_text = None
+            self._title = None
 
     @property
-    def axes(self) -> Axes:
-        return Axes(parent=self)
+    def v_pad(self) -> float:
+        return self.v_padding * self.height
+
+    @property
+    def h_pad(self) -> float:
+        return self.h_padding * self.width
 
     @property
     def container(self) -> Path:
-        return Path(fill="white", d=Path.get_path(0, 0, self.width, self.height))
+        return Path(
+            fill="white",
+            d=Path.get_path(0, 0, self.width, self.height),
+        )
+
+    @property
+    def x_count(self) -> int:
+        return self._x_count
+
+    @x_count.setter
+    def x_count(self, kwargs: tuple[Vector2D | None, list[str] | None]) -> None:
+        x_data, x_labels = kwargs
+        if not x_data:
+            cnt = len(x_labels)
+        elif x_data:
+            cnt = len(x_data[0])
+        self._x_count = cnt
+
+    @property
+    def y_count(self) -> int:
+        return self._y_count
+
+    @y_count.setter
+    def y_count(self, kwargs: tuple[Vector2D | None, list[str] | None]) -> None:
+        y_data, y_labels = kwargs
+        if not y_data:
+            cnt = len(y_labels)
+        cnt = len(y_data[0])
+        self._y_count = cnt
+
+    @property
+    def y_offsets(self) -> Vector2D:
+        return self._y_offsets
+
+    @y_offsets.setter
+    def y_offsets(self, y_data: Vector2D | None = None) -> None:
+        offsets = []
+        negative_offsets = [0] * self.y_count
+        positive_offsets = [0] * self.y_count
+
+        for row in y_data:
+            row_offsets = []
+            for i, y in enumerate(row):
+                current_offset = 0
+                if y >= 0:
+                    current_offset = positive_offsets[i]
+                    positive_offsets[i] += y
+                elif y < 0:
+                    current_offset = negative_offsets[i]
+                    negative_offsets[i] -= abs(y)
+                row_offsets.append(current_offset)
+            offsets.append(row_offsets)
+
+        self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
+
+    @property
+    def x_width(self) -> float:
+        return self.plot_width / self.x_count
+
+    @property
+    def y_values(self) -> Vector2D:
+        return self._y_values
+
+    @y_values.setter
+    def y_values(self, y_data: Vector2D) -> None:
+        data = []
+        for arr in y_data:
+            row = []
+            for y in arr:
+                v = self.y_axis.reproject(y)
+                row.append(v)
+            data.append(row)
+        self._y_values = data
+
+    @property
+    def x_values(self) -> Vector2D:
+        return self._x_values
+
+    @x_values.setter
+    def x_values(self, x_data: Vector2D) -> None:
+        if not x_data and self.x_labels:
+            x_data = [[i for i in range(len(self.x_labels))]]
+        else:
+            x_data = [*x_data]
+
+        y_len = len(self.y_data)
+        if len(x_data) != y_len:
+            if not len(x_data) == 1:
+                raise Exception("x and y data series do not match")
+            x_data = x_data * y_len
+
+        data = []
+        for arr in x_data:
+            row = []
+            for x in arr:
+                v = self.x_axis.reproject(x) + self.x_axis.zero
+                row.append(v)
+            data.append(row)
+
+        self._x_values = data
+
+    @property
+    def zero_line(self) -> Path:
+        return Path(
+            transform=[translate(self.h_pad, self.v_pad)],
+            d=[
+                f"M{0} {self.plot_height - self.y_axis.zero}",
+                f"h{self.plot_width}z",
+                f"M{self.x_axis.zero} {0}",
+                f"v{self.plot_height}z",
+            ],
+            stroke="black",
+        )
+
+    @property
+    def representation(self) -> G:
+        raise Exception("representation not implemented for instance of Chart.")

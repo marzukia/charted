@@ -1,10 +1,10 @@
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 
-Labels = List[str]
+Labels = list[str]
 
-Vector = List[float]
-Vector2D = List[Vector]
+Vector = list[float]
+Vector2D = list[Vector]
 
 
 class Bounds(NamedTuple):
@@ -29,3 +29,15 @@ class MeasuredText(NamedTuple):
 class Coordinate(NamedTuple):
     x: float
     y: float
+
+
+class AxisDimension(NamedTuple):
+    min_value: float
+    max_value: float
+    raw_min_value: float
+    raw_max_value: float
+    count: float
+
+    @property
+    def value_range(self) -> float:
+        return self.max_value - self.min_value
