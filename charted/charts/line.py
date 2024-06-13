@@ -1,84 +1,70 @@
 from charted.charts.chart import Chart
-from charted.charts.plot import Plot
-from charted.html.element import Circle, G, Path
-from charted.utils.transform import rotate, translate
-from charted.utils.types import Vector, Vector2D
+from charted.html.element import G, Circle, Path
+from charted.utils.transform import rotate, scale, translate
+from charted.utils.types import Labels, Vector, Vector2D
 
 
-class Line(Chart):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.labels = [*self.labels, " "]
-        self.add_children(
-            self.container,
-            self.plot,
-            self.points,
-            self.zero_line,
-            self.axes,
+class LineChart(Chart):
+    def __init__(
+        self,
+        data: Vector | Vector2D,
+        x_data: Vector | Vector2D | None = None,
+        labels: Labels | None = None,
+        width: float = 500,
+        height: float = 500,
+        h_padding: float = 0.1,
+        v_padding: float = 0.1,
+        title: str | None = None,
+        colors: list[str] | None = None,
+    ):
+        super().__init__(
+            y_data=data,
+            x_data=x_data,
+            x_labels=labels,
+            width=width,
+            height=height,
+            h_padding=h_padding,
+            v_padding=v_padding,
+            title=title,
+            colors=colors,
         )
-        if self.title_text:
-            self.add_child(self.title)
 
-    @classmethod
-    def get_bounds(cls, data: Vector2D):
-        agg = []
-        n = len(data[0])
-        for arr in data:
-            for v in arr:
-                agg.append(v)
-
-        min_x = 0
-        min_y = min(agg) * 1.1
-        max_x = n - 1
-        max_y = max(agg) * 1.1
-
-        return (min_x, min_y, max_x, max_y)
+    def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:
+        validated_data = super().validate_x_data(data)
+        if validated_data:
+            if len(validated_data) != 1:
+                raise Exception("x_data cannot be 2D for LineChart instance.")
+        return validated_data
 
     @property
-    def x_count(self) -> int:
-        return len(self.data[0]) + 1
-
-    @property
-    def x_width(self) -> float:
-        return self.plot_width / self.x_count
-
-    @property
-    def x_ticks(self) -> Vector:
-        return [(self.plot_width / self.x_count) * i for i in range(0, self.x_count)]
-
-    @property
-    def y_values(self) -> Vector2D:
-        data = []
-        for arr in self.data:
-            row = []
-            for y in arr:
-                v = self._reproject_y(abs(y))
-                if y < 0:
-                    v = -v
-                row.append(v)
-            data.append(row)
-        return data
-
-    @property
-    def points(self) -> G:
-        dx = self.h_pad
-        dy = self.v_pad
-
-        if self.min_y < 0:
-            dy += self._reproject_y(abs(self.min_y))
-
+    def representation(self) -> G:
         g = G(
+            opacity=0.8,
             transform=[
+                translate(-self.h_pad, -self.v_pad),
                 rotate(180, self.width / 2, self.height / 2),
-                translate(x=(dx + self.x_width), y=dy),
+                scale(-1, 1),
+                translate(-self.plot_width, self.y_axis.zero),
             ],
         )
-
-        for y_values, color in zip(self.y_values, self.colors):
+        for y_values, y_offsets, x_values, color in zip(
+            self.y_values,
+            self.y_offsets,
+            self.x_values,
+            self.colors,
+        ):
             series = G(fill="white", stroke=color, stroke_width=2)
             points = []
             path = []
-            for i, (x, y) in enumerate(zip(self.x_ticks, reversed(y_values))):
+            x_offset = 0
+
+            if self.x_labels:
+                x_offset += self.x_axis.reproject(1)
+
+            for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
+                x += x_offset
+                if self.y_stacked:
+                    y += y_offset
                 if i == 0:
                     path.append(f"M{x} {y}")
                 else:
@@ -90,29 +76,3 @@ class Line(Chart):
             g.add_children(series)
 
         return g
-
-    @property
-    def zero_line(self) -> Path:
-        dy = (self.height * self.padding) + self.y_zero
-        dx = self.width * self.padding
-        return Path(
-            d=[f"M{dx} {dy}", f"h{self.plot_width}z"],
-            stroke="black",
-        )
-
-    @property
-    def plot(self) -> Plot:
-        return Plot(
-            parent=self,
-            bounds=self.calculate_plot_corners(
-                self.width,
-                self.height,
-                self.padding,
-            ),
-            width=self.plot_width,
-            height=self.plot_height,
-            padding=self.padding,
-            # TODO: Remove this hardcoded no_y
-            no_y=5,
-            x_coordinates=self.x_ticks,
-        )
