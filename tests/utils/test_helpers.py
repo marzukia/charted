@@ -1,6 +1,8 @@
-from collections import defaultdict
 import os
-from charted.utils.helpers import BASE_DIR, nested_defaultdict
+from collections import defaultdict
+
+from charted.utils.defaults import BASE_DIR
+from charted.utils.helpers import nested_defaultdict
 
 
 def test_nested_defaultdict():
