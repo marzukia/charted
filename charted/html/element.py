@@ -80,7 +80,8 @@ class Element(object):
         Returns:
             Element: The current element instance after adding the child.
         """
-        self.children.append(child)
+        if child:
+            self.children.append(child)
         return self
 
     def add_children(self, *children: Children) -> "Element":
@@ -93,7 +94,8 @@ class Element(object):
             Element: The current element instance after adding the children.
         """
         for child in children:
-            self.add_child(child)
+            if child:
+                self.add_child(child)
         return self
 
     def __repr__(self) -> str:
