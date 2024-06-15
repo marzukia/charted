@@ -1,15 +1,13 @@
-from typing import Any, Dict, List, Union
-
-Children = List["Element"]
+Children = list["Element"]
 
 
 class Element(object):
     tag: str
-    kwargs: Dict[str, str] = {}
+    kwargs: dict[str, str] = {}
     children: Children = []
-    class_name: Union[str, None] = None
+    class_name: str | None = None
 
-    def __init__(self, parent: Any = None, **kwargs):
+    def __init__(self, parent: object = None, **kwargs):
         self.parent = parent
 
         _kwargs = {k: v for k, v in kwargs.copy().items() if k != "class_name"}
@@ -21,7 +19,7 @@ class Element(object):
             if type(value) is list:
                 _kwargs[key] = " ".join(value)
 
-        self.kwargs: Dict[str, str] = {**self.kwargs, **_kwargs}
+        self.kwargs: dict[str, str] = {**self.kwargs, **_kwargs}
 
         if self.class_name:
             self.kwargs["class"] = self.class_name
@@ -125,7 +123,7 @@ class Path(Element):
     tag = "path"
 
     @classmethod
-    def get_path(cls, x: float, y: float, width: float, height: float) -> List[str]:
+    def get_path(cls, x: float, y: float, width: float, height: float) -> list[str]:
         return " ".join(
             [
                 f"M{x} {y}",
