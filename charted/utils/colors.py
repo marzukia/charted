@@ -1,13 +1,13 @@
 import colorsys
-from typing import Generator, Tuple, List
+from typing import Generator
 
 
-def hex_to_rgb(hex: str) -> Tuple[int, int, int]:
+def hex_to_rgb(hex: str) -> tuple[int, int, int]:
     hex = hex.lstrip("#")
     return tuple(int(hex[i : i + 2], 16) for i in (0, 2, 4))
 
 
-def rgb_to_hex(rgb: Tuple[int, int, int]) -> str:
+def rgb_to_hex(rgb: tuple[int, int, int]) -> str:
     return "#{:02x}{:02x}{:02x}".format(*rgb)
 
 
@@ -24,6 +24,6 @@ def complementary_color(hex_color: str) -> str:
     return rgb_to_hex(comp_rgb)
 
 
-def generate_complementary_colors(hex_colors: List[str]) -> Generator[str, None, None]:
+def generate_complementary_colors(hex_colors: list[str]) -> Generator[str, None, None]:
     for color in hex_colors:
         yield complementary_color(color)

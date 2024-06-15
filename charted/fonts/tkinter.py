@@ -1,4 +1,3 @@
-from typing import Optional, Tuple
 import tkinter as tk
 from tkinter import font as tkfont
 
@@ -9,7 +8,7 @@ class TextMeasurer:
     """
 
     def __init__(self) -> None:
-        self.root: Optional[tk.Tk] = None
+        self.root: tk.Tk | None = None
 
     def __enter__(self) -> "TextMeasurer":
         self.root = tk.Tk()
@@ -22,7 +21,7 @@ class TextMeasurer:
         family: str = "Helvetica",
         size: int = 12,
         weight: str = "normal",
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         if self.root is None:
             raise RuntimeError("TextMeasurer must be used within a 'with' statement")
         font = tkfont.Font(family=family, size=size, weight=weight)
