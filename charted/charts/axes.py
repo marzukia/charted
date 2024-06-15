@@ -1,7 +1,6 @@
 from charted.html.element import G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.helpers import (
-    calculate_rotation_angle,
     calculate_text_dimensions,
     common_denominators,
     round_to_clean_number,
