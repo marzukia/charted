@@ -32,10 +32,10 @@ class ScatterChart(Chart):
         g = G(
             opacity=0.8,
             transform=[
-                translate(-self.h_pad, -self.v_pad),
+                translate(-self.h_pad, -self.bottom_padding),
                 rotate(180, self.width / 2, self.height / 2),
                 scale(-1, 1),
-                translate(-self.plot_width, self.y_axis.zero),
+                translate(-self.plot_width, 0),
             ],
         )
         for y_values, y_offsets, x_values, color in zip(

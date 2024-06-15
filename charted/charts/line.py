@@ -14,6 +14,7 @@ class LineChart(Chart):
         height: float = 500,
         h_padding: float = 0.1,
         v_padding: float = 0.1,
+        zero_index: bool = True,
         title: str | None = None,
         colors: list[str] | None = None,
     ):
@@ -27,6 +28,7 @@ class LineChart(Chart):
             v_padding=v_padding,
             title=title,
             colors=colors,
+            zero_index=zero_index,
         )
 
     def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:
@@ -41,10 +43,10 @@ class LineChart(Chart):
         g = G(
             opacity=0.8,
             transform=[
-                translate(-self.h_pad, -self.v_pad),
+                translate(-self.h_pad, -self.bottom_padding),
                 rotate(180, self.width / 2, self.height / 2),
                 scale(-1, 1),
-                translate(-self.plot_width, self.y_axis.zero),
+                translate(-self.plot_width, 0),
             ],
         )
         for y_values, y_offsets, x_values, color in zip(

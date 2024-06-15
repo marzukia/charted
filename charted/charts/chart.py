@@ -3,7 +3,11 @@ from charted.html.element import G, Path, Svg, Text
 from charted.utils.colors import generate_complementary_colors
 from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
 from charted.utils.exceptions import InvalidValue
-from charted.utils.helpers import calculate_text_dimensions
+from charted.utils.helpers import (
+    calculate_rotation_angle,
+    calculate_text_dimensions,
+    rotate_coordinate,
+)
 from charted.utils.transform import translate
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
@@ -18,6 +22,7 @@ class Chart(Svg):
         height: float = 500,
         h_padding: float = 0.1,
         v_padding: float = 0.1,
+        zero_index: bool = True,
         x_data: Vector | Vector2D | None = None,
         y_data: Vector | Vector2D | None = None,
         x_labels: Labels | None = None,
@@ -50,18 +55,22 @@ class Chart(Svg):
         self.x_count = (self.x_data, self.x_labels)
         self.y_count = (self.y_data, self.y_labels)
 
+        self.zero_index = zero_index
+
         self.x_axis = XAxis(
             parent=self,
             data=self.x_data,
-            labels=self.x_labels,
+            labels=x_labels,
             stacked=self.x_stacked,
+            zero_index=self.zero_index,
         )
 
         self.y_axis = YAxis(
             parent=self,
             data=self.y_data,
-            labels=self.y_labels,
+            labels=y_labels,
             stacked=self.y_stacked,
+            zero_index=self.zero_index,
         )
 
         self.y_offsets = self.y_data
@@ -178,7 +187,7 @@ class Chart(Svg):
 
     @property
     def plot_height(self) -> float:
-        return self.height - (self.v_pad * 2)
+        return self.height - (self.bottom_padding + self.top_padding)
 
     @plot_height.setter
     def plot_height(self, height: float) -> None:
@@ -248,6 +257,55 @@ class Chart(Svg):
         )
 
     @property
+    def x_labels(self) -> list[MeasuredText] | None:
+        return self._x_labels
+
+    @x_labels.setter
+    def x_labels(self, x_labels: list[str]) -> None:
+        if x_labels:
+            x_labels = [calculate_text_dimensions(label) for label in x_labels]
+        self._x_labels = x_labels
+
+    @property
+    def y_labels(self) -> list[MeasuredText] | None:
+        return self._y_labels
+
+    @y_labels.setter
+    def y_labels(self, y_labels: list[str]) -> None:
+        if y_labels:
+            y_labels = [calculate_text_dimensions(label) for label in y_labels]
+        self._y_labels = y_labels
+
+    @property
+    def x_label_rotation(self) -> tuple[float, float, float]:
+        if not self.x_labels:
+            return None
+
+        rotation_angle = 0
+        width = 0
+        for label in self.x_labels:
+            angle = calculate_rotation_angle(label.width, self.x_width)
+            width = max(width, label.width)
+            if angle and (angle > rotation_angle):
+                rotation_angle = max(angle, rotation_angle)
+
+        return rotation_angle, width
+
+    @property
+    def top_padding(self) -> float:
+        return self.v_pad
+
+    @property
+    def bottom_padding(self) -> float:
+        if not self.x_label_rotation:
+            return self.v_pad
+
+        rotation_angle, width = self.x_label_rotation
+        x, y = (width, 0)
+        _, dy = rotate_coordinate(x, y, rotation_angle)
+        return self.v_pad + abs((dy - y))
+
+    @property
     def x_count(self) -> int:
         return self._x_count
 
@@ -311,7 +369,12 @@ class Chart(Svg):
         for arr in y_data:
             row = []
             for y in arr:
-                v = self.y_axis.reproject(y)
+                if not self.y_stacked:
+                    v = self.y_axis.reproject(y)
+                else:
+                    v = self.y_axis.reproject(abs(y))
+                    if y < 0:
+                        v = -v
                 row.append(v)
             data.append(row)
         self._y_values = data
@@ -333,11 +396,13 @@ class Chart(Svg):
                 raise Exception("x and y data series do not match")
             x_data = x_data * y_len
 
+        xz = self.x_axis.reproject(self.x_axis.axis_dimension.min_value)
+
         data = []
         for arr in x_data:
             row = []
             for x in arr:
-                v = self.x_axis.reproject(x) + self.x_axis.zero
+                v = self.x_axis.reproject(x) + xz
                 row.append(v)
             data.append(row)
 
@@ -345,16 +410,30 @@ class Chart(Svg):
 
     @property
     def zero_line(self) -> Path:
-        return Path(
-            transform=[translate(self.h_pad, self.v_pad)],
-            d=[
-                f"M{0} {self.plot_height - self.y_axis.zero}",
-                f"h{self.plot_width}z",
+        paths = []
+        if self.x_axis.axis_dimension.min_value < 0:
+            paths += [
                 f"M{self.x_axis.zero} {0}",
                 f"v{self.plot_height}z",
-            ],
-            stroke="black",
-        )
+            ]
+
+        if self.y_axis.axis_dimension.min_value < 0:
+            y = self.plot_height - self.y_axis.zero
+            min_y = self.y_axis.axis_dimension.min_value
+            if self.y_stacked and min_y < 0:
+                y -= self.y_axis.reproject(abs(min_y))
+
+            paths += [
+                f"M{0} {y}",
+                f"h{self.plot_width}z",
+            ]
+
+        if len(paths) > 0:
+            return Path(
+                transform=[translate(self.h_pad, self.v_pad)],
+                d=paths,
+                stroke="black",
+            )
 
     @property
     def representation(self) -> G:

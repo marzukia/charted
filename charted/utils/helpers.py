@@ -75,10 +75,12 @@ def get_coefficient_and_exponent(value: float) -> tuple[float, float]:
     return coefficient, exponent
 
 
-def round_to_clean_number(value: float) -> float:
+def round_to_clean_number(value: float, round_down: bool = False) -> float:
     is_negative = value < 0
     coefficient, exponent = get_coefficient_and_exponent(abs(value))
     nearest_half = math.ceil(coefficient * 2) / 2
+    if round_down:
+        nearest_half = math.floor(coefficient * 2) / 2
     rounded_value = nearest_half * (10**exponent)
     if is_negative:
         rounded_value = -rounded_value
