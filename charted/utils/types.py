@@ -21,8 +21,6 @@ class Coordinate(NamedTuple):
 class AxisDimension(NamedTuple):
     min_value: float
     max_value: float
-    raw_min_value: float
-    raw_max_value: float
     count: float
 
     @property

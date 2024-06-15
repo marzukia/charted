@@ -17,6 +17,7 @@ class Axis(G):
         data: Vector2D | None = None,
         labels: list[str] | None = None,
         stacked: bool = False,
+        zero_index: bool = True,
     ):
         if not data and not labels:
             raise Exception("Need labels or data.")
@@ -27,7 +28,7 @@ class Axis(G):
         self.stacked = stacked
         self.data = data
         self.parent = parent
-        self.values = data
+        self.values = (data, labels, zero_index)
         self.labels = labels
         self.add_children(self.grid_lines, self.axis_labels)
 
@@ -38,9 +39,12 @@ class Axis(G):
         max_value: float,
         min_value: float,
         length: float,
+        stacked: bool = False,
     ) -> float:
         value_range = max_value - min_value
-        normalised_value = value / value_range
+        normalised_value = (value - min_value) / value_range
+        if stacked:
+            normalised_value = value / value_range
         return normalised_value * length
 
     @classmethod
@@ -52,7 +56,9 @@ class Axis(G):
         length: float,
     ) -> float:
         value_range = max_value - min_value
-        normalised_value = value / length
+        normalised_value = (value + min_value) / length
+        if min_value:
+            normalised_value = value / length
         return normalised_value * value_range
 
     @classmethod
@@ -60,8 +66,11 @@ class Axis(G):
         cls,
         data: Vector2D | None = None,
         stacked: bool = False,
+        has_labels: bool = False,
+        zero_index: bool = True,
     ) -> AxisDimension:
         count = len(data[0])
+
         if stacked:
             min_values = [0] * count
             max_values = [0] * count
@@ -71,37 +80,56 @@ class Axis(G):
                         min_values[n] -= abs(series[n])
                     else:
                         max_values[n] += series[n]
-            min_values = min(min_values)
-            max_values = max(max_values)
+            min_value = min(min_values)
+            max_value = max(max_values)
         else:
             agg = [x for arr in data for x in arr]
-            min_values = min(agg)
-            max_values = max(agg)
+            min_value = min(agg)
+            max_value = max(agg)
 
-        if min_values >= 1:
-            min_values = 0
+        if zero_index and min_value >= 1:
+            min_value = 0
 
-        return AxisDimension(
-            round_to_clean_number(min_values),
-            round_to_clean_number(max_values),
-            min_values,
-            max_values,
-            count,
-        )
+        if not has_labels:
+            if min_value < 0:
+                min_value = -round_to_clean_number(abs(min_value))
+            else:
+                min_value = round_to_clean_number(min_value, round_down=True)
+            max_value = round_to_clean_number(max_value)
+
+        return AxisDimension(min_value, max_value, count)
 
     @classmethod
-    def calculate_axis_values(cls, data: Vector2D, **kwargs) -> float:
-        axd = cls.calculate_axis_dimensions(data, **kwargs)
+    def calculate_axis_values(
+        cls,
+        data: Vector2D,
+        labels: list[str] | None = None,
+        zero_index: bool = True,
+        stacked: bool | None = None,
+    ) -> tuple[AxisDimension, float]:
+        has_labels = labels is not None
+
+        axd = cls.calculate_axis_dimensions(
+            data=data,
+            has_labels=has_labels,
+            zero_index=zero_index,
+            stacked=stacked,
+        )
         denominators = common_denominators(axd.min_value, axd.max_value)
 
         values = []
-        for denominator in reversed(denominators):
-            count = int(axd.value_range / denominator)
-            values = [axd.min_value + (i * denominator) for i in reversed(range(count))]
-            if len(values) > 5 or len(values) == axd.count:
-                break
+        if not has_labels:
+            for denominator in reversed(denominators):
+                count = int(axd.value_range / denominator)
+                values = [
+                    axd.min_value + (i * denominator) for i in reversed(range(count))
+                ]
+                if len(values) > 5 or len(values) == axd.count:
+                    break
+        else:
+            values = [i for i in range(len(labels))]
 
-        return values
+        return axd, values
 
     def reproject(self, value: float) -> float:
         raise Exception("reproject not implemented for instance of Axis.")
@@ -110,15 +138,8 @@ class Axis(G):
         raise Exception("reverse not implemented for instance of Axis.")
 
     @property
-    def axis_dimension(self) -> AxisDimension:
-        return self.calculate_axis_dimensions(
-            data=self.data,
-            stacked=self.stacked,
-        )
-
-    @property
     def zero(self) -> float:
-        return self.reproject(abs(self.axis_dimension.min_value))
+        return self.reproject(0)
 
     @property
     def grid_lines(self) -> Path:
@@ -137,8 +158,21 @@ class Axis(G):
         return self._values
 
     @values.setter
-    def values(self, data: Vector2D) -> None:
-        self._values = self.calculate_axis_values(data=data, stacked=self.stacked)
+    def values(
+        self,
+        kwargs: tuple[
+            Vector2D,
+            list[str] | None,
+            bool,
+        ],
+    ) -> None:
+        data, labels, zero_index = kwargs
+        self.axis_dimension, self._values = self.calculate_axis_values(
+            data=data,
+            stacked=self.stacked,
+            labels=labels,
+            zero_index=zero_index,
+        )
 
     @property
     def labels(self) -> list[MeasuredText]:
@@ -157,7 +191,7 @@ class Axis(G):
                 value = round(label, precision) if precision > 0 else int(label)
                 labels.append(value)
         else:
-            labels = list(reversed(labels))
+            labels = [" ", *labels]
         self._labels = [calculate_text_dimensions(label) for label in labels]
 
     @property
@@ -172,6 +206,7 @@ class XAxis(Axis):
             self.axis_dimension.max_value,
             self.axis_dimension.min_value,
             self.parent.plot_width,
+            self.stacked,
         )
 
     def reverse(self, value: float) -> float:
@@ -179,15 +214,14 @@ class XAxis(Axis):
             value,
             self.axis_dimension.max_value,
             self.axis_dimension.min_value,
-            self.plot_width,
+            self.parent.plot_width,
         )
 
     @property
     def coordinates(self):
-        count = len(self.values)
-        spacing = self.axis_dimension.value_range / count
-        reprojected_spacing = self.reproject(spacing)
-        return list(reversed([i * reprojected_spacing for i in range(count + 1)]))
+        return [
+            self.reproject(i) for i in [self.axis_dimension.max_value, *self.values]
+        ]
 
     @property
     def grid_lines(self) -> Path:
@@ -213,12 +247,8 @@ class XAxis(Axis):
         )
 
         rotation_angle = 0
-        for label in self.labels:
-            angle = calculate_rotation_angle(label.width, self.parent.x_width)
-            if angle and (angle > rotation_angle):
-                rotation_angle = max(angle, rotation_angle)
-        cum_width = sum([label.width for label in self.labels])
-        rotation_angle = calculate_rotation_angle(cum_width, self.parent.plot_width)
+        if self.parent.x_label_rotation:
+            rotation_angle, _ = self.parent.x_label_rotation
 
         y = self.parent.plot_height
         for x, label in zip(self.coordinates, self.labels):
@@ -235,6 +265,7 @@ class XAxis(Axis):
                 transform=transformations,
             )
             labels.add_child(text)
+
         return labels
 
 
@@ -245,6 +276,7 @@ class YAxis(Axis):
             self.axis_dimension.max_value,
             self.axis_dimension.min_value,
             self.parent.plot_height,
+            self.stacked,
         )
 
     def reverse(self, value: float) -> float:
@@ -252,15 +284,19 @@ class YAxis(Axis):
             value,
             self.axis_dimension.max_value,
             self.axis_dimension.min_value,
-            self.plot_height,
+            self.parent.plot_height,
         )
 
     @property
     def coordinates(self):
-        count = len(self.values)
-        spacing = self.axis_dimension.value_range / count
-        reprojected_spacing = self.reproject(spacing)
-        return [i * reprojected_spacing for i in range(count + 1)]
+        offset = 0
+        if self.stacked and self.axis_dimension.min_value < 0:
+            offset = self.axis_dimension.min_value
+
+        return [
+            self.reproject(i + abs(offset))
+            for i in reversed([self.axis_dimension.max_value, *self.values])
+        ]
 
     @property
     def grid_lines(self) -> Path:

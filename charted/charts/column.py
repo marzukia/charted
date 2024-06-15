@@ -16,6 +16,7 @@ class ColumnChart(Chart):
         height: float = 500,
         h_padding: float = 0.1,
         v_padding: float = 0.1,
+        zero_index: bool = True,
         title: str | None = None,
         colors: list[str] | None = None,
     ):
@@ -29,6 +30,7 @@ class ColumnChart(Chart):
             x_labels=labels,
             title=title,
             colors=colors,
+            zero_index=zero_index,
         )
 
     @property
@@ -37,14 +39,18 @@ class ColumnChart(Chart):
 
     @property
     def representation(self) -> G:
+        dy = 0
+        if self.y_axis.axis_dimension.min_value < 0:
+            dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
+
         g = G(
             opacity="0.8",
             transform=[
-                translate(-self.h_pad, -self.v_pad),
+                translate(-self.h_pad, -self.bottom_padding),
                 rotate(180, self.width / 2, self.height / 2),
                 scale(-1, 1),
                 translate(-self.plot_width, self.y_axis.zero),
-                translate(-self.x_width / 2, 0),
+                translate(-self.x_width / 2, dy),
             ],
         )
         for y_values, y_offsets, x_values, color in zip(
@@ -58,8 +64,7 @@ class ColumnChart(Chart):
                 x_offset += self.x_axis.reproject(1)
             paths = []
             for x, y, y_offset in zip(x_values, y_values, y_offsets):
-                if self.y_stacked:
-                    x += x_offset
+                x += x_offset
                 paths.append(Path.get_path(x, y_offset, self.x_width, y))
             g.add_child(Path(d=paths, fill=color))
 
