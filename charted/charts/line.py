@@ -17,7 +17,9 @@ class LineChart(Chart):
         zero_index: bool = True,
         title: str | None = None,
         colors: list[str] | None = None,
+        marker_size: float = 3,
     ):
+        self.marker_size = marker_size
         super().__init__(
             y_data=data,
             x_data=x_data,
@@ -71,8 +73,9 @@ class LineChart(Chart):
                     path.append(f"M{x} {y}")
                 else:
                     path.append(f"L{x} {y}")
-                c = Circle(cx=x, cy=y, r=4)
-                points.append(c)
+                if self.marker_size:
+                    c = Circle(cx=x, cy=y, r=self.marker_size)
+                    points.append(c)
             line = Path(d=path, fill="none")
             series.add_children(line, *points)
             g.add_children(series)
