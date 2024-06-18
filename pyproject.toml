@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "charted"
-version = "0.1.4"
+version = "0.1.5"
 description = "Charted is a zero dependency SVG chart generator that aims to provide a simple interface for generating beautiful and customisable graphs. This project is inspired by chart libraries like mermaid.js."
 authors = ["Andryo Marzuki <andryo@mrzk.io>"]
 readme = "README.md"
