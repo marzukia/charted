@@ -5,6 +5,7 @@ from charted.utils.helpers import (
     common_denominators,
     round_to_clean_number,
 )
+from charted.utils.themes import GridConfig
 from charted.utils.transform import rotate, translate
 from charted.utils.types import AxisDimension, MeasuredText, Vector, Vector2D
 
@@ -17,6 +18,7 @@ class Axis(G):
         labels: list[str] | None = None,
         stacked: bool = False,
         zero_index: bool = True,
+        config: GridConfig | None = None,
     ):
         if not data and not labels:
             raise Exception("Need labels or data.")
@@ -29,6 +31,7 @@ class Axis(G):
         self.parent = parent
         self.values = (data, labels, zero_index)
         self.labels = labels
+        self.config = config
         self.add_children(self.grid_lines, self.axis_labels)
 
     @classmethod
@@ -224,13 +227,16 @@ class XAxis(Axis):
 
     @property
     def grid_lines(self) -> Path:
+        if not self.config:
+            return None
+
         d = [f"M{x} {0} v{self.parent.plot_height}" for x in self.coordinates]
         return Path(
+            **self.config,
             d=d,
-            stroke="#CCCCCC",
             transform=translate(
-                x=self.parent.h_pad,
-                y=self.parent.v_pad,
+                x=self.parent.left_padding,
+                y=self.parent.top_padding,
             ),
         )
 
@@ -240,8 +246,8 @@ class XAxis(Axis):
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             transform=translate(
-                x=self.parent.h_pad,
-                y=self.parent.v_pad + 18,
+                x=self.parent.left_padding,
+                y=self.parent.top_padding + 18,
             ),
         )
 
@@ -299,13 +305,16 @@ class YAxis(Axis):
 
     @property
     def grid_lines(self) -> Path:
+        if not self.config:
+            return None
+
         d = [f"M{0} {y} h{self.parent.plot_width}" for y in self.coordinates]
         return Path(
+            **self.config,
             d=d,
-            stroke="#CCCCCC",
             transform=translate(
-                x=self.parent.h_pad,
-                y=self.parent.v_pad,
+                x=self.parent.left_padding,
+                y=self.parent.top_padding,
             ),
         )
 
@@ -315,8 +324,8 @@ class YAxis(Axis):
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             transform=translate(
-                x=(self.parent.h_pad - 6),
-                y=self.parent.v_pad,
+                x=(self.parent.left_padding - 6),
+                y=self.parent.top_padding,
             ),
         )
 

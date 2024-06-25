@@ -48,7 +48,9 @@ class Examples:
             title="Example Labelled Line Graph",
             data=[5 * (1.5**n) for n in range(0, 11)],
             labels=["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-            colors=["#204C9E"],
+            theme={
+                "colors": ["#204C9E"],
+            },
         )
 
     @property

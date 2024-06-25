@@ -1,4 +1,4 @@
-from charted.charts.axes import XAxis, YAxis
+from charted.charts.axes import Axis, XAxis, YAxis
 from charted.html.element import G, Path, Svg, Text
 from charted.utils.colors import generate_complementary_colors
 from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
@@ -8,6 +8,7 @@ from charted.utils.helpers import (
     calculate_text_dimensions,
     rotate_coordinate,
 )
+from charted.utils.themes import Theme
 from charted.utils.transform import translate
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
@@ -28,7 +29,7 @@ class Chart(Svg):
         x_labels: Labels | None = None,
         y_labels: Labels | None = None,
         title: str | None = None,
-        colors: list[str] | None = None,
+        theme: Theme | None = None,
     ):
         super().__init__(
             width=width,
@@ -38,6 +39,13 @@ class Chart(Svg):
 
         if not x_data and not y_data:
             raise Exception("No data was provided to the Chart element.")
+
+        if not x_data and not x_labels:
+            x_labels = [" " for i in range(len(y_data))]
+
+        self.theme = Theme.load(theme)
+
+        self.zero_index = zero_index
 
         self.x_labels = x_labels
         self.y_labels = y_labels
@@ -55,14 +63,13 @@ class Chart(Svg):
         self.x_count = (self.x_data, self.x_labels)
         self.y_count = (self.y_data, self.y_labels)
 
-        self.zero_index = zero_index
-
         self.x_axis = XAxis(
             parent=self,
             data=self.x_data,
             labels=x_labels,
             stacked=self.x_stacked,
             zero_index=self.zero_index,
+            config=self.theme["v_grid"],
         )
 
         self.y_axis = YAxis(
@@ -71,6 +78,7 @@ class Chart(Svg):
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
+            config=self.theme["h_grid"],
         )
 
         self.y_offsets = self.y_data
@@ -78,7 +86,7 @@ class Chart(Svg):
         self.y_values = self.y_data
         self.x_values = self.x_data
 
-        self.colors = colors
+        self.colors = self.theme["colors"]
         self.title = title
 
         self.add_children(
@@ -116,7 +124,7 @@ class Chart(Svg):
 
     @classmethod
     def _validate_attribute_value(cls, name: str, value: float):
-        if value <= 0:
+        if value < 0:
             raise InvalidValue(name, value)
         return value
 
@@ -180,7 +188,7 @@ class Chart(Svg):
 
     @plot_width.setter
     def plot_width(self, width: float) -> None:
-        calculated = width - (self.h_pad * 2)
+        calculated = width - (self.left_padding + self.right_padding)
         if calculated < 0:
             raise Exception("'calculated' was negative, check width and h_padding.")
         self._plot_width = calculated
@@ -290,6 +298,31 @@ class Chart(Svg):
                 rotation_angle = max(angle, rotation_angle)
 
         return rotation_angle, width
+
+    @property
+    def left_padding(self) -> float:
+        labels = self.y_labels
+
+        if not labels:
+            axd = Axis.calculate_axis_dimensions(
+                data=self.y_data,
+                stacked=self.y_stacked,
+                zero_index=self.zero_index,
+            )
+            labels = [str(axd.max_value)]
+
+        longest = ""
+        for label in labels:
+            if len(label) > len(longest):
+                longest = label
+
+        max_width = calculate_text_dimensions(longest)
+
+        return self.h_pad + max_width.width
+
+    @property
+    def right_padding(self) -> float:
+        return self.h_pad
 
     @property
     def top_padding(self) -> float:
@@ -430,7 +463,7 @@ class Chart(Svg):
 
         if len(paths) > 0:
             return Path(
-                transform=[translate(self.h_pad, self.v_pad)],
+                transform=[translate(self.left_padding, self.top_padding)],
                 d=paths,
                 stroke="black",
             )
