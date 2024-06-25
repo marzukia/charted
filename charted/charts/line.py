@@ -1,5 +1,6 @@
 from charted.charts.chart import Chart
 from charted.html.element import G, Circle, Path
+from charted.utils.themes import Theme
 from charted.utils.transform import rotate, scale, translate
 from charted.utils.types import Labels, Vector, Vector2D
 
@@ -12,12 +13,12 @@ class LineChart(Chart):
         labels: Labels | None = None,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0.1,
-        v_padding: float = 0.1,
+        h_padding: float = 0.05,
+        v_padding: float = 0.05,
         zero_index: bool = True,
         title: str | None = None,
-        colors: list[str] | None = None,
         marker_size: float = 3,
+        theme: Theme | None = None,
     ):
         self.marker_size = marker_size
         super().__init__(
@@ -29,8 +30,8 @@ class LineChart(Chart):
             h_padding=h_padding,
             v_padding=v_padding,
             title=title,
-            colors=colors,
             zero_index=zero_index,
+            theme=theme,
         )
 
     def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:

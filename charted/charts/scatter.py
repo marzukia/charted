@@ -1,5 +1,6 @@
 from charted.charts.chart import Chart
 from charted.html.element import G, Circle
+from charted.utils.themes import Theme
 from charted.utils.transform import rotate, scale, translate
 from charted.utils.types import Vector, Vector2D
 
@@ -11,10 +12,10 @@ class ScatterChart(Chart):
         y_data: Vector | Vector2D,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0.1,
-        v_padding: float = 0.1,
+        h_padding: float = 0.05,
+        v_padding: float = 0.05,
         title: str | None = None,
-        colors: list[str] | None = None,
+        theme: Theme | None = None,
     ):
         super().__init__(
             y_data=y_data,
@@ -24,7 +25,7 @@ class ScatterChart(Chart):
             h_padding=h_padding,
             v_padding=v_padding,
             title=title,
-            colors=colors,
+            theme=theme,
         )
 
     @property

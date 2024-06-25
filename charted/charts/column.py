@@ -1,5 +1,6 @@
 from charted.charts.chart import Chart
 from charted.html.element import G, Path
+from charted.utils.themes import Theme
 from charted.utils.transform import rotate, scale, translate
 from charted.utils.types import Labels, Vector, Vector2D
 
@@ -14,11 +15,11 @@ class ColumnChart(Chart):
         column_gap: float = 0.50,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0.1,
-        v_padding: float = 0.1,
+        h_padding: float = 0.05,
+        v_padding: float = 0.05,
         zero_index: bool = True,
         title: str | None = None,
-        colors: list[str] | None = None,
+        theme: Theme | None = None,
     ):
         self.column_gap = column_gap
         super().__init__(
@@ -29,8 +30,8 @@ class ColumnChart(Chart):
             y_data=data,
             x_labels=labels,
             title=title,
-            colors=colors,
             zero_index=zero_index,
+            theme=theme,
         )
 
     @property
