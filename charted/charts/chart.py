@@ -1,5 +1,5 @@
 from charted.charts.axes import Axis, XAxis, YAxis
-from charted.html.element import G, Path, Svg, Text
+from charted.html.element import G, Path, Rect, Svg, Text
 from charted.utils.colors import generate_complementary_colors
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.exceptions import InvalidValue
@@ -26,6 +26,7 @@ class Chart(Svg):
         y_data: Vector | Vector2D | None = None,
         x_labels: Labels | None = None,
         y_labels: Labels | None = None,
+        series_names: list[str] | None = None,
         title: str | None = None,
         theme: Theme | None = None,
     ):
@@ -42,6 +43,7 @@ class Chart(Svg):
             array_len = len(y_data[0]) if type(y_data[0]) is list else len(y_data)
             x_labels = [" " for i in range(array_len)]
 
+        self.series_names = series_names
         self.theme = Theme.load(theme)
 
         self.zero_index = zero_index
@@ -96,6 +98,7 @@ class Chart(Svg):
             self.x_axis,
             self.zero_line,
             self.representation,
+            self.legend,
         )
 
     @classmethod
@@ -476,3 +479,65 @@ class Chart(Svg):
     @property
     def representation(self) -> G:
         raise Exception("representation not implemented for instance of Chart.")
+
+    @property
+    def legend(self):
+        if not self.theme["legend"] or not self.series_names:
+            return None
+
+        legend_entries = [
+            calculate_text_dimensions(x, font_size=self.theme["legend"]["font_size"])
+            for x in self.series_names
+        ]
+        icon_height = max(x.height for x in legend_entries)
+        legend_width = max(x.width for x in legend_entries) + icon_height + 2
+        legend_height = len(legend_entries) * (icon_height + 2)
+
+        positions = {
+            "topright": {
+                "x0": (self.width - self.right_padding * 1.25) - legend_width,
+                "y0": self.top_padding * 1.25,
+            },
+            "topleft": {
+                "x0": (self.left_padding) * 1.25,
+                "y0": self.top_padding * 1.25,
+            },
+        }
+
+        position = positions.get(self.theme["legend"]["position"], None)
+        if not position:
+            raise Exception("Invalid position.")
+
+        x0, y0 = position["x0"], position["y0"]
+
+        legend = G()
+        legend.add_child(
+            Rect(
+                transform=translate(
+                    x=-(legend_width * self.theme["legend"]["legend_padding"] / 2),
+                    y=-(legend_height * self.theme["legend"]["legend_padding"] / 2),
+                ),
+                x=x0,
+                y=y0,
+                width=legend_width * (1 + self.theme["legend"]["legend_padding"]),
+                height=legend_height * (1 + self.theme["legend"]["legend_padding"]),
+                fill="#ffffff",
+                stroke="#CCCCCC",
+            )
+        )
+
+        for i, (legend_text, color) in enumerate(zip(legend_entries, self.colors)):
+            h = legend_text.height
+            g = G(transform=translate(0, y=(2 * i) + h))
+            y = y0 + (i * h)
+            rect = Rect(y=y - h, x=x0, width=h, height=h, fill=color)
+            text = Text(
+                y=y - (h / 4),
+                x=x0 + 2 + h,
+                text=legend_text.text,
+                font_size=self.theme["legend"]["font_size"],
+            )
+            g.add_children(rect, text)
+            legend.add_child(g)
+
+        return legend
