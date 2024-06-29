@@ -3,6 +3,12 @@ from typing import Optional, TypedDict
 from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
 
 
+class LegendConfig(TypedDict):
+    font_size: str | None
+    legend_padding: float | None
+    position: str | None
+
+
 class MarkerConfig(TypedDict):
     marker_size = float | None
 
@@ -49,6 +55,11 @@ class Theme(TypedDict):
 
 
 DEFAULT_THEME = Theme(
+    legend=LegendConfig(
+        font_size=11,
+        legend_padding=0.25,
+        position="topright",
+    ),
     marker=MarkerConfig(
         marker_size=3,
     ),

@@ -16,6 +16,7 @@ class LineChart(Chart):
         zero_index: bool = True,
         title: str | None = None,
         theme: Theme | None = None,
+        series_names: list[str] | None = None,
     ):
         super().__init__(
             y_data=data,
@@ -26,6 +27,7 @@ class LineChart(Chart):
             title=title,
             zero_index=zero_index,
             theme=theme,
+            series_names=series_names,
         )
 
     def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:

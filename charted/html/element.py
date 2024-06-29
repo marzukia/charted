@@ -141,3 +141,7 @@ class Text(Element):
     def __init__(self, text: str = None, **kwargs):
         super().__init__(**kwargs)
         self.add_child(text)
+
+
+class Rect(Element):
+    tag = "rect"
