@@ -53,8 +53,12 @@ graph = ColumnChart(
     labels=["January", "February", "March", "April", "May", "June", "July"],
     width=600,
     height=400,
-    v_padding=0.1,
-    h_padding=0.1
+    theme={
+        "padding": {
+            "v_padding": 0.1,
+            "h_padding": 0.1,
+        }
+    },
 )
 ```
 
@@ -69,7 +73,9 @@ graph = LineChart(
     title="Example Labelled Line Graph",
     data=[5 * (1.5**n) for n in range(0, 11)],
     labels=["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-    colors=['#204C9E']
+    theme={
+        "colors": ["#204C9E"],
+    },
 )
 ```
 

@@ -16,6 +16,7 @@ class TitleConfig(TypedDict):
     font_size: str | None
     font_family: str | None
     font_weight: str | None
+    font_color: str | None
 
 
 class GridConfig(TypedDict):
@@ -55,7 +56,7 @@ DEFAULT_THEME = Theme(
         font_size=DEFAULT_TITLE_FONT_SIZE,
         font_family=DEFAULT_FONT,
         font_weight="bold",
-        color="#444444",
+        font_color="#444444",
     ),
     colors=DEFAULT_COLORS,
     v_grid=GridConfig(
