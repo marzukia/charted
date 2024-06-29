@@ -214,7 +214,7 @@ class Axis(G):
                 value = round(label, precision) if precision > 0 else int(label)
                 labels.append(value)
         else:
-            labels = [" ", *labels]
+            labels = [*labels]
         self._labels = [calculate_text_dimensions(label) for label in labels]
 
     @property
@@ -242,9 +242,7 @@ class XAxis(Axis):
 
     @property
     def coordinates(self):
-        return [
-            self.reproject(i) for i in [self.axis_dimension.max_value, *self.values]
-        ]
+        return [self.reproject(i) for i in self.values]
 
     @property
     def grid_lines(self) -> Path:
