@@ -144,12 +144,13 @@ class Axis(G):
         values = []
         for denominator in reversed(denominators):
             count = int(value_range / denominator)
-            values = [min_value + (i * denominator) for i in reversed(range(count + 1))]
+            values = [min_value + (i * denominator) for i in reversed(range(count + 2))]
             if len(values) > 5:
                 break
 
         while len(values) > 10:
             values = [x for (i, x) in enumerate(values) if i % 2 == 0]
+            min_value, max_value = values[-1], values[0]
 
         return AxisDimension(min_value, max_value, axd.count), values
 
