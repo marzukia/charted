@@ -38,8 +38,12 @@ class Examples:
             labels=["January", "February", "March", "April", "May", "June", "July"],
             width=600,
             height=400,
-            v_padding=0.1,
-            h_padding=0.1,
+            theme={
+                "padding": {
+                    "v_padding": 0.1,
+                    "h_padding": 0.1,
+                }
+            },
         )
 
     @property

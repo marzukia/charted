@@ -114,15 +114,16 @@ class Axis(G):
         zero_index: bool = True,
         stacked: bool | None = None,
     ) -> tuple[AxisDimension, list[float]]:
-        if labels is not None:
-            values = [i for i in range(len(labels))]
-
         axd = cls.calculate_axis_dimensions(
             data=data,
-            has_labels=False,
+            has_labels=labels is not None,
             zero_index=zero_index,
             stacked=stacked,
         )
+
+        if labels is not None:
+            values = [i for i in range(len(labels))]
+            return (axd, values)
 
         denominators = common_denominators(axd.min_value, axd.max_value)
         value_range = axd.value_range

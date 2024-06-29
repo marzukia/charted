@@ -5,23 +5,32 @@ data = [7101, 7002, 6933, 6933, 6903, 6974, 6903, 6832, 6733, 6803, 6844, 6829, 
 # data2 = [i * 10 for i in data]
 # fmt: on
 
+# chart = LineChart(
+#     title="Test",
+#     data=[data],
+#     zero_index=False,
+#     theme={
+#         "colors": ["#ff0000"],
+#         "marker": {
+#             "marker_size": 0,
+#         },
+#         "title": {
+#             "font_color": "#ff0000",
+#         },
+#         "v_grid": None,
+#         "h_grid": {
+#             "stroke": "#dddddd",
+#             "stroke_dasharray": "4 2",
+#         },
+#     },
+# )
+
 chart = LineChart(
-    title="Test",
-    data=[data],
-    zero_index=False,
+    title="Example Labelled Line Graph",
+    data=[5 * (1.5**n) for n in range(0, 11)],
+    labels=["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
     theme={
-        "colors": ["#ff0000"],
-        "marker": {
-            "marker_size": 0,
-        },
-        "title": {
-            "font_color": "#ff0000",
-        },
-        "v_grid": None,
-        "h_grid": {
-            "stroke": "#dddddd",
-            "stroke_dasharray": "4 2",
-        },
+        "colors": ["#204C9E"],
     },
 )
 
