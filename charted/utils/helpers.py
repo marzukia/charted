@@ -47,6 +47,9 @@ def rotate_coordinate(x: float, y: float, angle_degrees: float) -> tuple[float, 
 
 
 def common_denominators(a: float, b: float) -> Vector:
+    if (b - a) <= 2:
+        return [0.2, 0.25, 0.5, 1]
+
     a, b = abs(int(a)), abs(int(b))
     if a == 0 and b == 0:
         return []

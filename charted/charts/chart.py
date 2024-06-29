@@ -21,8 +21,8 @@ class Chart(Svg):
         self,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0.1,
-        v_padding: float = 0.1,
+        h_padding: float = 0,
+        v_padding: float = 0,
         zero_index: bool = True,
         x_data: Vector | Vector2D | None = None,
         y_data: Vector | Vector2D | None = None,
@@ -41,7 +41,8 @@ class Chart(Svg):
             raise Exception("No data was provided to the Chart element.")
 
         if not x_data and not x_labels:
-            x_labels = [" " for i in range(len(y_data))]
+            array_len = len(y_data[0]) if type(y_data[0]) is list else len(y_data)
+            x_labels = [" " for i in range(array_len)]
 
         self.theme = Theme.load(theme)
 
@@ -56,6 +57,8 @@ class Chart(Svg):
         self.height = height
         self.h_padding = h_padding
         self.v_padding = v_padding
+
+        self.title = title
 
         self.plot_height = height
         self.plot_width = width
@@ -87,7 +90,6 @@ class Chart(Svg):
         self.x_values = self.x_data
 
         self.colors = self.theme["colors"]
-        self.title = title
 
         self.add_children(
             self.container,
@@ -228,7 +230,7 @@ class Chart(Svg):
             transform=[
                 translate(
                     x=-self._title.width / 2,
-                    y=self._title.height / 4,
+                    y=self._title.height,
                 )
             ],
             text=self._title.text,
@@ -304,7 +306,7 @@ class Chart(Svg):
         labels = self.y_labels
 
         if not labels:
-            axd = Axis.calculate_axis_dimensions(
+            axd, _ = Axis.calculate_axis_values(
                 data=self.y_data,
                 stacked=self.y_stacked,
                 zero_index=self.zero_index,
@@ -318,7 +320,7 @@ class Chart(Svg):
 
         max_width = calculate_text_dimensions(longest)
 
-        return self.h_pad + max_width.width
+        return self.h_pad + (max_width.width * 2)
 
     @property
     def right_padding(self) -> float:
@@ -326,7 +328,10 @@ class Chart(Svg):
 
     @property
     def top_padding(self) -> float:
-        return self.v_pad
+        offset = 0
+        if self._title:
+            offset += self._title.height * 1.5
+        return self.v_pad + offset
 
     @property
     def bottom_padding(self) -> float:
