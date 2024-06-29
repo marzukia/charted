@@ -1,7 +1,7 @@
 from charted.charts.axes import Axis, XAxis, YAxis
 from charted.html.element import G, Path, Svg, Text
 from charted.utils.colors import generate_complementary_colors
-from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
+from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.exceptions import InvalidValue
 from charted.utils.helpers import (
     calculate_rotation_angle,
@@ -21,8 +21,6 @@ class Chart(Svg):
         self,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0,
-        v_padding: float = 0,
         zero_index: bool = True,
         x_data: Vector | Vector2D | None = None,
         y_data: Vector | Vector2D | None = None,
@@ -55,8 +53,8 @@ class Chart(Svg):
 
         self.width = width
         self.height = height
-        self.h_padding = h_padding
-        self.v_padding = v_padding
+        self.h_padding = self.theme["padding"]["h_padding"]
+        self.v_padding = self.theme["padding"]["v_padding"]
 
         self.title = title
 
@@ -234,9 +232,10 @@ class Chart(Svg):
                 )
             ],
             text=self._title.text,
-            font_family=DEFAULT_FONT,
-            font_weight="bold",
-            font_size=DEFAULT_TITLE_FONT_SIZE,
+            fill=self.theme["title"]["font_color"],
+            font_family=self.theme["title"]["font_family"],
+            font_weight=self.theme["title"]["font_weight"],
+            font_size=self.theme["title"]["font_size"],
             x=self.width / 2,
             y=self.v_pad / 2,
         )
@@ -246,7 +245,8 @@ class Chart(Svg):
         if text:
             self._title = calculate_text_dimensions(
                 text,
-                font_size=DEFAULT_TITLE_FONT_SIZE,
+                font=self.theme["title"]["font_family"],
+                font_size=self.theme["title"]["font_size"],
             )
         else:
             self._title = None
@@ -306,12 +306,12 @@ class Chart(Svg):
         labels = self.y_labels
 
         if not labels:
-            axd, _ = Axis.calculate_axis_values(
+            _, values = Axis.calculate_axis_values(
                 data=self.y_data,
                 stacked=self.y_stacked,
                 zero_index=self.zero_index,
             )
-            labels = [str(axd.max_value)]
+            labels = [str(round(x, 2)) for x in values]
 
         longest = ""
         for label in labels:
@@ -320,7 +320,7 @@ class Chart(Svg):
 
         max_width = calculate_text_dimensions(longest)
 
-        return self.h_pad + (max_width.width * 2)
+        return self.h_pad + max_width.width
 
     @property
     def right_padding(self) -> float:

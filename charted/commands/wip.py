@@ -8,15 +8,18 @@ data = [7101, 7002, 6933, 6933, 6903, 6974, 6903, 6832, 6733, 6803, 6844, 6829, 
 chart = LineChart(
     title="Test",
     data=[data],
-    marker_size=0,
     zero_index=False,
-    h_padding=0.05,
-    v_padding=0.05,
     theme={
         "colors": ["#ff0000"],
+        "marker": {
+            "marker_size": 0,
+        },
+        "title": {
+            "font_color": "#ff0000",
+        },
         "v_grid": None,
         "h_grid": {
-            "stroke": "#ddd",
+            "stroke": "#dddddd",
             "stroke_dasharray": "4 2",
         },
     },

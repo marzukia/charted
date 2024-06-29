@@ -15,8 +15,6 @@ class ColumnChart(Chart):
         column_gap: float = 0.50,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0.05,
-        v_padding: float = 0.05,
         zero_index: bool = True,
         title: str | None = None,
         theme: Theme | None = None,
@@ -25,8 +23,6 @@ class ColumnChart(Chart):
         super().__init__(
             width=width,
             height=height,
-            h_padding=h_padding,
-            v_padding=v_padding,
             y_data=data,
             x_labels=labels,
             title=title,

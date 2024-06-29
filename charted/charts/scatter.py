@@ -12,8 +12,6 @@ class ScatterChart(Chart):
         y_data: Vector | Vector2D,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0.05,
-        v_padding: float = 0.05,
         title: str | None = None,
         theme: Theme | None = None,
     ):
@@ -22,8 +20,6 @@ class ScatterChart(Chart):
             x_data=x_data,
             width=width,
             height=height,
-            h_padding=h_padding,
-            v_padding=v_padding,
             title=title,
             theme=theme,
         )
