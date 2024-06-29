@@ -1,3 +1,4 @@
+import math
 from charted.html.element import G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.helpers import (
@@ -89,6 +90,10 @@ class Axis(G):
             min_value = min(agg)
             max_value = max(agg)
 
+        if abs(min_value) < 1 and abs(max_value) <= 1:
+            min_value = math.floor(min_value)
+            max_value = math.ceil(max_value)
+
         if zero_index and min_value >= 1:
             min_value = 0
 
@@ -108,30 +113,44 @@ class Axis(G):
         labels: list[str] | None = None,
         zero_index: bool = True,
         stacked: bool | None = None,
-    ) -> tuple[AxisDimension, float]:
-        has_labels = labels is not None
+    ) -> tuple[AxisDimension, list[float]]:
+        if labels is not None:
+            values = [i for i in range(len(labels))]
 
         axd = cls.calculate_axis_dimensions(
             data=data,
-            has_labels=has_labels,
+            has_labels=False,
             zero_index=zero_index,
             stacked=stacked,
         )
+
         denominators = common_denominators(axd.min_value, axd.max_value)
+        value_range = axd.value_range
+        min_value = axd.min_value
+        max_value = axd.max_value
+
+        # Handle values that area -1 to 1.
+        # Round these to -1 and 1.
+        if axd.value_range < 2:
+            value_range = 1
+
+        if min_value > 0 and min_value < 1:
+            min_value = 0
+
+        if max_value > 0 and max_value < 1:
+            max_value = 1
 
         values = []
-        if not has_labels:
-            for denominator in reversed(denominators):
-                count = int(axd.value_range / denominator)
-                values = [
-                    axd.min_value + (i * denominator) for i in reversed(range(count))
-                ]
-                if len(values) > 5 or len(values) == axd.count:
-                    break
-        else:
-            values = [i for i in range(len(labels))]
+        for denominator in reversed(denominators):
+            count = int(value_range / denominator)
+            values = [min_value + (i * denominator) for i in reversed(range(count + 1))]
+            if len(values) > 5:
+                break
 
-        return axd, values
+        while len(values) > 10:
+            values = [x for (i, x) in enumerate(values) if i % 2 == 0]
+
+        return AxisDimension(min_value, max_value, axd.count), values
 
     def reproject(self, value: float) -> float:
         raise Exception("reproject not implemented for instance of Axis.")
@@ -185,7 +204,7 @@ class Axis(G):
         if not labels:
             labels = []
             precision = 0
-            for label in [self.axis_dimension.max_value, *self.values]:
+            for label in self.values:
                 if "." in str(label):
                     decimal_value = str(label).split(".")[-1]
                     if float(decimal_value) > 0:
