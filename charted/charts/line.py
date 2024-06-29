@@ -13,22 +13,17 @@ class LineChart(Chart):
         labels: Labels | None = None,
         width: float = 500,
         height: float = 500,
-        h_padding: float = 0.05,
-        v_padding: float = 0.05,
         zero_index: bool = True,
         title: str | None = None,
-        marker_size: float = 3,
         theme: Theme | None = None,
     ):
-        self.marker_size = marker_size
+        self.marker_size = theme["marker"]["marker_size"]
         super().__init__(
             y_data=data,
             x_data=x_data,
             x_labels=labels,
             width=width,
             height=height,
-            h_padding=h_padding,
-            v_padding=v_padding,
             title=title,
             zero_index=zero_index,
             theme=theme,

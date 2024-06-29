@@ -1,6 +1,21 @@
 from typing import Optional, TypedDict
 
-from charted.utils.defaults import DEFAULT_COLORS
+from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
+
+
+class MarkerConfig(TypedDict):
+    marker_size = float | None
+
+
+class PaddingConfig(TypedDict):
+    h_padding: float | None
+    v_padding: float | None
+
+
+class TitleConfig(TypedDict):
+    font_size: str | None
+    font_family: str | None
+    font_weight: str | None
 
 
 class GridConfig(TypedDict):
@@ -33,6 +48,15 @@ class Theme(TypedDict):
 
 
 DEFAULT_THEME = Theme(
+    marker=MarkerConfig(
+        marker_size=3,
+    ),
+    title=TitleConfig(
+        font_size=DEFAULT_TITLE_FONT_SIZE,
+        font_family=DEFAULT_FONT,
+        font_weight="bold",
+        color="#444444",
+    ),
     colors=DEFAULT_COLORS,
     v_grid=GridConfig(
         stroke="#CCCCCC",
@@ -41,5 +65,9 @@ DEFAULT_THEME = Theme(
     h_grid=GridConfig(
         stroke="#CCCCCC",
         stroke_dasharray=None,
+    ),
+    padding=PaddingConfig(
+        h_padding=0.05,
+        v_padding=0.05,
     ),
 )
