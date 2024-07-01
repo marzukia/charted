@@ -144,7 +144,7 @@ class Axis(G):
         values = []
         for denominator in reversed(denominators):
             count = int(value_range / denominator)
-            values = [min_value + (i * denominator) for i in reversed(range(count + 2))]
+            values = [min_value + (i * denominator) for i in reversed(range(count + 1))]
             if len(values) > 5:
                 break
 
