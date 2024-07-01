@@ -148,7 +148,7 @@ class Axis(G):
             if len(values) > 5:
                 break
 
-        while len(values) > 10:
+        while len(values) > 10 and 0 not in values:
             values = [x for (i, x) in enumerate(values) if i % 2 == 0]
             min_value, max_value = values[-1], values[0]
 
