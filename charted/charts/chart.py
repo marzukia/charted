@@ -60,9 +60,6 @@ class Chart(Svg):
 
         self.title = title
 
-        self.plot_height = height
-        self.plot_width = width
-
         self.x_count = (self.x_data, self.x_labels)
         self.y_count = (self.y_data, self.y_labels)
 
@@ -187,25 +184,11 @@ class Chart(Svg):
 
     @property
     def plot_width(self) -> float:
-        return self._plot_width
-
-    @plot_width.setter
-    def plot_width(self, width: float) -> None:
-        calculated = width - (self.left_padding + self.right_padding)
-        if calculated < 0:
-            raise Exception("'calculated' was negative, check width and h_padding.")
-        self._plot_width = calculated
+        return self.width - (self.left_padding + self.right_padding)
 
     @property
     def plot_height(self) -> float:
         return self.height - (self.bottom_padding + self.top_padding)
-
-    @plot_height.setter
-    def plot_height(self, height: float) -> None:
-        calculated = self.height - (self.v_pad * 2)
-        if calculated < 0:
-            raise Exception("'calculated' was negative, check height and v_padding.")
-        self._plot_height = calculated
 
     @property
     def colors(self) -> list[str]:
