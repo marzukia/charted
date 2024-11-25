@@ -1,0 +1,20 @@
+{
+  "bar_basic.svg": "df7e5fe19bed92384d2ca08e7e56f624793d35926ef352758b44ca7858cc798e",
+  "bar_multi.svg": "b36852d662d83a970b20efb031da330020ab8a5e058666ea8330e58b31337740",
+  "bar_stacked.svg": "b36852d662d83a970b20efb031da330020ab8a5e058666ea8330e58b31337740",
+  "bar_negative.svg": "7a4aee3b2c42de3a0c34a80db698f8c6fdf2f6f2817e43f5b84cd88cf0ddf3e6",
+  "bar_stacked_negative.svg": "75f9649b90fc95fe49442658b300f57106bc76d5369abe06523a59cf60ade0ff",
+  "column_basic.svg": "5653ee019380d0b89208544553a2a2d30b65cc5e6731b807e32a12e1e5980435",
+  "column_stacked.svg": "df5034673285cad8f023cca9201b4ebc8efe42b8e42708243c7334e205a53934",
+  "column_negative.svg": "ceecc59688bbe059050e184837ef7f63b31b5049ab2f2a3d0a3219eeb077ed86",
+  "column_stacked_negative.svg": "237e46bed4fcecfd9c691ebb0e2e29a6dea30473ea36dff6918179bb683d0637",
+  "column_sidebyside.svg": "85f6b642ca2e4d88eb6980a52c7c7312120cc897092b332a749a0d8b9f789e2b",
+  "line_basic.svg": "d88d0640909c3a80b11ed291d68425dae0a886d4c26d2ea49b10b9261b27bbfb",
+  "line_multi.svg": "4227f9ca5aee51a01581f4abe819ec4bacb12fa937efffb16ba239fbd3c5ba01",
+  "pie.svg": "a2f8b9c385c54c92de65c0da744d702f45a45d5e3d40a697e5b795c50e0711da",
+  "pie_doughnut.svg": "f90d925dea6e93c35ec9f45107469e7bf8ac2d6989928b9e376a15f4f5aeaa35",
+  "scatter_basic.svg": "141cdea560def11c1ce94527a76e32bdeb236c462905d5f56fdd5fdb984051b4",
+  "scatter_multi.svg": "675835a7d9d92c9e5d2e0b8257c954235c05056955e66cf160b5d070924deb42",
+  "radar.svg": "ba4827382ef6c31581ff95be25f0e3ac81503539435dd72f24fd7c36711e5e2d",
+  "radar_multi.svg": "547e9a709a8e140b5cc8419fafa0e008c355987d61114c55fbf1348da75ed64a"
+}
