@@ -1,0 +1,36 @@
+# Charted Configuration Example
+# This file demonstrates all available theme configuration options
+
+# Global settings
+font = "Arial"
+font_size = 12
+title_font_size = 16
+width = 500
+height = 500
+
+# Default theme (can be preset name or full theme object)
+theme = "light"
+
+# Chart-type specific theme overrides
+[charts.bar]
+theme = { colors = ["#1a365d", "#2b6cb0", "#3182ce"] }
+
+[charts.column]
+theme = { colors = ["#e53e3e", "#dd6b20", "#d69e2e"], grid_color = "#444444" }
+
+[charts.line]
+theme = { marker_size = 4, grid_color = "#aaaaaa" }
+
+[charts.pie]
+theme = { colors = ["#48bb78", "#ed8936", "#f56565"] }
+
+[charts.scatter]
+theme = { marker_size = 5, background_color = "#f7fafc" }
+
+# Alternative: Use full theme objects
+#[theme]
+#colors = ["#2e7d32", "#1565c0", "#c62828"]
+#grid_color = "#999999"
+#legend_position = "topleft"
+#title_color = "#2d3748"
+#background_color = "#f0f4f8"
