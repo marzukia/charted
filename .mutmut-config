@@ -1,0 +1,7 @@
+[mutmut]
+runner = uv run pytest
+tests_dir = tests/
+paths_to_mutate = charted/
+exclude_regexes = 
+    __pycache__
+    tests
