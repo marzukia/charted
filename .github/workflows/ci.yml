@@ -1,0 +1,71 @@
+name: charted-ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install --system -e '.[dev]'
+
+      - name: Debug Python version and packages
+        run: |
+          echo "Python version:"
+          python --version
+          echo ""
+          echo "Installed pytest packages:"
+          pip list | grep -E "(pytest|coverage)"
+          echo ""
+          echo "pytest-cov version info:"
+          pip show pytest-cov
+          echo ""
+          echo "coverage version info:"
+          pip show coverage
+
+      - name: Debug test collection
+        run: |
+          echo "Attempting to collect tests..."
+          pytest --collect-only --quiet || echo "Test collection failed!"
+
+      - name: Run ruff linter
+        run: ruff check .
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=charted --cov-report=xml --cov-config=pyproject.toml --ignore=tests/fonts --ignore=tests/charts/test_visual.py
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
