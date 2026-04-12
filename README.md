@@ -29,9 +29,8 @@ I've tried to avoid using `tkinter` in this library as it can be fiddly to insta
 New font definitions can be created by using:
 
 ```sh
-poetry run python charted/fonts/creator.py Helvetica
+uv run python charted/fonts/creator.py Helvetica
 ```
-
 ## Links
 
 - [Charted - Documentation](https://charted-py.readthedocs.io/en/latest/genindex.html)
