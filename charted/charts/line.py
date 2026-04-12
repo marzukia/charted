@@ -1,7 +1,7 @@
 from charted.charts.chart import Chart
 from charted.html.element import G, Circle, Path
 from charted.utils.themes import Theme
-from charted.utils.transform import rotate, scale, translate
+from charted.utils.transform import translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
@@ -42,9 +42,7 @@ class LineChart(Chart):
         g = G(
             opacity=0.8,
             transform=[
-                translate(-self.h_pad, -self.bottom_padding),
-                rotate(180, self.width / 2, self.height / 2),
-                scale(-1, 1),
+                *self.base_transform,
                 translate(-self.plot_width, 0),
             ],
         )

@@ -9,7 +9,7 @@ from charted.utils.helpers import (
     rotate_coordinate,
 )
 from charted.utils.themes import Theme
-from charted.utils.transform import translate
+from charted.utils.transform import rotate, scale, translate
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
 
@@ -248,13 +248,14 @@ class Chart(Svg):
 
     @property
     def base_transform(self) -> list:
-        """Common transformation logic for all chart types."""
+        """Common SVG transformation chain shared by all chart types."""
         return [
             translate(-self.h_pad, -self.bottom_padding),
             rotate(180, self.width / 2, self.height / 2),
             scale(-1, 1),
-            translate(-self.plot_width, 0),
         ]
+
+    @property
     def container(self) -> Path:
         return Path(
             fill="white",

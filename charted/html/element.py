@@ -10,6 +10,7 @@ class Element(object):
     def __new__(cls, *args, **kwargs) -> "Element":
         instance = super().__new__(cls)
         instance.children = []
+        instance.kwargs = {}
         return instance
 
     def __init__(self, parent: object = None, **kwargs):
