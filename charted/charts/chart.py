@@ -61,9 +61,6 @@ class Chart(Svg):
         self._x_count = len(self.x_data[0]) if self.x_data else len(self.x_labels) if self.x_labels else 0
         self._y_count = len(self.y_data[0]) if self.y_data else len(self.y_labels) if self.y_labels else 0
 
-
-
-
         self.x_axis = XAxis(
             parent=self,
             data=self.x_data,
