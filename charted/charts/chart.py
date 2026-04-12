@@ -14,6 +14,8 @@ from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
 
 class Chart(Svg):
+    x_stacked: bool = False
+    y_stacked: bool = False
 
     def __init__(
         self,
@@ -197,9 +199,9 @@ class Chart(Svg):
         if not colors:
             colors = [*DEFAULT_COLORS]
         new_colors = [*colors]
-        while len(self.x_data[0] if isinstance(self.x_data[0], list) else self.x_data) > len(new_colors):
+        while self.x_count > len(new_colors):
             for color in generate_complementary_colors(colors):
-                if len(new_colors) >= len(self.x_data[0] if isinstance(self.x_data[0], list) else self.x_data):
+                if len(new_colors) >= self.x_count:
                     break
                 new_colors.append(color)
         self._colors = new_colors

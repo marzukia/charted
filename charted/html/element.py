@@ -7,6 +7,11 @@ class Element(object):
     children: Children
     class_name: str | None = None
 
+    def __new__(cls, *args, **kwargs) -> "Element":
+        instance = super().__new__(cls)
+        instance.children = []
+        return instance
+
     def __init__(self, parent: object = None, **kwargs):
         self.parent = parent
 
@@ -19,7 +24,7 @@ class Element(object):
             if isinstance(value, list):
                 _kwargs[key] = " ".join(value)
 
-        self.kwargs: dict[str, str] = {}
+        self.kwargs: dict[str, str] = {**getattr(type(self), "kwargs", {}), **_kwargs}
 
         if self.class_name:
             self.kwargs["class"] = self.class_name
