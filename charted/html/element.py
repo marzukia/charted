@@ -3,40 +3,35 @@ Children = list["Element"]
 
 class Element(object):
     tag: str
-    kwargs: dict[str, str] = {}
-    children: Children = []
+    kwargs: dict[str, str]
+    children: Children
     class_name: str | None = None
 
     def __init__(self, parent: object = None, **kwargs):
         self.parent = parent
 
         _kwargs = {k: v for k, v in kwargs.copy().items() if k != "class_name"}
-        class_name = getattr(kwargs, "class_name", None)
+        class_name = kwargs.get("class_name", None)
         if class_name:
             _kwargs["class"] = class_name
 
         for key, value in _kwargs.items():
-            if type(value) is list:
+            if isinstance(value, list):
                 _kwargs[key] = " ".join(value)
 
-        self.kwargs: dict[str, str] = {**self.kwargs, **_kwargs}
+        self.kwargs: dict[str, str] = {}
 
         if self.class_name:
             self.kwargs["class"] = self.class_name
 
         self.children: list = []
 
-    def __new__(cls, *args, **kwargs) -> "Element":
-        instance = super().__new__(cls)
-        instance.children = []
-        return instance
-
     @property
     def attributes(self) -> str:
         """Generate the attributes passed in as kwargs as a string.
 
         Returns:
-            str: A string representing HTML attributes in the format "key1="value1" key2="value2" ...".
+            str: A string representing HTML attributes.
         """
         string = ""
         if len(self.kwargs) > 0:
@@ -66,7 +61,8 @@ class Element(object):
             str: A string containing the HTML markup for all child elements.
         """
         return "".join(
-            child.html if type(child) is not str else child for child in self.children
+            child.html if not isinstance(child, str) else child
+            for child in self.children
         )
 
     def add_child(self, child: "Element") -> "Element":

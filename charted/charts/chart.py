@@ -14,8 +14,6 @@ from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
 
 class Chart(Svg):
-    x_stacked: bool = False
-    y_stacked: bool = False
 
     def __init__(
         self,
@@ -37,10 +35,10 @@ class Chart(Svg):
         )
 
         if not x_data and not y_data:
-            raise Exception("No data was provided to the Chart element.")
+            raise InvalidValue("data", "No data was provided to the Chart element.")
 
         if not x_data and not x_labels:
-            array_len = len(y_data[0]) if type(y_data[0]) is list else len(y_data)
+            array_len = len(y_data[0]) if isinstance(y_data[0], list) else len(y_data)
             x_labels = [" " for i in range(array_len)]
 
         self.series_names = series_names
@@ -60,8 +58,11 @@ class Chart(Svg):
 
         self.title = title
 
-        self.x_count = (self.x_data, self.x_labels)
-        self.y_count = (self.y_data, self.y_labels)
+        self._x_count = len(self.x_data[0]) if self.x_data else len(self.x_labels) if self.x_labels else 0
+        self._y_count = len(self.y_data[0]) if self.y_data else len(self.y_labels) if self.y_labels else 0
+
+
+
 
         self.x_axis = XAxis(
             parent=self,
@@ -104,15 +105,15 @@ class Chart(Svg):
             return None
 
         if len(data) == 0:
-            raise Exception("No data provided.")
+            raise InvalidValue("data", "No data provided.")
 
-        if type(data[0]) is not list:
+        if not isinstance(data[0], list):
             data = [data]
 
         max_length = max([len(i) for i in data])
 
         if not all([len(i) == max_length for i in data]):
-            raise Exception("Not all vectors were same length")
+            raise InvalidValue("data", "Not all vectors were same length")
 
         return data
 
@@ -199,9 +200,9 @@ class Chart(Svg):
         if not colors:
             colors = [*DEFAULT_COLORS]
         new_colors = [*colors]
-        while self.x_count > len(new_colors):
+        while len(self.x_data[0] if isinstance(self.x_data[0], list) else self.x_data) > len(new_colors):
             for color in generate_complementary_colors(colors):
-                if len(new_colors) >= self.x_count:
+                if len(new_colors) >= len(self.x_data[0] if isinstance(self.x_data[0], list) else self.x_data):
                     break
                 new_colors.append(color)
         self._colors = new_colors
