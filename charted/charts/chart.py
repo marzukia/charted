@@ -245,7 +245,6 @@ class Chart(Svg):
     def h_pad(self) -> float:
         return self.h_padding * self.width
 
-
     @property
     def base_transform(self) -> list:
         """Common SVG transformation chain shared by all chart types."""
