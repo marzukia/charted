@@ -28,4 +28,4 @@ addopts = "-ra -q"
 testpaths = ["tests"]
 
 [tool.uv]
-dev-dependencies = true
+dev-dependencies = ["charted[dev]"]
