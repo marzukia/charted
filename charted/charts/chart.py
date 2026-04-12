@@ -243,7 +243,16 @@ class Chart(Svg):
     def h_pad(self) -> float:
         return self.h_padding * self.width
 
+
     @property
+    def base_transform(self) -> list:
+        """Common transformation logic for all chart types."""
+        return [
+            translate(-self.h_pad, -self.bottom_padding),
+            rotate(180, self.width / 2, self.height / 2),
+            scale(-1, 1),
+            translate(-self.plot_width, 0),
+        ]
     def container(self) -> Path:
         return Path(
             fill="white",
