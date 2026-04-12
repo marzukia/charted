@@ -27,9 +27,9 @@ class Axis(G):
             labels = [" ", *labels, " "]
             data = [[i for i in range(len(labels))]]
 
+        super().__init__(parent=parent)
         self.stacked = stacked
         self.data = data
-        self.parent = parent
         self.values = (data, labels, zero_index)
         self.labels = labels
         self.config = config
