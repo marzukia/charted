@@ -1,5 +1,5 @@
 class InvalidValue(Exception):
-    def __init__(self, name: str, value: float):
+    def __init__(self, name: str, value: float | str):
         self.name = name
         self.value = value
         super().__init__(self.__str__())
@@ -10,14 +10,17 @@ class InvalidValue(Exception):
 
 class ChartError(Exception):
     """Base exception for chart-related errors."""
+
     pass
 
 
 class NoDataError(ChartError):
     """Raised when no data is provided to a chart."""
+
     pass
 
 
 class VectorLengthMismatchError(ChartError):
     """Raised when vectors have mismatched lengths."""
+
     pass

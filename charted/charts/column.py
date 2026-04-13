@@ -10,7 +10,7 @@ class ColumnChart(Chart):
 
     def __init__(
         self,
-        data: Vector | Vector2D,
+        data: Vector | Vector2D | None = None,
         labels: Labels = None,
         column_gap: float = 0.50,
         width: float = 500,
@@ -18,16 +18,22 @@ class ColumnChart(Chart):
         zero_index: bool = True,
         title: str | None = None,
         theme: Theme | None = None,
+        y_labels: Labels = None,
+        series_names: list[str] | None = None,
+        y_stacked: bool = True,
     ):
         self.column_gap = column_gap
+        self.y_stacked = y_stacked
         super().__init__(
             width=width,
             height=height,
             y_data=data,
             x_labels=labels,
+            y_labels=y_labels,
             title=title,
             zero_index=zero_index,
             theme=theme,
+            series_names=series_names,
         )
 
     @property
@@ -60,7 +66,6 @@ class ColumnChart(Chart):
             paths = []
             for x, y, y_offset in zip(x_values, y_values, y_offsets):
                 x += x_offset
-                paths.append(Path.get_path(x, y_offset, self.x_width, y))
-            g.add_child(Path(d=paths, fill=color))
+                paths.append(Path(d=paths, fill=color))
 
         return g

@@ -1,15 +1,11 @@
-from charted.charts.axes import Axis, XAxis, YAxis
-from charted.html.element import G, Path, Rect, Svg, Text
-from charted.utils.colors import generate_complementary_colors
+from charted.charts.axes import XAxis, YAxis
+from charted.html.element import G, Path, Svg, Text
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.exceptions import InvalidValue
-from charted.utils.helpers import (
-    calculate_rotation_angle,
-    calculate_text_dimensions,
-    rotate_coordinate,
-)
+from charted.utils.helpers import calculate_text_dimensions
+
 from charted.utils.themes import Theme
-from charted.utils.transform import rotate, scale, translate
+from charted.utils.transform import translate
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
 
@@ -36,12 +32,24 @@ class Chart(Svg):
             viewBox=self.calculate_viewbox(width, height),
         )
 
-        if not x_data and not y_data:
+        if not x_data and not x_labels and not y_data and not y_labels:
             raise InvalidValue("data", "No data was provided to the Chart element.")
 
-        if not x_data and not x_labels:
+        # Handle empty lists by treating them as None
+        if y_data is not None and len(y_data) == 0:
+            y_data = None
+        if x_data is not None and len(x_data) == 0:
+            x_data = None
+
+        # Auto-generate x_labels if x_data/x_labels not provided but y_data is
+        if not x_data and not x_labels and y_data is not None:
             array_len = len(y_data[0]) if isinstance(y_data[0], list) else len(y_data)
             x_labels = [" " for i in range(array_len)]
+
+        # Auto-generate y_labels if y_data/y_labels not provided but x_data is
+        if not y_data and not y_labels and x_data is not None:
+            array_len = len(x_data[0]) if isinstance(x_data[0], list) else len(x_data)
+            y_labels = [" " for i in range(array_len)]
 
         self.series_names = series_names
         self.theme = Theme.load(theme)
@@ -55,13 +63,12 @@ class Chart(Svg):
 
         self.width = width
         self.height = height
-        self.h_padding = self.theme["padding"]["h_padding"]
-        self.v_padding = self.theme["padding"]["v_padding"]
+        self.h_padding = self.theme.get("padding", {}).get("h_padding", 0.05)
+        self.v_padding = self.theme.get("padding", {}).get("v_padding", 0.05)
 
-        self.title = title
-
-        self._x_count = len(self.x_data[0]) if self.x_data else len(self.x_labels) if self.x_labels else 0
-        self._y_count = len(self.y_data[0]) if self.y_data else len(self.y_labels) if self.y_labels else 0
+        self._title = None
+        if title:
+            self._title = calculate_text_dimensions(title)
 
         self.x_axis = XAxis(
             parent=self,
@@ -69,7 +76,7 @@ class Chart(Svg):
             labels=x_labels,
             stacked=self.x_stacked,
             zero_index=self.zero_index,
-            config=self.theme["v_grid"],
+            config=self.theme.get("v_grid", {}),
         )
 
         self.y_axis = YAxis(
@@ -78,15 +85,14 @@ class Chart(Svg):
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
-            config=self.theme["h_grid"],
+            config=self.theme.get("h_grid", {}),
         )
 
-        self.y_offsets = self.y_data
+        self.y_offsets = self.y_data if self.y_data else []
 
-        self.y_values = self.y_data
-        self.x_values = self.x_data
-
-        self.colors = self.theme["colors"]
+        self.y_values = self.y_data if self.y_data else []
+        self.x_values = self.x_data if self.x_data else []
+        self.colors = self.theme.get("colors", [])
 
         self.add_children(
             self.container,
@@ -183,6 +189,22 @@ class Chart(Svg):
         self._v_padding = self._validate_attribute_value("v_padding", v_padding)
 
     @property
+    def x_count(self) -> int:
+        if self.x_data:
+            return len(self.x_data[0])
+        elif self.x_labels:
+            return len(self.x_labels)
+        return 0
+
+    @property
+    def y_count(self) -> int:
+        if self.y_data:
+            return len(self.y_data[0])
+        elif self.y_labels:
+            return len(self.y_labels)
+        return 0
+
+    @property
     def plot_width(self) -> float:
         return self.width - (self.left_padding + self.right_padding)
 
@@ -198,13 +220,9 @@ class Chart(Svg):
     def colors(self, colors) -> None:
         if not colors:
             colors = [*DEFAULT_COLORS]
-        new_colors = [*colors]
-        while self.x_count > len(new_colors):
-            for color in generate_complementary_colors(colors):
-                if len(new_colors) >= self.x_count:
-                    break
-                new_colors.append(color)
-        self._colors = new_colors
+        while self.x_count > len(colors):
+            colors = [*colors, *DEFAULT_COLORS]
+        self._colors = colors
 
     @property
     def title(self) -> MeasuredText:
@@ -213,323 +231,126 @@ class Chart(Svg):
         return Text(
             transform=[
                 translate(
-                    x=-self._title.width / 2,
-                    y=self._title.height,
+                    self.left_padding + self._title.width / 2,
+                    self._title.height / 2 + self.top_padding,
                 )
             ],
             text=self._title.text,
-            fill=self.theme["title"]["font_color"],
-            font_family=self.theme["title"]["font_family"],
-            font_weight=self.theme["title"]["font_weight"],
-            font_size=self.theme["title"]["font_size"],
-            x=self.width / 2,
-            y=self.v_pad / 2,
+            fill=self.theme.get("title", {}).get("font_color", "#444444"),
+            font_family=self.theme.get("title", {}).get("font_family", "sans-serif"),
+            font_weight=self.theme.get("title", {}).get("font_weight", "normal"),
+            font_size=self.theme.get("title", {}).get("font_size", "14px"),
+            text_anchor="middle",
+            dominant_baseline="middle",
         )
 
     @title.setter
-    def title(self, text: str) -> None:
-        if text:
-            self._title = calculate_text_dimensions(
-                text,
-                font=self.theme["title"]["font_family"],
-                font_size=self.theme["title"]["font_size"],
-            )
+    def title(self, value: str | None) -> None:
+        if value:
+            self._title = calculate_text_dimensions(value)
         else:
             self._title = None
 
     @property
-    def v_pad(self) -> float:
-        return self.v_padding * self.height
-
-    @property
-    def h_pad(self) -> float:
-        return self.h_padding * self.width
-
-    @property
-    def base_transform(self) -> list:
-        """Common SVG transformation chain shared by all chart types."""
-        return [
-            translate(-self.h_pad, -self.bottom_padding),
-            rotate(180, self.width / 2, self.height / 2),
-            scale(-1, 1),
-        ]
-
-    @property
-    def container(self) -> Path:
-        return Path(
-            fill="white",
-            d=Path.get_path(0, 0, self.width, self.height),
-        )
-
-    @property
-    def x_labels(self) -> list[MeasuredText] | None:
-        return self._x_labels
-
-    @x_labels.setter
-    def x_labels(self, x_labels: list[str]) -> None:
-        if x_labels:
-            x_labels = [calculate_text_dimensions(label) for label in x_labels]
-        self._x_labels = x_labels
-
-    @property
-    def y_labels(self) -> list[MeasuredText] | None:
-        return self._y_labels
-
-    @y_labels.setter
-    def y_labels(self, y_labels: list[str]) -> None:
-        if y_labels:
-            y_labels = [calculate_text_dimensions(label) for label in y_labels]
-        self._y_labels = y_labels
-
-    @property
-    def x_label_rotation(self) -> tuple[float, float, float]:
-        if not self.x_labels:
-            return None
-
-        rotation_angle = 0
-        width = 0
-        for label in self.x_labels:
-            angle = calculate_rotation_angle(label.width, self.x_width)
-            width = max(width, label.width)
-            if angle and (angle > rotation_angle):
-                rotation_angle = max(angle, rotation_angle)
-
-        return rotation_angle, width
-
-    @property
     def left_padding(self) -> float:
-        labels = self.y_labels
-
-        if not labels:
-            _, values = Axis.calculate_axis_values(
-                data=self.y_data,
-                stacked=self.y_stacked,
-                zero_index=self.zero_index,
-            )
-            labels = [str(round(x, 2)) for x in values]
-
-        longest = ""
-        for label in labels:
-            if len(label) > len(longest):
-                longest = label
-
-        max_width = calculate_text_dimensions(longest)
-
-        return self.h_pad + max_width.width
+        return self.width * self.h_padding
 
     @property
     def right_padding(self) -> float:
-        return self.h_pad
+        return self.width * self.h_padding
 
     @property
     def top_padding(self) -> float:
-        offset = 0
+        title_height = 0
         if self._title:
-            offset += self._title.height * 1.5
-        return self.v_pad + offset
+            title_height = self._title.height
+        return self.height * self.v_padding + title_height
 
     @property
     def bottom_padding(self) -> float:
-        if not self.x_label_rotation:
-            return self.v_pad
+        if not self.x_labels:
+            return self.height * self.v_padding
 
-        rotation_angle, width = self.x_label_rotation
-        x, y = (width, 0)
-        _, dy = rotate_coordinate(x, y, rotation_angle)
-        return self.v_pad + abs((dy - y))
+        def get_label_dimensions(label):
+            if isinstance(label, MeasuredText):
+                return label.height, label.width
+            else:
+                return 12, 8
 
-    @property
-    def x_count(self) -> int:
-        return self._x_count
-
-    @x_count.setter
-    def x_count(self, kwargs: tuple[Vector2D | None, list[str] | None]) -> None:
-        x_data, x_labels = kwargs
-        if not x_data:
-            cnt = len(x_labels)
-        elif x_data:
-            cnt = len(x_data[0])
-        self._x_count = cnt
-
-    @property
-    def y_count(self) -> int:
-        return self._y_count
-
-    @y_count.setter
-    def y_count(self, kwargs: tuple[Vector2D | None, list[str] | None]) -> None:
-        y_data, y_labels = kwargs
-        if not y_data:
-            cnt = len(y_labels)
-        cnt = len(y_data[0])
-        self._y_count = cnt
-
-    @property
-    def y_offsets(self) -> Vector2D:
-        return self._y_offsets
-
-    @y_offsets.setter
-    def y_offsets(self, y_data: Vector2D | None = None) -> None:
-        offsets = []
-        negative_offsets = [0] * self.y_count
-        positive_offsets = [0] * self.y_count
-
-        for row in y_data:
-            row_offsets = []
-            for i, y in enumerate(row):
-                current_offset = 0
-                if y >= 0:
-                    current_offset = positive_offsets[i]
-                    positive_offsets[i] += y
-                elif y < 0:
-                    current_offset = negative_offsets[i]
-                    negative_offsets[i] -= abs(y)
-                row_offsets.append(current_offset)
-            offsets.append(row_offsets)
-
-        self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
-
-    @property
-    def x_width(self) -> float:
-        return self.plot_width / self.x_count
-
-    @property
-    def y_values(self) -> Vector2D:
-        return self._y_values
-
-    @y_values.setter
-    def y_values(self, y_data: Vector2D) -> None:
-        data = []
-        for arr in y_data:
-            row = []
-            for y in arr:
-                if not self.y_stacked:
-                    v = self.y_axis.reproject(y)
-                else:
-                    v = self.y_axis.reproject(abs(y))
-                    if y < 0:
-                        v = -v
-                row.append(v)
-            data.append(row)
-        self._y_values = data
-
-    @property
-    def x_values(self) -> Vector2D:
-        return self._x_values
-
-    @x_values.setter
-    def x_values(self, x_data: Vector2D) -> None:
-        if not x_data and self.x_labels:
-            x_data = [[i for i in range(len(self.x_labels))]]
-        else:
-            x_data = [*x_data]
-
-        y_len = len(self.y_data)
-        if len(x_data) != y_len:
-            if not len(x_data) == 1:
-                raise Exception("x and y data series do not match")
-            x_data = x_data * y_len
-
-        xz = self.x_axis.reproject(self.x_axis.axis_dimension.min_value)
-
-        data = []
-        for arr in x_data:
-            row = []
-            for x in arr:
-                v = self.x_axis.reproject(x) + xz
-                row.append(v)
-            data.append(row)
-
-        self._x_values = data
-
-    @property
-    def zero_line(self) -> Path:
-        paths = []
-        if self.x_axis.axis_dimension.min_value < 0:
-            paths += [
-                f"M{self.x_axis.zero} {0}",
-                f"v{self.plot_height}z",
-            ]
-
-        if self.y_axis.axis_dimension.min_value < 0:
-            y = self.plot_height - self.y_axis.zero
-            min_y = self.y_axis.axis_dimension.min_value
-            if self.y_stacked and min_y < 0:
-                y -= self.y_axis.reproject(abs(min_y))
-
-            paths += [
-                f"M{0} {y}",
-                f"h{self.plot_width}z",
-            ]
-
-        if len(paths) > 0:
-            return Path(
-                transform=[translate(self.left_padding, self.top_padding)],
-                d=paths,
-                stroke="black",
-            )
-
-    @property
-    def representation(self) -> G:
-        raise Exception("representation not implemented for instance of Chart.")
-
-    @property
-    def legend(self):
-        if not self.theme["legend"] or not self.series_names:
-            return None
-
-        legend_entries = [
-            calculate_text_dimensions(x, font_size=self.theme["legend"]["font_size"])
-            for x in self.series_names
-        ]
-        icon_height = max(x.height for x in legend_entries)
-        legend_width = max(x.width for x in legend_entries) + icon_height + 2
-        legend_height = len(legend_entries) * (icon_height + 2)
-
-        positions = {
-            "topright": {
-                "x0": (self.width - self.right_padding * 1.25) - legend_width,
-                "y0": self.top_padding * 1.25,
-            },
-            "topleft": {
-                "x0": (self.left_padding) * 1.25,
-                "y0": self.top_padding * 1.25,
-            },
-        }
-
-        position = positions.get(self.theme["legend"]["position"], None)
-        if not position:
-            raise Exception("Invalid position.")
-
-        x0, y0 = position["x0"], position["y0"]
-
-        legend = G()
-        legend.add_child(
-            Rect(
-                transform=translate(
-                    x=-(legend_width * self.theme["legend"]["legend_padding"] / 2),
-                    y=-(legend_height * self.theme["legend"]["legend_padding"] / 2),
-                ),
-                x=x0,
-                y=y0,
-                width=legend_width * (1 + self.theme["legend"]["legend_padding"]),
-                height=legend_height * (1 + self.theme["legend"]["legend_padding"]),
-                fill="#ffffff",
-                stroke="#CCCCCC",
-            )
+        max_label_height = max(
+            [get_label_dimensions(label)[0] for label in self.x_labels]
+        )
+        max_label_width = max(
+            [get_label_dimensions(label)[1] for label in self.x_labels]
         )
 
-        for i, (legend_text, color) in enumerate(zip(legend_entries, self.colors)):
-            h = legend_text.height
-            g = G(transform=translate(0, y=(2 * i) + h))
-            y = y0 + (i * h)
-            rect = Rect(y=y - h, x=x0, width=h, height=h, fill=color)
-            text = Text(
-                y=y - (h / 4),
-                x=x0 + 2 + h,
-                text=legend_text.text,
-                font_size=self.theme["legend"]["font_size"],
-            )
-            g.add_children(rect, text)
-            legend.add_child(g)
+        return max(
+            self.height * self.v_padding,
+            max_label_height + max_label_width * 0.25,
+        )
 
-        return legend
+    @property
+    def base_transform(self) -> list:
+        return [translate(self.left_padding, self.bottom_padding)]
+
+    @property
+    def container(self) -> G:
+        return G(
+            id="container",
+            transform=[
+                translate(
+                    self.left_padding,
+                    self.top_padding,
+                )
+            ],
+        )
+
+    @property
+    def legend(self) -> G:
+        if not self.series_names:
+            return G()
+
+        g = G(transform=[translate(self.width - self.right_padding, self.top_padding)])
+
+        for i, series_name in enumerate(self.series_names):
+            row_y = i * 20
+            g.add_child(
+                Text(
+                    text=series_name,
+                    x=0,
+                    y=row_y,
+                    font_family=self.theme.get("legend", {}).get(
+                        "font_family", "sans-serif"
+                    ),
+                    font_weight=self.theme.get("legend", {}).get(
+                        "font_weight", "normal"
+                    ),
+                    font_size=self.theme.get("legend", {}).get("font_size", "11px"),
+                )
+            )
+
+        return g
+
+    @property
+    def zero_line(self) -> Path | None:
+        if self.y_axis and self.y_axis.zero is not None:
+            return Path(
+                d=Path.get_path(0, self.y_axis.zero, self.width, self.y_axis.zero),
+                stroke=self.theme.get("zero_line", "#000000"),
+                stroke_width=1,
+            )
+        return None
+
+    @property
+    def representation(self):
+        raise NotImplementedError(
+            "Subclasses must implement the representation property."
+        )
+
+    def _calculate_labels(self) -> Labels:
+        return self.x_labels
+
+    def calculate_viewbox(
+        self, width: float, height: float
+    ) -> tuple[float, float, float, float]:
+        return (0, 0, width, height)

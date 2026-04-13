@@ -32,8 +32,12 @@ class GridConfig(TypedDict):
 
 class Theme(TypedDict):
     colors: list[str] | None
-    v_grid = GridConfig | None
-    h_grid = GridConfig | None
+    v_grid: GridConfig | None
+    h_grid: GridConfig | None
+    padding: PaddingConfig | None
+    legend: LegendConfig | None
+    marker: MarkerConfig | None
+    title: TitleConfig | None
 
     @classmethod
     def load(cls, theme: Optional["Theme"]) -> "Theme":

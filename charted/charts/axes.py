@@ -72,6 +72,8 @@ class Axis(G):
         has_labels: bool = False,
         zero_index: bool = True,
     ) -> AxisDimension:
+        if data is None:
+            return AxisDimension(0, 0, 0)
         count = len(data[0])
 
         if stacked:
@@ -97,12 +99,11 @@ class Axis(G):
         if zero_index and min_value >= 1:
             min_value = 0
 
-        if not has_labels:
-            if min_value < 0:
-                min_value = -round_to_clean_number(abs(min_value))
-            else:
-                min_value = round_to_clean_number(min_value, round_down=True)
-            max_value = round_to_clean_number(max_value)
+        if min_value < 0:
+            min_value = -round_to_clean_number(abs(min_value))
+        else:
+            min_value = round_to_clean_number(min_value, round_down=True)
+        max_value = round_to_clean_number(max_value)
 
         return AxisDimension(min_value, max_value, count)
 
@@ -165,12 +166,12 @@ class Axis(G):
         return self.reproject(0)
 
     @property
-    def grid_lines(self) -> Path:
-        raise Exception("grid_lines not implemented for instance of Axis.")
+    def grid_lines(self) -> Path | None:
+        return None
 
     @property
-    def axis_labels(self) -> G:
-        raise Exception("axis_labels not implemented for instance of Axis.")
+    def axis_labels(self) -> G | None:
+        return None
 
     @property
     def reprojected_values(self):
@@ -212,14 +213,13 @@ class Axis(G):
                     if float(decimal_value) > 0:
                         precision = 1
                 value = round(label, precision) if precision > 0 else int(label)
-                labels.append(value)
-        else:
-            labels = [*labels]
+                if isinstance(value, float):
+                    label_text = f"{value:.1f}"
+                else:
+                    label_text = str(value)
+                labels.append(calculate_text_dimensions(label_text))
+            labels = labels[1:]
         self._labels = [calculate_text_dimensions(label) for label in labels]
-
-    @property
-    def count(self) -> int:
-        return len(self.values)
 
 
 class XAxis(Axis):
@@ -245,13 +245,27 @@ class XAxis(Axis):
         return [self.reproject(i) for i in self.values]
 
     @property
-    def grid_lines(self) -> Path:
-        if not self.config:
+    def grid_lines(self) -> Path | None:
+        # Use config from self.config or parent.config
+        config = (
+            self.config
+            if self.config is not None
+            else getattr(self.parent, "config", None)
+        )
+        if not config:
+            return None
+
+        # Check if parent has required attributes
+        if (
+            not hasattr(self.parent, "plot_height")
+            or not hasattr(self.parent, "left_padding")
+            or not hasattr(self.parent, "top_padding")
+        ):
             return None
 
         d = [f"M{x} {0} v{self.parent.plot_height}" for x in self.coordinates]
         return Path(
-            **self.config,
+            **config,
             d=d,
             transform=translate(
                 x=self.parent.left_padding,
@@ -260,7 +274,15 @@ class XAxis(Axis):
         )
 
     @property
-    def axis_labels(self) -> G:
+    def axis_labels(self) -> G | None:
+        # Check if parent has required attributes
+        if (
+            not hasattr(self.parent, "left_padding")
+            or not hasattr(self.parent, "top_padding")
+            or not hasattr(self.parent, "plot_height")
+        ):
+            return None
+
         labels = G(
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
@@ -271,10 +293,13 @@ class XAxis(Axis):
         )
 
         rotation_angle = 0
-        if self.parent.x_label_rotation:
-            rotation_angle, _ = self.parent.x_label_rotation
+        if hasattr(self.parent, "x_label_rotation") and self.parent.x_label_rotation:
+            try:
+                rotation_angle, _ = self.parent.x_label_rotation
+            except (ValueError, TypeError):
+                rotation_angle = 0
 
-        y = self.parent.plot_height
+        y = getattr(self.parent, "plot_height", 0)
         for x, label in zip(self.coordinates, self.labels):
             transformations = [translate(-label.width / 2, 0)]
             if rotation_angle > 0:
@@ -323,13 +348,27 @@ class YAxis(Axis):
         ]
 
     @property
-    def grid_lines(self) -> Path:
-        if not self.config:
+    def grid_lines(self) -> Path | None:
+        # Use config from self.config or parent.config
+        config = (
+            self.config
+            if self.config is not None
+            else getattr(self.parent, "config", None)
+        )
+        if not config:
+            return None
+
+        # Check if parent has required attributes
+        if (
+            not hasattr(self.parent, "plot_width")
+            or not hasattr(self.parent, "left_padding")
+            or not hasattr(self.parent, "top_padding")
+        ):
             return None
 
         d = [f"M{0} {y} h{self.parent.plot_width}" for y in self.coordinates]
         return Path(
-            **self.config,
+            **config,
             d=d,
             transform=translate(
                 x=self.parent.left_padding,
@@ -338,7 +377,13 @@ class YAxis(Axis):
         )
 
     @property
-    def axis_labels(self) -> G:
+    def axis_labels(self) -> G | None:
+        # Check if parent has required attributes
+        if not hasattr(self.parent, "left_padding") or not hasattr(
+            self.parent, "top_padding"
+        ):
+            return None
+
         labels = G(
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,

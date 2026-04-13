@@ -8,12 +8,13 @@ from charted.utils.types import Vector, Vector2D
 class ScatterChart(Chart):
     def __init__(
         self,
-        x_data: Vector | Vector2D,
-        y_data: Vector | Vector2D,
+        x_data: Vector | Vector2D | None = None,
+        y_data: Vector | Vector2D | None = None,
         width: float = 500,
         height: float = 500,
         title: str | None = None,
         theme: Theme | None = None,
+        series_names: list[str] | None = None,
     ):
         super().__init__(
             y_data=y_data,
@@ -22,6 +23,7 @@ class ScatterChart(Chart):
             height=height,
             title=title,
             theme=theme,
+            series_names=series_names,
         )
 
     @property
