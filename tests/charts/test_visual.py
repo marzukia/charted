@@ -81,3 +81,81 @@ def test_scatter_chart_multi_series():
     )
     baseline_svg = open("tests/baselines/scatter_multi.svg", "r").read()
     assert svgs_equal(chart.html, baseline_svg)
+
+
+# ============================================================
+# Edge Case / Non-Happy Path Tests
+# ============================================================
+
+
+def test_column_chart_empty_data():
+    """Test ColumnChart with empty data raises an exception."""
+    import pytest
+
+    with pytest.raises(Exception, match="No data was provided"):
+        ColumnChart(data=[], labels=[])
+
+
+def test_column_chart_single_point():
+    """Visual regression test for ColumnChart with single data point."""
+    chart = ColumnChart(data=[42], labels=["only"])
+    assert "svg" in chart.html.lower()
+    assert len(chart.html) > 0
+
+
+def test_column_chart_negative_values():
+    """Visual regression test for ColumnChart with negative values."""
+    chart = ColumnChart(data=[-5, 3, -2, 7], labels=["a", "b", "c", "d"])
+    assert "svg" in chart.html.lower()
+    assert len(chart.html) > 0
+
+
+def test_column_chart_large_values():
+    """Visual regression test for ColumnChart with very large values."""
+    chart = ColumnChart(data=[1000000, 2000000, 1500000], labels=["a", "b", "c"])
+    assert "svg" in chart.html.lower()
+    assert len(chart.html) > 0
+
+
+def test_line_chart_empty_data():
+    """Test LineChart with empty data raises an exception."""
+    import pytest
+
+    with pytest.raises(Exception, match="No data was provided"):
+        LineChart(data=[], labels=[])
+
+
+def test_line_chart_single_point():
+    """Visual regression test for LineChart with single data point."""
+    chart = LineChart(data=[42], labels=["only"])
+    assert "svg" in chart.html.lower()
+    assert len(chart.html) > 0
+
+
+def test_line_chart_negative_values():
+    """Visual regression test for LineChart with negative values."""
+    chart = LineChart(data=[-5, 3, -2, 7], labels=["a", "b", "c", "d"])
+    assert "svg" in chart.html.lower()
+    assert len(chart.html) > 0
+
+
+def test_scatter_chart_empty_data():
+    """Test ScatterChart with empty data raises an exception."""
+    import pytest
+
+    with pytest.raises(Exception, match="No data was provided"):
+        ScatterChart(x_data=[], y_data=[])
+
+
+def test_scatter_chart_single_point():
+    """Visual regression test for ScatterChart with single data point."""
+    chart = ScatterChart(x_data=[1], y_data=[42])
+    assert "svg" in chart.html.lower()
+    assert len(chart.html) > 0
+
+
+def test_scatter_chart_negative_values():
+    """Visual regression test for ScatterChart with negative values."""
+    chart = ScatterChart(x_data=[-5, 3, -2], y_data=[7, -3, 4])
+    assert "svg" in chart.html.lower()
+    assert len(chart.html) > 0
