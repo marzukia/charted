@@ -5,3 +5,8 @@ docs/_build/
 .pytest_cache/
 main.py
 docs/_output/
+COMPLAINTS.md
+DONE.md
+FINDINGS.md
+PLANS.md
+TODO.md
