@@ -13,22 +13,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install uv
+      run: pip install uv==0.5.20
 
       - name: Install dependencies
-        run: poetry install --with=dev
+        run: uv pip install '.[dev]'
 
       - name: Run Linter
-        run: poetry run flake8 charted
+        run: uv run flake8 charted
 
       - name: Run Tox
-        run: poetry run tox -e py${{ matrix.python-version[0] }}${{ matrix.python-version[2] }}
+        run: uv run tox -e py${{ matrix.python-version[0] }}${{ matrix.python-version[2] }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
