@@ -1,7 +1,6 @@
 from charted.charts.chart import Chart
 from charted.html.element import G, Circle, Path
 from charted.utils.themes import Theme
-from charted.utils.transform import rotate, scale, translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
