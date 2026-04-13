@@ -1,27 +1,26 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 name = "charted"
 version = "0.1.8a"
 description = "Charted is a zero dependency SVG chart generator that aims to provide a simple interface for generating beautiful and customisable graphs. This project is inspired by chart libraries like mermaid.js."
-authors = ["Andryo Marzuki <andryo@mrzk.io>"]
+authors = [{ name = "Andryo Marzuki", email = "andryo@mrzk.io" }]
 readme = "README.md"
+requires-python = ">=3.10"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.1"
-ipython = "^8.24.0"
-flake8 = "^7.0.0"
-black = "^24.4.2"
-tox = "^4.15.1"
-
-[tool.poetry.group.docs.dependencies]
-sphinx = "^7.3.7"
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.1",
+    "ipython>=8.24.0",
+    "flake8>=7.0.0",
+    "black>=24.4.2",
+    "tox>=4.15.1",
+]
+docs = [
+    "sphinx>=7.3.7",
+]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
