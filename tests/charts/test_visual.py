@@ -1,4 +1,19 @@
 """Visual regression tests for chart rendering using SVG structure comparison."""
+# ============================================================
+# HOW TO UPDATE BASELINES
+# ============================================================
+# When chart rendering legitimately changes (bug fixes, features), update baselines:
+#
+# 1. Find the failing test (e.g., test_column_chart_basic)
+# 2. Generate the new SVG:
+#    from charted.charts.column import ColumnChart
+#    chart = ColumnChart({'A': 10, 'B': 20, 'C': 30})
+#    with open('tests/baselines/column_basic.svg', 'w') as f:
+#        f.write(chart.to_string())
+# 3. Re-run the test to verify it passes
+#
+# Only update baselines when visual changes are INTENTIONAL.
+# ============================================================
 
 from lxml import etree
 
