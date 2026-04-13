@@ -9,6 +9,7 @@ requires-python = ">=3.10"
 [project.optional-dependencies]
 dev = [
     "pytest>=8.2.1",
+    "pytest-cov>=4.1.0",
     "ipython>=8.24.0",
     "flake8>=7.0.0",
     "black>=24.4.2",
@@ -26,6 +27,10 @@ build-backend = "hatchling.build"
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+
+[tool.pytest-cov]
+path = ["charted"]
+report = ["term-missing", "html"]
 
 [dependency-groups]
 dev = ["charted[dev]"]
