@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from charted.charts.chart import Chart
 from charted.html.element import G, Path
 from charted.utils.themes import Theme
-from charted.utils.transform import rotate, scale, translate
+from charted.utils.transform import translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
@@ -53,9 +55,6 @@ class ColumnChart(Chart):
             self.x_values,
             self.colors,
         ):
-            x_offset = 0
-            if self.x_labels:
-                x_offset += self.x_axis.reproject(1)
             paths = []
             for x, y, y_offset in zip(x_values, y_values, y_offsets):
                 x += self.x_offset
