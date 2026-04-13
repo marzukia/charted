@@ -1,7 +1,6 @@
 from charted.charts.chart import Chart
 from charted.html.element import G, Circle, Path
 from charted.utils.themes import Theme
-from charted.utils.transform import rotate, scale, translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
@@ -29,13 +28,6 @@ class LineChart(Chart):
             theme=theme,
             series_names=series_names,
         )
-
-    def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:
-        validated_data = super().validate_x_data(data)
-        if validated_data:
-            if len(validated_data) != 1:
-                raise Exception("x_data cannot be 2D for LineChart instance.")
-        return validated_data
 
     @property
     def representation(self) -> G:
