@@ -31,6 +31,7 @@ New font definitions can be created by using:
 ```sh
 uv run python charted/fonts/creator.py Helvetica
 ```
+
 ## Links
 
 - [Charted - Documentation](https://charted-py.readthedocs.io/en/latest/genindex.html)
@@ -40,24 +41,13 @@ uv run python charted/fonts/creator.py Helvetica
 ### Column
 
 ```py
-from charted.charts import Column
+from charted import column_chart
 
-graph = ColumnChart(
-    title="Example Column Graph",
-    data=[
-        [9.8, -29.8, 22.6, 45.0, 33.8, 35.4, 44.2],
-        [8.9, 33.1, -27.1, 31.2, -15.4, 32.6, 19.8],
-        [-32.0, 32.3, 45.7, -3.3, -33.3, -15.7, -38.6],
-    ],
+graph = column_chart(
+    data=[9.8, -29.8, 22.6, 45.0, 33.8, 35.4, 44.2],
     labels=["January", "February", "March", "April", "May", "June", "July"],
     width=600,
     height=400,
-    theme={
-        "padding": {
-            "v_padding": 0.1,
-            "h_padding": 0.1,
-        }
-    },
 )
 ```
 
@@ -66,10 +56,9 @@ graph = ColumnChart(
 ### Labelled Line Chart
 
 ```py
-from charted.charts import LineChart
+from charted import line_chart
 
-graph = LineChart(
-    title="Example Labelled Line Graph",
+graph = line_chart(
     data=[5 * (1.5**n) for n in range(0, 11)],
     labels=["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
     theme={
@@ -83,10 +72,9 @@ graph = LineChart(
 ### Dual Axis Line Chart
 
 ```py
-from charted.charts import LineChart
+from charted import line_chart
 
-graph = LineChart(
-    title="Example XY Line Graph",
+graph = line_chart(
     data=[
         [5 * (1.5**n) for n in range(0, 11)],
         [-5 * (1.5**n) for n in range(0, 11)],
@@ -102,10 +90,10 @@ graph = LineChart(
 ### Scatter
 
 ```py
-from charted.charts import ScatterChart
+import random
+from charted import scatter_chart
 
-graph = ScatterChart(
-    title="Example Scatter Graph",
+graph = scatter_chart(
     y_data=[
         [random.random() * i for i in range(-25, 25, 1)],
         [random.random() * i for i in range(-25, 25, 1)],
