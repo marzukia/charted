@@ -29,13 +29,6 @@ class LineChart(Chart):
             series_names=series_names,
         )
 
-    def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:
-        validated_data = super().validate_x_data(data)
-        if validated_data:
-            if len(validated_data) != 1:
-                raise Exception("x_data cannot be 2D for LineChart instance.")
-        return validated_data
-
     @property
     def representation(self) -> G:
         g = G(
