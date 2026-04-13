@@ -43,10 +43,7 @@ class ColumnChart(Chart):
         g = G(
             opacity="0.8",
             transform=[
-                translate(-self.h_pad, -self.bottom_padding),
-                rotate(180, self.width / 2, self.height / 2),
-                scale(-1, 1),
-                translate(-self.plot_width, self.y_axis.zero),
+                *self.get_base_transform(),
                 translate(-self.x_width / 2, dy),
             ],
         )
@@ -61,7 +58,7 @@ class ColumnChart(Chart):
                 x_offset += self.x_axis.reproject(1)
             paths = []
             for x, y, y_offset in zip(x_values, y_values, y_offsets):
-                x += x_offset
+                x += self.x_offset
                 paths.append(Path.get_path(x, y_offset, self.x_width, y))
             g.add_child(Path(d=paths, fill=color))
 

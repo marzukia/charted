@@ -116,12 +116,6 @@ class Chart(Svg):
 
         return data
 
-    def validate_x_data(self, data: Vector | Vector2D | None) -> Vector2D:
-        return self._validate_data(data)
-
-    def validate_y_data(self, data: Vector | Vector2D | None) -> Vector2D:
-        return self._validate_data(data)
-
     @classmethod
     def _validate_attribute_value(cls, name: str, value: float):
         if value < 0:
@@ -134,7 +128,7 @@ class Chart(Svg):
 
     @x_data.setter
     def x_data(self, data: Vector | Vector2D | None = None) -> None:
-        validated_data = self.validate_x_data(data)
+        validated_data = self._validate_data(data)
         self._x_data = validated_data
 
     @property
@@ -143,7 +137,7 @@ class Chart(Svg):
 
     @y_data.setter
     def y_data(self, data: Vector | Vector2D | None = None) -> None:
-        validated_data = self.validate_y_data(data)
+        validated_data = self._validate_data(data)
         self._y_data = validated_data
 
     @property
@@ -189,6 +183,26 @@ class Chart(Svg):
     @property
     def plot_height(self) -> float:
         return self.height - (self.bottom_padding + self.top_padding)
+
+    def get_base_transform(self) -> list:
+        """Return the base transform chain used by all chart types."""
+        from charted.utils.transform import rotate, scale
+
+        return [
+            translate(-self.h_pad, -self.bottom_padding),
+            rotate(180, self.width / 2, self.height / 2),
+            scale(-1, 1),
+            translate(-self.plot_width, 0),
+        ]
+
+    @property
+    def x_offset(self) -> float:
+        """Calculate x-offset for charts with x_labels."""
+        return self.x_axis.reproject(1) if self.x_labels else 0
+
+    def _apply_stacking(self, y: float, y_offset: float) -> float:
+        """Apply y-stacking if enabled."""
+        return y + y_offset if self.y_stacked else y
 
     @property
     def colors(self) -> list[str]:

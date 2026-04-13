@@ -41,12 +41,7 @@ class LineChart(Chart):
     def representation(self) -> G:
         g = G(
             opacity=0.8,
-            transform=[
-                translate(-self.h_pad, -self.bottom_padding),
-                rotate(180, self.width / 2, self.height / 2),
-                scale(-1, 1),
-                translate(-self.plot_width, 0),
-            ],
+            transform=[*self.get_base_transform()],
         )
         for y_values, y_offsets, x_values, color in zip(
             self.y_values,
@@ -57,15 +52,10 @@ class LineChart(Chart):
             series = G(fill="white", stroke=color, stroke_width=2)
             points = []
             path = []
-            x_offset = 0
-
-            if self.x_labels:
-                x_offset += self.x_axis.reproject(1)
 
             for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
-                x += x_offset
-                if self.y_stacked:
-                    y += y_offset
+                x += self.x_offset
+                y = self._apply_stacking(y, y_offset)
                 if i == 0:
                     path.append(f"M{x} {y}")
                 else:
