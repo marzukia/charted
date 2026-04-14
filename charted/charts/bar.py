@@ -3,7 +3,6 @@ from __future__ import annotations
 from charted.charts.chart import Chart
 from charted.html.element import G, Path
 from charted.utils.themes import Theme
-from charted.utils.transform import translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
@@ -61,21 +60,28 @@ class BarChart(Chart):
         if self.x_axis.axis_dimension.min_value < 0:
             dx = self.x_axis.reproject(abs(self.x_axis.axis_dimension.min_value))
 
-        # Starting X for all bars accounts for number of series
-        num_series = len(self.x_values) if self.x_values else 1
-        start_x = self.plot_width / (self.y_count + num_series - 1)
+        # Bar thickness (vertical dimension of each horizontal bar)
+        bar_thickness = self.y_height
+        gap = bar_thickness * self.bar_gap
+
+        # Center bars vertically with margins within the plot area
+        margin = bar_thickness * 0.5
+        start_y = margin
 
         g = G(
             opacity="0.8",
+            transform=f"translate({self.left_padding}, {self.top_padding})",
         )
-        for x_values_series, y_values_series, color in zip(
-            self.x_values,
-            self.y_values,
-            self.colors,
+        for series_idx, (x_values_series, y_values_series, color) in enumerate(
+            zip(self.x_values, self.y_values, self.colors)
         ):
             paths = []
-            for x, y in zip(x_values_series, y_values_series):
-                paths.append(Path.get_path(start_x + dx, y, x, self.y_height))
+            for bar_idx, (x, y) in enumerate(zip(x_values_series, y_values_series)):
+                # Calculate vertical position for this bar
+                bar_y = start_y + bar_idx * (bar_thickness + gap)
+                # x is the data value (already reprojected to plot coordinates)
+                # bar_y is the vertical position within the plot area
+                paths.append(Path.get_path(dx, bar_y, x, bar_thickness))
             g.add_child(Path(d=paths, fill=color))
 
         return g
