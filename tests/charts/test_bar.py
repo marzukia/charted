@@ -58,3 +58,24 @@ class TestBarChartSadPath:
         """Test that empty data raises ValueError."""
         with pytest.raises(Exception, match="No data was provided"):
             BarChart(data=[], labels=[])
+
+    def test_bar_chart_multiseries(self):
+        """Test bar chart with multiple series."""
+        data = [[10, 20, 30], [15, 25, 35]]
+        chart = BarChart(data=data, labels=["a", "b", "c"])
+        html = chart.html
+        assert "svg" in html.lower()
+
+    def test_bar_chart_mixed_negative_values(self):
+        """Test bar chart with mixed positive and negative values."""
+        chart = BarChart(data=[-10, 0, 10, 20], labels=["a", "b", "c", "d"])
+        html = chart.html
+        assert "svg" in html.lower()
+        assert "NaN" not in html
+        assert "Infinity" not in html
+
+    def test_bar_chart_zero_value(self):
+        """Test bar chart with zero values."""
+        chart = BarChart(data=[0, 10, 20], labels=["a", "b", "c"])
+        html = chart.html
+        assert "svg" in html.lower()
