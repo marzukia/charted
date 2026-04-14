@@ -364,7 +364,8 @@ class Chart(Svg):
     def y_count(self, kwargs: tuple[Vector2D | None, list[str] | None]) -> None:
         y_data, y_labels = kwargs
         if not y_data:
-            cnt = len(y_labels)
+            self._y_count = len(y_labels)
+            return
         cnt = len(y_data[0])
         self._y_count = cnt
 
@@ -374,6 +375,13 @@ class Chart(Svg):
 
     @y_offsets.setter
     def y_offsets(self, y_data: Vector2D | None = None) -> None:
+        # Handle None y_data (e.g., BarChart with only x_data)
+        if not y_data:
+            # Create empty offsets based on y_count
+            offsets = [[0] * self.y_count]
+            self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
+            return
+        
         offsets = []
         negative_offsets = [0] * self.y_count
         positive_offsets = [0] * self.y_count
@@ -393,6 +401,7 @@ class Chart(Svg):
 
         self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
 
+
     @property
     def x_width(self) -> float:
         return self.plot_width / self.x_count
@@ -403,6 +412,11 @@ class Chart(Svg):
 
     @y_values.setter
     def y_values(self, y_data: Vector2D) -> None:
+        # Handle None y_data (e.g., BarChart with only x_data)
+        if not y_data:
+            self._y_values = [[0] * self.y_count]
+            return
+
         data = []
         for arr in y_data:
             row = []
@@ -428,7 +442,8 @@ class Chart(Svg):
         else:
             x_data = [*x_data]
 
-        y_len = len(self.y_data)
+        # Handle None y_data (e.g., BarChart)
+        y_len = len(self.y_data) if self.y_data else 0
         if len(x_data) != y_len:
             if not len(x_data) == 1:
                 raise Exception("x and y data series do not match")
