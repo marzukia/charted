@@ -313,14 +313,20 @@ class Chart(Svg):
             )
             labels = [str(round(x, 2)) for x in values]
 
-        longest = ""
+        # Handle both string labels and MeasuredText objects
+        # MeasuredText has a .width attribute, strings need to be measured
+        max_width = 0.0
         for label in labels:
-            if len(label) > len(longest):
-                longest = label
+            if hasattr(label, 'width'):
+                # MeasuredText object - use its width directly
+                width = label.width
+            else:
+                # String label - measure it
+                width = calculate_text_dimensions(str(label)).width
+            if width > max_width:
+                max_width = width
 
-        max_width = calculate_text_dimensions(longest)
-
-        return self.h_pad + max_width.width
+        return self.h_pad + max_width
 
     @property
     def right_padding(self) -> float:
