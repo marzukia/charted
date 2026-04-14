@@ -33,11 +33,10 @@ jobs:
       - name: Install dependencies
         run: uv pip install '.[dev]'
 
-      - name: Run tests with coverage
+     - name: Run tests with coverage
         run: |
-          uv pip install pytest coverage
-          coverage run -m pytest
-          coverage xml
+          uv run coverage run -m pytest
+          uv run coverage xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
