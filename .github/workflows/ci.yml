@@ -1,6 +1,13 @@
 name: charted-ci
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -27,16 +34,12 @@ jobs:
       - name: Install uv
         run: pip install uv==0.5.20
 
-      - name: Create virtual environment
-        run: uv venv
-
       - name: Install dependencies
-        run: uv pip install '.[dev]'
+        run: uv pip install --system '.[dev]'
 
-      - name: Run Tox
-        run: uv run tox -e py${{ matrix.python-version | replace('.', '') }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=charted --cov-report=xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
