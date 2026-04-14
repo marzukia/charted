@@ -35,8 +35,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          uv run coverage run -m pytest
-          uv run coverage xml
+          uv run pytest --cov=charted --cov-report=xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
