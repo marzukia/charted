@@ -2,3 +2,4 @@
 from .column import ColumnChart
 from .line import LineChart
 from .scatter import ScatterChart
+from .bar import BarChart
