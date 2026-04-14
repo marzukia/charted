@@ -3,6 +3,7 @@ from __future__ import annotations
 from charted.charts.chart import Chart
 from charted.html.element import G, Path
 from charted.utils.themes import Theme
+from charted.utils.transform import translate
 from charted.utils.types import Labels, Vector, Vector2D
 
 
@@ -78,6 +79,11 @@ class BarChart(Chart):
         Returns:
             G element containing all bar paths with proper transforms.
         """
+        # Calculate dy offset for negative values
+        dy = 0
+        if self.x_axis.axis_dimension.min_value < 0:
+            dy = self.x_axis.reproject(abs(self.x_axis.axis_dimension.min_value))
+
         # Bar thickness (vertical dimension of each horizontal bar)
         bar_thickness = self.y_height
         gap = bar_thickness * self.bar_gap
@@ -85,12 +91,12 @@ class BarChart(Chart):
         # Start with gap offset at top for centering
         start_y = gap
 
-        # Calculate x offset: left_padding + plot_width * 226/443 for baseline match
-        x_offset = self.left_padding + self.plot_width * 226 / 443
-
         g = G(
             opacity="0.8",
-            transform=f"translate({x_offset}, {self.top_padding})",
+            transform=[
+                *self.get_base_transform(),
+                translate(-self.y_height / 2, dy),
+            ],
         )
         for x_values_series, y_values_series, color in zip(
             self.x_values, self.y_values, self.colors
@@ -99,9 +105,7 @@ class BarChart(Chart):
             for bar_idx, (x, y) in enumerate(zip(x_values_series, y_values_series)):
                 # Calculate vertical position for this bar
                 bar_y = start_y + bar_idx * (bar_thickness + gap)
-                # Scale reprojected x to match baseline: multiply by 217/443
-                bar_width = x * 217 / 443
-                paths.append(Path.get_path(0, bar_y, bar_width, bar_thickness))
+                paths.append(Path.get_path(0, bar_y, x, bar_thickness))
             g.add_child(Path(d=paths, fill=color))
 
         return g
