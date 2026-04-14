@@ -49,7 +49,12 @@ class BarChart(Chart):
 
     @property
     def y_height(self) -> float:
-        return self.plot_height / (self.y_count + (self.y_count + 1) * self.bar_gap)
+        # Calculate bar height: total space divided by (bars + gaps between them)
+        # For n bars with gaps between, we have (n-1) gaps
+        # So total space needed: n * bar_height + (n-1) * gap
+        # Which means: n * bar_height + (n-1) * bar_height * bar_gap = plot_height
+        # bar_height * (n + (n-1) * bar_gap) = plot_height
+        return self.plot_height / (self.y_count + (self.y_count - 1) * self.bar_gap)
 
     def get_base_transform(self):
         return []
@@ -64,9 +69,11 @@ class BarChart(Chart):
         bar_thickness = self.y_height
         gap = bar_thickness * self.bar_gap
 
-        # Center bars vertically with margins within the plot area
-        margin = bar_thickness * 0.5
-        start_y = margin
+        # Center bars vertically within the plot area
+        # With n bars and (n-1) gaps, total used space = n * bar_thickness + (n-1) * gap
+        # Center this in the plot_height
+        total_height = self.y_count * bar_thickness + (self.y_count - 1) * gap
+        start_y = (self.plot_height - total_height) / 2
 
         g = G(
             opacity="0.8",
