@@ -22,6 +22,7 @@ from lxml import etree
 from charted.charts.column import ColumnChart
 from charted.charts.line import LineChart
 from charted.charts.scatter import ScatterChart
+from charted.charts.bar import BarChart
 
 
 # ============================================================
@@ -111,6 +112,27 @@ def test_scatter_chart_multi_series():
         y_data=[[1, 2, 3], [3, 2, 1]],
     )
     baseline_path = BASELINES_DIR / "scatter_multi.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_bar_chart_basic():
+    """Visual regression test for basic BarChart (SVG structure)."""
+    chart = BarChart(data=[1, 2, 3], labels=["a", "b", "c"])
+    baseline_path = BASELINES_DIR / "bar_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_bar_chart_multi_series():
+    """Visual regression test for multi-series BarChart (SVG structure)."""
+    chart = BarChart(
+        data=[[1, 2, 3], [3, 2, 1]],
+        labels=["a", "b", "c"],
+    )
+    baseline_path = BASELINES_DIR / "bar_multi.svg"
     with open(baseline_path, "r") as f:
         baseline_svg = f.read()
     assert svgs_equal(chart.html, baseline_svg)

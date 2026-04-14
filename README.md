@@ -9,10 +9,10 @@ The following chart types are available:
 - Column
 - Line
 - Scatter
+- Bar
 
 The following chart types are planned to be implemented.
 
-- Bar
 - Donut
 - Pie
 
@@ -118,4 +118,18 @@ graph = ScatterChart(
 )
 ```
 
-![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter.svg)
+### Bar
+
+```py
+from charted.charts import BarChart
+
+graph = BarChart(
+    title="Example Bar Chart",
+    data=[1, 3, 2],
+    labels=["A", "B", "C"],
+    width=600,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar.svg)
