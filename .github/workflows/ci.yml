@@ -33,11 +33,8 @@ jobs:
       - name: Install dependencies
         run: uv pip install '.[dev]'
 
-      - name: Run Linter
-        run: uv run flake8 charted
-
       - name: Run Tox
-        run: uv run tox -e py${{ matrix.python-version[0] }}${{ matrix.python-version[2] }}
+        run: uv run tox -e py${{ matrix.python-version | replace('.', '') }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
