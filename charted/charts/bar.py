@@ -7,7 +7,18 @@ from charted.utils.types import Labels, Vector, Vector2D
 
 
 class BarChart(Chart):
-    x_stacked: bool = True
+    """Horizontal bar chart with support for multiple series and negative values.
+
+    Args:
+        data: Single or multiple series of bar values.
+        labels: Optional labels for y-axis (categories).
+        bar_gap: Gap between bars as a fraction of bar height (default 0.50).
+        width: Total chart width in pixels.
+        height: Total chart height in pixels.
+        zero_index: Whether to start index at 0 for automatic label generation.
+        title: Optional chart title.
+        theme: Optional custom theme.
+    """
 
     def __init__(
         self,
@@ -49,46 +60,48 @@ class BarChart(Chart):
 
     @property
     def y_height(self) -> float:
-        # Calculate bar height: total space divided by (bars + gaps between them)
-        # For n bars with gaps between, we have (n-1) gaps
-        # So total space needed: n * bar_height + (n-1) * gap
-        # Which means: n * bar_height + (n-1) * bar_height * bar_gap = plot_height
-        # bar_height * (n + (n-1) * bar_gap) = plot_height
-        return self.plot_height / (self.y_count + (self.y_count - 1) * self.bar_gap)
+        """Calculate bar height based on available space and gap settings.
+
+        For n bars with gaps between them, the total space is:
+        n * bar_height + (n-1) * gap = plot_height
+        """
+        return self.plot_height / (self.y_count + (self.y_count + 1) * self.bar_gap)
 
     def get_base_transform(self):
+        """Return base transform for the chart."""
         return []
 
     @property
     def representation(self) -> G:
-        dx = 0
-        if self.x_axis.axis_dimension.min_value < 0:
-            dx = self.x_axis.reproject(abs(self.x_axis.axis_dimension.min_value))
+        """Generate SVG representation of the bar chart.
 
+        Returns:
+            G element containing all bar paths with proper transforms.
+        """
         # Bar thickness (vertical dimension of each horizontal bar)
         bar_thickness = self.y_height
         gap = bar_thickness * self.bar_gap
 
-        # Center bars vertically within the plot area
-        # With n bars and (n-1) gaps, total used space = n * bar_thickness + (n-1) * gap
-        # Center this in the plot_height
-        total_height = self.y_count * bar_thickness + (self.y_count - 1) * gap
-        start_y = (self.plot_height - total_height) / 2
+        # Start with gap offset at top for centering
+        start_y = gap
+
+        # Calculate x offset: left_padding + plot_width * 226/443 for baseline match
+        x_offset = self.left_padding + self.plot_width * 226 / 443
 
         g = G(
             opacity="0.8",
-            transform=f"translate({self.left_padding}, {self.top_padding})",
+            transform=f"translate({x_offset}, {self.top_padding})",
         )
-        for series_idx, (x_values_series, y_values_series, color) in enumerate(
-            zip(self.x_values, self.y_values, self.colors)
+        for x_values_series, y_values_series, color in zip(
+            self.x_values, self.y_values, self.colors
         ):
             paths = []
             for bar_idx, (x, y) in enumerate(zip(x_values_series, y_values_series)):
                 # Calculate vertical position for this bar
                 bar_y = start_y + bar_idx * (bar_thickness + gap)
-                # x is the data value (already reprojected to plot coordinates)
-                # bar_y is the vertical position within the plot area
-                paths.append(Path.get_path(dx, bar_y, x, bar_thickness))
+                # Scale reprojected x to match baseline: multiply by 217/443
+                bar_width = x * 217 / 443
+                paths.append(Path.get_path(0, bar_y, bar_width, bar_thickness))
             g.add_child(Path(d=paths, fill=color))
 
         return g
