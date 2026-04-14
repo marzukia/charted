@@ -2,6 +2,7 @@ __pycache__/
 dist/
 docs/_build/
 .tox/
+.coverage
 .pytest_cache/
 main.py
 docs/_output/
