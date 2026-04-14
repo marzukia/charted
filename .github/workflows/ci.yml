@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: uv pip install '.[dev]'
 
-     - name: Run tests with coverage
+      - name: Run tests with coverage
         run: |
           uv run coverage run -m pytest
           uv run coverage xml
@@ -43,5 +43,3 @@ jobs:
         with:
           files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
-
-
