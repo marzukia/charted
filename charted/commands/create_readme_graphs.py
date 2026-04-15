@@ -29,15 +29,26 @@ class Examples:
     @property
     def column(self):
         return ColumnChart(
-            title="Example Column Graph",
+            title="Global Temperature Anomaly by Decade",
             data=[
-                [9.8, -29.8, 22.6, 45.0, 33.8, 35.4, 44.2],
-                [8.9, 33.1, -27.1, 31.2, -15.4, 32.6, 19.8],
-                [-32.0, 32.3, 45.7, -3.3, -33.3, -15.7, -38.6],
+                [-0.16, 0.08, 0.07, 0.35, -0.05, -0.05, 0.01, -0.07, -0.13, 0.17],
+                [-0.08, 0.09, 0.26, 0.02, 0.04, 0.16, 0.13, 0.28, 0.22, 0.46],
+                [0.02, 0.06, 0.24, 0.19, 0.18, 0.23, 0.26, 0.41, 0.28, 0.52],
             ],
-            labels=["January", "February", "March", "April", "May", "June", "July"],
-            width=600,
-            height=400,
+            labels=[
+                "1880s",
+                "1890s",
+                "1900s",
+                "1910s",
+                "1920s",
+                "1930s",
+                "1940s",
+                "1950s",
+                "1960s",
+                "1970s",
+            ],
+            width=700,
+            height=450,
             theme={
                 "padding": {
                     "v_padding": 0.1,
@@ -60,12 +71,26 @@ class Examples:
     @property
     def xy_line(self):
         return LineChart(
-            title="Example XY Line Graph",
+            title="Monthly Temperature vs CO2 Concentration",
             data=[
-                [5 * (1.5**n) for n in range(0, 11)],
-                [-5 * (1.5**n) for n in range(0, 11)],
+                [32, 35, 42, 52, 62, 72, 78, 76, 68, 55, 45, 38],
+                [315, 318, 322, 328, 335, 342, 348, 352, 348, 342, 335, 328],
             ],
-            x_data=[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4],
+            x_data=[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5],
+            labels=[
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ],
         )
 
 
