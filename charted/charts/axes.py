@@ -313,9 +313,26 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
+        """Calculate centered coordinates for bar chart bars."""
         offset = 0
         if self.stacked and self.axis_dimension.min_value < 0:
             offset = self.axis_dimension.min_value
+
+        # For bar charts, center labels within bars rather than at bar edges
+        bar_height = getattr(self.parent, "y_height", None)
+        if bar_height is not None:
+            # Calculate the gap-based offset to center on bars
+            bar_gap = getattr(self.parent, "bar_gap", 0.5)
+            # Start position is the gap offset from bar.py
+            start_y = bar_height * bar_gap
+            # Bar center: start_y + idx*(h+gap) + h/2
+            gap = bar_height * bar_gap
+            centers = [
+                start_y + i * (bar_height + gap) + bar_height / 2
+                for i in range(len(self.values))
+            ]
+            # Convert pixel positions to data-space values via reverse projection
+            return [self.reverse(center) for center in centers]
 
         return [
             self.reproject(i + abs(offset))
@@ -348,14 +365,29 @@ class YAxis(Axis):
             ),
         )
 
-        for y, label in zip(self.coordinates, self.labels):
+        # For bar charts, calculate pixel positions centered on bars
+        bar_height = getattr(self.parent, "y_height", None)
+        if bar_height is not None:
+            # Calculate bar gap and start position
+            bar_gap = getattr(self.parent, "bar_gap", 0.5)
+            gap = bar_height * bar_gap
+            start_y = bar_height * bar_gap
+            # Pixel positions centered on each bar
+            y_positions = [
+                start_y + i * (bar_height + gap) + bar_height / 2
+                for i in range(len(self.labels))
+            ]
+        else:
+            y_positions = self.coordinates
+
+        for y, label in zip(y_positions, self.labels):
             text = Text(
                 x=0,
                 y=y,
                 text=label.text,
                 transform=translate(
                     x=-label.width,
-                    y=label.height / 4,
+                    y=-label.height / 2,  # Vertically center text on bar center
                 ),
             )
             labels.add_child(text)

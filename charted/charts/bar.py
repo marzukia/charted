@@ -85,8 +85,8 @@ class BarChart(Chart):
         # Start with gap offset at top for centering
         start_y = gap
 
-        # Calculate x offset: left_padding + plot_width * 226/443 for baseline match
-        x_offset = self.left_padding + self.plot_width * 226 / 443
+        # Bars start at x=0 (left edge of plot area)
+        x_offset = self.left_padding
 
         g = G(
             opacity="0.8",
@@ -99,8 +99,7 @@ class BarChart(Chart):
             for bar_idx, (x, y) in enumerate(zip(x_values_series, y_values_series)):
                 # Calculate vertical position for this bar
                 bar_y = start_y + bar_idx * (bar_thickness + gap)
-                # Scale reprojected x to match baseline: multiply by 217/443
-                bar_width = x * 217 / 443
+                bar_width = x
                 paths.append(Path.get_path(0, bar_y, bar_width, bar_thickness))
             g.add_child(Path(d=paths, fill=color))
 
