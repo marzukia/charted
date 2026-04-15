@@ -387,7 +387,7 @@ class YAxis(Axis):
                 text=label.text,
                 transform=translate(
                     x=-label.width,
-                    y=0,
+                    y=label.height / 2,  # Vertically center text on bar center
                 ),
             )
             labels.add_child(text)
