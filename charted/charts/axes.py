@@ -325,7 +325,7 @@ class YAxis(Axis):
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
             # Start position is the gap offset from bar.py
             start_y = bar_height * bar_gap
-            # Center of each bar is start_y + bar_idx * (bar_height + gap) + bar_height/2
+            # Bar center: start_y + idx*(h+gap) + h/2
             gap = bar_height * bar_gap
             centers = [
                 start_y + i * (bar_height + gap) + bar_height / 2
@@ -387,7 +387,7 @@ class YAxis(Axis):
                 text=label.text,
                 transform=translate(
                     x=-label.width,
-                    y=label.height / 2,  # Vertically center text on bar center
+                    y=-label.height / 2,  # Vertically center text on bar center
                 ),
             )
             labels.add_child(text)
