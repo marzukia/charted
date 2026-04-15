@@ -28,31 +28,23 @@ class Examples:
 
     @property
     def column(self):
+        # Multi-column chart showing sales by product category over quarters
         return ColumnChart(
-            title="Global Temperature Anomaly by Decade",
+            title="Product Sales by Quarter ($M)",
             data=[
-                [-0.16, 0.08, 0.07, 0.35, -0.05, -0.05, 0.01, -0.07, -0.13, 0.17],
-                [-0.08, 0.09, 0.26, 0.02, 0.04, 0.16, 0.13, 0.28, 0.22, 0.46],
-                [0.02, 0.06, 0.24, 0.19, 0.18, 0.23, 0.26, 0.41, 0.28, 0.52],
+                [45, 52, 48, 61],  # Electronics
+                [32, 38, 45, 52],  # Clothing
+                [28, 35, 42, 48],  # Home & Garden
+                [22, 35, 42, 42],  # Sports
+                [18, 25, 32, 38],  # Books
             ],
-            labels=[
-                "1880s",
-                "1890s",
-                "1900s",
-                "1910s",
-                "1920s",
-                "1930s",
-                "1940s",
-                "1950s",
-                "1960s",
-                "1970s",
-            ],
+            labels=["Q1", "Q2", "Q3", "Q4"],
             width=700,
-            height=450,
+            height=500,
             theme={
                 "padding": {
-                    "v_padding": 0.1,
-                    "h_padding": 0.1,
+                    "v_padding": 0.12,
+                    "h_padding": 0.12,
                 }
             },
         )
