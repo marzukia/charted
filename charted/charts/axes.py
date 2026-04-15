@@ -360,7 +360,7 @@ class YAxis(Axis):
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             transform=translate(
-                x=(self.parent.left_padding - 6),
+                x=self.parent.left_padding,
                 y=self.parent.top_padding,
             ),
         )
@@ -386,7 +386,7 @@ class YAxis(Axis):
                 y=y,
                 text=label.text,
                 transform=translate(
-                    x=-label.width,
+                    x=-6,
                     y=-label.height / 2,  # Vertically center text on bar center
                 ),
             )
