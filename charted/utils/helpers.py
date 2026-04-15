@@ -46,6 +46,22 @@ def rotate_coordinate(x: float, y: float, angle_degrees: float) -> tuple[float, 
     return x_new, y_new
 
 
+def _divisors(n: int) -> list[int]:
+    """Return sorted list of divisors of n using an O(sqrt(n)) algorithm."""
+    if n <= 0:
+        return []
+    divisors = []
+    i = 1
+    sqrt_n = int(n**0.5)
+    while i <= sqrt_n:
+        if n % i == 0:
+            divisors.append(i)
+            if i != n // i:
+                divisors.append(n // i)
+        i += 1
+    return sorted(divisors)
+
+
 def common_denominators(a: float, b: float) -> Vector:
     if (b - a) <= 2:
         return [0.2, 0.25, 0.5, 1]
@@ -54,14 +70,12 @@ def common_denominators(a: float, b: float) -> Vector:
     if a == 0 and b == 0:
         return []
     elif a == 0:
-        return [i for i in range(1, b + 1) if b % i == 0]
+        return _divisors(b)
     elif b == 0:
-        return [i for i in range(1, a + 1) if a % i == 0]
+        return _divisors(a)
 
-    common_divisors = []
-    for i in range(1, min(a, b) + 1):
-        if a % i == 0 and b % i == 0:
-            common_divisors.append(i)
+    smaller = int(min(a, b))
+    common_divisors = [i for i in _divisors(smaller) if a % i == 0 and b % i == 0]
 
     return common_divisors
 
