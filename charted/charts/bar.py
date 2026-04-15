@@ -86,7 +86,7 @@ class BarChart(Chart):
         start_y = gap
 
         # Bars start at x=0 (left edge of plot area)
-        x_offset = 0
+        x_offset = self.left_padding
 
         g = G(
             opacity="0.8",
