@@ -332,15 +332,12 @@ class YAxis(Axis):
                 for i in range(len(self.values))
             ]
             # Convert pixel positions to data-space values via reverse projection
-            return [
-                self.reverse(center) for center in centers
-            ]
+            return [self.reverse(center) for center in centers]
 
         return [
             self.reproject(i + abs(offset))
             for i in reversed([self.axis_dimension.max_value, *self.values])
         ]
-
 
     @property
     def grid_lines(self) -> Path:
@@ -390,7 +387,7 @@ class YAxis(Axis):
                 text=label.text,
                 transform=translate(
                     x=-label.width,
-                    y=label.height / 2,
+                    y=0,
                 ),
             )
             labels.add_child(text)
