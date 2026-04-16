@@ -57,7 +57,7 @@ class ColumnChart(Chart):
         ):
             paths = []
             for x, y, y_offset in zip(x_values, y_values, y_offsets):
-                x += self.x_offset
+                # x += self.x_offset
                 paths.append(Path.get_path(x, y_offset, self.x_width, y))
             g.add_child(Path(d=paths, fill=color))
 

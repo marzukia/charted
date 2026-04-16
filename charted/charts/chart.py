@@ -444,7 +444,7 @@ class Chart(Svg):
     @x_values.setter
     def x_values(self, x_data: Vector2D) -> None:
         if not x_data and self.x_labels:
-            x_data = [[i for i in range(len(self.x_labels))]]
+            x_data = [[i + 1 for i in range(len(self.x_labels))]]
         else:
             x_data = [*x_data]
 
