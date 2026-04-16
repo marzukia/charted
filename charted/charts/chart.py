@@ -484,11 +484,15 @@ class Chart(Svg):
     @property
     def zero_line(self) -> Path:
         paths = []
-        # Only draw the x zero-line for ordinal charts (no explicit x_data).
-        # For xy charts with real data spanning negative values the zero-line
-        # would appear as a vertical bar in the middle of the plot — the plot
-        # left-edge already acts as the axis boundary.
-        if self.x_axis.axis_dimension.min_value < 0 and self._x_data is None:
+        # Draw the x zero-line when x spans negatives AND the chart type needs it.
+        # BarChart has a `y_height` property; its x_data are bar lengths measured
+        # from a zero baseline, so the zero-line is meaningful there.
+        # XY line/scatter charts have real x_data positions that already span the
+        # full plot width — a vertical bar at x=0 data position looks like a
+        # spurious y-axis in the middle of the plot — suppress it for those only.
+        is_bar_chart = getattr(self, "y_height", None) is not None
+        is_xy_line = self._x_data is not None and not is_bar_chart
+        if self.x_axis.axis_dimension.min_value < 0 and not is_xy_line:
             paths += [
                 f"M{self.x_axis.zero} {0}",
                 f"v{self.plot_height}z",
