@@ -46,7 +46,7 @@ class LineChart(Chart):
             path = []
 
             for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
-                # x values are already relative to plot area, don't add offset
+                x += self.x_offset
                 y = self._apply_stacking(y, y_offset)
                 if i == 0:
                     path.append(f"M{x} {y}")

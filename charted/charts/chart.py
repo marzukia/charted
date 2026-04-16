@@ -311,7 +311,7 @@ class Chart(Svg):
                 stacked=self.y_stacked,
                 zero_index=self.zero_index,
             )
-            labels = [f"{round(x, 2):g}" for x in values]
+            labels = [str(round(x, 2)) for x in values]
 
         # Handle both string labels and MeasuredText objects
         # MeasuredText has a .width attribute, strings need to be measured

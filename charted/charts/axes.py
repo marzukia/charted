@@ -334,8 +334,10 @@ class YAxis(Axis):
             # Convert pixel positions to data-space values via reverse projection
             return [self.reverse(center) for center in centers]
 
-        # For non-bar charts (line, scatter), use values directly with reproject
-        return [self.reproject(i + abs(offset)) for i in self.values]
+        return [
+            self.reproject(i + abs(offset))
+            for i in reversed([self.axis_dimension.max_value, *self.values])
+        ]
 
     @property
     def grid_lines(self) -> Path:
@@ -358,7 +360,7 @@ class YAxis(Axis):
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             transform=translate(
-                x=self.parent.left_padding,
+                x=(self.parent.left_padding - 6),
                 y=self.parent.top_padding,
             ),
         )
@@ -384,7 +386,7 @@ class YAxis(Axis):
                 y=y,
                 text=label.text,
                 transform=translate(
-                    x=-6,
+                    x=-label.width,
                     y=-label.height / 2,  # Vertically center text on bar center
                 ),
             )
