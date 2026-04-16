@@ -18,6 +18,7 @@ Zero-dependency SVG chart generator for Python. Simple interface, beautiful outp
    charts/bar
    charts/column
    charts/scatter
+    charts/pie
 
 .. toctree::
    :maxdepth: 1
