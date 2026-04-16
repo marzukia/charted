@@ -18,6 +18,10 @@ Stacked::
        labels=["a", "b", "c"],
    )
 
+Adjust column width with ``column_gap`` (0–1, default 0.5)::
+
+   chart = ColumnChart(data=[1, 2, 3], labels=["a", "b", "c"], column_gap=0.3)
+
 .. autoclass:: charted.charts.column.ColumnChart
    :members:
    :undoc-members:

@@ -18,6 +18,10 @@ Multi-series (side-by-side)::
        labels=["a", "b", "c"],
    )
 
+Adjust spacing between bars with ``bar_gap`` (0–1, default 0.5)::
+
+   chart = BarChart(data=[1, 2, 3], labels=["a", "b", "c"], bar_gap=0.3)
+
 .. image:: ../examples/bar_multi.svg
    :width: 100%
 

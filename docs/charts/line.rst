@@ -27,8 +27,8 @@ XY (scatter-line) with real x-values::
    from charted.charts.line import LineChart
 
    chart = LineChart(
+       data=[9, 1, 0, 1, 9],
        x_data=[-3, -1, 0, 1, 3],
-       y_data=[9, 1, 0, 1, 9],
        labels=["Jan", "Feb", "Mar", "Apr", "May"],
    )
 
