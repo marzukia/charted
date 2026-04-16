@@ -122,7 +122,10 @@ class Axis(G):
         )
 
         if labels is not None:
-            values = [i for i in range(len(labels))]
+            # Use the actual data values as tick positions so that ordinal charts
+            # (synthetically created [[0,1,...,n]] in Axis.__init__) and real-data
+            # xy charts both land in the correct pixel locations.
+            values = list(data[0])
             return (axd, values)
 
         denominators = common_denominators(axd.min_value, axd.max_value)
