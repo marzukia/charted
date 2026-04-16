@@ -1,4 +1,3 @@
-# flake8: noqa
 """Chart types - exports all available chart classes."""
 
 from .column import ColumnChart
