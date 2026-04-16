@@ -334,10 +334,8 @@ class YAxis(Axis):
             # Convert pixel positions to data-space values via reverse projection
             return [self.reverse(center) for center in centers]
 
-        return [
-            self.reproject(i + abs(offset))
-            for i in reversed([self.axis_dimension.max_value, *self.values])
-        ]
+        # For non-bar charts (line, scatter), use values directly with reproject
+        return [self.reproject(i + abs(offset)) for i in self.values]
 
     @property
     def grid_lines(self) -> Path:
