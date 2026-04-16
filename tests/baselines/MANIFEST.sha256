@@ -1,0 +1,10 @@
+{
+  "bar_basic.svg": "6c603c3df7d3574b4a37b0b8f33a592db5357ef97542914a5502049709c8f099",
+  "bar_multi.svg": "b9defa26e702c9c6deb7f14b7a5fc3bca883cb92c5c9b9d7a77c8a92381c3756",
+  "column_basic.svg": "b70b363faa8096b1fb579eed39b97c141348918522719635e5b28a25eb82bed1",
+  "column_stacked.svg": "6bf5d886e14124e14fb2fdd3d5ea8c3d1d82365623169e4865acf0f96c840b74",
+  "line_basic.svg": "003a8476fe2659031a3c77e659d011320bde15548ed23037e28631b9a9a4fe9b",
+  "line_multi.svg": "8d1bce1f8c6cd764dd6fab5275143c339f1a7ce50f8dc13790f9562ee8f4a88c",
+  "scatter_basic.svg": "c56a74d96895746c559bf06742e98bd8b1a5737889c3328eaedb160aa22513bc",
+  "scatter_multi.svg": "b64e1a7c88f5ef882f22825fdcc96db4dfcced62f46637fdb56c406d9c0bb7b0"
+}

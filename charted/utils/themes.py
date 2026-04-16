@@ -1,3 +1,4 @@
+import copy
 from typing import Optional, TypedDict
 
 from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
@@ -10,7 +11,7 @@ class LegendConfig(TypedDict):
 
 
 class MarkerConfig(TypedDict):
-    marker_size = float | None
+    marker_size: float | None
 
 
 class PaddingConfig(TypedDict):
@@ -32,13 +33,13 @@ class GridConfig(TypedDict):
 
 class Theme(TypedDict):
     colors: list[str] | None
-    v_grid = GridConfig | None
-    h_grid = GridConfig | None
+    v_grid: GridConfig | None
+    h_grid: GridConfig | None
 
     @classmethod
     def load(cls, theme: Optional["Theme"]) -> "Theme":
         if not theme:
-            return DEFAULT_THEME
+            return copy.deepcopy(DEFAULT_THEME)
 
         def deep_merge(default, custom):
             for key in custom:
@@ -51,7 +52,7 @@ class Theme(TypedDict):
                     default[key] = custom[key]
             return default
 
-        return deep_merge(DEFAULT_THEME.copy(), theme)
+        return deep_merge(copy.deepcopy(DEFAULT_THEME), theme)
 
 
 DEFAULT_THEME = Theme(
