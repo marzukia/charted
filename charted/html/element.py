@@ -10,8 +10,8 @@ class Element(object):
     def __init__(self, parent: object = None, **kwargs):
         self.parent = parent
 
-        _kwargs = {k: v for k, v in kwargs.copy().items() if k != "class_name"}
-        class_name = getattr(kwargs, "class_name", None)
+        _kwargs = dict(kwargs)
+        class_name = _kwargs.pop("class_name", None)
         if class_name:
             _kwargs["class"] = class_name
 

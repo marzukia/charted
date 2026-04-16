@@ -1,4 +1,5 @@
 from collections import defaultdict
+import functools
 import json
 import math
 import os
@@ -8,6 +9,7 @@ from charted.utils.defaults import BASE_DEFINITIONS_DIR, DEFAULT_FONT, DEFAULT_F
 from charted.utils.types import MeasuredText, Vector
 
 
+@functools.lru_cache(maxsize=512)
 def calculate_text_dimensions(
     text: str,
     font: str = DEFAULT_FONT,
@@ -63,13 +65,19 @@ def _divisors(n: int) -> list[int]:
 
 
 def common_denominators(a: float, b: float) -> Vector:
+    a_int, b_int = abs(int(a)), abs(int(b))
+
+    # Small ranges get a fixed fine-grained denominator set. This must come
+    # before the integer-zero check: int(0.5) == 0, so a range like (0, 0.5)
+    # would otherwise be mistaken for "both zero" and return [].
     if (b - a) <= 2:
         return [0.2, 0.25, 0.5, 1]
 
-    a, b = abs(int(a)), abs(int(b))
-    if a == 0 and b == 0:
+    if a_int == 0 and b_int == 0:
         return []
-    elif a == 0:
+
+    a, b = a_int, b_int
+    if a == 0:
         return _divisors(b)
     elif b == 0:
         return _divisors(a)

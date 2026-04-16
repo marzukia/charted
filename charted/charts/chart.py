@@ -100,11 +100,11 @@ class Chart(Svg):
 
     @classmethod
     def _validate_data(cls, data: Vector | Vector2D | None) -> Vector2D:
+        if data is not None and len(data) == 0:
+            raise Exception("No data was provided.")
+
         if not data:
             return None
-
-        if len(data) == 0:
-            raise Exception("No data provided.")
 
         if type(data[0]) is not list:
             data = [data]
@@ -197,8 +197,15 @@ class Chart(Svg):
 
     @property
     def x_offset(self) -> float:
-        """Calculate x-offset for charts with x_labels."""
-        return self.x_axis.reproject(1) if self.x_labels else 0
+        """Calculate x-offset for charts with x_labels.
+
+        Ordinal charts (no explicit x_data): shift by one tick width so data
+        points sit at the centre of their column.  XY charts (explicit x_data
+        provided): positions are already correct from reproject; offset is 0.
+        """
+        if self.x_labels and self._x_data is None:
+            return self.x_axis.reproject(1)
+        return 0
 
     def _apply_stacking(self, y: float, y_offset: float) -> float:
         """Apply y-stacking if enabled."""
@@ -213,9 +220,18 @@ class Chart(Svg):
         if not colors:
             colors = [*DEFAULT_COLORS]
         new_colors = [*colors]
-        while self.x_count > len(new_colors):
+        # Size palette to series count, not x_count. y_data may be None for
+        # BarChart (which puts its series in x_data), so fall back accordingly.
+        if self.y_data:
+            series_count = len(self.y_data)
+        elif self.x_data:
+            series_count = len(self.x_data)
+        else:
+            series_count = 0
+        target = max(series_count, self.x_count)
+        while target > len(new_colors):
             for color in generate_complementary_colors(colors):
-                if len(new_colors) >= self.x_count:
+                if len(new_colors) >= target:
                     break
                 new_colors.append(color)
         self._colors = new_colors
@@ -455,13 +471,11 @@ class Chart(Svg):
                 raise Exception("x and y data series do not match")
             x_data = x_data * y_len
 
-        xz = self.x_axis.reproject(self.x_axis.axis_dimension.min_value)
-
         data = []
         for arr in x_data:
             row = []
             for x in arr:
-                v = self.x_axis.reproject(x) + xz
+                v = self.x_axis.reproject(x)
                 row.append(v)
             data.append(row)
 
@@ -470,7 +484,15 @@ class Chart(Svg):
     @property
     def zero_line(self) -> Path:
         paths = []
-        if self.x_axis.axis_dimension.min_value < 0:
+        # Draw the x zero-line when x spans negatives AND the chart type needs it.
+        # BarChart has a `y_height` property; its x_data are bar lengths measured
+        # from a zero baseline, so the zero-line is meaningful there.
+        # XY line/scatter charts have real x_data positions that already span the
+        # full plot width — a vertical bar at x=0 data position looks like a
+        # spurious y-axis in the middle of the plot — suppress it for those only.
+        is_bar_chart = getattr(self, "y_height", None) is not None
+        is_xy_line = self._x_data is not None and not is_bar_chart
+        if self.x_axis.axis_dimension.min_value < 0 and not is_xy_line:
             paths += [
                 f"M{self.x_axis.zero} {0}",
                 f"v{self.plot_height}z",

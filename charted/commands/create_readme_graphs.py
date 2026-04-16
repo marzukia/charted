@@ -28,20 +28,23 @@ class Examples:
 
     @property
     def column(self):
+        # Multi-column chart showing sales by product category over quarters
         return ColumnChart(
-            title="Example Column Graph",
+            title="Product Sales by Quarter ($M)",
             data=[
-                [9.8, -29.8, 22.6, 45.0, 33.8, 35.4, 44.2],
-                [8.9, 33.1, -27.1, 31.2, -15.4, 32.6, 19.8],
-                [-32.0, 32.3, 45.7, -3.3, -33.3, -15.7, -38.6],
+                [45, 52, 48, 61],  # Electronics
+                [32, 38, 45, 52],  # Clothing
+                [28, 35, 42, 48],  # Home & Garden
+                [22, 35, 42, 42],  # Sports
+                [18, 25, 32, 38],  # Books
             ],
-            labels=["January", "February", "March", "April", "May", "June", "July"],
-            width=600,
-            height=400,
+            labels=["Q1", "Q2", "Q3", "Q4"],
+            width=700,
+            height=500,
             theme={
                 "padding": {
-                    "v_padding": 0.1,
-                    "h_padding": 0.1,
+                    "v_padding": 0.12,
+                    "h_padding": 0.12,
                 }
             },
         )
@@ -60,18 +63,33 @@ class Examples:
     @property
     def xy_line(self):
         return LineChart(
-            title="Example XY Line Graph",
+            title="Monthly Temperature vs CO2 Concentration",
             data=[
-                [5 * (1.5**n) for n in range(0, 11)],
-                [-5 * (1.5**n) for n in range(0, 11)],
+                [32, 35, 42, 52, 62, 72, 78, 76, 68, 55, 45, 38],
+                [315, 318, 322, 328, 335, 342, 348, 352, 348, 342, 335, 328],
             ],
-            x_data=[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4],
+            x_data=[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5],
+            labels=[
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ],
         )
 
 
-examples = Examples()
-properties = [prop for prop in dir(examples) if not prop.startswith("__")]
+if __name__ == "__main__":
+    examples = Examples()
+    properties = [prop for prop in dir(examples) if not prop.startswith("__")]
 
-for key in properties:
-    with open(os.path.join(EXAMPLES_DIR, f"{key}.svg"), "w") as test:
-        test.write(repr(getattr(examples, key)))
+    for key in properties:
+        with open(os.path.join(EXAMPLES_DIR, f"{key}.svg"), "w") as test:
+            test.write(repr(getattr(examples, key)))
