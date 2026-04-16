@@ -197,8 +197,15 @@ class Chart(Svg):
 
     @property
     def x_offset(self) -> float:
-        """Calculate x-offset for charts with x_labels."""
-        return self.x_axis.reproject(1) if self.x_labels else 0
+        """Calculate x-offset for charts with x_labels.
+
+        Ordinal charts (no explicit x_data): shift by one tick width so data
+        points sit at the centre of their column.  XY charts (explicit x_data
+        provided): positions are already correct from reproject; offset is 0.
+        """
+        if self.x_labels and self._x_data is None:
+            return self.x_axis.reproject(1)
+        return 0
 
     def _apply_stacking(self, y: float, y_offset: float) -> float:
         """Apply y-stacking if enabled."""

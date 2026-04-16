@@ -381,13 +381,16 @@ class YAxis(Axis):
             y_positions = self.coordinates
 
         for y, label in zip(y_positions, self.labels):
+            # Bar charts: center text on bar midpoint (baseline above center)
+            # Line/scatter: align baseline slightly below grid line (original behaviour)
+            y_offset = -label.height / 2 if bar_height is not None else label.height / 4
             text = Text(
                 x=0,
                 y=y,
                 text=label.text,
                 transform=translate(
                     x=-label.width,
-                    y=-label.height / 2,  # Vertically center text on bar center
+                    y=y_offset,
                 ),
             )
             labels.add_child(text)
