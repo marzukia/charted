@@ -45,6 +45,8 @@ class Axis(G):
         stacked: bool = False,
     ) -> float:
         value_range = max_value - min_value
+        if value_range == 0:
+            return 0.0
         normalised_value = (value - min_value) / value_range
         if stacked:
             normalised_value = value / value_range
@@ -94,7 +96,7 @@ class Axis(G):
             min_value = math.floor(min_value)
             max_value = math.ceil(max_value)
 
-        if zero_index and min_value >= 1:
+        if zero_index and min_value > 0:
             min_value = 0
 
         if not has_labels:
@@ -316,30 +318,31 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
-        """Calculate centered coordinates for bar chart bars."""
+        """Calculate pixel coordinates for grid lines / labels.
+
+        For bar charts, return pixel positions centered on each bar
+        (matching ``axis_labels``). For other chart types, return projected
+        pixel positions for each grid value.
+        """
         offset = 0
         if self.stacked and self.axis_dimension.min_value < 0:
             offset = self.axis_dimension.min_value
 
-        # For bar charts, center labels within bars rather than at bar edges
+        # For bar charts, center grid lines within bars using pixel positions
+        # directly (no reverse() round-trip through data space).
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
-            # Calculate the gap-based offset to center on bars
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
-            # Start position is the gap offset from bar.py
-            start_y = bar_height * bar_gap
-            # Bar center: start_y + idx*(h+gap) + h/2
             gap = bar_height * bar_gap
-            centers = [
+            start_y = bar_height * bar_gap
+            return [
                 start_y + i * (bar_height + gap) + bar_height / 2
                 for i in range(len(self.values))
             ]
-            # Convert pixel positions to data-space values via reverse projection
-            return [self.reverse(center) for center in centers]
 
         return [
             self.reproject(i + abs(offset))
-            for i in reversed([self.axis_dimension.max_value, *self.values])
+            for i in reversed(self.values)
         ]
 
     @property

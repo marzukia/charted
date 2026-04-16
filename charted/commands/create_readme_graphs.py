@@ -86,9 +86,10 @@ class Examples:
         )
 
 
-examples = Examples()
-properties = [prop for prop in dir(examples) if not prop.startswith("__")]
+if __name__ == "__main__":
+    examples = Examples()
+    properties = [prop for prop in dir(examples) if not prop.startswith("__")]
 
-for key in properties:
-    with open(os.path.join(EXAMPLES_DIR, f"{key}.svg"), "w") as test:
-        test.write(repr(getattr(examples, key)))
+    for key in properties:
+        with open(os.path.join(EXAMPLES_DIR, f"{key}.svg"), "w") as test:
+            test.write(repr(getattr(examples, key)))

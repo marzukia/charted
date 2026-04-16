@@ -100,11 +100,11 @@ class Chart(Svg):
 
     @classmethod
     def _validate_data(cls, data: Vector | Vector2D | None) -> Vector2D:
+        if data is not None and len(data) == 0:
+            raise Exception("No data was provided.")
+
         if not data:
             return None
-
-        if len(data) == 0:
-            raise Exception("No data provided.")
 
         if type(data[0]) is not list:
             data = [data]
@@ -220,9 +220,18 @@ class Chart(Svg):
         if not colors:
             colors = [*DEFAULT_COLORS]
         new_colors = [*colors]
-        while self.x_count > len(new_colors):
+        # Size palette to series count, not x_count. y_data may be None for
+        # BarChart (which puts its series in x_data), so fall back accordingly.
+        if self.y_data:
+            series_count = len(self.y_data)
+        elif self.x_data:
+            series_count = len(self.x_data)
+        else:
+            series_count = 0
+        target = max(series_count, self.x_count)
+        while target > len(new_colors):
             for color in generate_complementary_colors(colors):
-                if len(new_colors) >= self.x_count:
+                if len(new_colors) >= target:
                     break
                 new_colors.append(color)
         self._colors = new_colors
@@ -462,13 +471,11 @@ class Chart(Svg):
                 raise Exception("x and y data series do not match")
             x_data = x_data * y_len
 
-        xz = self.x_axis.reproject(self.x_axis.axis_dimension.min_value)
-
         data = []
         for arr in x_data:
             row = []
             for x in arr:
-                v = self.x_axis.reproject(x) + xz
+                v = self.x_axis.reproject(x)
                 row.append(v)
             data.append(row)
 

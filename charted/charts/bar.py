@@ -78,9 +78,9 @@ class BarChart(Chart):
         Returns:
             G element containing all bar paths with proper transforms.
         """
-        # Bar thickness (vertical dimension of each horizontal bar)
-        bar_thickness = self.y_height
-        gap = bar_thickness * self.bar_gap
+        # Total vertical slot per category (one full bar + surrounding gap).
+        slot_height = self.y_height
+        gap = slot_height * self.bar_gap
 
         # Start with gap offset at top for centering
         start_y = gap
@@ -88,19 +88,26 @@ class BarChart(Chart):
         # Bars start at x=0 (left edge of plot area)
         x_offset = self.left_padding
 
+        num_series = len(self.x_values) if self.x_values else 1
+        # Split the slot between series so multi-series charts draw side-by-side
+        # sub-bars within each category slot. Single-series behaviour unchanged.
+        series_thickness = slot_height / num_series if num_series > 0 else slot_height
+
         g = G(
             opacity="0.8",
             transform=f"translate({x_offset}, {self.top_padding})",
         )
-        for x_values_series, y_values_series, color in zip(
-            self.x_values, self.y_values, self.colors
+        for series_idx, (x_values_series, y_values_series, color) in enumerate(
+            zip(self.x_values, self.y_values, self.colors)
         ):
             paths = []
             for bar_idx, (x, y) in enumerate(zip(x_values_series, y_values_series)):
-                # Calculate vertical position for this bar
-                bar_y = start_y + bar_idx * (bar_thickness + gap)
+                # Calculate vertical position for this bar slot
+                slot_y = start_y + bar_idx * (slot_height + gap)
+                # Offset within the slot for this series (no-op for single series)
+                bar_y = slot_y + series_idx * series_thickness
                 bar_width = x
-                paths.append(Path.get_path(0, bar_y, bar_width, bar_thickness))
+                paths.append(Path.get_path(0, bar_y, bar_width, series_thickness))
             g.add_child(Path(d=paths, fill=color))
 
         return g
