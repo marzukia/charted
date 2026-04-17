@@ -12,8 +12,6 @@ All chart types support negative values with a proper zero baseline, multi-serie
 - Bar (single-series, multi-series, stacked, side-by-side)
 - Line (single-series, multi-series, XY mode)
 - Scatter (single-series, multi-series)
-- Pie
-- Doughnut
 
 ## Installation
 
@@ -274,37 +272,3 @@ graph = ScatterChart(
 ```
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter_single.svg)
-
-### Pie
-
-```py
-from charted.charts import PieChart
-
-graph = PieChart(
-    title="Market Share by Product Line",
-    data=[35, 28, 18, 12, 7],
-    labels=["Product A", "Product B", "Product C", "Product D", "Other"],
-    width=600,
-    height=500,
-)
-```
-
-![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie.svg)
-
-### Doughnut
-
-```py
-from charted.charts import PieChart
-
-graph = PieChart(
-    title="Operating System Market Share",
-    data=[72, 15, 8, 5],
-    labels=["Windows", "macOS", "Linux", "Other"],
-    doughnut=True,
-    inner_radius=0.5,
-    width=600,
-    height=500,
-)
-```
-
-![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie_doughnut.svg)
