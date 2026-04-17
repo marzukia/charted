@@ -15,6 +15,8 @@ class PieChart(Chart):
     `inner_radius` (0-1) to create a doughnut chart.
     """
 
+    render_axes: bool = False
+
     def __init__(
         self,
         data: Vector | Vector2D,
@@ -41,10 +43,36 @@ class PieChart(Chart):
             doughnut: If True, renders as doughnut chart.
             inner_radius: Inner radius ratio (0-1) for doughnut mode.
         """
-        self.doughnut = doughnut
-        self.inner_radius = min(max(inner_radius, 0.0), 1.0)
+        # Bug 7: validate inner_radius before use
+        if not (0 <= inner_radius < 1):
+            raise ValueError(
+                f"inner_radius must be in [0, 1), got {inner_radius}"
+            )
 
-        # Normalize data format
+        self.doughnut = doughnut
+        self.inner_radius = inner_radius
+
+        # Store original data for pie slice calculations (x_values gets transformed by parent)
+        if not isinstance(data, list) or not data or isinstance(data[0], (int, float)):
+            self._pie_data = [list(data)]  # Single series as list of lists
+        else:
+            self._pie_data = [list(series) for series in data]  # Multiple series
+
+        # Bug 3 & 6: validate all values are non-negative and finite
+        for series in self._pie_data:
+            if not all(math.isfinite(v) for v in series):
+                raise ValueError(
+                    "PieChart data must be finite (no NaN or inf values)"
+                )
+            if any(v < 0 for v in series):
+                raise ValueError("PieChart data must be non-negative")
+
+        # Bug 4: validate that not all values are zero
+        all_totals = [sum(series) for series in self._pie_data]
+        if all(t == 0 for t in all_totals):
+            raise ValueError("PieChart data must not all be zero")
+
+        # Normalize data format for parent class
         if not isinstance(data, list) or not data or isinstance(data[0], (int, float)):
             x_data = [data]
         else:
@@ -87,21 +115,50 @@ class PieChart(Chart):
         )
 
         # Process each series
-        for series_idx, (x_values_series, color) in enumerate(
-            zip(self.x_values, self.colors)
-        ):
+        color_cycle = self.colors  # Access the color cycle from base class
+
+        for series_idx, pie_data_series in enumerate(self._pie_data):
             # Calculate total for this series
-            total = sum(x_values_series) if x_values_series else 1
+            total = sum(pie_data_series) if pie_data_series else 0
             if total == 0:
                 continue
 
             current_angle = -90  # Start at top (12 o'clock)
+            slice_idx = 0  # Track slice index for color cycling
 
-            for value in x_values_series:
-                if total != 0:
-                    slice_angle = (value / total) * 360
-                else:
-                    slice_angle = 0
+            for value in pie_data_series:
+                slice_angle = (value / total) * 360
+
+                # Get color for this slice, cycling through the palette
+                slice_color = color_cycle[slice_idx % len(color_cycle)]
+
+                # Bug 2: special-case a full circle (single slice = 100%)
+                if slice_angle >= 359.999:
+                    inner_r = outer_radius * self.inner_radius if self.doughnut else 0
+                    if self.doughnut:
+                        # Two 180° arcs for outer ring, two for inner (reversed)
+                        path_d = [
+                            f"M {outer_radius} 0",
+                            f"A {outer_radius} {outer_radius} 0 1 1 {-outer_radius} 0",
+                            f"A {outer_radius} {outer_radius} 0 1 1 {outer_radius} 0",
+                            f"M {inner_r} 0",
+                            f"A {inner_r} {inner_r} 0 1 0 {-inner_r} 0",
+                            f"A {inner_r} {inner_r} 0 1 0 {inner_r} 0",
+                            "Z",
+                        ]
+                    else:
+                        path_d = [
+                            f"M {outer_radius} 0",
+                            f"A {outer_radius} {outer_radius} 0 1 1 {-outer_radius} 0",
+                            f"A {outer_radius} {outer_radius} 0 1 1 {outer_radius} 0",
+                            "Z",
+                        ]
+                    pie_g.add_child(
+                        Path(d=path_d, fill=slice_color, stroke="#333333", stroke_width=1)
+                    )
+                    current_angle += slice_angle
+                    slice_idx += 1
+                    continue
 
                 # Calculate slice endpoints
                 start_angle_rad = math.radians(current_angle)
@@ -143,9 +200,10 @@ class PieChart(Chart):
                     ]
 
                 pie_g.add_child(
-                    Path(d=path_d, fill=color, stroke="#333333", stroke_width=1)
+                    Path(d=path_d, fill=slice_color, stroke="#333333", stroke_width=1)
                 )
 
                 current_angle += slice_angle
+                slice_idx += 1  # Increment for next slice's color
 
         return pie_g

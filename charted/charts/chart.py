@@ -16,6 +16,7 @@ from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 class Chart(Svg):
     x_stacked: bool = False
     y_stacked: bool = False
+    render_axes: bool = True
 
     def __init__(
         self,
@@ -91,15 +92,11 @@ class Chart(Svg):
 
         self.colors = self.theme["colors"]
 
-        self.add_children(
-            self.container,
-            self.title,
-            self.y_axis,
-            self.x_axis,
-            self.zero_line,
-            self.representation,
-            self.legend,
-        )
+        children = [self.container, self.title]
+        if self.render_axes:
+            children += [self.y_axis, self.x_axis, self.zero_line]
+        children += [self.representation, self.legend]
+        self.add_children(*children)
 
     @classmethod
     def _validate_data(cls, data: Vector | Vector2D | None) -> Vector2D:
@@ -429,21 +426,15 @@ class Chart(Svg):
             offsets = [[0] * self.x_count]
             self._x_offsets = [[self.x_axis.reproject(x) for x in arr] for arr in offsets]
             return
-
+        
         offsets = []
-        negative_offsets = [0] * self.x_count
-        positive_offsets = [0] * self.x_count
+        cumulative_offsets = [0] * self.x_count
 
         for row in x_data:
             row_offsets = []
             for i, x in enumerate(row):
-                current_offset = 0
-                if x >= 0:
-                    current_offset = positive_offsets[i]
-                    positive_offsets[i] += x
-                else:
-                    current_offset = negative_offsets[i]
-                    negative_offsets[i] -= abs(x)
+                current_offset = cumulative_offsets[i]
+                cumulative_offsets[i] += x
                 row_offsets.append(current_offset)
             offsets.append(row_offsets)
 
