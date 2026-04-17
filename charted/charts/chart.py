@@ -429,15 +429,21 @@ class Chart(Svg):
             offsets = [[0] * self.x_count]
             self._x_offsets = [[self.x_axis.reproject(x) for x in arr] for arr in offsets]
             return
-        
+
         offsets = []
-        cumulative_offsets = [0] * self.x_count
+        negative_offsets = [0] * self.x_count
+        positive_offsets = [0] * self.x_count
 
         for row in x_data:
             row_offsets = []
             for i, x in enumerate(row):
-                current_offset = cumulative_offsets[i]
-                cumulative_offsets[i] += x
+                current_offset = 0
+                if x >= 0:
+                    current_offset = positive_offsets[i]
+                    positive_offsets[i] += x
+                else:
+                    current_offset = negative_offsets[i]
+                    negative_offsets[i] -= abs(x)
                 row_offsets.append(current_offset)
             offsets.append(row_offsets)
 
