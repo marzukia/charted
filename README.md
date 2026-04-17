@@ -8,16 +8,12 @@ All chart types support negative values with a proper zero baseline, multi-serie
 
 ## Chart Types
 
-### Available
-
-- Column
-- Line
-- Scatter
-- Bar
-
-### Planned
-
-- Donut
+- Column (multi-series, stacked, side-by-side)
+- Bar (single-series, multi-series, stacked, side-by-side)
+- Line (single-series, multi-series, XY mode)
+- Scatter (single-series, multi-series)
+- Pie
+- Doughnut
 
 ## Installation
 
@@ -227,3 +223,88 @@ graph = BarChart(
 ```
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar_sidebyside.svg)
+
+### Line — single series
+
+```py
+from charted.charts import LineChart
+
+graph = LineChart(
+    title="Monthly Active Users (K)",
+    data=[[42, 48, 55, 61, 58, 70, 80, 78, 85, 92, 88, 100]],
+    labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    series_names=["MAU"],
+    width=700,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line_single.svg)
+
+### Scatter — multi-series
+
+```py
+from charted.charts import ScatterChart
+
+graph = ScatterChart(
+    title="Correlation Analysis",
+    x_data=[[0, 10, 20, 30, 40, 50], [5, 15, 25, 35, 45, 55]],
+    y_data=[[10, 20, 30, 40, 50, 60], [15, 25, 35, 50, 60, 70]],
+    series_names=["Group A", "Group B"],
+    width=700,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter.svg)
+
+### Scatter — single series
+
+```py
+from charted.charts import ScatterChart
+
+graph = ScatterChart(
+    title="Height vs Weight Distribution",
+    x_data=[160, 165, 170, 172, 175, 178, 180, 182, 185, 188, 190],
+    y_data=[55, 60, 65, 68, 72, 75, 78, 80, 85, 88, 92],
+    series_names=["Observations"],
+    width=700,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter_single.svg)
+
+### Pie
+
+```py
+from charted.charts import PieChart
+
+graph = PieChart(
+    title="Market Share by Product Line",
+    data=[35, 28, 18, 12, 7],
+    labels=["Product A", "Product B", "Product C", "Product D", "Other"],
+    width=600,
+    height=500,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie.svg)
+
+### Doughnut
+
+```py
+from charted.charts import PieChart
+
+graph = PieChart(
+    title="Operating System Market Share",
+    data=[72, 15, 8, 5],
+    labels=["Windows", "macOS", "Linux", "Other"],
+    doughnut=True,
+    inner_radius=0.5,
+    width=600,
+    height=500,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie_doughnut.svg)
