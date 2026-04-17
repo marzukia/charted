@@ -318,18 +318,10 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
-        """Calculate pixel coordinates for grid lines / labels.
-
-        For bar charts, return pixel positions centered on each bar
-        (matching ``axis_labels``). For other chart types, return projected
-        pixel positions for each grid value.
-        """
         offset = 0
         if self.stacked and self.axis_dimension.min_value < 0:
             offset = self.axis_dimension.min_value
 
-        # For bar charts, center grid lines within bars using pixel positions
-        # directly (no reverse() round-trip through data space).
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
@@ -371,14 +363,11 @@ class YAxis(Axis):
             ),
         )
 
-        # For bar charts, calculate pixel positions centered on bars
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
-            # Calculate bar gap and start position
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
             gap = bar_height * bar_gap
             start_y = bar_height * bar_gap
-            # Pixel positions centered on each bar
             y_positions = [
                 start_y + i * (bar_height + gap) + bar_height / 2
                 for i in range(len(self.labels))
@@ -387,8 +376,6 @@ class YAxis(Axis):
             y_positions = self.coordinates
 
         for y, label in zip(y_positions, self.labels):
-            # Bar charts: center text on bar midpoint (baseline above center)
-            # Line/scatter: align baseline slightly below grid line (original behaviour)
             y_offset = -label.height / 2 if bar_height is not None else label.height / 4
             text = Text(
                 x=0,

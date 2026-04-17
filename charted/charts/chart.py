@@ -68,7 +68,7 @@ class Chart(Svg):
             data=self.x_data,
             labels=x_labels,
             stacked=self.x_stacked,
-            zero_index=self.zero_index,
+            zero_index=False if (x_data is not None and x_labels is not None) else self.zero_index,
             config=self.theme["v_grid"],
         )
 
@@ -185,7 +185,6 @@ class Chart(Svg):
         return self.height - (self.bottom_padding + self.top_padding)
 
     def get_base_transform(self) -> list:
-        """Return the base transform chain used by all chart types."""
         from charted.utils.transform import rotate, scale
 
         return [
@@ -220,8 +219,6 @@ class Chart(Svg):
         if not colors:
             colors = [*DEFAULT_COLORS]
         new_colors = [*colors]
-        # Size palette to series count, not x_count. y_data may be None for
-        # BarChart (which puts its series in x_data), so fall back accordingly.
         if self.y_data:
             series_count = len(self.y_data)
         elif self.x_data:
@@ -329,15 +326,11 @@ class Chart(Svg):
             )
             labels = [str(round(x, 2)) for x in values]
 
-        # Handle both string labels and MeasuredText objects
-        # MeasuredText has a .width attribute, strings need to be measured
         max_width = 0.0
         for label in labels:
             if hasattr(label, 'width'):
-                # MeasuredText object - use its width directly
                 width = label.width
             else:
-                # String label - measure it
                 width = calculate_text_dimensions(str(label)).width
             if width > max_width:
                 max_width = width
@@ -397,9 +390,7 @@ class Chart(Svg):
 
     @y_offsets.setter
     def y_offsets(self, y_data: Vector2D | None = None) -> None:
-        # Handle None y_data (e.g., BarChart with only x_data)
         if not y_data:
-            # Create empty offsets based on y_count
             offsets = [[0] * self.y_count]
             self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
             return
@@ -434,7 +425,6 @@ class Chart(Svg):
 
     @y_values.setter
     def y_values(self, y_data: Vector2D) -> None:
-        # Handle None y_data (e.g., BarChart with only x_data)
         if not y_data:
             self._y_values = [[0] * self.y_count]
             return
@@ -464,7 +454,6 @@ class Chart(Svg):
         else:
             x_data = [*x_data]
 
-        # Handle None y_data (e.g., BarChart)
         y_len = len(self.y_data) if self.y_data else 0
         if len(x_data) != y_len:
             if not len(x_data) == 1:
@@ -484,12 +473,6 @@ class Chart(Svg):
     @property
     def zero_line(self) -> Path:
         paths = []
-        # Draw the x zero-line when x spans negatives AND the chart type needs it.
-        # BarChart has a `y_height` property; its x_data are bar lengths measured
-        # from a zero baseline, so the zero-line is meaningful there.
-        # XY line/scatter charts have real x_data positions that already span the
-        # full plot width — a vertical bar at x=0 data position looks like a
-        # spurious y-axis in the middle of the plot — suppress it for those only.
         is_bar_chart = getattr(self, "y_height", None) is not None
         is_xy_line = self._x_data is not None and not is_bar_chart
         if self.x_axis.axis_dimension.min_value < 0 and not is_xy_line:

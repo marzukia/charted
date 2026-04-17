@@ -1,6 +1,8 @@
 Line Charts
 ===========
 
+Line chart. Supports multiple overlapping series, negative values, and custom x-axis positions.
+
 .. image:: ../examples/line.svg
    :width: 100%
 
@@ -11,25 +13,34 @@ Basic usage::
    chart = LineChart(data=[1, 2, 3], labels=["a", "b", "c"])
    chart.html  # returns SVG string
 
-Multi-series::
+Multi-series (overlapping lines)::
 
+   import math
+   n = 20
    chart = LineChart(
-       data=[[1, 2, 3], [3, 2, 1]],
-       labels=["a", "b", "c"],
-       series_names=["Series 1", "Series 2"],
+       title="Signal Analysis: Raw vs Filtered vs Baseline",
+       data=[
+           [math.sin(i * 0.5) * 30 + (i % 7 - 3) * 5 for i in range(n)],  # Raw
+           [math.sin(i * 0.5) * 25 for i in range(n)],                      # Filtered
+           [math.sin(i * 0.5) * 10 - 5 for i in range(n)],                  # Baseline
+       ],
+       labels=[str(i) for i in range(n)],
+       width=700,
+       height=400,
    )
 
 .. image:: ../examples/xy_line.svg
    :width: 100%
 
-XY (scatter-line) with real x-values::
-
-   from charted.charts.line import LineChart
+XY mode with real x-values (temperature anomaly)::
 
    chart = LineChart(
-       data=[9, 1, 0, 1, 9],
-       x_data=[-3, -1, 0, 1, 3],
-       labels=["Jan", "Feb", "Mar", "Apr", "May"],
+       title="Temperature Anomaly vs Baseline (1990-2009)",
+       data=[anomalies, [0] * 20],
+       x_data=list(range(1990, 2010)),
+       labels=[str(y) for y in range(1990, 2010)],
+       width=700,
+       height=400,
    )
 
 .. autoclass:: charted.charts.line.LineChart

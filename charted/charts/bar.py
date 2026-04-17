@@ -7,18 +7,6 @@ from charted.utils.types import Labels, Vector, Vector2D
 
 
 class BarChart(Chart):
-    """Horizontal bar chart with support for multiple series and negative values.
-
-    Args:
-        data: Single or multiple series of bar values.
-        labels: Optional labels for y-axis (categories).
-        bar_gap: Gap between bars as a fraction of bar height (default 0.50).
-        width: Total chart width in pixels.
-        height: Total chart height in pixels.
-        zero_index: Whether to start index at 0 for automatic label generation.
-        title: Optional chart title.
-        theme: Optional custom theme.
-    """
 
     def __init__(
         self,
@@ -60,54 +48,49 @@ class BarChart(Chart):
 
     @property
     def y_height(self) -> float:
-        """Calculate bar height based on available space and gap settings.
-
-        For n bars with gaps between them, the total space is:
-        n * bar_height + (n-1) * gap = plot_height
-        """
         return self.plot_height / (self.y_count + (self.y_count + 1) * self.bar_gap)
 
     def get_base_transform(self):
-        """Return base transform for the chart."""
         return []
 
     @property
     def representation(self) -> G:
-        """Generate SVG representation of the bar chart.
-
-        Returns:
-            G element containing all bar paths with proper transforms.
-        """
-        # Total vertical slot per category (one full bar + surrounding gap).
         slot_height = self.y_height
         gap = slot_height * self.bar_gap
-
-        # Start with gap offset at top for centering
         start_y = gap
-
-        # Bars start at x=0 (left edge of plot area)
         x_offset = self.left_padding
+        zero_x = self.x_axis.zero
 
         num_series = len(self.x_values) if self.x_values else 1
-        # Split the slot between series so multi-series charts draw side-by-side
-        # sub-bars within each category slot. Single-series behaviour unchanged.
         series_thickness = slot_height / num_series if num_series > 0 else slot_height
 
         g = G(
             opacity="0.8",
             transform=f"translate({x_offset}, {self.top_padding})",
         )
-        for series_idx, (x_values_series, y_values_series, color) in enumerate(
-            zip(self.x_values, self.y_values, self.colors)
+        for series_idx, (x_values_series, color) in enumerate(
+            zip(self.x_values, self.colors)
         ):
             paths = []
-            for bar_idx, (x, y) in enumerate(zip(x_values_series, y_values_series)):
-                # Calculate vertical position for this bar slot
+            for bar_idx, x in enumerate(x_values_series):
                 slot_y = start_y + bar_idx * (slot_height + gap)
-                # Offset within the slot for this series (no-op for single series)
                 bar_y = slot_y + series_idx * series_thickness
-                bar_width = x
-                paths.append(Path.get_path(0, bar_y, bar_width, series_thickness))
+                if x >= zero_x:
+                    paths.append(Path.get_path(zero_x, bar_y, x - zero_x, series_thickness))
+                else:
+                    paths.append(Path.get_path(x, bar_y, zero_x - x, series_thickness))
             g.add_child(Path(d=paths, fill=color))
 
-        return g
+        grid_color = "#CCCCCC"
+        if isinstance(self.theme, dict):
+            grid_color = self.theme.get("h_grid", {}).get("stroke", "#CCCCCC")
+        bottom_border = Path(
+            stroke=grid_color,
+            stroke_dasharray="None",
+            d=[f"M0 {self.plot_height} h{self.plot_width}"],
+            transform=f"translate({self.left_padding}, {self.top_padding})",
+        )
+
+        result = G()
+        result.add_children(g, bottom_border)
+        return result
