@@ -142,7 +142,9 @@ class PieChart(Chart):
                         "Z",
                     ]
 
-                pie_g.add_child(Path(d=path_d, fill=color))
+                pie_g.add_child(
+                    Path(d=path_d, fill=color, stroke="#333333", stroke_width=1)
+                )
 
                 current_angle += slice_angle
 
