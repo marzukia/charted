@@ -18,6 +18,7 @@ class BarChart(Chart):
         zero_index: bool = True,
         title: str | None = None,
         theme: Theme | None = None,
+        series_names: list[str] | None = None,
     ):
         self.bar_gap = bar_gap
         if not isinstance(data, list) or not data or isinstance(data[0], (int, float)):
@@ -44,6 +45,7 @@ class BarChart(Chart):
             title=title,
             zero_index=zero_index,
             theme=theme,
+            series_names=series_names,
         )
 
     @property

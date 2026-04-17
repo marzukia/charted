@@ -20,6 +20,7 @@ class ColumnChart(Chart):
         zero_index: bool = True,
         title: str | None = None,
         theme: Theme | None = None,
+        series_names: list[str] | None = None,
     ):
         self.column_gap = column_gap
         super().__init__(
@@ -30,6 +31,7 @@ class ColumnChart(Chart):
             title=title,
             zero_index=zero_index,
             theme=theme,
+            series_names=series_names,
         )
 
     @property

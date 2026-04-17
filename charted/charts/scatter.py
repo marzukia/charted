@@ -13,6 +13,7 @@ class ScatterChart(Chart):
         height: float = 500,
         title: str | None = None,
         theme: Theme | None = None,
+        series_names: list[str] | None = None,
     ):
         super().__init__(
             y_data=y_data,
@@ -21,6 +22,7 @@ class ScatterChart(Chart):
             height=height,
             title=title,
             theme=theme,
+            series_names=series_names,
         )
 
     @property
