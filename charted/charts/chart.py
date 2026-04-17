@@ -27,6 +27,7 @@ class Chart(Svg):
         x_labels: Labels | None = None,
         y_labels: Labels | None = None,
         series_names: list[str] | None = None,
+        x_stacked: bool = False,
         title: str | None = None,
         theme: Theme | None = None,
     ):
@@ -44,6 +45,7 @@ class Chart(Svg):
             x_labels = [" " for i in range(array_len)]
 
         self.series_names = series_names
+        self.x_stacked = x_stacked
         self.theme = Theme.load(theme)
 
         self.zero_index = zero_index
@@ -82,6 +84,7 @@ class Chart(Svg):
         )
 
         self.y_offsets = self.y_data
+        self.x_offsets = self.x_data
 
         self.y_values = self.y_data
         self.x_values = self.x_data
@@ -414,6 +417,31 @@ class Chart(Svg):
 
         self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
 
+
+
+    @property
+    def x_offsets(self):
+        return self._x_offsets
+
+    @x_offsets.setter
+    def x_offsets(self, x_data=None):
+        if not x_data or not getattr(self, 'x_stacked', False):
+            offsets = [[0] * self.x_count]
+            self._x_offsets = [[self.x_axis.reproject(x) for x in arr] for arr in offsets]
+            return
+        
+        offsets = []
+        cumulative_offsets = [0] * self.x_count
+
+        for row in x_data:
+            row_offsets = []
+            for i, x in enumerate(row):
+                current_offset = cumulative_offsets[i]
+                cumulative_offsets[i] += x
+                row_offsets.append(current_offset)
+            offsets.append(row_offsets)
+
+        self._x_offsets = [[self.x_axis.reproject(x) for x in arr] for arr in offsets]
 
     @property
     def x_width(self) -> float:

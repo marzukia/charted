@@ -1,10 +1,10 @@
 {
-  "bar_basic.svg": "42907c701662397ee64217a7a60be92d3631195574244894df699d8a429d5d0c",
-  "bar_multi.svg": "1f8198eeaf89206f6073120f365fc54ad57ec4083475e4456bbd9a3f4cf3b7f2",
+  "bar_basic.svg": "bfb7ae6c63721f429ddcb4925e4dfdbd237c62be825cff2094070d880bb10c3c",
+  "bar_multi.svg": "52c28b2bcff037b2dd7f861768a0e97fc9f3b596cf86961b5eac5de188fd4120",
   "column_basic.svg": "b70b363faa8096b1fb579eed39b97c141348918522719635e5b28a25eb82bed1",
   "column_stacked.svg": "6bf5d886e14124e14fb2fdd3d5ea8c3d1d82365623169e4865acf0f96c840b74",
   "line_basic.svg": "003a8476fe2659031a3c77e659d011320bde15548ed23037e28631b9a9a4fe9b",
-  "line_multi.svg": "8d1bce1f8c6cd764dd6fab5275143c339f1a7ce50f8dc13790f9562ee8f4a88c",
+  "line_multi.svg": "7356dcb7b6448e7b6efa4c96d5218d96d269dceb75b9b85f8f9f5e4e1ef354f0",
   "scatter_basic.svg": "c56a74d96895746c559bf06742e98bd8b1a5737889c3328eaedb160aa22513bc",
   "scatter_multi.svg": "b64e1a7c88f5ef882f22825fdcc96db4dfcced62f46637fdb56c406d9c0bb7b0"
 }

@@ -144,6 +144,27 @@ graph = BarChart(
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar_multi.svg)
 
+### Bar — stacked
+
+```py
+from charted.charts import BarChart
+
+graph = BarChart(
+    title="Budget by Department ($K)",
+    data=[
+        [100, -50, 120],    # Revenue
+        [80, 60, -40],      # Expenses
+    ],
+    labels=["Q1", "Q2", "Q3"],
+    series_names=["Revenue", "Expenses"],
+    x_stacked=True,
+    width=700,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar_stacked.svg)
+
 
 ### Column — stacked (default for multi-series)
 
