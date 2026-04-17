@@ -144,3 +144,65 @@ graph = BarChart(
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar_multi.svg)
 
+
+### Column — stacked (default for multi-series)
+
+```py
+from charted.charts import ColumnChart
+
+graph = ColumnChart(
+    title="Year-over-Year Growth by Segment",
+    data=[
+        [12, 22, 30],      # Revenue
+        [-8, -15, -20],    # Costs
+        [4, 7, 10],        # Net
+    ],
+    labels=["Q1", "Q2", "Q3"],
+    series_names=["Revenue", "Costs", "Net"],
+    width=700,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/column_stacked.svg)
+
+### Column — side-by-side
+
+```py
+from charted.charts import ColumnChart
+
+graph = ColumnChart(
+    title="Sales Performance by Region",
+    data=[
+        [45, 52, 38, 61],   # North
+        [38, 46, 52, 49],   # South
+        [52, 39, 46, 51],   # East
+    ],
+    labels=["Q1", "Q2", "Q3", "Q4"],
+    series_names=["North", "South", "East"],
+    width=700,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/column_sidebyside.svg)
+
+### Bar — side-by-side with negatives
+
+```py
+from charted.charts import BarChart
+
+graph = BarChart(
+    title="Revenue vs Expenses by Quarter ($K)",
+    data=[
+        [120, 180, 210],    # Revenue
+        [-80, -95, -110],   # Expenses
+    ],
+    labels=["Q1", "Q2", "Q3"],
+    series_names=["Revenue", "Expenses"],
+    width=700,
+    height=400,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar_sidebyside.svg)
