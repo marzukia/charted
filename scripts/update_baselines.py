@@ -21,6 +21,7 @@ sys.path.insert(0, str(ROOT))
 from charted.charts.bar import BarChart
 from charted.charts.column import ColumnChart
 from charted.charts.line import LineChart
+from charted.charts.pie import PieChart
 from charted.charts.scatter import ScatterChart
 
 BASELINES_DIR = ROOT / "tests" / "baselines"
@@ -37,6 +38,8 @@ CHARTS = {
         labels=["a", "b", "c"],
         series_names=["Series 1", "Series 2"],
     ),
+    "pie_basic": PieChart(data=[10, 20, 30, 40]),
+    "pie_doughnut": PieChart(data=[10, 20, 30, 40], doughnut=True, inner_radius=0.3),
     "scatter_basic": ScatterChart(x_data=[1, 2, 3], y_data=[1, 2, 3]),
     "scatter_multi": ScatterChart(
         x_data=[[1, 2, 3], [2, 3, 4]],

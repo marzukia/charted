@@ -16,6 +16,7 @@ from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 class Chart(Svg):
     x_stacked: bool = False
     y_stacked: bool = False
+    render_axes: bool = True
 
     def __init__(
         self,
@@ -91,15 +92,11 @@ class Chart(Svg):
 
         self.colors = self.theme["colors"]
 
-        self.add_children(
-            self.container,
-            self.title,
-            self.y_axis,
-            self.x_axis,
-            self.zero_line,
-            self.representation,
-            self.legend,
-        )
+        children = [self.container, self.title]
+        if self.render_axes:
+            children += [self.y_axis, self.x_axis, self.zero_line]
+        children += [self.representation, self.legend]
+        self.add_children(*children)
 
     @classmethod
     def _validate_data(cls, data: Vector | Vector2D | None) -> Vector2D:
