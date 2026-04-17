@@ -7,14 +7,25 @@ from unittest.mock import patch, MagicMock
 
 from charted.utils.defaults import BASE_DEFINITIONS_DIR
 
+# Try to import TextMeasurer, handle missing tkinter gracefully
+try:
+    from charted.fonts.tkinter import TextMeasurer
+
+    TKINTER_AVAILABLE = True
+except ImportError:
+    TextMeasurer = None  # type: ignore
+    TKINTER_AVAILABLE = False
+
 
 class TestFontLoadingHappyPath:
     """Test happy path scenarios for font loading and utilities."""
 
     def test_create_font_definition(self):
         """Test that create_font_definition creates a JSON file."""
+        if not TKINTER_AVAILABLE:
+            pytest.skip("tkinter not available")
+
         from charted.fonts.utils import create_font_definition
-        from charted.fonts.tkinter import TextMeasurer
 
         mock_tm = MagicMock(spec=TextMeasurer)
         mock_tm.__enter__ = MagicMock(return_value=mock_tm)

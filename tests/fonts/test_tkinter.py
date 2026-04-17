@@ -2,9 +2,20 @@
 
 import os
 import pytest
-from unittest.mock import patch, MagicMock
 
-from charted.fonts.tkinter import TextMeasurer
+# Try to detect if tkinter is available; if not, skip all tests in this module
+try:
+    import tkinter  # noqa: F401
+except ImportError:
+    pytestmark = pytest.mark.skip(reason="tkinter not available")
+
+    # Provide stubs so the module can be imported without error
+    class TextMeasurer:
+        pass
+else:
+    from unittest.mock import patch, MagicMock
+
+    from charted.fonts.tkinter import TextMeasurer
 
 
 class TestTkinterFontUtils:

@@ -1,13 +1,32 @@
-import tkinter as tk
-from tkinter import font as tkfont
+"""Tkinter-based text measurement utilities.
+
+Provides TextMeasurer for measuring text dimensions using tkinter.
+Gracefully handles environments where tkinter is not available.
+"""
+
+try:
+    import tkinter as tk
+    from tkinter import font as tkfont
+
+    TKINTER_AVAILABLE = True
+except ImportError:
+    TKINTER_AVAILABLE = False
+    tk = None  # type: ignore
+    tkfont = None  # type: ignore
 
 
 class TextMeasurer:
-    """This is ussed in `create_font_definition`. This is not used at runtime as I am trying to avoid
-    creating a dependency on `tkinter`.
+    """Context manager for measuring text dimensions using tkinter.
+
+    This is used in `create_font_definition` but not at runtime,
+    avoiding a hard dependency on tkinter for the end user.
     """
 
     def __init__(self) -> None:
+        if not TKINTER_AVAILABLE:
+            raise ImportError(
+                "tkinter is not available. TextMeasurer requires tkinter."
+            )
         self.root: tk.Tk | None = None
 
     def __enter__(self) -> "TextMeasurer":
