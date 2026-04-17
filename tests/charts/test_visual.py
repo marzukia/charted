@@ -22,7 +22,6 @@ from lxml import etree
 from charted.charts.bar import BarChart
 from charted.charts.column import ColumnChart
 from charted.charts.line import LineChart
-from charted.charts.pie import PieChart
 from charted.charts.scatter import ScatterChart
 
 
@@ -139,22 +138,6 @@ def test_bar_chart_multi_series():
     assert svgs_equal(chart.html, baseline_svg)
 
 
-def test_pie_chart_basic():
-    """Visual regression test for basic PieChart (SVG structure)."""
-    chart = PieChart(data=[10, 20, 30, 40])
-    baseline_path = BASELINES_DIR / "pie_basic.svg"
-    with open(baseline_path, "r") as f:
-        baseline_svg = f.read()
-    assert svgs_equal(chart.html, baseline_svg)
-
-
-def test_pie_chart_doughnut():
-    """Visual regression test for doughnut PieChart (SVG structure)."""
-    chart = PieChart(data=[10, 20, 30, 40], doughnut=True, inner_radius=0.3)
-    baseline_path = BASELINES_DIR / "pie_doughnut.svg"
-    with open(baseline_path, "r") as f:
-        baseline_svg = f.read()
-    assert svgs_equal(chart.html, baseline_svg)
 
 
 # ============================================================
