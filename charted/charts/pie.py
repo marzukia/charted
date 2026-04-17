@@ -44,7 +44,13 @@ class PieChart(Chart):
         self.doughnut = doughnut
         self.inner_radius = min(max(inner_radius, 0.0), 1.0)
 
-        # Normalize data format
+        # Store original data for pie slice calculations (x_values gets transformed by parent)
+        if not isinstance(data, list) or not data or isinstance(data[0], (int, float)):
+            self._pie_data = [list(data)]  # Single series as list of lists
+        else:
+            self._pie_data = [list(series) for series in data]  # Multiple series
+
+        # Normalize data format for parent class
         if not isinstance(data, list) or not data or isinstance(data[0], (int, float)):
             x_data = [data]
         else:
@@ -87,22 +93,25 @@ class PieChart(Chart):
         )
 
         # Process each series
-        for series_idx, (x_values_series, color) in enumerate(
-            zip(self.x_values, self.colors)
-        ):
+        color_cycle = self.colors  # Access the color cycle from base class
+
+        for series_idx, pie_data_series in enumerate(self._pie_data):
             # Calculate total for this series
-            total = sum(x_values_series) if x_values_series else 1
+            total = sum(pie_data_series) if pie_data_series else 1
             if total == 0:
                 continue
 
             current_angle = -90  # Start at top (12 o'clock)
+            slice_idx = 0  # Track slice index for color cycling
 
-            for value in x_values_series:
+            for value in pie_data_series:
                 if total != 0:
                     slice_angle = (value / total) * 360
                 else:
                     slice_angle = 0
 
+                # Get color for this slice, cycling through the palette
+                slice_color = color_cycle[slice_idx % len(color_cycle)]
                 # Calculate slice endpoints
                 start_angle_rad = math.radians(current_angle)
                 end_angle_rad = math.radians(current_angle + slice_angle)
@@ -143,9 +152,10 @@ class PieChart(Chart):
                     ]
 
                 pie_g.add_child(
-                    Path(d=path_d, fill=color, stroke="#333333", stroke_width=1)
+                    Path(d=path_d, fill=slice_color, stroke="#333333", stroke_width=1)
                 )
 
                 current_angle += slice_angle
+                slice_idx += 1  # Increment for next slice's color
 
         return pie_g
