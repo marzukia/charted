@@ -504,8 +504,15 @@ class Chart(Svg):
         is_bar_chart = getattr(self, "y_height", None) is not None
         is_xy_line = self._x_data is not None and not is_bar_chart
         if self.x_axis.axis_dimension.min_value < 0 and not is_xy_line:
+            x = self.x_axis.zero
+            min_x = self.x_axis.axis_dimension.min_value
+            # Mirror y_stacked compensation: in stacked mode with negative
+            # values the x-axis reproject is relative-to-zero, so shift
+            # right by reproject(abs(min_x)) for absolute placement.
+            if self.x_stacked and min_x < 0:
+                x += self.x_axis.reproject(abs(min_x))
             paths += [
-                f"M{self.x_axis.zero} {0}",
+                f"M{x} {0}",
                 f"v{self.plot_height}z",
             ]
 
@@ -544,14 +551,22 @@ class Chart(Svg):
         legend_width = max(x.width for x in legend_entries) + icon_height + 2
         legend_height = len(legend_entries) * (icon_height + 2)
 
+        # Anchor legend fully inside the plot borders. The background Rect is
+        # translated by -legend_width*padding/2 on x, so its right edge sits
+        # at x0 + legend_width*(1 + padding/2). We solve for x0 so the right
+        # edge lands just inside the plot's right border (with a small inset).
+        pad = self.theme["legend"]["legend_padding"]
+        plot_right = self.left_padding + self.plot_width
+        plot_left = self.left_padding
+        inset = 4
         positions = {
             "topright": {
-                "x0": (self.width - self.right_padding * 1.25) - legend_width,
-                "y0": self.top_padding * 1.25,
+                "x0": plot_right - inset - legend_width * (1 + pad / 2),
+                "y0": self.top_padding + inset + legend_height * (pad / 2),
             },
             "topleft": {
-                "x0": (self.left_padding) * 1.25,
-                "y0": self.top_padding * 1.25,
+                "x0": plot_left + inset + legend_width * (pad / 2),
+                "y0": self.top_padding + inset + legend_height * (pad / 2),
             },
         }
 

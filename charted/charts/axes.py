@@ -254,7 +254,16 @@ class XAxis(Axis):
         if not self.config:
             return None
 
-        d = [f"M{x} {0} v{self.parent.plot_height}" for x in self.coordinates]
+        # In stacked mode with negative values, the reproject formula is
+        # relative to zero (value/range), so tick coordinates need to be
+        # shifted right by reproject(abs(min_value)) to land at absolute
+        # positions within the plot.
+        dx = 0
+        min_v = self.axis_dimension.min_value
+        if self.stacked and min_v < 0:
+            dx = self.reproject(abs(min_v))
+
+        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in self.coordinates]
         return Path(
             **self.config,
             d=d,
@@ -279,8 +288,15 @@ class XAxis(Axis):
         if self.parent.x_label_rotation:
             rotation_angle, _ = self.parent.x_label_rotation
 
+        # Same absolute-position compensation as grid_lines.
+        dx = 0
+        min_v = self.axis_dimension.min_value
+        if self.stacked and min_v < 0:
+            dx = self.reproject(abs(min_v))
+
         y = self.parent.plot_height
         for x, label in zip(self.coordinates, self.labels):
+            x = x + dx
             transformations = [translate(-label.width / 2, 0)]
             if rotation_angle > 0:
                 transformations = [
