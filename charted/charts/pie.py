@@ -52,7 +52,6 @@ class PieChart(Svg):
 
         total = sum(self.data)
         if total == 0:
-            self._svg_html = self._generate_svg(colors)
             return
 
         current_angle = self.start_angle
@@ -141,17 +140,11 @@ class PieChart(Svg):
 
         return " ".join(path)
 
-    def _generate_svg(self, colors: list[str]) -> str:
-        """Generate the complete SVG string."""
-        attrs = f'width="{self.width}" height="{self.height}" viewBox="0 0 {self.width} {self.height}"'
-        return f"<svg {attrs}>{self.html}</svg>"
-
     def to_string(self) -> str:
         """Return the SVG as a string."""
-        return f'<svg width="{self.width}" height="{self.height}" viewBox="0 0 {self.width} {self.height}" xmlns="http://www.w3.org/2000/svg">{self.html}</svg>'
+        return self.html
 
     def to_file(self, path: str) -> None:
         """Save the SVG to a file."""
-        svg_content = self.to_string()
         with open(path, "w") as f:
-            f.write(svg_content)
+            f.write(self.html)

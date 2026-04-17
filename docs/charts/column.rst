@@ -1,7 +1,7 @@
 Column Charts
 =============
 
-Vertical column chart — ideal for comparing values over time or across discrete categories. Supports negative values and multiple series.
+Vertical column chart. Supports negative values and multiple series.
 
 .. image:: ../examples/column.svg
    :width: 100%

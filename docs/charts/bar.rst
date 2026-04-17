@@ -1,7 +1,7 @@
 Bar Charts
 ==========
 
-Horizontal bar chart — best for comparing categories, especially when labels are long or there are many items. Supports negative values and multiple series.
+Horizontal bar chart. Supports negative values and multiple series.
 
 .. image:: ../examples/bar.svg
    :width: 100%

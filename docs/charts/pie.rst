@@ -11,12 +11,21 @@ Basic usage::
    chart = PieChart(data=[45, 30, 15, 10], labels=["A", "B", "C", "D"])
    chart.html
 
-With explode::
+Donut mode::
 
    chart = PieChart(
        data=[45, 30, 15, 10],
+       labels=["Electronics", "Clothing", "Food", "Other"],
+       donut=True,
+       donut_radius=0.5,
+   )
+
+Custom start angle::
+
+   chart = PieChart(
+       data=[25, 25, 25, 25],
        labels=["A", "B", "C", "D"],
-       explode=10,
+       start_angle=45,
    )
 
 .. autoclass:: charted.charts.pie.PieChart

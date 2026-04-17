@@ -1,13 +1,15 @@
 """Chart types - exports all available chart classes."""
 
+from .bar import BarChart
 from .column import ColumnChart
 from .line import LineChart
+from .pie import PieChart
 from .scatter import ScatterChart
-from .bar import BarChart
 
 __all__ = [
     "BarChart",
     "ColumnChart",
     "LineChart",
+    "PieChart",
     "ScatterChart",
 ]

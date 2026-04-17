@@ -1,7 +1,7 @@
 Line Charts
 ===========
 
-Continuous line chart — great for time-series, trends, and signal data. Supports multiple overlapping series, negative values, and custom x-axis positions.
+Line chart. Supports multiple overlapping series, negative values, and custom x-axis positions.
 
 .. image:: ../examples/line.svg
    :width: 100%
