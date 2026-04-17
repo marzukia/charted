@@ -110,4 +110,21 @@ class BarChart(Chart):
                 paths.append(Path.get_path(0, bar_y, bar_width, series_thickness))
             g.add_child(Path(d=paths, fill=color))
 
-        return g
+        # Bottom border: horizontal line at the base of the plot area.
+        # Column/line charts get this automatically from the y-axis grid at y=0;
+        # bar charts don't because y-axis grid lines are centered on bars.
+        grid_color = (
+            self.theme.get("h_grid", {}).get("stroke", "#CCCCCC")
+            if isinstance(self.theme, dict)
+            else "#CCCCCC"
+        )
+        bottom_border = Path(
+            stroke=grid_color,
+            stroke_dasharray="None",
+            d=[f"M0 {self.plot_height} h{self.plot_width}"],
+            transform=f"translate({self.left_padding}, {self.top_padding})",
+        )
+
+        result = G()
+        result.add_children(g, bottom_border)
+        return result
