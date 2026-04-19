@@ -145,3 +145,14 @@ class Text(Element):
 
 class Rect(Element):
     tag = "rect"
+
+
+class Tspan(Element):
+    """SVG tspan element for inline text styling and line breaks."""
+
+    tag = "tspan"
+
+    def __init__(self, text: str = None, **kwargs):
+        super().__init__(**kwargs)
+        if text is not None:
+            self.add_child(text)

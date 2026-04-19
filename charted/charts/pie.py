@@ -5,7 +5,7 @@ import math
 from typing import TYPE_CHECKING
 
 from charted.charts.chart import Chart
-from charted.html.element import G, Path, Text
+from charted.html.element import G, Path, Text, Tspan
 
 if TYPE_CHECKING:
     from charted.utils.themes import Theme
@@ -263,19 +263,31 @@ class PieChart(Chart):
             percentage = (value / self._total) * 100
 
             # Format text: label\n<value>\n<%>
-            text_content = f"{label_text}\n{value}\n{percentage:.1f}%"
+            lines = [label_text, str(value), f"{percentage:.1f}%"]
 
-            # Create text element, centered on the calculated position
+            # Create text element with proper font and multi-line support via tspan
             text_elem = Text(
-                text=text_content,
                 x=label_x,
                 y=label_y,
                 text_anchor="middle",
                 dominant_baseline="middle",
                 fill="white",
-                font_size=12,
-                font_weight="bold",
+                font_size=11,
+                font_weight="600",
+                font_family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
             )
+
+            # Add each line as a tspan for proper line breaks in SVG
+            line_height = 14  # Slightly more than font_size for line spacing
+            for idx, line in enumerate(lines):
+                y_offset = (idx - len(lines) // 2) * line_height
+                tspan = Tspan(
+                    text=line,
+                    x=label_x,
+                    y=label_y + y_offset,
+                )
+                text_elem.add_child(tspan)
+
             slices_g.add_child(text_elem)
 
         return slices_g
