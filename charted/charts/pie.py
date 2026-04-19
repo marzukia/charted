@@ -98,6 +98,9 @@ class PieChart(Chart):
                 # Zero values get a zero-span angle
                 self._angles.append((current_angle, current_angle))
 
+        self.render_axes = (
+            False  # Set BEFORE super().__init__ to prevent axes from being added
+        )
         # Call parent Chart constructor with minimal setup
         # Pie chart doesn't use axes, so we pass minimal data
         super().__init__(

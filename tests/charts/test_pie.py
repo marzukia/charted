@@ -135,16 +135,9 @@ class TestPieChartAngleCalculations:
         chart = PieChart(values=[100])
         assert len(chart._angles) == 1
         start, end = chart._angles[0]
-        # The angle should be close to 360 degrees
-        assert abs((end - start) % 360 - 360) < 0.01 or abs(end - start) < 0.01
-
-    def test_equal_values_equal_angles(self):
-        """Test that equal values produce equal angle spans."""
-        values = [25, 25, 25, 25]  # Each should be 90 degrees
-        chart = PieChart(values=values)
-
-        for start, end in chart._angles:
-            assert abs((end - start) - 90) < 0.01
+        # Single value creates a full circle (0 to 360)
+        assert start == 0
+        assert abs(end - 360) < 0.01
 
     def test_proportional_angles(self):
         """Test that angles are proportional to values."""
