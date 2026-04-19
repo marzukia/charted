@@ -192,6 +192,10 @@ class PieChart(Chart):
 
     def _get_colors(self) -> list[str]:
         """Get colors for slices, using custom colors or theme colors."""
+        if self._custom_colors:
+            return self._custom_colors[: len(self._angles)]
+        return self.colors_list[: len(self._angles)]
+        """Get colors for slices, using custom colors or theme colors."""
         if self.colors:
             return self.colors[: len(self._angles)]
         return self.colors_list[: len(self._angles)]
