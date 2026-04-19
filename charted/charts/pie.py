@@ -5,7 +5,7 @@ import math
 from typing import TYPE_CHECKING
 
 from charted.charts.chart import Chart
-from charted.html.element import G, Path
+from charted.html.element import G, Path, Text
 
 if TYPE_CHECKING:
     from charted.utils.themes import Theme
@@ -109,6 +109,8 @@ class PieChart(Chart):
             theme=theme,
             x_stacked=False,
         )
+        # Disable axes - pie charts don't use x/y axes
+        self.render_axes = False
 
     def _slice_path(
         self,
@@ -240,6 +242,38 @@ class PieChart(Chart):
             )
 
             slices_g.add_child(Path(d=path_d, fill=color))
+
+            # Add label inside the slice
+            # Calculate midpoint angle of the slice
+            midpoint_angle = (start_angle + end_angle) / 2
+
+            # Calculate label position (70% of the way to the edge)
+            label_radius = outer_radius * 0.7
+            # Convert angle to radians (same convention as _slice_path)
+            label_rad = math.radians(midpoint_angle - 90)
+            label_x = center_x + label_radius * math.cos(label_rad)
+            label_y = center_y + label_radius * math.sin(label_rad)
+
+            # Get label text and value
+            label_text = self.labels[i] if i < len(self.labels) else f"Slice {i + 1}"
+            value = self._raw_values[i]
+            percentage = (value / self._total) * 100
+
+            # Format text: label\n<value>\n<%>
+            text_content = f"{label_text}\n{value}\n{percentage:.1f}%"
+
+            # Create text element, centered on the calculated position
+            text_elem = Text(
+                text=text_content,
+                x=label_x,
+                y=label_y,
+                text_anchor="middle",
+                dominant_baseline="middle",
+                fill="white",
+                font_size=12,
+                font_weight="bold",
+            )
+            slices_g.add_child(text_elem)
 
         return slices_g
 
