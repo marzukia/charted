@@ -32,7 +32,18 @@ save(
     BarChart(
         title="Profit/Loss by Region ($M)",
         data=[-12, 34, -8, 52, -5, 28, 41, -19, 15, 60],
-        labels=["North", "South", "East", "West", "Central", "Pacific", "Atlantic", "Mountain", "Plains", "Metro"],
+        labels=[
+            "North",
+            "South",
+            "East",
+            "West",
+            "Central",
+            "Pacific",
+            "Atlantic",
+            "Mountain",
+            "Plains",
+            "Metro",
+        ],
         width=700,
         height=500,
     ).html,
@@ -170,7 +181,28 @@ save(
 
 # XY mode line (temperature anomaly)
 years = list(range(1990, 2010))
-anomalies = [-15, -5, 10, 20, 5, 25, 15, 30, 10, 20, 40, 25, 45, 30, 50, 35, 60, 55, 45, 70]
+anomalies = [
+    -15,
+    -5,
+    10,
+    20,
+    5,
+    25,
+    15,
+    30,
+    10,
+    20,
+    40,
+    25,
+    45,
+    30,
+    50,
+    35,
+    60,
+    55,
+    45,
+    70,
+]
 save(
     "xy_line.svg",
     LineChart(
@@ -189,7 +221,20 @@ save(
     LineChart(
         title="Monthly Active Users (K)",
         data=[[42, 48, 55, 61, 58, 70, 80, 78, 85, 92, 88, 100]],
-        labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        labels=[
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ],
         series_names=["MAU"],
         width=700,
         height=400,
@@ -235,7 +280,7 @@ save(
     "pie.svg",
     PieChart(
         title="Market Share by Product Line",
-        data=[35, 28, 18, 12, 7],
+        values=[35, 28, 18, 12, 7],
         labels=["Product A", "Product B", "Product C", "Product D", "Other"],
         width=600,
         height=500,
@@ -247,9 +292,9 @@ save(
     "pie_doughnut.svg",
     PieChart(
         title="Operating System Market Share",
-        data=[72, 15, 8, 5],
+        values=[72, 15, 8, 5],
         labels=["Windows", "macOS", "Linux", "Other"],
-        doughnut=True,
+        # doughnut mode enabled via inner_radius below
         inner_radius=0.5,
         width=600,
         height=500,

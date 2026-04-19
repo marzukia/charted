@@ -107,6 +107,7 @@ class PieChart(Chart):
             y_data=[[0]],
             title=title,
             theme=theme,
+            x_stacked=False,
         )
 
     def _slice_path(
@@ -194,11 +195,9 @@ class PieChart(Chart):
         """Get colors for slices, using custom colors or theme colors."""
         if self._custom_colors:
             return self._custom_colors[: len(self._angles)]
-        return self.colors_list[: len(self._angles)]
-        """Get colors for slices, using custom colors or theme colors."""
         if self.colors:
             return self.colors[: len(self._angles)]
-        return self.colors_list[: len(self._angles)]
+        return self.theme.get("colors", [])[: len(self._angles)]
 
     @property
     def representation(self):
@@ -227,8 +226,8 @@ class PieChart(Chart):
 
             color = (
                 slice_colors[i % len(slice_colors)]
-                if slice_colors
-                else self.colors_list[i % len(self.colors_list)]
+                if slice_colors and len(slice_colors) > 0
+                else f"#{(hash(str(i)) % 0xFFFFFF):06x}"
             )
 
             path_d = self._slice_path(
