@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from charted.utils.themes import Theme
     from charted.utils.types import Labels
 
+
 class PieChart(Chart):
     """A pie chart representing categorical data as slices of a circle.
 
@@ -276,11 +277,95 @@ class PieChart(Chart):
 
         return slices_g
 
+    def _split_camel_case(self, text: str) -> list[str]:
+        """Split a camelCase or PascalCase string into words.
+
+        Examples:
+            "VeryLongCategoryName" -> ["Very", "Long", "Category", "Name"]
+            "XMLParser" -> ["XML", "Parser"]
+
+        Args:
+            text: A camelCase or PascalCase string.
+
+        Returns:
+            List of words extracted from the camelCase string.
+        """
+        if not text:
+            return []
+
+        # Pattern matches:
+        # 1. Boundaries before uppercase followed by lowercase (e.g., "Category")
+        # 2. Boundaries before uppercase followed by uppercase + lowercase (e.g., "XMLParser" -> "XML", "Parser")
+        import re
+
+        # Insert space before uppercase letters that follow lowercase letters
+        # or before uppercase letters followed by lowercase (start of new word)
+        result = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
+        result = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", result)
+        return result.split()
+
+    def _break_long_word(self, text: str, max_width: int) -> list[str]:
+        """Break a long word into multiple lines by character.
+
+        Uses binary search to find optimal break points that maximize
+        utilization of max_width while ensuring each line fits.
+
+        Args:
+            text: The text to break.
+            max_width: Maximum width in pixels.
+
+        Returns:
+            List of lines, each fitting within max_width.
+        """
+        from charted.utils.helpers import calculate_text_dimensions
+
+        if not text:
+            return [""]
+
+        # Check if entire text fits
+        text_metrics = calculate_text_dimensions(text)
+        if text_metrics.width <= max_width:
+            return [text]
+
+        # Binary search for optimal break point
+        lines = []
+        remaining = text
+
+        while remaining:
+            # Binary search for the longest prefix that fits
+            lo, hi = 1, len(remaining)
+            best = 1
+
+            while lo <= hi:
+                mid = (lo + hi) // 2
+                substring = remaining[:mid]
+                metrics = calculate_text_dimensions(substring)
+                if metrics.width <= max_width:
+                    best = mid
+                    lo = mid + 1
+                else:
+                    hi = mid - 1
+
+            # Take the best fit
+            lines.append(remaining[:best])
+            remaining = remaining[best:]
+
+            # Safety check to avoid infinite loop
+            if best == 0 or not remaining:
+                break
+
+        return lines if lines else [text]
+
     def _wrap_text(self, text: str, max_width: int = 120) -> list[str]:
         """Wrap text to fit within a maximum width using actual font metrics.
 
         Uses calculate_text_dimensions for precise width measurement based on
         the actual font being used (Inter, 11pt).
+
+        Breaks text at:
+        1. Word boundaries (spaces)
+        2. CamelCase boundaries (e.g., "VeryLongName" → "VeryLong\nName")
+        3. Character boundaries (last resort)
 
         Args:
             text: The text to wrap.
@@ -299,49 +384,59 @@ class PieChart(Chart):
         if text_metrics.width <= max_width:
             return [text]
 
-        lines = []
+        # First, try to split at word boundaries (spaces)
         words = text.split()
-
-        current_line = ""
-        for word in words:
-            # Build test line with this word
-            test_line = current_line + " " + word if current_line else word
-
-            # Measure actual width
-            line_metrics = calculate_text_dimensions(test_line)
-
-            if line_metrics.width <= max_width:
-                # Word fits on current line
-                current_line = test_line
-            else:
-                # Word doesn't fit
-                if current_line:
-                    lines.append(current_line)
-
-                # Check if the word itself fits
-                word_metrics = calculate_text_dimensions(word)
-                if word_metrics.width > max_width:
-                    # Word is longer than max width - need to break it
-                    # Break character by character
-                    chunk = ""
-                    for char in word:
-                        test_chunk = chunk + char
-                        chunk_metrics = calculate_text_dimensions(test_chunk)
-                        if chunk_metrics.width > max_width:
-                            lines.append(chunk)
-                            chunk = char
-                        else:
-                            chunk = test_chunk
-                    if chunk:
-                        current_line = chunk
-                    continue
+        if len(words) > 1:
+            # Multi-word text - wrap at word boundaries
+            lines = []
+            current_line = ""
+            for word in words:
+                test_line = current_line + " " + word if current_line else word
+                line_metrics = calculate_text_dimensions(test_line)
+                if line_metrics.width <= max_width:
+                    current_line = test_line
                 else:
-                    current_line = word
+                    if current_line:
+                        lines.append(current_line)
+                    # Check if word itself fits
+                    word_metrics = calculate_text_dimensions(word)
+                    if word_metrics.width <= max_width:
+                        current_line = word
+                    else:
+                        # Word too long - break it (see below)
+                        sub_lines = self._break_long_word(word, max_width)
+                        lines.extend(sub_lines[:-1])
+                        current_line = sub_lines[-1] if sub_lines else ""
+            if current_line:
+                lines.append(current_line)
+            return lines if lines else [text]
 
-        if current_line:
-            lines.append(current_line)
+        # Single "word" - try camelCase splitting
+        camel_words = self._split_camel_case(text)
+        if len(camel_words) > 1:
+            lines = []
+            current_line = ""
+            for word in camel_words:
+                test_line = current_line + " " + word if current_line else word
+                line_metrics = calculate_text_dimensions(test_line)
+                if line_metrics.width <= max_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    word_metrics = calculate_text_dimensions(word)
+                    if word_metrics.width <= max_width:
+                        current_line = word
+                    else:
+                        sub_lines = self._break_long_word(word, max_width)
+                        lines.extend(sub_lines[:-1])
+                        current_line = sub_lines[-1] if sub_lines else ""
+            if current_line:
+                lines.append(current_line)
+            return lines if lines else [text]
 
-        return lines if lines else [text]
+        # Last resort: character-by-character breaking
+        return self._break_long_word(text, max_width)
 
     @property
     def representation(self) -> G:
