@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import math
-
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from charted.charts.chart import Chart
 from charted.html.element import G, Path, Text, Tspan
 
+
 if TYPE_CHECKING:
     from charted.utils.themes import Theme
     from charted.utils.types import Labels
-
 
 class PieChart(Chart):
     """A pie chart representing categorical data as slices of a circle.
@@ -196,66 +196,44 @@ class PieChart(Chart):
 
         return " ".join(path_cmds)
 
-    def _get_colors(self) -> list[str]:
-        """Get colors for slices, using custom colors or theme colors."""
-        if self._custom_colors:
-            return self._custom_colors[: len(self._angles)]
-        if self.colors:
-            return self.colors[: len(self._angles)]
-        return self.theme.get("colors", [])[: len(self._angles)]
-
-    @property
-    def representation(self):
-        """Generate the SVG G element containing the pie chart."""
-        # Calculate dimensions
-        center_x = self.width / 2
-        center_y = self.height / 2
-
-        # Calculate radius (fit within bounds with some margin)
-        available_radius = min(self.width, self.height) / 2
-        outer_radius = available_radius * 0.9  # Leave 10% margin
-
-        if outer_radius <= 0:
-            outer_radius = 50  # Minimum radius
-
-        # Get colors
-        slice_colors = self._get_colors()
-
-        # Create groups for the pie chart
+    def _render_slices(self) -> G:
+        """Render the pie slices and labels."""
         slices_g = G()
 
-        for i, (start_angle, end_angle) in enumerate(self._angles):
-            # Skip zero-value slices (they have no angle span)
+        cx = self.width / 2
+        cy = self.height / 2
+        # Calculate outer radius based on chart dimensions
+        outer_radius = min(cx, cy) * 0.85  # Leave room for labels
+        inner_radius = outer_radius * self.inner_radius
+
+        # Calculate label positions
+        label_radius = outer_radius * 1.15  # Labels just outside pie
+
+        for i, angle_pair in enumerate(self._angles):
+            start_angle, end_angle = angle_pair
+            mid_angle = (start_angle + end_angle) / 2
+
+            # Skip zero-size slices for rendering
             if start_angle == end_angle:
                 continue
 
-            color = (
-                slice_colors[i % len(slice_colors)]
-                if slice_colors and len(slice_colors) > 0
-                else f"#{(hash(str(i)) % 0xFFFFFF):06x}"
+            # Create slice path
+            slice_path = self._slice_path(
+                cx, cy, outer_radius, start_angle, end_angle, inner_radius
             )
 
-            path_d = self._slice_path(
-                cx=center_x,
-                cy=center_y,
-                outer_radius=outer_radius,
-                start_angle=start_angle,
-                end_angle=end_angle,
-                inner_radius=self.inner_radius,
+            # Create path element
+            path_elem = Path(
+                d=slice_path,
+                fill=self.colors[i % len(self.colors)],
+                stroke="#ffffff",
+                stroke_width=2,
             )
+            slices_g.add_child(path_elem)
 
-            slices_g.add_child(Path(d=path_d, fill=color))
-
-            # Add label inside the slice
-            # Calculate midpoint angle of the slice
-            midpoint_angle = (start_angle + end_angle) / 2
-
-            # Calculate label position (70% of the way to the edge)
-            label_radius = outer_radius * 0.7
-            # Convert angle to radians (same convention as _slice_path)
-            label_rad = math.radians(midpoint_angle - 90)
-            label_x = center_x + label_radius * math.cos(label_rad)
-            label_y = center_y + label_radius * math.sin(label_rad)
+            # Calculate label position
+            label_x = cx + label_radius * math.cos(math.radians(mid_angle - 90))
+            label_y = cy + label_radius * math.sin(math.radians(mid_angle - 90))
 
             # Get label text and value
             label_text = self.labels[i] if i < len(self.labels) else f"Slice {i + 1}"
@@ -263,9 +241,12 @@ class PieChart(Chart):
             percentage = (value / self._total) * 100
 
             # Format text: label\n<value>\n<%>
-            lines = [label_text, str(value), f"{percentage:.1f}%"]
+            # Wrap the label text to fit within chart width
+            label_lines = self._wrap_text(label_text, max_width=120)
+            value_line = str(value)
+            percent_line = f"{percentage:.1f}%"
 
-            # Create text element with proper font and multi-line support via tspan
+            # Create text element with proper font
             text_elem = Text(
                 x=label_x,
                 y=label_y,
@@ -274,13 +255,16 @@ class PieChart(Chart):
                 fill="white",
                 font_size=11,
                 font_weight="600",
-                font_family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+                font_family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
             )
+
+            # Combine all lines: wrapped label + value + percentage
+            all_lines = label_lines + [value_line, percent_line]
 
             # Add each line as a tspan for proper line breaks in SVG
             line_height = 14  # Slightly more than font_size for line spacing
-            for idx, line in enumerate(lines):
-                y_offset = (idx - len(lines) // 2) * line_height
+            for idx, line in enumerate(all_lines):
+                y_offset = (idx - len(all_lines) // 2) * line_height
                 tspan = Tspan(
                     text=line,
                     x=label_x,
@@ -291,6 +275,86 @@ class PieChart(Chart):
             slices_g.add_child(text_elem)
 
         return slices_g
+
+    def _wrap_text(self, text: str, max_width: int = 120) -> list[str]:
+        """Wrap text to fit within a maximum width using actual font metrics.
+
+        Uses calculate_text_dimensions for precise width measurement based on
+        the actual font being used (Inter, 11pt).
+
+        Args:
+            text: The text to wrap.
+            max_width: Maximum width in pixels.
+
+        Returns:
+            List of lines, each fitting within max_width.
+        """
+        if not text:
+            return [""]
+
+        from charted.utils.helpers import calculate_text_dimensions
+
+        # Check if entire text fits
+        text_metrics = calculate_text_dimensions(text)
+        if text_metrics.width <= max_width:
+            return [text]
+
+        lines = []
+        words = text.split()
+
+        current_line = ""
+        for word in words:
+            # Build test line with this word
+            test_line = current_line + " " + word if current_line else word
+
+            # Measure actual width
+            line_metrics = calculate_text_dimensions(test_line)
+
+            if line_metrics.width <= max_width:
+                # Word fits on current line
+                current_line = test_line
+            else:
+                # Word doesn't fit
+                if current_line:
+                    lines.append(current_line)
+
+                # Check if the word itself fits
+                word_metrics = calculate_text_dimensions(word)
+                if word_metrics.width > max_width:
+                    # Word is longer than max width - need to break it
+                    # Break character by character
+                    chunk = ""
+                    for char in word:
+                        test_chunk = chunk + char
+                        chunk_metrics = calculate_text_dimensions(test_chunk)
+                        if chunk_metrics.width > max_width:
+                            lines.append(chunk)
+                            chunk = char
+                        else:
+                            chunk = test_chunk
+                    if chunk:
+                        current_line = chunk
+                    continue
+                else:
+                    current_line = word
+
+        if current_line:
+            lines.append(current_line)
+
+        return lines if lines else [text]
+
+    @property
+    def representation(self) -> G:
+        """Render the pie chart."""
+        return self._render_slices()
+
+    def _get_legend_items(self) -> list[tuple[str, str]]:
+        """Return list of (label, color) tuples for legend."""
+        items = []
+        for i, _ in enumerate(self._angles):
+            label = self.labels[i] if i < len(self.labels) else f"Slice {i + 1}"
+            items.append((label, self.colors[i % len(self.colors)]))
+        return items
 
     @property
     def x_stacked(self) -> bool:
