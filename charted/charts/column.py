@@ -8,7 +8,8 @@ from charted.utils.types import Labels, Vector, Vector2D
 
 
 class ColumnChart(Chart):
-    y_stacked: bool = True
+    y_stacked: bool = False
+    side_by_side: bool = False
 
     def __init__(
         self,
@@ -41,6 +42,59 @@ class ColumnChart(Chart):
     @property
     def representation(self) -> G:
         dy = 0
+        if self.y_axis.axis_dimension.min_value < 0:
+            dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
+
+        g = G(
+            opacity="0.8",
+            transform=[
+                *self.get_base_transform(),
+                translate(-self.x_width / 2, dy),
+            ],
+        )
+
+        num_series = len(self.y_values)
+
+        if not self.y_stacked:
+            # side-by-side mode
+            bar_width = self.x_width / num_series if num_series > 0 else self.x_width
+            series_offset = (bar_width * (num_series - 1)) / 2 if num_series > 0 else 0
+
+            for series_idx in range(num_series):
+                y_values = self.y_values[series_idx]
+                x_values = self.x_values[series_idx]
+                color = (
+                    self.colors[series_idx]
+                    if series_idx < len(self.colors)
+                    else self.colors[series_idx % len(self.colors)]
+                )
+
+                paths = []
+                for x_idx, (x, y) in enumerate(zip(x_values, y_values)):
+                    x += self.x_offset
+                    # center bar within its slot, offset from group center
+                    bar_x = x - series_offset + series_idx * bar_width
+                    paths.append(Path.get_path(bar_x, 0, bar_width, y))
+                g.add_child(Path(d=paths, fill=color))
+        else:
+            # stacked mode
+            running_y = [0.0] * len(self.y_values[0]) if self.y_values else []
+
+            for y_values, x_values, color in zip(
+                self.y_values,
+                self.x_values,
+                self.colors,
+            ):
+                paths = []
+                for x_idx, (x, y) in enumerate(zip(x_values, y_values)):
+                    x += self.x_offset
+                    y_offset = running_y[x_idx]
+                    paths.append(Path.get_path(x, y_offset, self.x_width, y))
+
+                g.add_child(Path(d=paths, fill=color))
+
+        return g
+
         if self.y_axis.axis_dimension.min_value < 0:
             dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
 
