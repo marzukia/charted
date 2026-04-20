@@ -55,7 +55,7 @@ class ColumnChart(Chart):
         )
 
         dy = 0
-        if self.y_axis.axis_dimension.min_value < 0:
+        if self.y_axis.axis_dimension.min_value < 0 and not self.y_stacked:
             dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
 
         bars_g = G(
@@ -65,7 +65,6 @@ class ColumnChart(Chart):
                 translate(start_x - slot_width / 2, dy),
             ],
         )
-
         if self.y_stacked:
             # Stacked mode: iterate series, accumulate offsets along the y axis
             for y_values_series, y_offsets_series, color in zip(

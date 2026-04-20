@@ -137,6 +137,7 @@ save(
         series_names=["Revenue", "Costs", "Net"],
         width=700,
         height=400,
+        y_stacked=True,
     ).html,
 )
 
