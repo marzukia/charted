@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from charted.charts.chart import Chart
 from charted.html.element import G, Path, Text, Tspan
+from charted.utils.defaults import DEFAULT_FONT
 
 
 if TYPE_CHECKING:
@@ -255,7 +256,7 @@ class PieChart(Chart):
                 fill="white",
                 font_size=11,
                 font_weight="600",
-                font_family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+                font_family=DEFAULT_FONT,
             )
 
             # Combine all lines: wrapped label + value + percentage
