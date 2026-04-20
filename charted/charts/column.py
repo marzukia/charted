@@ -8,7 +8,7 @@ from charted.utils.types import Labels, Vector, Vector2D
 
 
 class ColumnChart(Chart):
-    y_stacked: bool = True
+    y_stacked: bool = False
 
     def __init__(
         self,
@@ -21,8 +21,10 @@ class ColumnChart(Chart):
         title: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
+        y_stacked: bool = False,
     ):
         self.column_gap = column_gap
+        self.y_stacked = y_stacked
         super().__init__(
             width=width,
             height=height,
@@ -32,6 +34,7 @@ class ColumnChart(Chart):
             zero_index=zero_index,
             theme=theme,
             series_names=series_names,
+            y_stacked=y_stacked,
         )
 
     @property
@@ -40,27 +43,64 @@ class ColumnChart(Chart):
 
     @property
     def representation(self) -> G:
+        slot_width = self.x_width
+        gap = slot_width * self.column_gap
+        start_x = gap
+
+        num_series = len(self.y_values) if self.y_values else 1
+        series_thickness = (
+            slot_width / num_series
+            if (num_series > 0 and not self.y_stacked)
+            else slot_width
+        )
+
         dy = 0
         if self.y_axis.axis_dimension.min_value < 0:
             dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
 
-        g = G(
+        bars_g = G(
             opacity="0.8",
             transform=[
                 *self.get_base_transform(),
-                translate(-self.x_width / 2, dy),
+                translate(start_x - slot_width / 2, dy),
             ],
         )
-        for y_values, y_offsets, x_values, color in zip(
-            self.y_values,
-            self.y_offsets,
-            self.x_values,
-            self.colors,
-        ):
-            paths = []
-            for x, y, y_offset in zip(x_values, y_values, y_offsets):
-                x += self.x_offset
-                paths.append(Path.get_path(x, y_offset, self.x_width, y))
-            g.add_child(Path(d=paths, fill=color))
 
-        return g
+        if self.y_stacked:
+            # Stacked mode: iterate series, accumulate offsets along the y axis
+            for y_values_series, y_offsets_series, color in zip(
+                self.y_values, self.y_offsets, self.colors
+            ):
+                paths = []
+                for col_idx, (y, y_offset_val) in enumerate(
+                    zip(y_values_series, y_offsets_series)
+                ):
+                    slot_x = start_x + col_idx * (slot_width + gap)
+                    # y_offset_val is the reprojected cumulative start position
+                    # and y is the reprojected signed value. Use the bottommost
+                    # point and positive height regardless of sign.
+                    bottom_y = min(y_offset_val, y_offset_val + y)
+                    height = abs(y)
+                    paths.append(
+                        Path.get_path(slot_x, bottom_y, series_thickness, height)
+                    )
+                bars_g.add_child(Path(d=paths, fill=color))
+        else:
+            # Side-by-side mode: each series draws at same x position but offset y
+            zero_y = self.y_axis.zero
+            for series_idx, (y_values_series, color) in enumerate(
+                zip(self.y_values, self.colors)
+            ):
+                paths = []
+                for col_idx, y in enumerate(y_values_series):
+                    slot_x = start_x + col_idx * (slot_width + gap)
+                    bar_x = slot_x + series_idx * series_thickness
+                    if y >= zero_y:
+                        paths.append(
+                            Path.get_path(bar_x, zero_y, series_thickness, y - zero_y)
+                        )
+                    else:
+                        paths.append(
+                            Path.get_path(bar_x, y, series_thickness, zero_y - y)
+                        )
+        return bars_g

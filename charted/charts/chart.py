@@ -29,6 +29,7 @@ class Chart(Svg):
         y_labels: Labels | None = None,
         series_names: list[str] | None = None,
         x_stacked: bool = False,
+        y_stacked: bool = False,
         title: str | None = None,
         theme: Theme | None = None,
     ):
@@ -47,6 +48,7 @@ class Chart(Svg):
 
         self.series_names = series_names
         self.x_stacked = x_stacked
+        self.y_stacked = y_stacked
         self.theme = Theme.load(theme)
 
         self.zero_index = zero_index
