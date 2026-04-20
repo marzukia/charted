@@ -101,27 +101,3 @@ class ColumnChart(Chart):
                 g.add_child(Path(d=paths, fill=color))
 
         return g
-
-        if self.y_axis.axis_dimension.min_value < 0:
-            dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
-
-        g = G(
-            opacity="0.8",
-            transform=[
-                *self.get_base_transform(),
-                translate(-self.x_width / 2, dy),
-            ],
-        )
-        for y_values, y_offsets, x_values, color in zip(
-            self.y_values,
-            self.y_offsets,
-            self.x_values,
-            self.colors,
-        ):
-            paths = []
-            for x, y, y_offset in zip(x_values, y_values, y_offsets):
-                x += self.x_offset
-                paths.append(Path.get_path(x, y_offset, self.x_width, y))
-            g.add_child(Path(d=paths, fill=color))
-
-        return g
