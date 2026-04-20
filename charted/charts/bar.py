@@ -99,14 +99,15 @@ class BarChart(Chart):
                     slot_y = start_y + bar_idx * (slot_height + gap)
                     # For stacked mode with mixed +/- values, render from offset
                     # Positive x extends right (larger x in SVG), negative extends left
-                    if x >= 0:
-                        left_x = x_offset_val
-                        width = x
-                    else:
-                        left_x = x_offset_val + x
-                        width = abs(x)
+                    # For stacked mode with mixed +/- values:
+                    # offset = where PREVIOUS bar ENDS
+                    # Positive x: bar extends right from offset, ends at (offset + x)
+                    # Negative x: bar extends left from offset, ends at (offset + x)
+                    left_x = x_offset_val
+                    width = x
                     paths.append(Path.get_path(left_x, slot_y, width, series_thickness))
                 bars_g.add_child(Path(d=paths, fill=color))
+
         else:
             zero_x = self.x_axis.zero
             for series_idx, (x_values_series, color) in enumerate(
