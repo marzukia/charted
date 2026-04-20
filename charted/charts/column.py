@@ -74,7 +74,11 @@ class ColumnChart(Chart):
                     x += self.x_offset
                     # center bar within its slot, offset from group center
                     bar_x = x - series_offset + series_idx * bar_width
-                    paths.append(Path.get_path(bar_x, 0, bar_width, y))
+                    paths.append(
+                        Path.get_path(
+                            bar_x, min(0, y), bar_width, max(y, 0) - min(0, y)
+                        )
+                    )
                 g.add_child(Path(d=paths, fill=color))
         else:
             # stacked mode
