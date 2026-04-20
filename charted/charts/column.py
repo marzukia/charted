@@ -86,23 +86,24 @@ class ColumnChart(Chart):
                     )
                 bars_g.add_child(Path(d=paths, fill=color))
         else:
-            # Side-by-side mode: each series draws at same x position but offset x
-            zero_y = self.y_axis.zero
-            for series_idx, (y_values_series, color) in enumerate(
-                zip(self.y_values, self.colors)
+            # Side-by-side mode: use y_offsets (reprojected by Chart.y_offsets setter)
+            for series_idx, (y_values_series, y_offsets_series, color) in enumerate(
+                zip(self.y_values, self.y_offsets, self.colors)
             ):
                 paths = []
-                for col_idx, y in enumerate(y_values_series):
+                for col_idx, (y, y_offset_val) in enumerate(
+                    zip(y_values_series, y_offsets_series)
+                ):
                     slot_x = start_x + col_idx * (slot_width + gap)
                     bar_x = slot_x + series_idx * series_thickness
-                    if y >= zero_y:
-                        paths.append(
-                            Path.get_path(bar_x, zero_y, series_thickness, y - zero_y)
-                        )
-                    else:
-                        paths.append(
-                            Path.get_path(bar_x, y, series_thickness, zero_y - y)
-                        )
+                    # y_offset_val is the reprojected zero-line position for this column
+                    # y is the reprojected value. Calculate position/height from the
+                    # bottommost point with positive height regardless of sign.
+                    bottom_y = min(y_offset_val, y)
+                    height = abs(y - y_offset_val)
+                    paths.append(
+                        Path.get_path(bar_x, bottom_y, series_thickness, height)
+                    )
                 bars_g.add_child(Path(d=paths, fill=color))
 
         return bars_g
