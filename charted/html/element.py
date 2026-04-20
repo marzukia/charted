@@ -97,7 +97,10 @@ class Element(object):
         return self
 
     def __repr__(self) -> str:
-        return self.html
+        """Return pretty-formatted HTML/SVG string representation."""
+        from charted.html.formatter import format_html
+
+        return format_html(self.html, indent=2)
 
 
 class Svg(Element):
