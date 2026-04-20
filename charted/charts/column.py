@@ -92,6 +92,7 @@ class ColumnChart(Chart):
                 paths = []
                 for x_idx, (x, y) in enumerate(zip(x_values, y_values)):
                     x += self.x_offset
+                    bar_x = x - self.x_width / 2
                     y_offset = running_y[x_idx]
                     y_start = min(y_offset, y_offset + y)
                     y_height = abs(y)
