@@ -154,6 +154,7 @@ save(
         series_names=["North", "South", "East"],
         width=700,
         height=400,
+        y_stacked=False,
     ).html,
 )
 
