@@ -4,7 +4,7 @@ import math
 
 from charted.charts.chart import Chart
 from charted.html.element import G, Path, Text
-from charted.utils.colors import complementary_color
+from charted.utils.colors import complementary_color, get_contrast_color
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.themes import Theme
 from charted.utils.types import Labels, Vector
@@ -12,6 +12,8 @@ from charted.utils.types import Labels, Vector
 
 class PieChart(Chart):
     """Pie chart for displaying categorical data as proportional slices."""
+
+    render_axes = False  # Pie charts don't need axes or grid lines
 
     def __init__(
         self,
@@ -113,18 +115,21 @@ class PieChart(Chart):
         large_arc = 1 if angle_span > 180 else 0
 
         # Build path: move to center, line to start, arc to end, close
+
         if self.inner_radius > 0:
             # Doughnut mode: need inner path too
-            inner_x1 = cx + self.inner_radius * math.cos(start_rad)
-            inner_y1 = cy + self.inner_radius * math.sin(start_rad)
-            inner_x2 = cx + self.inner_radius * math.cos(end_rad)
-            inner_y2 = cy + self.inner_radius * math.sin(end_rad)
+            # inner_radius is a ratio (0.0-1.0) of the outer radius
+            actual_inner_radius = radius * self.inner_radius
+            inner_x1 = cx + actual_inner_radius * math.cos(start_rad)
+            inner_y1 = cy + actual_inner_radius * math.sin(start_rad)
+            inner_x2 = cx + actual_inner_radius * math.cos(end_rad)
+            inner_y2 = cy + actual_inner_radius * math.sin(end_rad)
 
             path = [
                 f"M {x1} {y1}",  # Start at outer edge
                 f"A {radius} {radius} 0 {large_arc} 1 {x2} {y2}",  # Arc to end
                 f"L {inner_x2} {inner_y2}",  # Line to inner edge
-                f"A {self.inner_radius} {self.inner_radius} 0 {large_arc} 0 {inner_x1} {inner_y1}",
+                f"A {actual_inner_radius} {actual_inner_radius} 0 {large_arc} 0 {inner_x1} {inner_y1}",
                 # Inner arc
                 "Z",  # Close
             ]
@@ -143,16 +148,18 @@ class PieChart(Chart):
         """Generate SVG path for a full circle (100% slice case)."""
         if self.inner_radius > 0:
             # Doughnut: use two circles with different fill rules
+            actual_inner_radius = radius * self.inner_radius
             return [
                 f"M {cx} {cy - radius}",
                 f"A {radius} {radius} 0 1 1 {cx} {cy + radius}",
                 f"A {radius} {radius} 0 1 1 {cx} {cy - radius}",
                 "Z",
-                f"M {cx} {cy - self.inner_radius}",
-                f"A {self.inner_radius} {self.inner_radius} 0 1 0 {cx} {cy + self.inner_radius}",
-                f"A {self.inner_radius} {self.inner_radius} 0 1 0 {cx} {cy - self.inner_radius}",
+                f"M {cx} {cy - actual_inner_radius}",
+                f"A {actual_inner_radius} {actual_inner_radius} 0 1 0 {cx} {cy + actual_inner_radius}",
+                f"A {actual_inner_radius} {actual_inner_radius} 0 1 0 {cx} {cy - actual_inner_radius}",
                 "Z",
             ]
+
         else:
             return [
                 f"M {cx} {cy - radius}",
@@ -202,12 +209,14 @@ class PieChart(Chart):
                     d=path_data,
                     fill=self.colors[i % len(self.colors)],
                     fill_rule="evenodd" if self.inner_radius > 0 else "nonzero",
+                    opacity=0.8,
                 )
             else:
                 path_data = self._get_slice_path(cx, cy, radius, start_angle, end_angle)
                 slice_path = Path(
                     d=path_data,
                     fill=self.colors[i % len(self.colors)],
+                    opacity=0.8,
                 )
 
             # Wrap in group with transform if exploded
@@ -218,24 +227,31 @@ class PieChart(Chart):
             else:
                 result.add_child(slice_path)
 
-            # Add label inside slice
+            # Add label inside slice with color-aware text
             label_angle = (start_angle + end_angle) / 2
             label_rad = math.radians(label_angle - 90)
 
             # Position label at 60% of radius from center
+            # Position label at 75% of radius from center (closer to outer edge)
             if self.inner_radius > 0:
-                label_radius = (radius + self.inner_radius) / 2
+                actual_inner_radius = radius * self.inner_radius
+                # Place label in the middle of the ring
+                label_radius = (actual_inner_radius + radius) / 2
             else:
                 label_radius = radius * 0.6
 
             label_x = cx + label_radius * math.cos(label_rad)
             label_y = cy + label_radius * math.sin(label_rad)
 
+            # Use contrast-aware text color
+            slice_color = self.colors[i % len(self.colors)]
+            text_color = get_contrast_color(slice_color)
+
             label_text = Text(
                 x=label_x,
                 y=label_y,
                 text=str(label),
-                fill="white",
+                fill=text_color,
                 font_size=14,
                 font_family="Helvetica",
                 text_anchor="middle",

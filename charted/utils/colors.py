@@ -56,6 +56,26 @@ def complementary_color(hex_color: str) -> str:
     return rgb_to_hex(comp_rgb)
 
 
+def get_contrast_color(hex_color: str) -> str:
+    """Return black or white text color for best contrast against the given background.
+
+    Uses luminance calculation (WCAG formula) to determine if text should be
+    black or white for optimal readability.
+
+    Args:
+        hex_color: Background color in hex format
+
+    Returns:
+        '#000000' for dark backgrounds, '#ffffff' for light backgrounds
+    """
+    rgb = hex_to_rgb(hex_color)
+    # WCAG luminance formula
+    luminance = (
+        0.2126 * (rgb[0] / 255) + 0.7152 * (rgb[1] / 255) + 0.0722 * (rgb[2] / 255)
+    )
+    return "#000000" if luminance > 0.5 else "#ffffff"
+
+
 def generate_complementary_colors(hex_colors: list[str]) -> Generator[str, None, None]:
     for color in hex_colors:
         yield complementary_color(color)

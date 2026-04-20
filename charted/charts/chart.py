@@ -71,7 +71,9 @@ class Chart(Svg):
             data=self.x_data,
             labels=x_labels,
             stacked=self.x_stacked,
-            zero_index=False if (x_data is not None and x_labels is not None) else self.zero_index,
+            zero_index=False
+            if (x_data is not None and x_labels is not None)
+            else self.zero_index,
             config=self.theme["v_grid"],
         )
 
@@ -328,7 +330,7 @@ class Chart(Svg):
 
         max_width = 0.0
         for label in labels:
-            if hasattr(label, 'width'):
+            if hasattr(label, "width"):
                 width = label.width
             else:
                 width = calculate_text_dimensions(str(label)).width
@@ -392,9 +394,11 @@ class Chart(Svg):
     def y_offsets(self, y_data: Vector2D | None = None) -> None:
         if not y_data:
             offsets = [[0] * self.y_count]
-            self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
+            self._y_offsets = [
+                [self.y_axis.reproject(y) for y in arr] for arr in offsets
+            ]
             return
-        
+
         offsets = []
         negative_offsets = [0] * self.y_count
         positive_offsets = [0] * self.y_count
@@ -414,29 +418,22 @@ class Chart(Svg):
 
         self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
 
-
-
     @property
     def x_offsets(self):
         return self._x_offsets
 
     @x_offsets.setter
     def x_offsets(self, x_data=None):
-        if not x_data or not getattr(self, 'x_stacked', False):
+        if not x_data or not getattr(self, "x_stacked", False):
             offsets = [[0] * self.x_count]
-            self._x_offsets = [[self.x_axis.reproject(x) for x in arr] for arr in offsets]
+            self._x_offsets = [
+                [self.x_axis.reproject(x) for x in arr] for arr in offsets
+            ]
             return
-        
-        offsets = []
-        cumulative_offsets = [0] * self.x_count
 
-        for row in x_data:
-            row_offsets = []
-            for i, x in enumerate(row):
-                current_offset = cumulative_offsets[i]
-                cumulative_offsets[i] += x
-                row_offsets.append(current_offset)
-            offsets.append(row_offsets)
+        # For x_stacked horizontal bars, each series starts from zero
+        # (bars stack visually by drawing order, not cumulative positioning)
+        offsets = [[0] * self.x_count for _ in x_data]
 
         self._x_offsets = [[self.x_axis.reproject(x) for x in arr] for arr in offsets]
 
