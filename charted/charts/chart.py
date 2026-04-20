@@ -401,15 +401,19 @@ class Chart(Svg):
             ]
             return
 
-        offsets = []
-        current_offsets = [0] * self.y_count
+        # For stacked mode, accumulate offsets; for non-stacked, all start from zero
+        if getattr(self, "y_stacked", False):
+            offsets = []
+            current_offsets = [0] * self.y_count
 
-        for row in y_data:
-            row_offsets = []
-            for i, y in enumerate(row):
-                row_offsets.append(current_offsets[i])
-                current_offsets[i] += y
-            offsets.append(row_offsets)
+            for row in y_data:
+                row_offsets = []
+                for i, y in enumerate(row):
+                    row_offsets.append(current_offsets[i])
+                    current_offsets[i] += y
+                offsets.append(row_offsets)
+        else:
+            offsets = [[0] * self.y_count for _ in y_data]
 
         self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
 

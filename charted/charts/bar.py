@@ -7,7 +7,6 @@ from charted.utils.types import Labels, Vector, Vector2D
 
 
 class BarChart(Chart):
-
     def __init__(
         self,
         data: Vector | Vector2D,
@@ -67,7 +66,9 @@ class BarChart(Chart):
 
         num_series = len(self.x_values) if self.x_values else 1
         series_thickness = (
-            slot_height / num_series if (num_series > 0 and not self.x_stacked) else slot_height
+            slot_height / num_series
+            if (num_series > 0 and not self.x_stacked)
+            else slot_height
         )
 
         # Mirror of ColumnChart's dy: for stacked charts with negative values,
@@ -96,16 +97,15 @@ class BarChart(Chart):
                     zip(x_values_series, x_offsets_series)
                 ):
                     slot_y = start_y + bar_idx * (slot_height + gap)
-                    # x_offset_val is the reprojected cumulative start position
-                    # and x is the reprojected signed value. Use the leftmost
-                    # point and positive width regardless of sign so that a
-                    # positive value stacked on top of a negative cumulative
-                    # offset (or vice versa) renders correctly.
-                    left_x = min(x_offset_val, x_offset_val + x)
-                    width = abs(x)
-                    paths.append(
-                        Path.get_path(left_x, slot_y, width, series_thickness)
-                    )
+                    # For stacked mode with mixed +/- values, render from offset
+                    # Positive x extends right (larger x in SVG), negative extends left
+                    if x >= 0:
+                        left_x = x_offset_val
+                        width = x
+                    else:
+                        left_x = x_offset_val + x
+                        width = abs(x)
+                    paths.append(Path.get_path(left_x, slot_y, width, series_thickness))
                 bars_g.add_child(Path(d=paths, fill=color))
         else:
             zero_x = self.x_axis.zero

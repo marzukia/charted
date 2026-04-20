@@ -75,11 +75,14 @@ class ColumnChart(Chart):
                     zip(y_values_series, y_offsets_series)
                 ):
                     slot_x = start_x + col_idx * (slot_width + gap)
-                    # y_offset_val is the reprojected cumulative start position
-                    # and y is the reprojected signed value. Use the bottommost
-                    # point and positive height regardless of sign.
-                    bottom_y = min(y_offset_val, y_offset_val + y)
-                    height = abs(y)
+                    # For stacked mode with mixed +/- values, render from offset
+                    # Positive y extends down (larger y in SVG), negative extends up
+                    if y >= 0:
+                        bottom_y = y_offset_val
+                        height = y
+                    else:
+                        bottom_y = y_offset_val + y
+                        height = abs(y)
                     paths.append(
                         Path.get_path(slot_x, bottom_y, series_thickness, height)
                     )
