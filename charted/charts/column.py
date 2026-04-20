@@ -55,7 +55,8 @@ class ColumnChart(Chart):
         )
 
         dy = 0
-        if self.y_axis.axis_dimension.min_value < 0 and not self.y_stacked:
+        # Only apply dy offset in stacked mode with negative values
+        if self.y_axis.axis_dimension.min_value < 0 and self.y_stacked:
             dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
 
         bars_g = G(
