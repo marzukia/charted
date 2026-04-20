@@ -86,7 +86,7 @@ class ColumnChart(Chart):
                     )
                 bars_g.add_child(Path(d=paths, fill=color))
         else:
-            # Side-by-side mode: each series draws at same x position but offset y
+            # Side-by-side mode: each series draws at same x position but offset x
             zero_y = self.y_axis.zero
             for series_idx, (y_values_series, color) in enumerate(
                 zip(self.y_values, self.colors)
@@ -103,4 +103,6 @@ class ColumnChart(Chart):
                         paths.append(
                             Path.get_path(bar_x, y, series_thickness, zero_y - y)
                         )
+                bars_g.add_child(Path(d=paths, fill=color))
+
         return bars_g
