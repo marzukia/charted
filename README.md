@@ -12,6 +12,8 @@ All chart types support negative values with a proper zero baseline, multi-serie
 - Bar (single-series, multi-series, stacked, side-by-side)
 - Line (single-series, multi-series, XY mode)
 - Scatter (single-series, multi-series)
+- Pie (doughnut mode, exploded slices)
+
 
 ## Installation
 
@@ -265,7 +267,40 @@ graph = ScatterChart(
     title="Height vs Weight Distribution",
     x_data=[160, 165, 170, 172, 175, 178, 180, 182, 185, 188, 190],
     y_data=[55, 60, 65, 68, 72, 75, 78, 80, 85, 88, 92],
-    series_names=["Observations"],
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter_single.svg)
+
+### Pie — basic
+
+```py
+from charted.charts import PieChart
+
+graph = PieChart(
+    title="Market Share by Product Line",
+    data=[35, 28, 18, 12, 7],
+    labels=["Product A", "Product B", "Product C", "Product D", "Other"],
+    width=600,
+    height=500,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie.svg)
+
+### Pie — doughnut mode
+
+```py
+from charted.charts import PieChart
+
+graph = PieChart(
+    title="Operating System Market Share",
+    data=[45, 28, 15, 12],
+    labels=["Windows", "macOS", "Linux", "Other"],
+    inner_radius=100,  # Creates doughnut hole
+    width=600,
+    height=500,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie_doughnut.svg)
     width=700,
     height=400,
 )
