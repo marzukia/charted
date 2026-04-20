@@ -129,7 +129,10 @@ class PieChart(Chart):
             x_stacked=False,
         )
         # Override viewBox to shift origin and include label space
-        self.viewBox = f"{offset_x} {offset_y} {expanded_width} {expanded_height}"
+        self.kwargs["viewBox"] = (
+            f"{offset_x} {offset_y} {expanded_width} {expanded_height}"
+        )
+
         # Disable axes - pie charts don't use x/y axes
         self.render_axes = False
 
