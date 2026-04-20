@@ -205,7 +205,6 @@ class PieChart(Chart):
         cy = self.height / 2
         # Calculate outer radius based on chart dimensions
         outer_radius = min(cx, cy) * 0.85  # Leave room for labels
-        inner_radius = outer_radius * self.inner_radius
 
         # Calculate label positions
         label_radius = outer_radius * 1.15  # Labels just outside pie
@@ -220,7 +219,7 @@ class PieChart(Chart):
 
             # Create slice path
             slice_path = self._slice_path(
-                cx, cy, outer_radius, start_angle, end_angle, inner_radius
+                cx, cy, outer_radius, start_angle, end_angle, self.inner_radius
             )
 
             # Create path element
