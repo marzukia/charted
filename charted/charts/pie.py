@@ -107,16 +107,18 @@ class PieChart(Chart):
         self.render_axes = (
             False  # Set BEFORE super().__init__ to prevent axes from being added
         )
-        # Expand viewBox to accommodate labels outside the pie
-        # Labels are positioned at label_radius = outer_radius * 1.15
-        # outer_radius = min(width, height) / 2 * 0.85
-        # So we need ~15% extra space on each side
-        label_margin = 0.20  # 20% extra space
-        expanded_width = width * (1 + label_margin)
-        expanded_height = height * (1 + label_margin)
-        offset_x = -(label_margin / 2) * width
-        offset_y = -(label_margin / 2) * height
-
+        # Calculate viewBox expansion needed for labels
+        # Use 30% margin to ensure labels fit comfortably beyond the pie edge
+        # Store original dimensions for pie center calculation
+        # Store original dimensions for pie center calculation
+        self._original_width = width
+        self._original_height = height
+        label_margin = 0.40
+        # Calculate expanded dimensions and offsets
+        expanded_width = self._original_width * (1 + label_margin)
+        expanded_height = self._original_height * (1 + label_margin)
+        offset_x = -self._original_width * label_margin / 2
+        offset_y = -self._original_height * label_margin / 2
         # Call parent Chart constructor with minimal setup
         # Pie chart doesn't use axes, so we pass minimal data
         super().__init__(
@@ -221,8 +223,8 @@ class PieChart(Chart):
         """Render the pie slices and labels."""
         slices_g = G()
 
-        cx = self.width / 2
-        cy = self.height / 2
+        cx = self._original_width / 2
+        cy = self._original_height / 2
         # Calculate outer radius based on chart dimensions
         outer_radius = min(cx, cy) * 0.85  # Leave room for labels
 
