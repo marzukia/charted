@@ -243,7 +243,7 @@ class PieChart(Chart):
 
             # Format text: label\n<value>\n<%>
             # Wrap the label text to fit within chart width
-            label_lines = self._wrap_text(label_text, max_width=120)
+            label_lines = [label_text]
             value_line = str(value)
             percent_line = f"{percentage:.1f}%"
 
