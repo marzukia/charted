@@ -27,6 +27,18 @@ class PieChart(Chart):
         explode: float | Vector = 0,
         start_angle: float = 0,
     ):
+        """Initialize pie chart.
+
+        Args:
+            data: Values for each slice (must be non-negative, sum > 0)
+            labels: Optional labels for each slice
+            width, height: Chart dimensions in pixels
+            title: Optional chart title
+            theme: Optional theme configuration
+            inner_radius: Ratio (0.0-1.0) for doughnut hole; 0 = regular pie
+            explode: Single value or list to offset slices from center (pixels)
+            start_angle: Starting angle in degrees (0 = top, clockwise)
+        """
         # Validate inputs
         if not data or len(data) == 0:
             raise ValueError("Data cannot be empty")
@@ -231,8 +243,8 @@ class PieChart(Chart):
             label_angle = (start_angle + end_angle) / 2
             label_rad = math.radians(label_angle - 90)
 
-            # Position label at 60% of radius from center
-            # Position label at 75% of radius from center (closer to outer edge)
+            # Position label in the middle of the ring for donut, 60% for regular pie
+
             if self.inner_radius > 0:
                 actual_inner_radius = radius * self.inner_radius
                 # Place label in the middle of the ring

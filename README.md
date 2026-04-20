@@ -294,16 +294,10 @@ graph = PieChart(
     title="Operating System Market Share",
     data=[45, 28, 15, 12],
     labels=["Windows", "macOS", "Linux", "Other"],
-    inner_radius=100,  # Creates doughnut hole
+    inner_radius=0.5,  # Creates doughnut hole (0.0-1.0 ratio)
     width=600,
     height=500,
 )
 ```
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie_doughnut.svg)
-    width=700,
-    height=400,
-)
-```
-
-![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter_single.svg)

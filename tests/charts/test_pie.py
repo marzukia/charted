@@ -33,7 +33,7 @@ class TestPieChartHappyPath:
 
     def test_pie_chart_doughnut_mode(self):
         """Test pie chart in doughnut mode."""
-        chart = PieChart(data=[30, 40, 30], labels=["A", "B", "C"], inner_radius=50)
+        chart = PieChart(data=[30, 40, 30], labels=["A", "B", "C"], inner_radius=0.5)
         html = chart.html
         assert "<path" in html.lower()
         assert "inner_radius" not in html.lower()  # Should be rendered, not in HTML
@@ -46,26 +46,34 @@ class TestPieChartHappyPath:
 
     def test_pie_chart_explode_specific(self):
         """Test pie chart with specific slice exploded."""
-        chart = PieChart(data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], explode=[0, 15, 0, 0])
+        chart = PieChart(
+            data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], explode=[0, 15, 0, 0]
+        )
         html = chart.html
         assert "translate" in html.lower()
 
     def test_pie_chart_start_angle(self):
         """Test pie chart with custom start angle."""
-        chart = PieChart(data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], start_angle=90)
+        chart = PieChart(
+            data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], start_angle=90
+        )
         html = chart.html
         assert "svg" in html.lower()
 
     def test_pie_chart_custom_dimensions(self):
         """Test pie chart with custom width and height."""
-        chart = PieChart(data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], width=700, height=600)
+        chart = PieChart(
+            data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], width=700, height=600
+        )
         html = chart.html
         assert 'width="700' in html
         assert 'height="600' in html
 
     def test_pie_chart_with_title(self):
         """Test pie chart with title."""
-        chart = PieChart(data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], title="Test Title")
+        chart = PieChart(
+            data=[45, 30, 15, 10], labels=["A", "B", "C", "D"], title="Test Title"
+        )
         html = chart.html
         assert "Test Title" in html
 
@@ -104,7 +112,9 @@ class TestPieChartSadPath:
 
     def test_pie_chart_all_zeros(self):
         """Test pie chart with all zeros raises ValueError."""
-        with pytest.raises(ValueError, match="Total of all values must be greater than 0"):
+        with pytest.raises(
+            ValueError, match="Total of all values must be greater than 0"
+        ):
             PieChart(data=[0, 0, 0], labels=["A", "B", "C"])
 
     def test_pie_chart_nan_values(self):
@@ -128,12 +138,14 @@ class TestPieChartVisualRegression:
 
     def test_pie_chart_baseline(self):
         """Test pie chart matches baseline SVG."""
-        chart = PieChart(data=[45, 30, 15, 10], labels=["Electronics", "Clothing", "Food", "Other"])
+        chart = PieChart(
+            data=[45, 30, 15, 10], labels=["Electronics", "Clothing", "Food", "Other"]
+        )
         html = chart.html
 
         # Verify key SVG elements are present
-        assert '<svg' in html.lower()
-        assert '</svg>' in html.lower()
+        assert "<svg" in html.lower()
+        assert "</svg>" in html.lower()
         assert "<path" in html.lower()
 
         # Verify labels are present
@@ -148,7 +160,7 @@ class TestPieChartVisualRegression:
         html = chart.html
 
         # Verify SVG structure
-        assert '<svg' in html.lower()
+        assert "<svg" in html.lower()
         assert "<path" in html.lower()
 
         # Verify labels are present
