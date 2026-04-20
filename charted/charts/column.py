@@ -76,17 +76,15 @@ class ColumnChart(Chart):
                     zip(y_values_series, y_offsets_series)
                 ):
                     slot_x = start_x + col_idx * (slot_width + gap)
-                    # For stacked mode with mixed +/- values, render from offset
-                    # Positive y extends down (larger y in SVG), negative extends up
+                    # For stacked mode, offset represents where the PREVIOUS bar ENDS
+                    # Positive y extends DOWN from offset, negative extends UP to offset
                     if y >= 0:
-                        bottom_y = y_offset_val
+                        top_y = y_offset_val
                         height = y
                     else:
-                        bottom_y = y_offset_val + y
+                        top_y = y_offset_val + y  # negative y, so this subtracts
                         height = abs(y)
-                    paths.append(
-                        Path.get_path(slot_x, bottom_y, series_thickness, height)
-                    )
+                    paths.append(Path.get_path(slot_x, top_y, series_thickness, height))
                 bars_g.add_child(Path(d=paths, fill=color))
         else:
             # Side-by-side mode: draw from zero line (like BarChart)
