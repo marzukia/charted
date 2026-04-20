@@ -93,7 +93,9 @@ class ColumnChart(Chart):
                 for x_idx, (x, y) in enumerate(zip(x_values, y_values)):
                     x += self.x_offset
                     y_offset = running_y[x_idx]
-                    paths.append(Path.get_path(x, y_offset, self.x_width, y))
+                    y_start = min(y_offset, y_offset + y)
+                    y_height = max(y_offset + y, y_offset) - y_start
+                    paths.append(Path.get_path(x, y_start, self.x_width, y_height))
 
                 g.add_child(Path(d=paths, fill=color))
 
