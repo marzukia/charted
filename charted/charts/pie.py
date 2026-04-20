@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from charted.charts.chart import Chart
@@ -105,15 +104,32 @@ class PieChart(Chart):
         )
         # Call parent Chart constructor with minimal setup
         # Pie chart doesn't use axes, so we pass minimal data
+        self.render_axes = (
+            False  # Set BEFORE super().__init__ to prevent axes from being added
+        )
+        # Expand viewBox to accommodate labels outside the pie
+        # Labels are positioned at label_radius = outer_radius * 1.15
+        # outer_radius = min(width, height) / 2 * 0.85
+        # So we need ~15% extra space on each side
+        label_margin = 0.20  # 20% extra space
+        expanded_width = width * (1 + label_margin)
+        expanded_height = height * (1 + label_margin)
+        offset_x = -(label_margin / 2) * width
+        offset_y = -(label_margin / 2) * height
+
+        # Call parent Chart constructor with minimal setup
+        # Pie chart doesn't use axes, so we pass minimal data
         super().__init__(
-            width=width,
-            height=height,
+            width=expanded_width,
+            height=expanded_height,
             x_data=[[0]],
             y_data=[[0]],
             title=title,
             theme=theme,
             x_stacked=False,
         )
+        # Override viewBox to shift origin and include label space
+        self.viewBox = f"{offset_x} {offset_y} {expanded_width} {expanded_height}"
         # Disable axes - pie charts don't use x/y axes
         self.render_axes = False
 
