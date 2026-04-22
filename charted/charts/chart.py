@@ -49,7 +49,8 @@ class Chart(Svg):
 
         self.series_names = series_names
         self.x_stacked = x_stacked
-        self.theme = Theme.load(theme)
+        self.series_names = series_names
+        self.x_stacked = x_stacked
 
         self.zero_index = zero_index
 
@@ -60,11 +61,10 @@ class Chart(Svg):
 
         self.width = width
         self.height = height
-        self.series_names = series_names
         self.x_stacked = x_stacked
 
-        # Load base theme
-        base_theme = Theme.load(theme)
+        # Load and apply theme
+        self.theme = Theme.load(theme)
 
         # Apply chart-type-specific overrides if available
         if chart_type:
@@ -73,21 +73,18 @@ class Chart(Svg):
             config = load_config()
             chart_override = get_chart_theme(config, chart_type)
             if chart_override:
-                self.theme = Theme.load(chart_override)
-                # Merge with base theme (base takes precedence)
-                for key in base_theme:
-                    if key not in self.theme:
-                        self.theme[key] = base_theme[key]
-                    elif isinstance(base_theme[key], dict) and isinstance(
-                        self.theme[key], dict
+                chart_theme = Theme.load(chart_override)
+                # Merge: chart override takes precedence over base theme
+                for key in self.theme:
+                    if key not in chart_theme:
+                        chart_theme[key] = self.theme[key]
+                    elif isinstance(self.theme[key], dict) and isinstance(
+                        chart_theme[key], dict
                     ):
-                        for subkey in base_theme[key]:
-                            if subkey not in self.theme[key]:
-                                self.theme[key][subkey] = base_theme[key][subkey]
-            else:
-                self.theme = base_theme
-        else:
-            self.theme = base_theme
+                        for subkey in self.theme[key]:
+                            if subkey not in chart_theme[key]:
+                                chart_theme[key][subkey] = self.theme[key][subkey]
+                self.theme = chart_theme
 
         self.h_padding = self.theme["padding"]["h_padding"]
         self.v_padding = self.theme["padding"]["v_padding"]

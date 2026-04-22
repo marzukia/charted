@@ -1,6 +1,13 @@
 """Tests for theme loading and utilities."""
 
-from charted.utils.themes import Theme, DEFAULT_THEME
+from charted.utils.themes import (
+    Theme,
+    DEFAULT_THEME,
+    PRESET_THEMES,
+    DARK_THEME,
+    LIGHT_THEME,
+    HIGH_CONTRAST_THEME,
+)
 
 
 class TestThemeLoadingHappyPath:
@@ -32,6 +39,40 @@ class TestThemeLoadingHappyPath:
         theme = Theme.load(None)
         assert "colors" in theme
         assert len(theme["colors"]) > 0
+
+
+class TestPresetThemes:
+    """Test preset theme loading."""
+
+    def test_load_dark_theme(self):
+        """Test loading dark preset theme."""
+        theme = Theme.load("dark")
+        assert theme["title"]["font_color"] == "#E0E0E0"
+        assert theme["v_grid"]["stroke"] == "#444444"
+        assert "#5fab9e" in theme["colors"]
+
+    def test_load_light_theme(self):
+        """Test loading light preset theme."""
+        theme = Theme.load("light")
+        assert theme["title"]["font_color"] == "#333333"
+        assert theme["v_grid"]["stroke"] == "#E0E0E0"
+        assert "#2e7d32" in theme["colors"]
+
+    def test_load_high_contrast_theme(self):
+        """Test loading high-contrast preset theme."""
+        theme = Theme.load("high-contrast")
+        assert theme["title"]["font_color"] == "#000000"
+        assert theme["v_grid"]["stroke"] == "#000000"
+        assert "#000000" in theme["colors"]
+
+    def test_preset_themes_dict(self):
+        """Test PRESET_THEMES dictionary contains all presets."""
+        assert "dark" in PRESET_THEMES
+        assert "light" in PRESET_THEMES
+        assert "high-contrast" in PRESET_THEMES
+        assert PRESET_THEMES["dark"] == DARK_THEME
+        assert PRESET_THEMES["light"] == LIGHT_THEME
+        assert PRESET_THEMES["high-contrast"] == HIGH_CONTRAST_THEME
 
 
 class TestThemeLoadingSadPath:
