@@ -8,6 +8,30 @@ from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
 
 
 class BarChart(Chart):
+    """Horizontal bar chart for comparing categorical data.
+
+    Displays data as horizontal bars where the length of each bar
+    represents the value. Supports single and multi-series data,
+    with optional stacking and side-by-side layouts.
+
+    Args:
+        data: Single series (list of values) or multi-series (list of lists)
+        labels: Category labels for the y-axis
+        bar_gap: Gap between bars as ratio of bar height (default from config)
+        width, height: Chart dimensions in pixels
+        zero_index: Whether to include zero on the x-axis
+        title: Optional chart title
+        theme: Optional theme configuration
+        series_names: Names for each series (shown in legend)
+        series_styles: Per-series style overrides
+        x_stacked: If True, stack bars horizontally instead of side-by-side
+
+    Example:
+        >>> from charted import BarChart
+        >>> chart = BarChart(data=[120, 180, 210], labels=['Q1', 'Q2', 'Q3'])
+        >>> chart.save('sales.svg')
+    """
+
     def __init__(
         self,
         data: Vector | Vector2D,

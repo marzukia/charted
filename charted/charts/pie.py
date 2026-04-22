@@ -12,8 +12,43 @@ from charted.utils.types import Labels, SeriesStyleConfig, Vector
 
 
 class PieChart(Chart):
-    """Pie chart for displaying categorical data as proportional slices."""
+    """Pie chart for displaying categorical data as proportional slices.
 
+    Renders data as a circular chart divided into slices where each
+    slice's arc length (and area) is proportional to its value.
+    Supports doughnut mode, slice explosion, and custom labeling.
+
+    Args:
+        data: Values for each slice (must be non-negative, sum > 0)
+        labels: Optional labels for each slice
+        width, height: Chart dimensions in pixels
+        title: Optional chart title
+        theme: Optional theme configuration
+        inner_radius: Ratio (0.0-1.0) for doughnut hole; 0 = regular pie
+        explode: Single value or list to offset slices from center (pixels)
+        start_angle: Starting angle in degrees (0 = top, clockwise)
+        series_styles: Optional per-slice styling overrides
+
+    Example:
+        >>> from charted import PieChart
+        >>> # Basic pie chart
+        >>> chart = PieChart(
+        ...     data=[25, 35, 40],
+        ...     labels=['Product A', 'Product B', 'Product C']
+        ... )
+        >>> chart.save('market_share.svg')
+        >>>
+        >>> # Doughnut chart with exploded slice
+        >>> chart = PieChart(
+        ...     data=[15, 25, 35, 25],
+        ...     labels=['Q1', 'Q2', 'Q3', 'Q4'],
+        ...     inner_radius=0.5,
+        ...     explode=[10, 0, 0, 0]
+        ... )
+    """
+
+    """Pie chart for displaying categorical data as proportional slices."""
+    render_axes = False  # Pie charts don't need axes or grid lines
     render_axes = False  # Pie charts don't need axes or grid lines
 
     def __init__(

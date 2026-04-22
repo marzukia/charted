@@ -21,8 +21,28 @@ from charted.utils.types import (
 
 
 class Chart(Svg):
+    """Base class for all SVG chart types.
+
+    Provides common functionality for chart rendering including
+    theme application, data validation, coordinate calculations,
+    and SVG generation. All chart types inherit from this class.
+
+    Attributes:
+        x_stacked: If True, stack series along x-axis
+        y_stacked: If True, stack series along y-axis
+        render_axes: Whether to draw axes and grid lines
+        theme: Applied theme configuration
+        colors: Auto-generated color palette for series
+
+    Example:
+        >>> from charted.charts.chart import Chart
+        >>> # Use concrete subclasses instead:
+        >>> from charted import BarChart, LineChart, PieChart
+    """
+
     x_stacked: bool = False
     y_stacked: bool = False
+    render_axes: bool = True
     render_axes: bool = True
 
     def _repr_svg_(self) -> str:

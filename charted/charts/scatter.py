@@ -5,6 +5,38 @@ from charted.utils.types import SeriesStyleConfig, Vector, Vector2D
 
 
 class ScatterChart(Chart):
+    """Scatter plot for displaying relationships between two variables.
+
+    Plots individual data points at (x, y) coordinates to show
+    correlations, clusters, or distributions. Supports multi-series
+    data with custom marker shapes and sizes.
+
+    Args:
+        data: Single series (list of y-values with x=indices) or
+              multi-series (list of lists) or list of (x, y) tuples
+        x_data: Optional x-coordinates for each point
+        labels: Optional series names
+        width, height: Chart dimensions in pixels
+        zero_index: Whether to include zero in both axes
+        title: Optional chart title
+        theme: Optional theme configuration
+        series_names: Names for each series (shown in legend)
+        series_styles: Per-series style overrides (marker_shape, marker_size)
+
+    Example:
+        >>> from charted import ScatterChart
+        >>> # Basic scatter plot
+        >>> chart = ScatterChart(data=[5, 8, 12, 15], x_data=[1, 2, 3, 4])
+        >>> chart.save('correlation.svg')
+        >>>
+        >>> # Multi-series with custom markers
+        >>> chart = ScatterChart(
+        ...     data=[[5, 8, 12], [7, 10, 14]],
+        ...     x_data=[1, 2, 3],
+        ...     series_styles=[{'marker_shape': 'circle'}, {'marker_shape': 'square'}]
+        ... )
+    """
+
     def __init__(
         self,
         x_data: Vector | Vector2D,

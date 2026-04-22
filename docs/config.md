@@ -59,21 +59,9 @@ start_angle = 0         # Starting angle in degrees (0-360)
 label_font_size = 14    # Font size for slice labels in points
 ```
 
-### Chart-Specific Themes
+### Chart-Specific Configuration
 
-You can define theme overrides for specific chart types:
-
-```toml
-[charts.pie]
-# Pie-specific theme overrides
-# These merge with the base theme
-
-[charts.bar]
-# Bar-specific theme overrides
-
-[charts.column]
-# Column-specific theme overrides
-```
+Chart-specific parameters (like `inner_radius` for pie charts) are set as constructor arguments, not in the config file.
 
 ## Usage
 
@@ -117,4 +105,102 @@ python -m charted create bar output.svg --data data.csv
 
 # Override config with explicit config path
 python -m charted create column chart.svg -d sales.csv -c /path/to/config.toml
+```
+
+## Advanced Configuration
+
+### Environment Variables
+
+Override config values via environment variables:
+
+```bash
+export CHARTED_WIDTH=800
+export CHARTED_HEIGHT=500
+export CHARTED_THEME=dark
+export CHARTED_FONT=Roboto
+```
+
+### Programmatic Configuration
+
+Load and modify config in Python:
+
+```python
+from charted.config import load_config, save_config
+
+config = load_config()
+config["width"] = 800
+config["theme"] = "dark"
+save_config(config, path="/path/to/custom/.chartedrc.toml")
+```
+
+### Chart-Specific Defaults
+
+Configure defaults per chart type:
+
+```toml
+[bar]
+bar_gap = 0.3
+
+[column]
+column_gap = 0.6
+
+[pie]
+explode = 0.15
+start_angle = 90
+label_font_size = 12
+```
+
+### Complete Example
+
+Full `.chartedrc.toml` example:
+
+```toml
+font = "Roboto"
+font_size = 12
+title_font_size = 16
+
+# Theme configuration
+theme = "dark"  # or "light", "high-contrast", or custom dict
+
+# Grid configuration
+v_grid = { stroke = "#E0E0E0", stroke_dasharray = "5,5" }
+h_grid = { stroke = "#E0E0E0", stroke_dasharray = "5,5" }
+
+# Legend configuration  
+legend = { position = "topright", font_size = 11, font_color = "#666666", legend_padding = 0.25 }
+
+# Title configuration
+title = { font_size = "16pt", font_family = "Helvetica", font_weight = "bold", font_color = "#333333" }
+
+# Marker configuration
+marker = { marker_size = 3.0 }
+
+# Padding configuration
+padding = { h_padding = 0.05, v_padding = 0.05 }
+```
+
+Chart-specific parameters (explode, inner_radius, start_angle, etc.) are constructor arguments, not config options.
+
+## Troubleshooting
+
+### Config Not Loading
+
+```python
+from charted.config import find_config
+config_path = find_config()
+print(f"Config found at: {config_path}")
+```
+
+### Overriding Config Programmatically
+
+```python
+from charted import BarChart
+
+chart = BarChart(
+    data=[120, 180, 210],
+    labels=["Q1", "Q2", "Q3"],
+    width=1000,
+    height=700,
+    theme="dark"
+)
 ```

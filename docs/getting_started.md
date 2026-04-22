@@ -21,9 +21,6 @@ chart.save("sales.svg")
 ```
 
 That's it! You now have a `sales.svg` file ready to use in presentations, websites, or documentation.
-
-## Chart Types
-
 Charted supports 5 chart types:
 
 - **BarChart** - Horizontal bars (comparing categories)
@@ -288,6 +285,214 @@ This is useful when you want a consistent interface across different chart types
 
 
 
+## Advanced API Usage
+
+### Chart Class Methods
+
+The base `Chart` class provides several useful methods for exporting and embedding:
+
+```python
+from charted import BarChart
+
+chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"], title="Sales")
+
+# Save to file
+chart.save("output.svg")
+
+# Get raw SVG string
+svg_content = chart.to_svg()
+
+# Get markdown with file reference
+md = chart.to_markdown(path="output.svg")
+# Output: ![Sales](output.svg)
+
+# Get markdown with inline data URL (no external file needed)
+md_inline = chart.to_markdown()
+# Output: ![Sales](data:image/svg+xml;base64,PHN2Zy4uLg==)
+
+# Get HTML snippet
+html = chart.to_html()
+# Output: <figure><svg xmlns="http://www.w3.org/2000/svg" ...>
+
+# Jupyter integration (automatic via _repr_html_)
+chart  # In Jupyter notebook, renders the chart inline
+```
+
+### Advanced Styling with series_styles
+
+Override styling for individual series or chart elements:
+
+```python
+from charted import BarChart, LineChart
+
+# Bar chart with highlighted series
+bar = BarChart(
+    data=[[120, 180, 210], [130, 190, 220]],
+    labels=["Q1", "Q2", "Q3"],
+    series_names=["2023", "2024"],
+    series_styles=[
+        None,  # Use theme default for 2023
+        {
+            "fill": "#ff6b6b",      # Red fill for 2024
+            "stroke_width": 3.0,    # Thicker border
+        }
+    ]
+)
+
+# Line chart with custom markers
+line = LineChart(
+    data=[120, 180, 210, 150],
+    labels=["Q1", "Q2", "Q3", "Q4"],
+    series_styles=[
+        {
+            "marker_shape": "square",  # Square markers instead of circles
+            "marker_size": 6.0,        # Larger markers
+            "stroke_width": 2.5,       # Thicker line
+            "stroke_opacity": 0.8,     # Semi-transparent line
+        }
+    ]
+)
+```
+
+### Font Configuration
+
+Charted bundles 8 professional fonts. Configure globally via `.chartedrc.toml`:
+
+```toml
+# .chartedrc.toml
+font = "Roboto"           # Default font family
+font_size = 12            # Body text size (pt)
+title_font_size = 16      # Title size (pt)
+```
+
+Available fonts: `Helvetica`, `Arial`, `Roboto`, `Inter`, `Lato`, `JetBrains Mono`, `Fira Code`, `Courier`.
+
+Per-chart font override:
+
+```python
+chart = BarChart(
+    data=[120, 180, 210],
+    labels=["Q1", "Q2", "Q3"],
+    font_family="JetBrains Mono",  # Override default
+    font_size=14
+)
+```
+
+### CLI Usage
+
+Create charts from the command line without writing Python:
+
+```bash
+# Basic bar chart from CSV
+python -m charted create bar sales.svg --data sales.csv
+python -m charted create bar sales.svg --data sales.csv
+
+# Multi-series column chart
+python -m charted create column comparison.svg --data sales.csv
+
+# Use short flag
+python -m charted create line trend.svg -d trend.csv
+
+# Batch process directory (infers chart type from filename)
+python -m charted batch ./data ./output
+
+# Force specific chart type for all files
+python -m charted batch ./data ./output --chart-type line
+
+# Use custom config
+python -m charted create bar sales.svg --data sales.csv --config .chartedrc.toml
+```
+
+**Data Formats:**
+
+CSV — first column is labels, remaining columns are data series:
+```csv
+Quarter,Q1,Q2,Q3,Q4
+Sales,120,180,210,150
+Profit,80,120,140,100
+```
+
+JSON — supports arrays, arrays of objects, or structured objects:
+```json
+[120, 180, 210, 150]
+```
+
+```json
+[{"label": "Q1", "value": 120}, {"label": "Q2", "value": 180}]
+```
+
+```json
+{"data": [120, 180], "labels": ["Q1", "Q2"], "title": "Sales"}
+```
+
+**Batch Filename Pattern:**
+
+Files should contain chart type keywords (bar, column, line, pie, scatter) in the filename. The batch command infers chart type from the filename, or you can override with `--chart-type`.
+
+### HTML Embedding
+
+Charts are SVG, so they embed directly in HTML:
+
+```html
+<!-- Direct include -->
+<figure>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+    <!-- chart content -->
+  </svg>
+  <figcaption>Sales by Quarter</figcaption>
+</figure>
+
+<!-- Responsive with CSS -->
+<style>
+  figure chart {
+    width: 100%;
+    height: auto;
+  }
+</style>
+
+<!-- Inline data URL for single-file HTML -->
+<img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmci...">
+```
+
+### Markdown Documentation
+
+Embed charts in READMEs and docs:
+
+```python
+from charted import BarChart, chart_to_markdown
+
+chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
+chart.save("docs/sales.svg")
+
+# Simple reference
+md = chart_to_markdown("docs/sales.svg", title="Sales Chart")
+# ![Sales Chart](docs/sales.svg)
+
+# With dimensions
+md = chart_to_markdown("docs/sales.svg", title="Sales", width="100%", max_width="600px")
+# ![Sales](docs/sales.svg){width=100% max-width=600px}
+```
+
+### Error Handling
+
+Charted provides custom exceptions for common issues:
+
+```python
+from charted import BarChart
+from charted.utils.exceptions import ChartError, DataLoadError
+
+try:
+    chart = BarChart(data=[], labels=[])  # Empty data
+except ChartError as e:
+    print(f"Chart error: {e}")
+
+try:
+    from charted import load_csv
+    x, y, labels = load_csv("nonexistent.csv")
+except DataLoadError as e:
+    print(f"Data load error: {e}")
+```
+
 ## Customization
 
 ### Themes
@@ -356,41 +561,11 @@ chart.save("custom_colors.svg")
 
 Charted also has a command-line interface:
 
-```bash
-# Create a single chart
-charted create bar --data 120,180,210 --labels Q1,Q2,Q3 --title "Sales" --output sales.svg
-
-# Batch generate charts
-charted batch config.toml
-```
-
-**CLI Example:**
-```bash
-# Bar chart
-charted create bar \
-  --data 120,180,210,150 \
-  --labels Q1,Q2,Q3,Q4 \
-  --title "Quarterly Sales" \
-  --width 800 \
-  --height 400 \
-  --output sales.svg
-
-# Column chart (stacked)
-charted create column \
-  --data 30,50,40 \
-  --data 90,130,170 \
-  --labels Q1,Q2,Q3 \
-  --series-names North,South \
-  --stacked \
-  --output stacked.svg
-```
-
 ## Next Steps
 
 - **API Reference** - Complete documentation for all chart classes
 - **Themes** - Learn about theme customization
-- **CLI Guide** - Command-line usage examples
-- **Examples** - See real-world chart configurations
+- **Configuration** - Configure charted for your project
 
 ## Common Patterns
 

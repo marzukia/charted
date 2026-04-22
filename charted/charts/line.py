@@ -5,6 +5,40 @@ from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
 
 
 class LineChart(Chart):
+    """Line chart for displaying trends over continuous data.
+
+    Connects data points with straight lines to show changes
+    across categories or time. Supports multi-series data with
+    optional area fills, markers, and custom styling.
+
+    Args:
+        data: Single series (list of values) or multi-series (list of lists)
+        x_data: Optional x-axis values (defaults to indices 0, 1, 2, ...)
+        labels: Optional x-axis labels
+        width, height: Chart dimensions in pixels
+        zero_index: Whether to include zero in the data range
+        title: Optional chart title
+        theme: Optional theme configuration
+        series_names: Names for each series (shown in legend)
+        series_styles: Per-series style overrides (stroke, marker_shape, etc.)
+
+    Example:
+        >>> from charted import LineChart
+        >>> # Basic line chart
+        >>> chart = LineChart(
+        ...     data=[10, 25, 18, 32],
+        ...     labels=['Jan', 'Feb', 'Mar', 'Apr']
+        ... )
+        >>> chart.save('trends.svg')
+        >>>
+        >>> # Multi-series with area fill
+        >>> chart = LineChart(
+        ...     data=[[10, 25, 18], [15, 20, 28]],
+        ...     labels=['2023', '2024'],
+        ...     series_styles=[{'area_fill': True, 'area_fill_opacity': 0.2}]
+        ... )
+    """
+
     def __init__(
         self,
         data: Vector | Vector2D,

@@ -9,6 +9,30 @@ from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
 
 
 class ColumnChart(Chart):
+    """Vertical column chart for comparing categorical data.
+
+    Displays data as vertical columns where the height of each column
+    represents the value. Supports single and multi-series data,
+    with optional stacking and side-by-side layouts.
+
+    Args:
+        data: Single series (list of values) or multi-series (list of lists)
+        labels: Category labels for the x-axis
+        column_gap: Gap between columns as ratio of column width (default 0.2)
+        width, height: Chart dimensions in pixels
+        zero_index: Whether to include zero on the y-axis
+        title: Optional chart title
+        theme: Optional theme configuration
+        series_names: Names for each series (shown in legend)
+        y_stacked: If True, stack columns vertically instead of side-by-side
+        series_styles: Per-series style overrides
+
+    Example:
+        >>> from charted import ColumnChart
+        >>> chart = ColumnChart(data=[120, 180, 210], labels=['Q1', 'Q2', 'Q3'])
+        >>> chart.save('sales.svg')
+    """
+
     y_stacked: bool = True
 
     def __init__(
