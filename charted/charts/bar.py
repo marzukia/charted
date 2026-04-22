@@ -7,7 +7,6 @@ from charted.utils.types import Labels, Vector, Vector2D
 
 
 class BarChart(Chart):
-
     def __init__(
         self,
         data: Vector | Vector2D,
@@ -50,6 +49,7 @@ class BarChart(Chart):
             theme=theme,
             series_names=series_names,
             x_stacked=x_stacked,
+            chart_type="bar",
         )
 
     @property
@@ -67,7 +67,9 @@ class BarChart(Chart):
 
         num_series = len(self.x_values) if self.x_values else 1
         series_thickness = (
-            slot_height / num_series if (num_series > 0 and not self.x_stacked) else slot_height
+            slot_height / num_series
+            if (num_series > 0 and not self.x_stacked)
+            else slot_height
         )
 
         # Mirror of ColumnChart's dy: for stacked charts with negative values,
@@ -103,9 +105,7 @@ class BarChart(Chart):
                     # offset (or vice versa) renders correctly.
                     left_x = min(x_offset_val, x_offset_val + x)
                     width = abs(x)
-                    paths.append(
-                        Path.get_path(left_x, slot_y, width, series_thickness)
-                    )
+                    paths.append(Path.get_path(left_x, slot_y, width, series_thickness))
                 bars_g.add_child(Path(d=paths, fill=color))
         else:
             zero_x = self.x_axis.zero

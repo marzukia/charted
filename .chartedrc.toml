@@ -1,0 +1,28 @@
+# Charted configuration file
+# Place this in your project root to customize chart defaults
+
+# Font settings
+font = "Helvetica"
+font_size = 12
+title_font_size = 16
+
+# Chart dimensions
+width = 600
+height = 400
+
+# Color palette (SVG/CSS color values)
+colors = [
+    "#5fab9e",
+    "#f58b51",
+    "#f7dd72",
+    "#db504a",
+    "#2e4756"
+]
+
+# Theme reference (optional)
+# theme = "dark"
+
+# Pie chart specific defaults
+[pie]
+explode = 0.1
+start_angle = 0

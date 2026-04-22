@@ -1,12 +1,10 @@
 from collections import defaultdict
 import functools
-import json
 import math
-import os
 
-
-from charted.utils.defaults import BASE_DEFINITIONS_DIR, DEFAULT_FONT, DEFAULT_FONT_SIZE
+from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.types import MeasuredText, Vector
+from charted.fonts.wrapper import Font
 
 
 @functools.lru_cache(maxsize=512)
@@ -16,12 +14,9 @@ def calculate_text_dimensions(
     font_size: int = DEFAULT_FONT_SIZE,
 ) -> MeasuredText:
     text = str(text)
-    with open(os.path.join(BASE_DEFINITIONS_DIR, f"{font}.json"), "r") as src:
-        lookup = json.loads(src.read())[str(font_size)]
-        ord_arr = [ord(char) for char in text]
-        width = sum([lookup[str(ord_char)]["width"] for ord_char in ord_arr])
-        height = max([lookup[str(ord_char)]["height"] for ord_char in ord_arr])
-        return MeasuredText(text, width, height)
+    font_instance = Font(family=font, size=font_size)
+    width, height = font_instance.measure(text)
+    return MeasuredText(text, width, height)
 
 
 def calculate_rotation_angle(

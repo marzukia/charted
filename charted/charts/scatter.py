@@ -23,6 +23,7 @@ class ScatterChart(Chart):
             title=title,
             theme=theme,
             series_names=series_names,
+            chart_type="scatter",
         )
 
     @property

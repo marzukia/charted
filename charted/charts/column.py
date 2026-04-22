@@ -32,6 +32,7 @@ class ColumnChart(Chart):
             zero_index=zero_index,
             theme=theme,
             series_names=series_names,
+            chart_type="column",
         )
 
     @property

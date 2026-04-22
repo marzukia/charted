@@ -74,6 +74,7 @@ class PieChart(Chart):
             title=title,
             zero_index=True,
             theme=theme,
+            chart_type="pie",
         )
 
         # Override colors to match data length

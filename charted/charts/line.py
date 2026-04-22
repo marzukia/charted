@@ -27,6 +27,7 @@ class LineChart(Chart):
             zero_index=zero_index,
             theme=theme,
             series_names=series_names,
+            chart_type="line",
         )
 
     @property

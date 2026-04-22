@@ -11,6 +11,7 @@ from charted.utils.helpers import (
 from charted.utils.themes import Theme
 from charted.utils.transform import translate
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
+from charted.config import get_chart_theme
 
 
 class Chart(Svg):
@@ -31,6 +32,7 @@ class Chart(Svg):
         x_stacked: bool = False,
         title: str | None = None,
         theme: Theme | None = None,
+        chart_type: str | None = None,
     ):
         super().__init__(
             width=width,
@@ -58,6 +60,35 @@ class Chart(Svg):
 
         self.width = width
         self.height = height
+        self.series_names = series_names
+        self.x_stacked = x_stacked
+
+        # Load base theme
+        base_theme = Theme.load(theme)
+
+        # Apply chart-type-specific overrides if available
+        if chart_type:
+            from charted.config import load_config
+
+            config = load_config()
+            chart_override = get_chart_theme(config, chart_type)
+            if chart_override:
+                self.theme = Theme.load(chart_override)
+                # Merge with base theme (base takes precedence)
+                for key in base_theme:
+                    if key not in self.theme:
+                        self.theme[key] = base_theme[key]
+                    elif isinstance(base_theme[key], dict) and isinstance(
+                        self.theme[key], dict
+                    ):
+                        for subkey in base_theme[key]:
+                            if subkey not in self.theme[key]:
+                                self.theme[key][subkey] = base_theme[key][subkey]
+            else:
+                self.theme = base_theme
+        else:
+            self.theme = base_theme
+
         self.h_padding = self.theme["padding"]["h_padding"]
         self.v_padding = self.theme["padding"]["v_padding"]
 
