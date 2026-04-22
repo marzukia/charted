@@ -16,19 +16,24 @@ fi
 # DNF (Fedora/RHEL 8+) - fallback to pip if package not available
 if command -v dnf &> /dev/null; then
     echo "📦 DNF detected. Checking for charted package..."
-    if dnf list charted 2>/dev/null | grep -q charted; then
+    if dnf list charted 2>&1 | grep -q "charted"; then
         sudo dnf install -y charted
         echo "✅ Installed via DNF"
         exit 0
     else
         echo "⚠️  charted not found in DNF repos. Falling back to pip..."
-        sudo dnf install -y python3-pip
-        pip3 install --user charted
+        sudo dnf install -y python3-pip python3-pipx --skip-unavailable || sudo dnf install -y python3-pip
+        if command -v pipx &> /dev/null; then
+            pipx install charted
+        else
+            pip3 install --user charted
+            echo "💡 Add ~/.local/bin to your PATH if needed"
+        fi
         echo "✅ Installed via pip"
-        echo "💡 Add ~/.local/bin to your PATH if needed"
         exit 0
     fi
 fi
+
 
 # APT (Ubuntu/Debian) - fallback to pip if package not available
 if command -v apt &> /dev/null; then
