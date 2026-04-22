@@ -59,4 +59,16 @@ pip install --user charted
 charted --version
 ```
 
-You should see the installed version number.
+## Usage
+
+```bash
+# Interactive chart creation
+charted create bar output.svg --data "10,20,30,40" --labels "A,B,C,D" --title "My Chart"
+
+# Batch processing
+charted batch ./data ./output --chart-type bar
+
+# Help
+charted --help
+charted create --help
+```
