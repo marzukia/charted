@@ -10,7 +10,7 @@ This branch implements the theme system enhancements outlined in GitHub issues #
 **Status:** Font wrapper implemented, needs integration
 
 **Tasks:**
-- [ ] Wire `Font` class into `Chart` class for actual text rendering
+- [x] Wire `Font` class into `Chart` class for actual text rendering
 - [ ] Add more font definitions (Times New Roman, Courier, etc.)
 - [ ] Support custom font files (.ttf, .otf) via PIL
 - [ ] Implement font styling (bold, italic, weight variations)
@@ -21,39 +21,32 @@ This branch implements the theme system enhancements outlined in GitHub issues #
 - `charted/fonts/definitions/` - add more font JSON definitions
 - `charted/fonts/wrapper.py` - add styling support
 - `charted/config.py` - update font configuration
-
 ---
 
 ### Phase 2: Preset Theme Packs (#34)
 **Dependency:** Foundation for #35 and #36
-**Status:** Basic theme dict support exists
+**Status:** Complete
 
 **Tasks:**
-- [ ] Add 3 preset themes to `charted/utils/themes.py`:
+- [x] Add 3 preset themes to `charted/utils/themes.py`:
   - `dark`: dark background, light grid lines, high-contrast colors
   - `light`: white/light gray background, subtle grid lines
   - `high-contrast`: accessibility-optimized, bold colors, thick grid lines
-- [ ] Update `Theme.load()` to support preset selection via name
+- [x] Update `Theme.load()` to support preset selection via name
 - [ ] Add docs/examples for each preset
 - [ ] Update README with theme previews
 - [ ] Add tests for preset theme loading
-
-**Files to modify:**
-- `charted/utils/themes.py` - add preset definitions
-- `charted/config.py` - update theme loading logic
-- `docs/config.md` - document presets
-- `tests/utils/test_themes.py` - add preset tests
 
 ---
 
 ### Phase 3: Per-Chart-Type Theme Overrides (#35)
 **Dependency:** Builds on #34 (preset themes)
-**Status:** Single base theme exists
+**Status:** Complete
 
 **Tasks:**
-- [ ] Update `Theme.load()` to accept chart-type-specific overrides
-- [ ] Add config sections: `[charts.pie]`, `[charts.column]`, etc.
-- [ ] Modify `Chart` class to merge base + chart-specific themes
+- [x] Update `Theme.load()` to accept chart-type-specific overrides
+- [x] Add config sections: `[charts.pie]`, `[charts.column]`, etc.
+- [x] Modify `Chart` class to merge base + chart-specific themes
 - [ ] Add tests for theme inheritance chain
 - [ ] Document config syntax
 
