@@ -215,16 +215,17 @@ Data Loading API
 
    **Supported JSON Formats:**
 
-   .. code-block:: json
+   Simple array::
 
-      // Simple array
       [120, 180, 210]
 
-      // Array of objects
+   Array of objects::
+
       [{"label": "Q1", "value": 120}, {"label": "Q2", "value": 180}]
 
-       // Object with data and labels
-       {"data": [120, 180, 210], "labels": ["Q1", "Q2", "Q3"], "title": "Sales"}
+   Object with data and labels::
+
+      {"data": [120, 180, 210], "labels": ["Q1", "Q2", "Q3"], "title": "Sales"}
 
 CLI API
 -------
@@ -296,24 +297,24 @@ Full CLI Reference
 
 **Data Formats:**
 
-CSV: First column is labels, remaining columns are data series
-.. code-block:: csv
+**CSV Format:** First column is labels, remaining columns are data series::
 
    Quarter,Q1,Q2,Q3,Q4
    Sales,120,180,210,150
    Profit,80,120,140,100
 
-JSON: Supports arrays, arrays of objects, or structured objects
-
-.. code-block:: json
+**JSON Format:** Supports arrays, arrays of objects, or structured objects::
 
    [120, 180, 210, 150]
-   [{"label": "Q1", "value": 120}, {"label": "Q2", "value": 180}]
-   {"data": [120, 180], "labels": ["Q1", "Q2"], "title": "Sales"}
-**Error Handling:**
 
+   [{"label": "Q1", "value": 120}, {"label": "Q2", "value": 180}]
+
+   {"data": [120, 180], "labels": ["Q1", "Q2"], "title": "Sales"}
+
+**Error Handling:**
 
 CLI provides helpful error messages with suggestions:
 - Missing data file → check file path
 - Unsupported format → use .csv or .json only
 - Invalid chart type → use bar, column, line, scatter, or pie
+
