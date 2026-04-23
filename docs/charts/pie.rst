@@ -31,11 +31,10 @@ Create a doughnut chart by setting inner_radius::
        data=[45, 30, 15, 10],
        labels=["Electronics", "Clothing", "Food", "Other"],
        series_names=["Sales"],
-       width=500,
-       height=400,
-       doughnut=True,
-       inner_radius=0.5  # 50% of outer radius
-   )
+        width=500,
+        height=400,
+        inner_radius=0.5  # 50% of outer radius
+    )
 
 .. image:: ../examples/pie_doughnut.svg
    :width: 100%
@@ -45,8 +44,7 @@ Customizing Doughnut::
    chart = PieChart(
        data=[300, 150, 100],
        labels=["Product A", "Product B", "Product C"],
-       doughnut=True,
-       inner_radius=0.4,  # Smaller hole
+        inner_radius=0.4,  # Smaller hole
        start_angle=45,  # Rotate chart
        theme={
            "colors": ["#FF6B6B", "#4ECDC4", "#45B7D1"]  # Custom slice colors
@@ -198,10 +196,8 @@ API Reference
    - ``data`` — Single list of values (one slice per value)
    - ``labels`` — Slice labels
    - ``series_names`` — Legend name for the data series
-   - ``doughnut`` — If True, render as doughnut chart (default: False)
-   - ``inner_radius`` — Inner radius ratio for doughnut mode (0.3-0.7, default: 0)
-   - ``slice_styles`` — Dictionary mapping slice index to style overrides
-   - ``width`` — Chart width in pixels (default 800)
+    - ``inner_radius`` — Inner radius ratio for doughnut mode (0.3-0.7, default: 0; 0 = regular pie)
+    - ``slice_styles`` — Dictionary mapping slice index to style overrides
    - ``height`` — Chart height in pixels (default 600)
    - ``theme`` — Theme name string or theme dictionary
    - ``title`` — Chart title text
@@ -224,8 +220,7 @@ API Reference
           labels=["Product A", "Product B", "Product C", "Product D"],
           series_names=["Sales"],
           title="Market Share",
-          doughnut=True,
-          inner_radius=0.5,
+        inner_radius=0.5,
           slice_styles={
               0: {"color": "#FF6B6B", "explode": 0.1},
               1: {"color": "#4ECDC4"},

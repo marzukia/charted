@@ -152,10 +152,8 @@ Pie Chart
    - ``data`` — Single list of values
    - ``labels`` — Slice labels
    - ``series_names`` — Legend name
-   - ``doughnut`` — If True, render as doughnut chart
-   - ``inner_radius`` — Inner radius for doughnut mode (0.3-0.7)
-   - ``slice_styles`` — Per-slice customization (colors, explosion, labels)
-   - ``theme`` — Theme dictionary or theme name string
+    - ``inner_radius`` — Inner radius for doughnut mode (0.3-0.7, 0 = regular pie)
+    - ``slice_styles`` — Per-slice customization (colors, explosion, labels)
 
    **Example:**
 
@@ -178,7 +176,6 @@ Pie Chart
       chart = PieChart(
           data=[300, 150, 100],
           labels=["A", "B", "C"],
-          doughnut=True,
           inner_radius=0.5
       )
 
