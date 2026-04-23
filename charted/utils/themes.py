@@ -68,6 +68,44 @@ class Theme(TypedDict):
 
 
 # Preset theme definitions
+FUNGOID_THEME = Theme(
+    legend=LegendConfig(
+        font_size=11,
+        legend_padding=0.25,
+        position="topright",
+    ),
+    marker=MarkerConfig(
+        marker_size=3,
+    ),
+    title=TitleConfig(
+        font_size=DEFAULT_TITLE_FONT_SIZE,
+        font_family=DEFAULT_FONT,
+        font_weight="bold",
+        font_color="#FF7800",  # fungoid orange
+    ),
+    colors=[
+        "#FF7800",
+        "#3CDC50",
+        "#FFBE00",
+        "#FF5A5A",
+        "#695541",
+    ],  # orange, green, yellow, red, muted
+    v_grid=GridConfig(
+        stroke="#695541",  # muted warm dark
+        stroke_dasharray=None,
+    ),
+    h_grid=GridConfig(
+        stroke="#695541",
+        stroke_dasharray=None,
+    ),
+    padding=PaddingConfig(
+        h_padding=0.05,
+        v_padding=0.05,
+    ),
+    series_style=None,
+)
+
+# Preset theme definitions
 DARK_THEME = Theme(
     legend=LegendConfig(
         font_size=11,
@@ -165,6 +203,7 @@ PRESET_THEMES = {
     "dark": DARK_THEME,
     "light": LIGHT_THEME,
     "high-contrast": HIGH_CONTRAST_THEME,
+    "fungoid": FUNGOID_THEME,
 }
 
 
@@ -183,7 +222,7 @@ DEFAULT_THEME = Theme(
         font_weight="bold",
         font_color="#444444",
     ),
-    colors=DEFAULT_COLORS,
+    colors=["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
     v_grid=GridConfig(
         stroke="#CCCCCC",
         stroke_dasharray=None,
