@@ -53,7 +53,7 @@ CHARTS = {
         data=[45, 30, 15, 10], labels=["Electronics", "Clothing", "Food", "Other"]
     ),
     "pie_doughnut": PieChart(
-        data=[30, 40, 30], labels=["A", "B", "C"], inner_radius=50
+        data=[30, 40, 30], labels=["A", "B", "C"], inner_radius=0.5
     ),
     # Scatter charts
     "scatter_basic": ScatterChart(x_data=[1, 2, 3], y_data=[1, 2, 3]),

@@ -157,7 +157,7 @@ class TestPieChartVisualRegression:
 
     def test_pie_chart_doughnut_baseline(self):
         """Test doughnut chart generates correct SVG."""
-        chart = PieChart(data=[30, 40, 30], labels=["A", "B", "C"], inner_radius=50)
+        chart = PieChart(data=[30, 40, 30], labels=["A", "B", "C"], inner_radius=0.5)
         html = chart.html
 
         # Verify SVG structure

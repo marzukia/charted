@@ -98,54 +98,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
-## [1.0.2] - 2026-04-23
-
-### Fixed
-- Homebrew formula installation fixes (brew tap marzukia/tap/charted)
-
-### Changed
-- None
-
-### Deprecated
-- None
-
-### Removed
-- None
-
-### Added
-- None
-
-### Security
-- None
-
-## [1.0.1] - 2026-04-23
-
-### Added
-- Package manager install scripts (homebrew, apt, dnf, universal)
-- Fallback to pipx/pip when system packages unavailable
-
-### Fixed
-- CLI usage examples in install readme
-- Theme examples across chart documentation (pie.rst, scatter.rst)
-- Theme count documentation (3 presets: dark, light, high-contrast)
-- Theme dict structure documentation
-- Duplicate sections and fake TOML/Theme constants in docs
-- Sphinx documentation structure and API reference
-
-### Changed
-- Comprehensive documentation overhaul
-
-### Deprecated
-- None
-
-### Removed
-- Fake CLI section, fake theme sections, fake Theme constants
-
-### Security
-- None
-
 ## [0.1.0] - 2026-04-22
 
 ### Added
 - Initial release
 - All chart types and core functionality
+
