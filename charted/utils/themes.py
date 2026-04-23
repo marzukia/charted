@@ -1,7 +1,7 @@
 import copy
 from typing import Optional, TypedDict
 
-from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
+from charted.utils.defaults import DEFAULT_FONT, DEFAULT_TITLE_FONT_SIZE
 from charted.utils.types import SeriesStyleConfig
 
 
