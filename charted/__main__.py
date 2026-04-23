@@ -20,6 +20,19 @@ def main(args=None):
     )
     create_parser.add_argument("output", help="Output SVG file path")
     create_parser.add_argument("--data", "-d", help="Data file (CSV or JSON)")
+    create_parser.add_argument(
+        "--data-inline", help="Inline data values (comma-separated, e.g. '10,20,30')"
+    )
+    create_parser.add_argument(
+        "--labels", help="Labels for data points (comma-separated, e.g. 'A,B,C')"
+    )
+    create_parser.add_argument(
+        "--x-data", help="X-coordinates for scatter plots (comma-separated)"
+    )
+    create_parser.add_argument(
+        "--y-data", help="Y-coordinates for scatter plots (comma-separated)"
+    )
+    create_parser.add_argument("--title", help="Chart title")
     create_parser.add_argument("--config", "-c", help="Config file path")
     create_parser.set_defaults(func="create")
 

@@ -384,23 +384,26 @@ Create charts from the command line without writing Python:
 
 ```bash
 # Basic bar chart from CSV
-python -m charted create bar sales.svg --data sales.csv
-python -m charted create bar sales.svg --data sales.csv
+charted create bar sales.svg --data sales.csv
 
 # Multi-series column chart
-python -m charted create column comparison.svg --data sales.csv
+charted create column comparison.svg --data sales.csv
 
 # Use short flag
-python -m charted create line trend.svg -d trend.csv
+charted create line trend.svg -d trend.csv
 
 # Batch process directory (infers chart type from filename)
-python -m charted batch ./data ./output
+
+
+# Scatter plot with x/y coordinates
+charted create scatter plot.svg --x-data "1,2,3,4" --y-data "2,4,6,8" --title "Correlation"
+charted batch ./data ./output
 
 # Force specific chart type for all files
-python -m charted batch ./data ./output --chart-type line
+charted batch ./data ./output --chart-type line
 
 # Use custom config
-python -m charted create bar sales.svg --data sales.csv --config .chartedrc.toml
+charted create bar sales.svg --data sales.csv --config .chartedrc.toml
 ```
 
 **Data Formats:**

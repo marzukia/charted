@@ -101,10 +101,10 @@ Config files are automatically used by the CLI:
 
 ```sh
 # Uses .chartedrc.toml from project root
-python -m charted create bar output.svg --data data.csv
+charted create bar output.svg --data data.csv
 
 # Override config with explicit config path
-python -m charted create column chart.svg -d sales.csv -c /path/to/config.toml
+charted create column chart.svg -d sales.csv -c /path/to/config.toml
 ```
 
 ## Advanced Configuration

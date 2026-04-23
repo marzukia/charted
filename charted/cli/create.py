@@ -100,6 +100,26 @@ def create_command(args: argparse.Namespace):
                     file=sys.stderr,
                 )
             sys.exit(1)
+    elif getattr(args, "data_inline", None):
+        # Parse inline data
+        data["data"] = [float(x.strip()) for x in args.data_inline.split(",")]
+        if getattr(args, "labels", None):
+            data["labels"] = [x.strip() for x in args.labels.split(",")]
+    elif chart_type == "scatter":
+        # Scatter requires x_data and y_data
+        if getattr(args, "x_data", None) and getattr(args, "y_data", None):
+            data["x_data"] = [float(x.strip()) for x in args.x_data.split(",")]
+            data["y_data"] = [float(y.strip()) for y in args.y_data.split(",")]
+        else:
+            print(
+                "Error: Scatter plots require --x-data and --y-data arguments",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    # Add title if provided
+    if getattr(args, "title", None):
+        data["title"] = args.title
 
     # Create chart
     try:
