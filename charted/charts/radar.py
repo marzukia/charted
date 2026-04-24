@@ -145,7 +145,7 @@ class RadarChart(Chart):
         """Convert polar coordinates to Cartesian."""
         angle_rad = math.radians(angle_deg)
         x = cx + radius * math.cos(angle_rad)
-        y = cy + radius * math.sin(angle_rad)
+        y = cy - radius * math.sin(angle_rad)  # negate y for SVG coordinate system
         return x, y
 
     def _get_grid_radius(self, level: int) -> float:
