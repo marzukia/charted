@@ -5,13 +5,21 @@ import json
 import sys
 from pathlib import Path
 
-from ..charts import BarChart, ColumnChart, LineChart, PieChart, ScatterChart
+from ..charts import (
+    BarChart,
+    ColumnChart,
+    LineChart,
+    PieChart,
+    RadarChart,
+    ScatterChart,
+)
 
 CHART_TYPES = {
     "bar": BarChart,
     "column": ColumnChart,
     "line": LineChart,
     "pie": PieChart,
+    "radar": RadarChart,
     "scatter": ScatterChart,
 }
 
