@@ -210,15 +210,12 @@ class RadarChart(Chart):
                 label_x, label_y = self._polar_to_cartesian(cx, cy, label_radius, angle)
 
                 # Adjust text anchor based on angle
-                if -90 < angle < 90:
+                if -90 <= angle <= 90:  # Right side: start anchor
                     text_anchor = "start"
                     x_align = label_x + 5
-                elif angle < -90 or angle >= 90:
+                else:  # Left side: end anchor
                     text_anchor = "end"
                     x_align = label_x - 5
-                else:
-                    text_anchor = "middle"
-                    x_align = label_x
 
                 label_text = Text(
                     x=x_align,
