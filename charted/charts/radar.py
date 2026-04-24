@@ -4,7 +4,6 @@ import math
 
 from charted.charts.chart import Chart
 from charted.html.element import Circle, G, Path, Text
-
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.themes import Theme
 from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
