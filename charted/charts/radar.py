@@ -162,6 +162,10 @@ class RadarChart(Chart):
         angle = self._get_angle(axis_index)
         return self._polar_to_cartesian(cx, cy, radius, angle)
 
+    def get_base_transform(self) -> list:
+        """Radar charts use polar coordinates — no base transform needed."""
+        return []
+
     @property
     def representation(self) -> G:
         """Generate radar chart SVG elements."""
