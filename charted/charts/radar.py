@@ -104,7 +104,6 @@ class RadarChart(Chart):
         self.grid_levels = grid_levels
         self.show_axis_labels = show_axis_labels
         self.label_offset = label_offset
-        self.series_names = series_names
 
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(axis_count)] for _ in data]
@@ -121,6 +120,7 @@ class RadarChart(Chart):
             theme=theme,
             chart_type="radar",
             series_styles=series_styles,
+            series_names=series_names,
         )
 
     @property
