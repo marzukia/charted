@@ -314,7 +314,7 @@ class PieChart(Chart):
                 text=str(label),
                 fill=text_color,
                 font_size=get_pie_label_font_size(),
-                font_family="Helvetica",
+                font_family=self.theme["title"]["font_family"],
                 text_anchor="middle",
                 dominant_baseline="middle",
             )

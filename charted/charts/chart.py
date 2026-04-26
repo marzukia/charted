@@ -736,7 +736,7 @@ class Chart(Svg):
                 x=x0 + 2 + h,
                 text=legend_text.text,
                 font_size=self.theme["legend"]["font_size"],
-                font_family="Helvetica",
+                font_family=self.theme["title"]["font_family"],
             )
             g.add_children(rect, text)
             legend.add_child(g)
