@@ -34,6 +34,19 @@ class TestRadarChartHappyPath:
         assert chart.series_names == ["Player A", "Player B"]
         assert "<path" in html.lower()
 
+    def test_radar_chart_multi_series_colors(self):
+        """Test radar chart assigns different colors to each series."""
+        chart = RadarChart(
+            data=[[20, 35, 30, 45, 25], [30, 25, 40, 35, 30]],
+            labels=["Speed", "Power", "Endurance", "Defense", "Skill"],
+            series_names=["Player A", "Player B"],
+        )
+        # Verify chart has 2 distinct colors for 2 series
+        assert len(chart.colors) == 2
+        assert chart.colors[0] != chart.colors[1], (
+            "Each series should have a different color"
+        )
+
     def test_radar_chart_custom_size(self):
         """Test radar chart with custom dimensions."""
         chart = RadarChart(
@@ -127,6 +140,11 @@ class TestRadarChartSadPath:
         with pytest.raises(ValueError, match="Labels cannot be empty"):
             RadarChart(data=[10, 20, 30], labels=[])
 
+    def test_radar_chart_empty_data(self):
+        """Test radar chart with empty data raises error."""
+        with pytest.raises(ValueError, match="Data cannot be empty"):
+            RadarChart(data=[], labels=["A", "B", "C"])
+
     def test_radar_chart_mismatched_data_labels(self):
         """Test radar chart with mismatched data and labels length."""
         with pytest.raises(ValueError, match="matching labels"):
@@ -161,3 +179,30 @@ class TestRadarChartSadPath:
         )
         html = chart.html
         assert html  # Should render without error
+
+    def test_radar_chart_with_tuple_data(self):
+        """Test radar chart accepts tuple data (not just lists)."""
+        chart = RadarChart(
+            data=(10, 20, 30, 40),  # Tuple instead of list
+            labels=["A", "B", "C", "D"],
+        )
+        html = chart.html
+        assert html  # Should render without TypeError
+
+    def test_radar_chart_with_tuple_series(self):
+        """Test radar chart accepts tuple of tuples for multi-series."""
+        chart = RadarChart(
+            data=((10, 20, 30), (15, 25, 35)),  # Tuples instead of lists
+            labels=["A", "B", "C"],
+        )
+        html = chart.html
+        assert html  # Should render without TypeError
+
+    def test_radar_chart_axis_count_mismatch(self):
+        """Test radar chart raises error when axis_count != len(labels)."""
+        with pytest.raises(ValueError, match="axis_count.*must match"):
+            RadarChart(
+                data=[[10, 20, 30]],
+                labels=["A", "B", "C", "D"],  # 4 labels
+                axis_count=3,  # But axis_count=3
+            )

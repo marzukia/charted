@@ -86,12 +86,27 @@ class RadarChart(Chart):
         if not labels or len(labels) == 0:
             raise ValueError("Labels cannot be empty")
 
-        # Normalize data to list of lists (multi-series format)
-        if not isinstance(data[0], list):
-            data = [data]  # Single series
+        if not data or (isinstance(data, list) and len(data) == 0):
+            raise ValueError("Data cannot be empty")
 
-        if axis_count is None:
-            axis_count = len(labels)
+        # Normalize data to list of lists (multi-series format)
+        # Handle tuples and other sequence types, not just lists
+        if isinstance(data, (list, tuple)) and len(data) > 0:
+            if isinstance(data[0], (list, tuple)):
+                # Multi-series: convert all inner sequences to lists
+                data = [list(s) for s in data]
+            else:
+                # Single series: wrap in list
+                data = [list(data)]
+        else:
+            raise ValueError("Data cannot be empty")
+
+        # axis_count must match len(labels) for consistency
+        if axis_count is not None and axis_count != len(labels):
+            raise ValueError(
+                f"axis_count ({axis_count}) must match len(labels) ({len(labels)})"
+            )
+        axis_count = len(labels)
 
         if any(len(series) != axis_count for series in data):
             raise ValueError(
@@ -121,6 +136,8 @@ class RadarChart(Chart):
             series_styles=series_styles,
             series_names=series_names,
         )
+        # Set colors after super().__init__() to override base class default
+        self.colors = data
 
     @property
     def colors(self) -> list[str]:
@@ -129,6 +146,9 @@ class RadarChart(Chart):
     @colors.setter
     def colors(self, data: Vector | Vector2D) -> None:
         """Generate colors for series."""
+        if not data or (isinstance(data, list) and len(data) == 0):
+            self._colors = []
+            return
         n_series = len(data) if isinstance(data[0], list) else 1
         self._colors = list(DEFAULT_COLORS[:n_series])
         while len(self._colors) < n_series:
