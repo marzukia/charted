@@ -4,7 +4,7 @@ import math
 
 from charted.charts.chart import Chart
 from charted.html.element import Circle, G, Path, Text
-from charted.utils.defaults import DEFAULT_COLORS
+from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.themes import Theme
 from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
 
@@ -60,7 +60,7 @@ class RadarChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
-        radius: float = 0.35,
+        radius: float = 0.45,
         axis_count: int | None = None,
         grid_levels: int = 5,
         show_axis_labels: bool = True,
@@ -225,7 +225,8 @@ class RadarChart(Chart):
                     y=label_y + 4,  # Small y offset for baseline
                     text=label,
                     fill=self.theme.get("text_color", "#333"),
-                    font_size=self.theme.get("font_size", 12),
+                    font_size=DEFAULT_FONT_SIZE,
+                    font_family=DEFAULT_FONT,
                     text_anchor=text_anchor,
                 )
                 g.add_child(label_text)
