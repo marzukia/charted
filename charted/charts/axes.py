@@ -133,7 +133,11 @@ class Axis(G):
             # (synthetically created [[0,1,...,n]] in Axis.__init__) and real-data
             # xy charts both land in the correct pixel locations.
             values = list(data[0])
-            return (axd, values)
+            # Grid lines use full range from min to max for proper rendering
+            min_val = min(values)
+            max_val = max(values)
+            grid_line_values = list(range(int(min_val), int(max_val) + 1))
+            return (axd, values, grid_line_values)
 
         denominators = common_denominators(axd.min_value, axd.max_value)
         value_range = axd.value_range
@@ -151,35 +155,46 @@ class Axis(G):
         if max_value > 0 and max_value < 1:
             max_value = 1
 
-        values = []
+        # Generate all potential grid line positions (full range)
+        all_values = []
         for denominator in reversed(denominators):
             count = int(value_range / denominator)
-            values = [min_value + (i * denominator) for i in reversed(range(count + 1))]
-            if len(values) > 5:
+            all_values = [
+                min_value + (i * denominator) for i in reversed(range(count + 1))
+            ]
+            if len(all_values) > 5:
                 break
 
-        # Preserve original range before filtering
-        original_min = values[-1]
-        original_max = values[0]
+        # Preserve original axis range for grid lines
+        original_min = all_values[-1]
+        original_max = all_values[0]
 
+        # Filter for label display only
+        values = all_values.copy()
         while len(values) > 10 and 0 not in values:
             values = [x for (i, x) in enumerate(values) if i % 2 == 0]
             min_value, max_value = values[-1], values[0]
 
-        # Apply explicit tick interval if provided
+        # Apply explicit tick interval if provided (for labels only)
         if axis_tick_interval is not None:
             parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
             if parsed_interval and parsed_interval > 0:
                 values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
 
-        # Preserve original axis range for proper scaling, even if ticks are filtered
-        # This ensures grid lines and data rendering use the full range
+        # Store full range for grid lines, filtered range for labels
         if min_value > original_min:
             min_value = original_min
         if max_value < original_max:
             max_value = original_max
 
-        return AxisDimension(min_value, max_value, axd.count), values
+        # Store all grid line positions separately
+        grid_line_values = all_values
+        while len(grid_line_values) > 10 and 0 not in grid_line_values:
+            grid_line_values = [
+                x for (i, x) in enumerate(grid_line_values) if i % 2 == 0
+            ]
+
+        return AxisDimension(min_value, max_value, axd.count), values, grid_line_values
 
     def reverse(self, value: float) -> float:
         raise Exception("reverse not implemented for instance of Axis.")
@@ -214,13 +229,34 @@ class Axis(G):
         ],
     ) -> None:
         data, labels, zero_index = kwargs
-        self.axis_dimension, self._values = self.calculate_axis_values(
-            data=data,
-            stacked=self.stacked,
-            labels=labels,
-            zero_index=zero_index,
-            axis_tick_interval=self.axis_tick_interval,
+        self.axis_dimension, self._values, self._grid_line_values = (
+            self.calculate_axis_values(
+                data=data,
+                stacked=self.stacked,
+                labels=labels,
+                zero_index=zero_index,
+                axis_tick_interval=self.axis_tick_interval,
+            )
         )
+        # Store grid line values separately (full range, not filtered)
+        all_denominators = common_denominators(
+            self.axis_dimension.min_value, self.axis_dimension.max_value
+        )
+        value_range = self.axis_dimension.max_value - self.axis_dimension.min_value
+        self._grid_line_values = []
+        for denominator in reversed(all_denominators):
+            count = int(value_range / denominator)
+            self._grid_line_values = [
+                self.axis_dimension.min_value + (i * denominator)
+                for i in reversed(range(count + 1))
+            ]
+            if len(self._grid_line_values) > 5:
+                break
+        # Reduce grid lines if too many
+        while len(self._grid_line_values) > 10 and 0 not in self._grid_line_values:
+            self._grid_line_values = [
+                x for (i, x) in enumerate(self._grid_line_values) if i % 2 == 0
+            ]
 
     @property
     def labels(self) -> list[MeasuredText]:
@@ -354,6 +390,12 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
+        # Use grid line values for full axis range (top/bottom lines included)
+        if hasattr(self, "_grid_line_values") and self._grid_line_values:
+            values = self._grid_line_values
+        else:
+            values = self.values
+
         offset = 0
         if self.stacked and self.axis_dimension.min_value < 0:
             offset = self.axis_dimension.min_value
@@ -365,10 +407,10 @@ class YAxis(Axis):
             start_y = bar_height * bar_gap
             return [
                 start_y + i * (bar_height + gap) + bar_height / 2
-                for i in range(len(self.values))
+                for i in range(len(values))
             ]
 
-        return [self.reproject(i + abs(offset)) for i in reversed(self.values)]
+        return [self.reproject(i + abs(offset)) for i in reversed(values)]
 
     @property
     def grid_lines(self) -> Path:

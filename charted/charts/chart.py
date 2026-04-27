@@ -447,7 +447,7 @@ class Chart(Svg):
         labels = self.y_labels
 
         if not labels:
-            _, values = Axis.calculate_axis_values(
+            _, values, _ = Axis.calculate_axis_values(
                 data=self.y_data,
                 stacked=self.y_stacked,
                 zero_index=self.zero_index,
