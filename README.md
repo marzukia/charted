@@ -9,7 +9,7 @@ All chart types support negative values with a proper zero baseline, multi-serie
 ## Why Charted?
 
 - **Zero runtime dependencies** — pure Python, no numpy/pandas required
-- **5 chart types** — Bar, Column, Line, Scatter, Pie (with doughnut mode)
+- **6 chart types** — Bar, Column, Line, Scatter, Pie, Radar
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
 - **Theme system** — 3 built-in themes + custom dict overrides
@@ -463,3 +463,21 @@ graph = PieChart(
 ```
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie_doughnut.svg)
+### Radar — multi-axis comparison
+
+```py
+from charted.charts import RadarChart
+
+graph = RadarChart(
+    title="Player Skill Comparison",
+    data=[
+        [85, 90, 75, 88, 92],  # Player A
+        [70, 85, 90, 75, 80],  # Player B
+    ],
+    labels=["Speed", "Strength", "Defense", "Technique", "Stamina"],
+    width=600,
+    height=500,
+)
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/radar.svg)
