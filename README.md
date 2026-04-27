@@ -26,6 +26,7 @@ All chart types support negative values with a proper zero baseline, multi-serie
 - Line (single-series, multi-series, XY mode)
 - Scatter (single-series, multi-series)
 - Pie (doughnut mode, exploded slices)
+- Radar (multi-axis comparison, multi-series)
 
 
 ## CLI Usage
