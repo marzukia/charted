@@ -122,6 +122,7 @@ class RadarChart(Chart):
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(axis_count)] for _ in data]
         y_data = data
+        self._series_data = data  # Must set before super().__init__ calls representation
 
         super().__init__(
             width=width,
@@ -252,7 +253,9 @@ class RadarChart(Chart):
                 g.add_child(label_text)
 
         # Render data series
-        for series_idx, (y_values, color) in enumerate(zip(self.y_values, self.colors)):
+        for series_idx, (y_values, color) in enumerate(
+            zip(self._series_data, self.colors)
+        ):
             # Get effective style for this series
             style = {}
             if self.series_styles and series_idx < len(self.series_styles):
@@ -266,7 +269,7 @@ class RadarChart(Chart):
             marker_size = style.get("marker_size", 4)
 
             # Calculate max value for scaling
-            max_value = max(max(abs(v) for v in series) for series in self.y_values)
+            max_value = max(max(abs(v) for v in s) for s in self._series_data)
             if max_value == 0:
                 max_value = 1
 
