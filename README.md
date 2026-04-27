@@ -285,6 +285,18 @@ The `axis_tick_interval` parameter controls how many x-axis labels are displayed
 - `str` with `%` — Show percentage of labels (e.g., `"25%"` shows 25% of labels)
 - `float` < 1 — Show proportion of labels (e.g., `0.25` shows 25% of labels)
 
+Visual examples of `axis_tick_interval`:
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line_tick_interval_3.svg)
+*Every 3rd label*
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line_tick_interval_25pct.svg)
+*25% of labels (string syntax)*
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line_tick_interval_025.svg)
+*25% of labels (float proportion)*
+
+
 
 ### Line — XY mode with temperature anomaly data
 

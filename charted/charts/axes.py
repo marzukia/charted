@@ -163,9 +163,9 @@ class Axis(G):
             min_value, max_value = values[-1], values[0]
 
         # Apply explicit tick interval if provided
-        if axis_tick_interval is not None and axis_tick_interval > 0:
+        if axis_tick_interval is not None:
             parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
-            if parsed_interval:
+            if parsed_interval and parsed_interval > 0:
                 values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
 
         return AxisDimension(min_value, max_value, axd.count), values
