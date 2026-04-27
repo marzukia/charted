@@ -171,7 +171,8 @@ class Axis(G):
 
         # Filter for label display only
         values = all_values.copy()
-        while len(values) > 10 and 0 not in values:
+        # Filter for label display - enforce max 10 labels regardless of 0 position
+        while len(values) > 10:
             values = [x for (i, x) in enumerate(values) if i % 2 == 0]
             min_value, max_value = values[-1], values[0]
 
@@ -189,7 +190,7 @@ class Axis(G):
 
         # Store all grid line positions separately
         grid_line_values = all_values
-        while len(grid_line_values) > 10 and 0 not in grid_line_values:
+        while len(grid_line_values) > 10:
             grid_line_values = [
                 x for (i, x) in enumerate(grid_line_values) if i % 2 == 0
             ]
