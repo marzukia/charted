@@ -255,7 +255,7 @@ save(
     "line_tick_interval_25pct.svg",
     LineChart(
         title="Temperature Trend (25% labels)",
-        data=[[35, 28, 21, 14, 7, 0]],
+        data=[[35, 32, 28, 23, 18, 12, 7, 8, 13, 19, 26, 32]],
         labels=[
             "Jan",
             "Feb",
