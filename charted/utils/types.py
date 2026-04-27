@@ -14,6 +14,7 @@ class SeriesStyleConfig(TypedDict, total=False):
     stroke_opacity: float | None
     area_fill: bool | None
     area_fill_opacity: float | None
+    show_markers: bool | None
 
 
 Labels = list[str]

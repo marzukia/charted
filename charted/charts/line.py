@@ -51,6 +51,7 @@ class LineChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        axis_tick_interval: int | None = None,
     ):
         super().__init__(
             y_data=data,
@@ -64,6 +65,7 @@ class LineChart(Chart):
             series_names=series_names,
             series_styles=series_styles,
             chart_type="line",
+            axis_tick_interval=axis_tick_interval,
         )
 
     def _get_series_style(self, index: int) -> dict:
@@ -94,7 +96,6 @@ class LineChart(Chart):
             stroke = style.get("stroke") or color
             stroke_width = style.get("stroke_width") or 2
             stroke_dasharray = style.get("stroke_dasharray")
-            area_fill = style.get("area_fill", False)
             stroke_opacity = style.get("stroke_opacity")
             area_fill = style.get("area_fill", False)
             area_fill_opacity = style.get("area_fill_opacity", 0.3)
@@ -120,7 +121,12 @@ class LineChart(Chart):
                     path.append(f"L{x} {y}")
 
                 # Render marker based on shape
-                if marker_shape != "none" and marker_size:
+                show_markers = style.get("show_markers")
+                if show_markers is False:
+                    pass
+                elif show_markers is True or (
+                    show_markers is None and marker_shape != "none" and marker_size
+                ):
                     if marker_shape == "square":
                         from charted.html.element import Rect
 

@@ -223,6 +223,88 @@ save(
     ).html,
 )
 
+# Line with tick interval (every 4th label on x-axis)
+save(
+    "line_tick_interval_3.svg",
+    LineChart(
+        title="Temperature Trend (every 4th label)",
+        data=[[35, 32, 28, 23, 18, 12, 7, 8, 13, 19, 26, 32]],
+        labels=[
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ],
+        series_names=["Temperature (°C)"],
+        width=700,
+        height=400,
+        axis_tick_interval=6,  # Show every 6th x-axis label (fewer ticks)
+    ).html,
+)
+
+# Line with tick interval (25% labels - string syntax)
+save(
+    "line_tick_interval_25pct.svg",
+    LineChart(
+        title="Temperature Trend (25% labels)",
+        data=[[35, 28, 21, 14, 7, 0]],
+        labels=[
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ],
+        series_names=["Temperature (°C)"],
+        width=700,
+        height=400,
+        axis_tick_interval="25%",
+    ).html,
+)
+
+# Line with tick interval (25% labels - float syntax)
+save(
+    "line_tick_interval_025.svg",
+    LineChart(
+        title="Temperature Trend (0.25 proportion)",
+        data=[[35, 28, 21, 14, 7, 0]],
+        labels=[
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ],
+        series_names=["Temperature (°C)"],
+        width=700,
+        height=400,
+        axis_tick_interval=0.25,
+    ).html,
+)
+
+
 # Single-series line
 save(
     "line_single.svg",

@@ -43,7 +43,6 @@ class Chart(Svg):
     x_stacked: bool = False
     y_stacked: bool = False
     render_axes: bool = True
-    render_axes: bool = True
 
     def _repr_svg_(self) -> str:
         """Return SVG string for Jupyter notebook display.
@@ -127,6 +126,7 @@ class Chart(Svg):
         title: str | None = None,
         theme: Theme | None = None,
         chart_type: str | None = None,
+        axis_tick_interval: float | str | None = None,
     ):
         super().__init__(
             width=width,
@@ -144,10 +144,9 @@ class Chart(Svg):
         self.series_names = series_names
         self.series_styles = series_styles
         self.x_stacked = x_stacked
-        self.series_names = series_names
-        self.x_stacked = x_stacked
 
         self.zero_index = zero_index
+        self.axis_tick_interval = axis_tick_interval
 
         self.x_labels = x_labels
         self.y_labels = y_labels
@@ -156,7 +155,6 @@ class Chart(Svg):
 
         self.width = width
         self.height = height
-        self.x_stacked = x_stacked
 
         # Load and apply theme
         self.theme = Theme.load(theme)
@@ -200,6 +198,7 @@ class Chart(Svg):
                 else self.zero_index
             ),
             config=self.theme["v_grid"],
+            axis_tick_interval=self.axis_tick_interval,
         )
 
         self.y_axis = YAxis(
@@ -209,6 +208,7 @@ class Chart(Svg):
             stacked=self.y_stacked,
             zero_index=self.zero_index,
             config=self.theme["h_grid"],
+            axis_tick_interval=self.axis_tick_interval,
         )
 
         self.y_offsets = self.y_data
@@ -447,7 +447,7 @@ class Chart(Svg):
         labels = self.y_labels
 
         if not labels:
-            _, values = Axis.calculate_axis_values(
+            _, values, _ = Axis.calculate_axis_values(
                 data=self.y_data,
                 stacked=self.y_stacked,
                 zero_index=self.zero_index,

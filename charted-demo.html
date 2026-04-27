@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charted - Axis Tick Interval Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e4;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a0a0a0;
+        }
+        
+        .demo-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .demo-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #00d9ff;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        label {
+            font-size: 0.9rem;
+            color: #b0b0b0;
+        }
+        
+        select, input[type="text"] {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        select:hover, input[type="text"]:hover {
+            border-color: #00d9ff;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            border: none;
+            border-radius: 8px;
+            color: #1a1a2e;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+        }
+        
+        .chart-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 400px;
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .example-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .example-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #00ff88;
+        }
+        
+        .example-card .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #00d9ff;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+        }
+        
+        .example-card p {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #1a1a2e;
+            flex-shrink: 0;
+        }
+        
+        .feature-text {
+            font-size: 0.95rem;
+            color: #b0b0b0;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #707070;
+        }
+        
+        a {
+            color: #00d9ff;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Charted</h1>
+            <p class="subtitle">Beautiful, customizable charts for Python</p>
+        </header>
+
+        <div class="demo-section">
+            <h2 class="demo-title">Interactive Demo</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="interval-type">Tick Interval Type:</label>
+                    <select id="interval-type">
+                        <option value="int">Integer (every Nth label)</option>
+                        <option value="pct">Percentage String ("25%")</option>
+                        <option value="float">Float Proportion (0.25)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="interval-value">Value:</label>
+                    <input type="text" id="interval-value" value="3" placeholder="e.g., 3, 25%, 0.25">
+                </div>
+                <button onclick="updateChart()">Update Chart</button>
+            </div>
+            <div class="chart-container" id="chart-container">
+                <!-- Chart will be rendered here -->
+                <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00d9ff;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Grid lines -->
+                    <g stroke="#e0e0e0" stroke-width="1">
+                        <line x1="100" y1="50" x2="100" y2="350"/>
+                        <line x1="200" y1="50" x2="200" y2="350"/>
+                        <line x1="300" y1="50" x2="300" y2="350"/>
+                        <line x1="400" y1="50" x2="400" y2="350"/>
+                        <line x1="500" y1="50" x2="500" y2="350"/>
+                        <line x1="600" y1="50" x2="600" y2="350"/>
+                        <line x1="700" y1="50" x2="700" y2="350"/>
+                        <line x1="800" y1="50" x2="800" y2="350"/>
+                        
+                        <line x1="100" y1="350" x2="700" y2="350"/>
+                        <line x1="100" y1="275" x2="700" y2="275"/>
+                        <line x1="100" y1="200" x2="700" y2="200"/>
+                        <line x1="100" y1="125" x2="700" y2="125"/>
+                        <line x1="100" y1="50" x2="700" y2="50"/>
+                    </g>
+                    
+                    <!-- Line chart -->
+                    <polyline 
+                        fill="none" 
+                        stroke="url(#grad1)" 
+                        stroke-width="3"
+                        points="100,300 200,250 300,200 400,150 500,180 600,120 700,80"
+                    />
+                    
+                    <!-- Data points -->
+                    <circle cx="100" cy="300" r="5" fill="#00d9ff"/>
+                    <circle cx="200" cy="250" r="5" fill="#00d9ff"/>
+                    <circle cx="300" cy="200" r="5" fill="#00d9ff"/>
+                    <circle cx="400" cy="150" r="5" fill="#00d9ff"/>
+                    <circle cx="500" cy="180" r="5" fill="#00d9ff"/>
+                    <circle cx="600" cy="120" r="5" fill="#00d9ff"/>
+                    <circle cx="700" cy="80" r="5" fill="#00d9ff"/>
+                    
+                    <!-- X-axis labels -->
+                    <g font-family="Inter" font-size="12" fill="#666" text-anchor="middle">
+                        <text x="100" y="370">Jan</text>
+                        <text x="200" y="370">Feb</text>
+                        <text x="300" y="370">Mar</text>
+                        <text x="400" y="370">Apr</text>
+                        <text x="500" y="370">May</text>
+                        <text x="600" y="370">Jun</text>
+                        <text x="700" y="370">Jul</text>
+                    </g>
+                    
+                    <!-- Y-axis labels -->
+                    <g font-family="Inter" font-size="12" fill="#666" text-anchor="end">
+                        <text x="90" y="355">0</text>
+                        <text x="90" y="280">25</text>
+                        <text x="90" y="205">50</text>
+                        <text x="90" y="130">75</text>
+                        <text x="90" y="55">100</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title">Examples</h2>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <h3>Integer Interval</h3>
+                    <div class="code">axis_tick_interval=3</div>
+                    <p>Shows every 3rd label (Jan, Apr, Jul)</p>
+                </div>
+                <div class="example-card">
+                    <h3>Percentage String</h3>
+                    <div class="code">axis_tick_interval="25%"</div>
+                    <p>Shows 25% of labels (2 out of 8)</p>
+                </div>
+                <div class="example-card">
+                    <h3>Float Proportion</h3>
+                    <div class="code">axis_tick_interval=0.25</div>
+                    <p>Shows 25% of labels (same as "25%")</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="demo-title">Key Features</h2>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div class="feature-text">Flexible tick interval control (int, string, float)</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div class="feature-text">Beautiful gradient styling</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div class="feature-text">Multiple chart types (line, bar, column, pie, radar, scatter)</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div class="feature-text">Customizable themes and colors</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div class="feature-text">SVG output for crisp rendering</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <div class="feature-text">CLI and Python API support</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with <a href="https://github.com/marzukia/charted">Charted</a> • 
+            <a href="https://charted.mrzk.io">charted.mrzk.io</a> • 
+            <a href="https://github.com/marzukia/charted">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script>
+        function updateChart() {
+            const intervalType = document.getElementById('interval-type').value;
+            const intervalValue = document.getElementById('interval-value').value;
+            
+            // Generate labels based on interval
+            const allLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            let displayedLabels = [];
+            
+            if (intervalType === 'int') {
+                const n = parseInt(intervalValue) || 1;
+                displayedLabels = allLabels.filter((_, i) => i % n === 0);
+            } else if (intervalType === 'pct') {
+                const pct = parseFloat(intervalValue.replace('%', '')) || 100;
+                const count = Math.ceil(allLabels.length * (pct / 100));
+                const step = Math.ceil(allLabels.length / count);
+                displayedLabels = allLabels.filter((_, i) => i % step === 0);
+            } else if (intervalType === 'float') {
+                const prop = parseFloat(intervalValue) || 1;
+                const count = Math.ceil(allLabels.length * prop);
+                const step = Math.ceil(allLabels.length / count);
+                displayedLabels = allLabels.filter((_, i) => i % step === 0);
+            }
+            
+            console.log(`Interval type: ${intervalType}, value: ${intervalValue}`);
+            console.log('Displayed labels:', displayedLabels);
+            
+            // In a real implementation, this would update the chart
+            alert(`Chart updated with axis_tick_interval=${intervalValue} (${intervalType})\nShowing ${displayedLabels.length} labels: ${displayedLabels.join(', ')}`);
+        }
+        
+        // Update input placeholder when type changes
+        document.getElementById('interval-type').addEventListener('change', function() {
+            const input = document.getElementById('interval-value');
+            if (this.value === 'pct') {
+                input.value = '25%';
+                input.placeholder = 'e.g., 25%';
+            } else if (this.value === 'float') {
+                input.value = '0.25';
+                input.placeholder = 'e.g., 0.25';
+            } else {
+                input.value = '3';
+                input.placeholder = 'e.g., 3';
+            }
+        });
+    </script>
+</body>
+</html>
