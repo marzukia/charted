@@ -250,25 +250,9 @@ class Axis(G):
                 axis_tick_interval=self.axis_tick_interval,
             )
         )
-        # Store grid line values separately (full range, not filtered)
-        all_denominators = common_denominators(
-            self.axis_dimension.min_value, self.axis_dimension.max_value
-        )
-        value_range = self.axis_dimension.max_value - self.axis_dimension.min_value
-        self._grid_line_values = []
-        for denominator in reversed(all_denominators):
-            count = int(value_range / denominator)
-            self._grid_line_values = [
-                self.axis_dimension.min_value + (i * denominator)
-                for i in reversed(range(count + 1))
-            ]
-            if len(self._grid_line_values) > 5:
-                break
-        # Reduce grid lines if too many
-        while len(self._grid_line_values) > 10 and 0 not in self._grid_line_values:
-            self._grid_line_values = [
-                x for (i, x) in enumerate(self._grid_line_values) if i % 2 == 0
-            ]
+        # Use the same filtered values for grid lines as for labels
+        # This ensures grid lines align with tick labels
+        self._grid_line_values = self._values
 
     @property
     def labels(self) -> list[MeasuredText]:
@@ -286,6 +270,11 @@ class Axis(G):
                         precision = 1
                 value = round(label, precision) if precision > 0 else int(label)
                 labels.append(value)
+            # Reverse labels for Y-axis to match coordinate order (max→min)
+            from charted.charts.axes import YAxis
+
+            if isinstance(self, YAxis):
+                labels = labels[::-1]
         else:
             labels = [*labels]
         self._labels = [calculate_text_dimensions(label) for label in labels]
