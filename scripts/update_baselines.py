@@ -20,10 +20,10 @@ ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
 from charted.charts.bar import BarChart
-from charted.charts.radar import RadarChart
 from charted.charts.column import ColumnChart
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
+from charted.charts.radar import RadarChart
 from charted.charts.scatter import ScatterChart
 
 BASELINES_DIR = ROOT / "tests" / "baselines"
