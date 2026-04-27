@@ -172,17 +172,10 @@ class Axis(G):
             if parsed_interval and parsed_interval > 0:
                 values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
 
-        # Recalculate min/max from filtered values, or use original if empty
-        if values:
-            min_value = min(values)
-            max_value = max(values)
-        else:
-            min_value, max_value = original_min, original_max
+        # Keep original range for proper scaling, even if ticks are filtered
+        min_value, max_value = original_min, original_max
 
         return AxisDimension(min_value, max_value, axd.count), values
-
-    def reproject(self, value: float) -> float:
-        raise Exception("reproject not implemented for instance of Axis.")
 
     def reverse(self, value: float) -> float:
         raise Exception("reverse not implemented for instance of Axis.")

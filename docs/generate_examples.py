@@ -246,7 +246,7 @@ save(
         series_names=["Temperature (°C)"],
         width=700,
         height=400,
-        axis_tick_interval=4,  # Show every 4th x-axis label
+        axis_tick_interval=6,  # Show every 6th x-axis label (fewer ticks)
     ).html,
 )
 
