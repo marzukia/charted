@@ -22,7 +22,7 @@ class Axis(G):
         stacked: bool = False,
         zero_index: bool = True,
         config: GridConfig | None = None,
-        axis_tick_interval: int | None = None,
+        axis_tick_interval: float | str | None = None,
     ):
         if not data and not labels:
             raise Exception("Need labels or data.")

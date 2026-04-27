@@ -126,7 +126,7 @@ class Chart(Svg):
         title: str | None = None,
         theme: Theme | None = None,
         chart_type: str | None = None,
-        axis_tick_interval: int | None = None,
+        axis_tick_interval: float | str | None = None,
     ):
         super().__init__(
             width=width,
