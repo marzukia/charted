@@ -172,8 +172,12 @@ class Axis(G):
             if parsed_interval and parsed_interval > 0:
                 values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
 
-        # Keep original range for proper scaling, even if ticks are filtered
-        min_value, max_value = original_min, original_max
+        # Preserve original axis range for proper scaling, even if ticks are filtered
+        # This ensures grid lines and data rendering use the full range
+        if min_value > original_min:
+            min_value = original_min
+        if max_value < original_max:
+            max_value = original_max
 
         return AxisDimension(min_value, max_value, axd.count), values
 
