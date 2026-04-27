@@ -116,6 +116,7 @@ class Axis(G):
         labels: list[str] | None = None,
         zero_index: bool = True,
         stacked: bool | None = None,
+        axis_tick_interval: int | None = None,
     ) -> tuple[AxisDimension, list[float]]:
         axd = cls.calculate_axis_dimensions(
             data=data,
@@ -157,6 +158,10 @@ class Axis(G):
         while len(values) > 10 and 0 not in values:
             values = [x for (i, x) in enumerate(values) if i % 2 == 0]
             min_value, max_value = values[-1], values[0]
+
+        # Apply explicit tick interval if provided
+        if axis_tick_interval is not None and axis_tick_interval > 0:
+            values = [v for i, v in enumerate(values) if i % axis_tick_interval == 0]
 
         return AxisDimension(min_value, max_value, axd.count), values
 
