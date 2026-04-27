@@ -202,6 +202,7 @@ class Chart(Svg):
                 else self.zero_index
             ),
             config=self.theme["v_grid"],
+            axis_tick_interval=self.axis_tick_interval,
         )
 
         self.y_axis = YAxis(
@@ -211,6 +212,7 @@ class Chart(Svg):
             stacked=self.y_stacked,
             zero_index=self.zero_index,
             config=self.theme["h_grid"],
+            axis_tick_interval=self.axis_tick_interval,
         )
 
         self.y_offsets = self.y_data

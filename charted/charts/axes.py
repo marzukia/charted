@@ -21,6 +21,7 @@ class Axis(G):
         stacked: bool = False,
         zero_index: bool = True,
         config: GridConfig | None = None,
+        axis_tick_interval: int | None = None,
     ):
         if not data and not labels:
             raise Exception("Need labels or data.")
@@ -31,6 +32,7 @@ class Axis(G):
         self.stacked = stacked
         self.data = data
         self.parent = parent
+        self.axis_tick_interval = axis_tick_interval
         self.values = (data, labels, zero_index)
         self.labels = labels
         self.config = config
@@ -206,6 +208,7 @@ class Axis(G):
             stacked=self.stacked,
             labels=labels,
             zero_index=zero_index,
+            axis_tick_interval=self.axis_tick_interval,
         )
 
     @property

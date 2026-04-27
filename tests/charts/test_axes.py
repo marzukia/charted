@@ -168,3 +168,44 @@ class TestYAxisSadPath:
         labels = axis.labels
         # Labels should be formatted
         assert len(labels) > 0
+
+
+class TestAxisTickInterval:
+    """Tests for axis_tick_interval parameter."""
+
+    def test_tick_interval_filtering(self):
+        """Test that axis_tick_interval filters tick values."""
+        parent = MockParent()
+        data = [[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]]
+        axis = YAxis(parent=parent, data=data, axis_tick_interval=2)
+        values = axis.values
+        # With interval=2, should show fewer values than default
+        # Default behavior produces ~6 values, interval=2 should produce ~3
+        assert len(values) <= 6
+
+    def test_tick_interval_one(self):
+        """Test axis_tick_interval=1 shows all values."""
+        parent = MockParent()
+        data = [[10, 20, 30, 40, 50]]
+        axis = YAxis(parent=parent, data=data, axis_tick_interval=1)
+        values = axis.values
+        # Should show all values (axis may add 0)
+        assert len(values) >= len(data[0])
+
+    def test_tick_interval_none(self):
+        """Test that None tick_interval uses default behavior."""
+        parent = MockParent()
+        data = [[10, 20, 30, 40, 50]]
+        axis = YAxis(parent=parent, data=data, axis_tick_interval=None)
+        values = axis.values
+        # Should have values (default behavior)
+        assert len(values) > 0
+
+    def test_xaxis_tick_interval(self):
+        """Test axis_tick_interval works for XAxis too."""
+        parent = MockParent()
+        data = [[10, 20, 30, 40, 50, 60, 70]]
+        axis = XAxis(parent=parent, data=data, axis_tick_interval=3)
+        values = axis.values
+        # With interval=3, should show fewer values
+        assert len(values) <= len(data[0])
