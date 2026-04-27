@@ -43,7 +43,6 @@ class Chart(Svg):
     x_stacked: bool = False
     y_stacked: bool = False
     render_axes: bool = True
-    render_axes: bool = True
 
     def _repr_svg_(self) -> str:
         """Return SVG string for Jupyter notebook display.
@@ -145,8 +144,6 @@ class Chart(Svg):
         self.series_names = series_names
         self.series_styles = series_styles
         self.x_stacked = x_stacked
-        self.series_names = series_names
-        self.x_stacked = x_stacked
 
         self.zero_index = zero_index
         self.axis_tick_interval = axis_tick_interval
@@ -158,7 +155,6 @@ class Chart(Svg):
 
         self.width = width
         self.height = height
-        self.x_stacked = x_stacked
 
         # Load and apply theme
         self.theme = Theme.load(theme)
