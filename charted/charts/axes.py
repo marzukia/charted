@@ -5,6 +5,7 @@ from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.helpers import (
     calculate_text_dimensions,
     common_denominators,
+    parse_tick_interval,
     round_to_clean_number,
 )
 from charted.utils.themes import GridConfig
@@ -163,7 +164,9 @@ class Axis(G):
 
         # Apply explicit tick interval if provided
         if axis_tick_interval is not None and axis_tick_interval > 0:
-            values = [v for i, v in enumerate(values) if i % axis_tick_interval == 0]
+            parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
+            if parsed_interval:
+                values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
 
         return AxisDimension(min_value, max_value, axd.count), values
 
