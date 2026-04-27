@@ -109,3 +109,34 @@ def round_to_clean_number(value: float, round_down: bool = False) -> float:
 
 def nested_defaultdict() -> defaultdict:
     return defaultdict(nested_defaultdict)
+
+
+def parse_tick_interval(
+    tick_interval: float | str | None,
+    count: int | None = None,
+) -> int | None:
+    """Parse a tick interval value, supporting numbers and percentage strings.
+
+    Args:
+        tick_interval: A numeric interval, a percentage string like '25%', or None.
+        count: Total count of data points (required for percentage strings).
+
+    Returns:
+        An integer interval, or None if tick_interval is None.
+    """
+    if tick_interval is None:
+        return None
+
+    if isinstance(tick_interval, str):
+        if tick_interval.endswith("%"):
+            if count is None:
+                raise ValueError("count is required for percentage tick intervals")
+            pct = float(tick_interval[:-1])
+            return max(1, int(count * pct / 100))
+        return int(float(tick_interval))
+
+    # If a fraction (< 1) is provided with count, treat as a proportion
+    if isinstance(tick_interval, float) and 0 < tick_interval < 1 and count is not None:
+        return max(1, int(count * tick_interval))
+
+    return max(1, int(tick_interval))
