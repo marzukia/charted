@@ -158,6 +158,10 @@ class Axis(G):
             if len(values) > 5:
                 break
 
+        # Preserve original range before filtering
+        original_min = values[-1]
+        original_max = values[0]
+
         while len(values) > 10 and 0 not in values:
             values = [x for (i, x) in enumerate(values) if i % 2 == 0]
             min_value, max_value = values[-1], values[0]
@@ -167,6 +171,13 @@ class Axis(G):
             parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
             if parsed_interval and parsed_interval > 0:
                 values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
+
+        # Recalculate min/max from filtered values, or use original if empty
+        if values:
+            min_value = min(values)
+            max_value = max(values)
+        else:
+            min_value, max_value = original_min, original_max
 
         return AxisDimension(min_value, max_value, axd.count), values
 
