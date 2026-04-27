@@ -244,6 +244,48 @@ graph = LineChart(
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line.svg)
 
+### Line — with axis tick interval control
+
+```py
+from charted.charts import LineChart
+
+# Show every 3rd x-axis label to avoid crowding
+graph = LineChart(
+    title="Temperature Trend (with controlled x-axis labels)",
+    data=[[22, 24, 23, 25, 27, 26, 28, 30, 29, 31, 33, 32]],
+    labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    axis_tick_interval=3,  # Show every 3rd label
+    width=700,
+    height=400,
+)
+
+# Or use percentage-based interval (show 25% of labels)
+graph = LineChart(
+    title="Temperature Trend (25% labels)",
+    data=[[22, 24, 23, 25, 27, 26, 28, 30, 29, 31, 33, 32]],
+    labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    axis_tick_interval="25%",  # Show 25% of labels
+    width=700,
+    height=400,
+)
+
+# Or use float proportion (show 1/4 of labels)
+graph = LineChart(
+    title="Temperature Trend (0.25 proportion)",
+    data=[[22, 24, 23, 25, 27, 26, 28, 30, 29, 31, 33, 32]],
+    labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    axis_tick_interval=0.25,  # Show 25% of labels
+    width=700,
+    height=400,
+)
+```
+
+The `axis_tick_interval` parameter controls how many x-axis labels are displayed:
+- `int` — Show every Nth label (e.g., `3` shows every 3rd label)
+- `str` with `%` — Show percentage of labels (e.g., `"25%"` shows 25% of labels)
+- `float` < 1 — Show proportion of labels (e.g., `0.25` shows 25% of labels)
+
+
 ### Line — XY mode with temperature anomaly data
 
 ```py
