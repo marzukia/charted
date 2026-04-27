@@ -169,12 +169,23 @@ class Axis(G):
         original_min = all_values[-1]
         original_max = all_values[0]
 
-        # Filter for label display only
+        # Filter for label display - calculate rational tick interval
+        # Target 5-10 ticks by choosing interval from [1, 2, 5, 10, 20, 50, ...]
         values = all_values.copy()
-        # Filter for label display - enforce max 10 labels regardless of 0 position
-        while len(values) > 10:
-            values = [x for (i, x) in enumerate(values) if i % 2 == 0]
-            min_value, max_value = values[-1], values[0]
+        if len(values) > 10:
+            actual_range = values[0] - values[-1]
+            # Find interval that gives ~5-10 ticks
+            for interval in [1, 2, 5, 10, 20, 50, 100, 200, 500]:
+                tick_count = int(actual_range / interval) + 1
+                if 5 <= tick_count <= 10:
+                    # Rebuild values with this interval
+                    start = values[-1]
+                    values = [start + i * interval for i in range(tick_count)]
+                    values.append(values[0] + actual_range)  # ensure full range
+                    break
+            else:
+                # fallback: keep every other tick
+                values = [x for (i, x) in enumerate(values) if i % 2 == 0]
 
         # Apply explicit tick interval if provided (for labels only)
         if axis_tick_interval is not None:
