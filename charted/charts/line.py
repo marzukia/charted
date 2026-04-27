@@ -122,7 +122,12 @@ class LineChart(Chart):
                     path.append(f"L{x} {y}")
 
                 # Render marker based on shape
-                if marker_shape != "none" and marker_size:
+                show_markers = style.get("show_markers")
+                if show_markers is False:
+                    pass
+                elif show_markers is True or (
+                    show_markers is None and marker_shape != "none" and marker_size
+                ):
                     if marker_shape == "square":
                         from charted.html.element import Rect
 
