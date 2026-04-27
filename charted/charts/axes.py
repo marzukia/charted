@@ -170,7 +170,7 @@ class Axis(G):
         original_max = all_values[0]
 
         # Filter for label display - calculate rational tick interval
-        # Target 5-10 ticks by choosing interval from [1, 2, 5, 10, 20, 50, ...]
+        # Target 5-10 ticks using standard intervals [1, 2, 5, 10, ...]
         values = all_values.copy()
         if len(values) > 10:
             actual_range = values[0] - values[-1]
@@ -178,15 +178,13 @@ class Axis(G):
             for interval in [1, 2, 5, 10, 20, 50, 100, 200, 500]:
                 tick_count = int(actual_range / interval) + 1
                 if 5 <= tick_count <= 10:
-                    # Rebuild values with this interval
-                    start = values[-1]
-                    values = [start + i * interval for i in range(tick_count)]
-                    values.append(values[0] + actual_range)  # ensure full range
+                    # rebuild descending (max→min) for y-axis
+                    start = values[0]  # max value
+                    values = [start - i * interval for i in range(tick_count)]
                     break
             else:
-                # fallback: keep every other tick
+                # fallback: keep every other tick (preserve descending order)
                 values = [x for (i, x) in enumerate(values) if i % 2 == 0]
-
         # Apply explicit tick interval if provided (for labels only)
         if axis_tick_interval is not None:
             parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
