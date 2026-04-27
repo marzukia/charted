@@ -127,6 +127,7 @@ class Chart(Svg):
         title: str | None = None,
         theme: Theme | None = None,
         chart_type: str | None = None,
+        axis_tick_interval: int | None = None,
     ):
         super().__init__(
             width=width,
@@ -148,6 +149,7 @@ class Chart(Svg):
         self.x_stacked = x_stacked
 
         self.zero_index = zero_index
+        self.axis_tick_interval = axis_tick_interval
 
         self.x_labels = x_labels
         self.y_labels = y_labels

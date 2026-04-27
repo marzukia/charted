@@ -51,6 +51,7 @@ class LineChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        axis_tick_interval: int | None = None,
     ):
         super().__init__(
             y_data=data,
@@ -64,6 +65,7 @@ class LineChart(Chart):
             series_names=series_names,
             series_styles=series_styles,
             chart_type="line",
+            axis_tick_interval=axis_tick_interval,
         )
 
     def _get_series_style(self, index: int) -> dict:
