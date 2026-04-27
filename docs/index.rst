@@ -13,7 +13,7 @@ charted
 **Key Features:**
 
 - **Zero runtime dependencies** — pure Python stdlib, no numpy/pandas needed
-- **5 chart types** — Bar, Column, Line, Scatter, Pie (with doughnut mode)
+- **6 chart types** — Bar, Column, Line, Scatter, Pie, Radar
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
 - **Theme system** — 3 built-in themes + custom dict overrides
@@ -53,13 +53,14 @@ That's it — no dependencies, no configuration needed.
 Chart Types
 -----------
 
-charted provides 5 chart types, all with consistent API:
+charted provides 6 chart types, all with consistent API:
 
 - **ColumnChart** — vertical bars, multi-series with stacked/side-by-side layouts
 - **BarChart** — horizontal bars, single or multi-series
 - **LineChart** — line graphs with XY mode support
 - **ScatterChart** — scatter plots with marker customization
 - **PieChart** — pie/doughnut charts with per-slice styling
+- **RadarChart** — multi-axis spider/radar charts for comparison
 
 .. toctree::
    :maxdepth: 2
@@ -70,6 +71,7 @@ charted provides 5 chart types, all with consistent API:
    charts/line
    charts/scatter
    charts/pie
+   charts/radar
 
 .. toctree::
    :maxdepth: 2

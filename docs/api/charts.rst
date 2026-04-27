@@ -193,6 +193,40 @@ Pie Chart
           }
       )
 
+Radar Chart
+-----------
+
+.. autoclass:: charted.RadarChart
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+   Radar (spider) chart for multi-axis comparison with support for multi-series data.
+
+   **Key Parameters:**
+
+   - ``data`` — List of lists for multi-series, each inner list has one value per axis
+   - ``labels`` — Axis labels (one per data point)
+   - ``series_names`` — Names for each data series (used in legend)
+   - ``theme`` — Theme dictionary or theme name string
+
+   **Example:**
+
+   .. code-block:: python
+
+      from charted import RadarChart
+
+      chart = RadarChart(
+          data=[
+              [85, 90, 75, 88, 92],  # Player A
+              [70, 85, 90, 75, 80],  # Player B
+          ],
+          labels=["Speed", "Strength", "Defense", "Technique", "Stamina"],
+          series_names=["Player A", "Player B"],
+          title="Player Skill Comparison"
+      )
+      chart.save("radar.svg")
+
 Common Methods
 --------------
 

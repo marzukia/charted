@@ -12,7 +12,14 @@ import os
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "examples")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-from charted.charts import BarChart, ColumnChart, LineChart, PieChart, ScatterChart
+from charted.charts import (
+    BarChart,
+    ColumnChart,
+    LineChart,
+    PieChart,
+    RadarChart,
+    ScatterChart,
+)
 
 
 def save(name: str, svg: str) -> None:
@@ -296,6 +303,35 @@ save(
         data=[72, 15, 8, 5],
         labels=["Windows", "macOS", "Linux", "Other"],
         inner_radius=0.5,
+        width=600,
+        height=500,
+    ).html,
+)
+
+# ---------------------------------------------------------------------------
+# Radar charts
+# ---------------------------------------------------------------------------
+
+# Single-series radar
+save(
+    "radar.svg",
+    RadarChart(
+        title="Character Stats Comparison",
+        data=[20, 35, 30, 45, 25],
+        labels=["Speed", "Power", "Endurance", "Defense", "Skill"],
+        width=600,
+        height=500,
+    ).html,
+)
+
+# Multi-series radar
+save(
+    "radar_multi.svg",
+    RadarChart(
+        title="Player Comparison",
+        data=[[20, 35, 30, 45, 25], [30, 25, 40, 35, 30]],
+        labels=["Speed", "Power", "Endurance", "Defense", "Skill"],
+        series_names=["Player A", "Player B"],
         width=600,
         height=500,
     ).html,

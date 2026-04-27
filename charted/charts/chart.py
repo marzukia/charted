@@ -217,7 +217,8 @@ class Chart(Svg):
         self.y_values = self.y_data
         self.x_values = self.x_data
 
-        self.colors = self.theme["colors"]
+        if not hasattr(self, "_colors"):
+            self.colors = self.theme["colors"]
 
         children = [self.container, self.title]
         if self.render_axes:
@@ -736,7 +737,7 @@ class Chart(Svg):
                 x=x0 + 2 + h,
                 text=legend_text.text,
                 font_size=self.theme["legend"]["font_size"],
-                font_family="Helvetica",
+                font_family=self.theme["title"]["font_family"],
             )
             g.add_children(rect, text)
             legend.add_child(g)
