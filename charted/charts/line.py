@@ -96,7 +96,6 @@ class LineChart(Chart):
             stroke = style.get("stroke") or color
             stroke_width = style.get("stroke_width") or 2
             stroke_dasharray = style.get("stroke_dasharray")
-            area_fill = style.get("area_fill", False)
             stroke_opacity = style.get("stroke_opacity")
             area_fill = style.get("area_fill", False)
             area_fill_opacity = style.get("area_fill_opacity", 0.3)
