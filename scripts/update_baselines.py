@@ -20,6 +20,7 @@ ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
 from charted.charts.bar import BarChart
+from charted.charts.radar import RadarChart
 from charted.charts.column import ColumnChart
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
@@ -60,6 +61,19 @@ CHARTS = {
     "scatter_multi": ScatterChart(
         x_data=[[1, 2, 3], [2, 3, 4]],
         y_data=[[1, 2, 3], [3, 2, 1]],
+    ),
+    # Radar charts
+    "radar": RadarChart(
+        data=[8, 7, 6, 9, 5],
+        labels=["Speed", "Power", "Range", "Armor", "Stealth"],
+    ),
+    "radar_multi": RadarChart(
+        data=[
+            [8, 7, 6, 9, 5],
+            [6, 9, 8, 5, 8],
+        ],
+        labels=["Speed", "Power", "Range", "Armor", "Stealth"],
+        series_names=["Unit A", "Unit B"],
     ),
 }
 

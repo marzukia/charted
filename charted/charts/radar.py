@@ -122,7 +122,10 @@ class RadarChart(Chart):
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(axis_count)] for _ in data]
         y_data = data
-        self._series_data = data  # Must set before super().__init__ calls representation
+        self._series_data = (
+            data  # Must set before super().__init__ calls representation
+        )
+        self.colors = data  # Must set before super().__init__ calls representation
 
         super().__init__(
             width=width,

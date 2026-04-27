@@ -217,7 +217,8 @@ class Chart(Svg):
         self.y_values = self.y_data
         self.x_values = self.x_data
 
-        self.colors = self.theme["colors"]
+        if not hasattr(self, "_colors"):
+            self.colors = self.theme["colors"]
 
         children = [self.container, self.title]
         if self.render_axes:
