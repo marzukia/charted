@@ -81,6 +81,15 @@ class BarChart(Chart):
             chart_type="bar",
             series_styles=series_styles,
         )
+        
+        # Refresh y_axis grid_lines after parent is fully initialized.
+        # During Chart.__init__, left_padding returns h_pad (25.0) because
+        # y_axis doesn't exist yet. After initialization, it correctly
+        # calculates from labels (32.0). We need to recreate the grid Path
+        # with correct values.
+        if self.y_axis and self.y_axis.config:
+            self.y_axis.children[0] = self.y_axis.grid_lines
+            self.y_axis.children[1] = self.y_axis.axis_labels
 
     @property
     def y_height(self) -> float:

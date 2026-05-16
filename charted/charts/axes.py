@@ -391,8 +391,11 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
-        # Use grid line values for full axis range (top/bottom lines included)
-        if hasattr(self, "_grid_line_values") and self._grid_line_values:
+        # For bar/column charts, use values (number of bars) not grid lines
+        bar_height = getattr(self.parent, "y_height", None)
+        if bar_height is not None:
+            values = self.values
+        elif hasattr(self, "_grid_line_values") and self._grid_line_values:
             values = self._grid_line_values
         else:
             values = self.values
@@ -401,7 +404,6 @@ class YAxis(Axis):
         if self.stacked and self.axis_dimension.min_value < 0:
             offset = self.axis_dimension.min_value
 
-        bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
             gap = bar_height * bar_gap
