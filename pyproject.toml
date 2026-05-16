@@ -33,13 +33,13 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["charted"]
-relative_files = true
+branch = true
+omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.:",
-    "raise NotImplementedError",
     "raise NotImplementedError",
 ]
 
