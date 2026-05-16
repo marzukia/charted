@@ -1,0 +1,27 @@
+# Codecov configuration for charted
+
+coverage:
+  status:
+    project:
+      default:
+        # Allow slight coverage drops due to refactoring
+        target: 80%
+        threshold: 5%
+    patch:
+      default:
+        # New code should have reasonable coverage but allow for refactoring
+        target: 60%
+        threshold: 10%
+
+# Ignore files that are not directly tested but are used indirectly
+ignore:
+  - "charted/fonts/*"
+  - "charted/utils/bar_renderer.py"
+  - "charted/utils/line_renderer.py"
+  - "tests/*"
+  - "**/__pycache__/*"
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
