@@ -87,6 +87,7 @@ def batch_command(args: argparse.Namespace):
         except Exception as e:
             # Unexpected errors - log and re-raise for debugging
             import traceback
+
             print(f"  Unexpected error with {data_file.name}: {e}", file=sys.stderr)
             traceback.print_exc()
             error_count += 1

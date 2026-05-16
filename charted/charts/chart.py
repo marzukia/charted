@@ -81,7 +81,9 @@ class Chart(Svg):
 
     def to_markdown(self, alt_text: str | None = None, width: str | None = None) -> str:
         """Generate markdown markup for the chart."""
-        return generate_markdown_image(self.svg, alt_text, self.title.text if self._title else None, width)
+        return generate_markdown_image(
+            self.svg, alt_text, self.title.text if self._title else None, width
+        )
 
     def _repr_html_(self) -> str:
         """Return HTML wrapper for the chart."""
@@ -327,7 +329,7 @@ class Chart(Svg):
     @property
     def left_padding(self) -> float:
         """Calculate left padding for y-axis labels."""
-        if not hasattr(self, 'y_axis') or self.y_axis is None:
+        if not hasattr(self, "y_axis") or self.y_axis is None:
             return self.h_pad
         return calculate_padding_from_labels(self.y_labels, self.h_pad, self.y_axis)
 

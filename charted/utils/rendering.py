@@ -11,8 +11,12 @@ from charted.utils.transform import translate
 from charted.utils.types import MeasuredText
 
 
-def generate_markdown_image(svg_data: str, alt_text: str | None,
-                           title: str | None = None, width: str | None = None) -> str:
+def generate_markdown_image(
+    svg_data: str,
+    alt_text: str | None,
+    title: str | None = None,
+    width: str | None = None,
+) -> str:
     """Generate markdown markup for an SVG chart.
 
     Args:
@@ -35,8 +39,9 @@ def generate_markdown_image(svg_data: str, alt_text: str | None,
     return f"![{alt}]({data_url})"
 
 
-def create_legend_background(x: float, y: float, legend_width: float,
-                             legend_height: float, padding: float) -> Rect:
+def create_legend_background(
+    x: float, y: float, legend_width: float, legend_height: float, padding: float
+) -> Rect:
     """Create legend background rectangle.
 
     Args:
@@ -63,9 +68,9 @@ def create_legend_background(x: float, y: float, legend_width: float,
     )
 
 
-def calculate_legend_dimensions(series_names: list[str],
-                                font_size: float,
-                                legend_padding: float) -> tuple[float, float, float, float]:
+def calculate_legend_dimensions(
+    series_names: list[str], font_size: float, legend_padding: float
+) -> tuple[float, float, float, float]:
     """Calculate legend dimensions based on series names.
 
     Args:
@@ -77,8 +82,7 @@ def calculate_legend_dimensions(series_names: list[str],
         Tuple of (legend_width, legend_height, icon_height, entry_count).
     """
     legend_entries = [
-        calculate_text_dimensions(name, font_size=font_size)
-        for name in series_names
+        calculate_text_dimensions(name, font_size=font_size) for name in series_names
     ]
     icon_height = max(entry.height for entry in legend_entries)
     legend_width = max(entry.width for entry in legend_entries) + icon_height + 2
@@ -87,10 +91,16 @@ def calculate_legend_dimensions(series_names: list[str],
     return legend_width, legend_height, icon_height, len(legend_entries)
 
 
-def calculate_legend_position(position: str, plot_right: float,
-                              plot_left: float, legend_width: float,
-                              legend_height: float, top_padding: float,
-                              inset: float = 4, padding: float = 0.5) -> tuple[float, float]:
+def calculate_legend_position(
+    position: str,
+    plot_right: float,
+    plot_left: float,
+    legend_width: float,
+    legend_height: float,
+    top_padding: float,
+    inset: float = 4,
+    padding: float = 0.5,
+) -> tuple[float, float]:
     """Calculate legend position coordinates.
 
     Args:
@@ -127,9 +137,14 @@ def calculate_legend_position(position: str, plot_right: float,
     return result["x0"], result["y0"]
 
 
-def create_legend_entry(rect_x: float, rect_y: float,
-                        text: MeasuredText, color: str,
-                        index: int, font_family: str) -> G:
+def create_legend_entry(
+    rect_x: float,
+    rect_y: float,
+    text: MeasuredText,
+    color: str,
+    index: int,
+    font_family: str,
+) -> G:
     """Create a single legend entry (icon + text).
 
     Args:
@@ -162,9 +177,14 @@ def create_legend_entry(rect_x: float, rect_y: float,
     return g
 
 
-def create_legend(series_names: list[str], colors: list[str],
-                  theme_config: dict, plot_left: float, plot_right: float,
-                  top_padding: float) -> G | None:
+def create_legend(
+    series_names: list[str],
+    colors: list[str],
+    theme_config: dict,
+    plot_left: float,
+    plot_right: float,
+    top_padding: float,
+) -> G | None:
     """Create complete legend element.
 
     Args:
@@ -194,8 +214,14 @@ def create_legend(series_names: list[str], colors: list[str],
     # Calculate position
     inset = 4
     x0, y0 = calculate_legend_position(
-        position, plot_right, plot_left, legend_width,
-        legend_height, top_padding, inset, legend_padding
+        position,
+        plot_right,
+        plot_left,
+        legend_width,
+        legend_height,
+        top_padding,
+        inset,
+        legend_padding,
     )
 
     # Create legend container
@@ -209,19 +235,25 @@ def create_legend(series_names: list[str], colors: list[str],
     # Add entries
     for i, (name, color) in enumerate(zip(series_names, colors)):
         text = calculate_text_dimensions(name, font_size=font_size)
-        entry = create_legend_entry(
-            x0, y0, text, color, i, font_family
-        )
+        entry = create_legend_entry(x0, y0, text, color, i, font_family)
         legend.add_child(entry)
 
     return legend
 
 
-def create_zero_line_path(x_axis_zero: float, y_axis_zero: float,
-                          plot_width: float, plot_height: float,
-                          left_padding: float, x_stacked: bool,
-                          y_stacked: bool, x_min: float, y_min: float,
-                          is_bar_chart: bool, is_xy_line: bool) -> Path | None:
+def create_zero_line_path(
+    x_axis_zero: float,
+    y_axis_zero: float,
+    plot_width: float,
+    plot_height: float,
+    left_padding: float,
+    x_stacked: bool,
+    y_stacked: bool,
+    x_min: float,
+    y_min: float,
+    is_bar_chart: bool,
+    is_xy_line: bool,
+) -> Path | None:
     """Create zero line path for charts with negative values.
 
     Args:
@@ -247,20 +279,24 @@ def create_zero_line_path(x_axis_zero: float, y_axis_zero: float,
         x = x_axis_zero
         if x_stacked and x_min < 0:
             x += abs(x_min)  # Simplified reproject
-        paths.extend([
-            f"M{x} {0}",
-            f"v{plot_height}z",
-        ])
+        paths.extend(
+            [
+                f"M{x} {0}",
+                f"v{plot_height}z",
+            ]
+        )
 
     # Y-axis zero line (horizontal)
     if y_min < 0:
         y = plot_height - y_axis_zero
         if y_stacked and y_min < 0:
             y -= abs(y_min)  # Simplified reproject
-        paths.extend([
-            f"M{0} {y}",
-            f"h{plot_width}z",
-        ])
+        paths.extend(
+            [
+                f"M{0} {y}",
+                f"h{plot_width}z",
+            ]
+        )
 
     if len(paths) > 0:
         return Path(
@@ -271,8 +307,9 @@ def create_zero_line_path(x_axis_zero: float, y_axis_zero: float,
     return None
 
 
-def generate_html_wrapper(svg_content: str,
-                         style: str = "display: inline-block;") -> str:
+def generate_html_wrapper(
+    svg_content: str, style: str = "display: inline-block;"
+) -> str:
     """Generate HTML wrapper for SVG chart.
 
     Args:

@@ -11,9 +11,14 @@ from charted.utils.helpers import (
 from charted.utils.types import MeasuredText, Vector2D
 
 
-def calculate_plot_dimensions(width: float, height: float,
-                              left_padding: float, right_padding: float,
-                              top_padding: float, bottom_padding: float) -> tuple[float, float]:
+def calculate_plot_dimensions(
+    width: float,
+    height: float,
+    left_padding: float,
+    right_padding: float,
+    top_padding: float,
+    bottom_padding: float,
+) -> tuple[float, float]:
     """Calculate available plot area dimensions.
 
     Args:
@@ -32,9 +37,11 @@ def calculate_plot_dimensions(width: float, height: float,
     return plot_width, plot_height
 
 
-def calculate_padding_from_labels(labels: list[MeasuredText] | list[str] | None,
-                                  h_pad: float,
-                                  axis_reproject_func=None) -> float:
+def calculate_padding_from_labels(
+    labels: list[MeasuredText] | list[str] | None,
+    h_pad: float,
+    axis_reproject_func=None,
+) -> float:
     """Calculate horizontal padding needed for y-axis labels.
 
     Args:
@@ -95,8 +102,9 @@ def calculate_bottom_padding(v_pad: float, x_label_rotation: tuple | None) -> fl
     return v_pad + abs((dy - y))
 
 
-def calculate_x_label_rotation(labels: list[MeasuredText] | None,
-                               x_width: float) -> tuple[float, float] | None:
+def calculate_x_label_rotation(
+    labels: list[MeasuredText] | None, x_width: float
+) -> tuple[float, float] | None:
     """Calculate optimal rotation angle for x-axis labels.
 
     Args:
@@ -148,8 +156,9 @@ def calculate_viewbox(width: float, height: float) -> str:
     return f"0 0 {width} {height}"
 
 
-def get_base_transform(h_pad: float, bottom_padding: float,
-                       plot_width: float, width: float, height: float) -> list:
+def get_base_transform(
+    h_pad: float, bottom_padding: float, plot_width: float, width: float, height: float
+) -> list:
     """Get base transformation matrix for chart coordinates.
 
     Args:
@@ -172,8 +181,9 @@ def get_base_transform(h_pad: float, bottom_padding: float,
     ]
 
 
-def calculate_x_offset(x_labels: list | None, x_data: Vector2D | None,
-                       axis_reproject_func) -> float:
+def calculate_x_offset(
+    x_labels: list | None, x_data: Vector2D | None, axis_reproject_func
+) -> float:
     """Calculate x-offset for ordinal charts.
 
     Args:
@@ -189,8 +199,7 @@ def calculate_x_offset(x_labels: list | None, x_data: Vector2D | None,
     return 0
 
 
-def calculate_stacked_value(y: float, y_offset: float,
-                           stacked: bool) -> float:
+def calculate_stacked_value(y: float, y_offset: float, stacked: bool) -> float:
     """Apply stacking offset to a value.
 
     Args:

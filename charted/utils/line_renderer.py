@@ -39,7 +39,12 @@ class LineRenderer:
         )
 
         for series_idx, (y_values, y_offsets, x_values, color) in enumerate(
-            zip(self.chart.y_values, self.chart.y_offsets, self.chart.x_values, self.chart.colors)
+            zip(
+                self.chart.y_values,
+                self.chart.y_offsets,
+                self.chart.x_values,
+                self.chart.colors,
+            )
         ):
             self._render_series(g, y_values, y_offsets, x_values, color, series_idx)
 
@@ -75,7 +80,9 @@ class LineRenderer:
         area_fill = style.get("area_fill", False)
         area_fill_opacity = style.get("area_fill_opacity", 0.3)
         marker_shape = style.get("marker_shape", "circle")
-        marker_size = style.get("marker_size") or self.chart.theme["marker"]["marker_size"]
+        marker_size = (
+            style.get("marker_size") or self.chart.theme["marker"]["marker_size"]
+        )
 
         # Create series group with common styles
         series = G(fill="white", stroke=stroke, stroke_width=stroke_width)

@@ -167,7 +167,9 @@ class RadarRenderer:
         for series_idx, (y_values, color) in enumerate(
             zip(self.chart._series_data, self.chart.colors)
         ):
-            self._render_single_series(g, cx, cy, y_values, color, series_idx, max_value)
+            self._render_single_series(
+                g, cx, cy, y_values, color, series_idx, max_value
+            )
 
     def _render_single_series(
         self,

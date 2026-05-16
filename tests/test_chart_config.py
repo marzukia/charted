@@ -31,12 +31,7 @@ class TestChartConfig:
 
     def test_custom_values(self):
         """Test setting custom values."""
-        config = ChartConfig(
-            width=800,
-            height=600,
-            title="My Chart",
-            render_axes=False
-        )
+        config = ChartConfig(width=800, height=600, title="My Chart", render_axes=False)
         assert config.width == 800
         assert config.height == 600
         assert config.title == "My Chart"
@@ -95,15 +90,12 @@ class TestBarChartConfig:
     def test_custom_values(self):
         """Test setting custom values."""
         config = BarChartConfig(
-            width=600,
-            bar_gap=0.3,
-            x_stacked=True,
-            labels=['Q1', 'Q2', 'Q3']
+            width=600, bar_gap=0.3, x_stacked=True, labels=["Q1", "Q2", "Q3"]
         )
         assert config.width == 600
         assert config.bar_gap == 0.3
         assert config.x_stacked is True
-        assert config.labels == ['Q1', 'Q2', 'Q3']
+        assert config.labels == ["Q1", "Q2", "Q3"]
 
 
 class TestColumnChartConfig:
@@ -119,13 +111,11 @@ class TestColumnChartConfig:
     def test_custom_values(self):
         """Test setting custom values."""
         config = ColumnChartConfig(
-            column_gap=0.15,
-            y_stacked=False,
-            labels=['Jan', 'Feb', 'Mar']
+            column_gap=0.15, y_stacked=False, labels=["Jan", "Feb", "Mar"]
         )
         assert config.column_gap == 0.15
         assert config.y_stacked is False
-        assert config.labels == ['Jan', 'Feb', 'Mar']
+        assert config.labels == ["Jan", "Feb", "Mar"]
 
 
 class TestLineChartConfig:
@@ -147,7 +137,7 @@ class TestLineChartConfig:
             marker_shape="square",
             marker_size=6.0,
             area_fill=True,
-            area_fill_opacity=0.2
+            area_fill_opacity=0.2,
         )
         assert config.line_style == "dashed"
         assert config.marker_shape == "square"
@@ -196,10 +186,7 @@ class TestScatterChartConfig:
 
     def test_custom_values(self):
         """Test setting custom values."""
-        config = ScatterChartConfig(
-            marker_shape="diamond",
-            marker_size=8.0
-        )
+        config = ScatterChartConfig(marker_shape="diamond", marker_size=8.0)
         assert config.marker_shape == "diamond"
         assert config.marker_size == 8.0
 
@@ -215,26 +202,24 @@ class TestRadarChartConfig:
     def test_valid_config(self):
         """Test valid configuration."""
         config = RadarChartConfig(
-            labels=['Speed', 'Power', 'Endurance'],
-            radius=0.5,
-            grid_levels=4
+            labels=["Speed", "Power", "Endurance"], radius=0.5, grid_levels=4
         )
-        assert config.labels == ['Speed', 'Power', 'Endurance']
+        assert config.labels == ["Speed", "Power", "Endurance"]
         assert config.radius == 0.5
         assert config.grid_levels == 4
 
     def test_invalid_radius(self):
         """Test validation of radius."""
         with pytest.raises(ValueError, match="radius"):
-            RadarChartConfig(labels=['A', 'B'], radius=0)
+            RadarChartConfig(labels=["A", "B"], radius=0)
 
         with pytest.raises(ValueError, match="radius"):
-            RadarChartConfig(labels=['A', 'B'], radius=1.5)
+            RadarChartConfig(labels=["A", "B"], radius=1.5)
 
     def test_invalid_grid_levels(self):
         """Test validation of grid_levels."""
         with pytest.raises(ValueError, match="grid_levels"):
-            RadarChartConfig(labels=['A', 'B'], grid_levels=0)
+            RadarChartConfig(labels=["A", "B"], grid_levels=0)
 
 
 class TestConfigInheritance:
@@ -248,11 +233,7 @@ class TestConfigInheritance:
 
     def test_copy_with_modifications(self):
         """Test copying and modifying configs."""
-        base_config = BarChartConfig(
-            width=600,
-            title="Sales",
-            bar_gap=0.3
-        )
+        base_config = BarChartConfig(width=600, title="Sales", bar_gap=0.3)
 
         modified = base_config.copy()
         modified.width = 800
@@ -282,11 +263,7 @@ class TestConfigSerialization:
     def test_round_trip(self):
         """Test serialization and deserialization."""
         original = BarChartConfig(
-            width=600,
-            height=400,
-            title="Test",
-            bar_gap=0.3,
-            labels=['A', 'B', 'C']
+            width=600, height=400, title="Test", bar_gap=0.3, labels=["A", "B", "C"]
         )
 
         data = original.to_dict()
@@ -303,7 +280,7 @@ class TestConfigSerialization:
         data = {
             "width": 600,
             "unknown_field": "should be ignored",
-            "another_unknown": 123
+            "another_unknown": 123,
         }
         config = BarChartConfig.from_dict(data)
         assert config.width == 600

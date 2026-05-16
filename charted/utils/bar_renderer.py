@@ -50,7 +50,9 @@ class BarRenderer:
         # need this compensation.
         dx = 0
         if self.chart.x_stacked and self.chart.x_axis.axis_dimension.min_value < 0:
-            dx = self.chart.x_axis.reproject(abs(self.chart.x_axis.axis_dimension.min_value))
+            dx = self.chart.x_axis.reproject(
+                abs(self.chart.x_axis.axis_dimension.min_value)
+            )
 
         bars_g = G(
             opacity="0.8",
@@ -90,7 +92,9 @@ class BarRenderer:
             for bar_idx, (x, x_offset_val) in enumerate(
                 zip(x_values_series, x_offsets_series)
             ):
-                slot_y = start_y + bar_idx * (series_thickness + series_thickness * self.chart.bar_gap)
+                slot_y = start_y + bar_idx * (
+                    series_thickness + series_thickness * self.chart.bar_gap
+                )
                 # x_offset_val is the reprojected cumulative start position
                 # and x is the reprojected signed value. Use the leftmost
                 # point and positive width regardless of sign so that a
@@ -101,7 +105,9 @@ class BarRenderer:
                 paths.append(Path.get_path(left_x, slot_y, width, series_thickness))
             bars_g.add_child(Path(d=paths, fill=fill))
 
-    def _render_side_by_side(self, bars_g: G, start_y: float, series_thickness: float) -> None:
+    def _render_side_by_side(
+        self, bars_g: G, start_y: float, series_thickness: float
+    ) -> None:
         """Render side-by-side horizontal bars.
 
         Args:
@@ -119,16 +125,16 @@ class BarRenderer:
 
             paths = []
             for bar_idx, x in enumerate(x_values_series):
-                slot_y = start_y + bar_idx * (series_thickness + series_thickness * self.chart.bar_gap)
+                slot_y = start_y + bar_idx * (
+                    series_thickness + series_thickness * self.chart.bar_gap
+                )
                 bar_y = slot_y + series_idx * series_thickness
                 if x >= zero_x:
                     paths.append(
                         Path.get_path(zero_x, bar_y, x - zero_x, series_thickness)
                     )
                 else:
-                    paths.append(
-                        Path.get_path(x, bar_y, zero_x - x, series_thickness)
-                    )
+                    paths.append(Path.get_path(x, bar_y, zero_x - x, series_thickness))
             bars_g.add_child(Path(d=paths, fill=fill))
 
     def _render_borders(self, bars_g: G) -> None:
@@ -141,7 +147,9 @@ class BarRenderer:
         if isinstance(self.chart.theme, dict):
             grid_color = self.chart.theme.get("h_grid", {}).get("stroke", "#CCCCCC")
 
-        border_transform = f"translate({self.chart.left_padding}, {self.chart.top_padding})"
+        border_transform = (
+            f"translate({self.chart.left_padding}, {self.chart.top_padding})"
+        )
         borders = [
             Path(
                 stroke=grid_color,

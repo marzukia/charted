@@ -53,9 +53,7 @@ class Theme(TypedDict):
         elif not theme:
             return copy.deepcopy(DEFAULT_THEME)
 
-        def deep_merge(
-            default: Theme, custom: dict[str, object]
-        ) -> Theme:
+        def deep_merge(default: Theme, custom: dict[str, object]) -> Theme:
             for key in custom:
                 if key in default:
                     if isinstance(default[key], dict) and isinstance(custom[key], dict):

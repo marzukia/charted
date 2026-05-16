@@ -127,6 +127,7 @@ def create_command(args: argparse.Namespace):
     except Exception as e:
         # Unexpected errors - log for debugging
         import traceback
+
         print(f"Unexpected error creating chart: {e}", file=sys.stderr)
         traceback.print_exc()
         sys.exit(1)

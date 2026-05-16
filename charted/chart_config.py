@@ -238,7 +238,9 @@ class PieChartConfig(ChartConfig):
     def __post_init__(self):
         """Validate pie-specific settings."""
         if not 0 <= self.inner_radius < 1:
-            raise ValueError("inner_radius must be between 0 (inclusive) and 1 (exclusive)")
+            raise ValueError(
+                "inner_radius must be between 0 (inclusive) and 1 (exclusive)"
+            )
 
     # Pie-specific settings
     inner_radius: float = 0.0
