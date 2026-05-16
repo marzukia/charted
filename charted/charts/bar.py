@@ -81,7 +81,7 @@ class BarChart(Chart):
             chart_type="bar",
             series_styles=series_styles,
         )
-        
+
         # Refresh y_axis grid_lines after parent is fully initialized.
         # During Chart.__init__, left_padding returns h_pad (25.0) because
         # y_axis doesn't exist yet. After initialization, it correctly
