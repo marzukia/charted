@@ -1,0 +1,173 @@
+.\" Man page generated from reStructuredText
+.\" by the Docutils 0.22.4 manpage writer.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "tox" "1" "" "" "User Commands"
+.SH Name
+tox \- virtualenv-based automation of test activities
+.SH SYNOPSIS
+.sp
+\fBtox\fP [\fIoptions\fP] [\fBrun\fP | \fBrun\-parallel\fP | \fBdepends\fP | \fBman\fP | \fBlist\fP | \fBdevenv\fP | \fBschema\fP |
+\fBconfig\fP | \fBquickstart\fP | \fBexec\fP | \fBlegacy\fP] [\fIcommand\-options\fP]
+.SH DESCRIPTION
+.sp
+tox aims to automate and standardize testing in Python. It is part of a larger vision of easing the packaging, testing
+and release process of Python software.
+.sp
+tox creates virtual environments for multiple Python versions, installs project dependencies, and runs tests in each
+environment. It supports parallel execution, custom test commands, and extensive configuration.
+.SH COMMANDS
+.INDENT 0.0
+.TP
+.B \fBrun\fP (\fIor\fP \fBr\fP)
+run environments
+.TP
+.B \fBrun\-parallel\fP (\fIor\fP \fBp\fP)
+run environments in parallel
+.TP
+.B \fBdepends\fP (\fIor\fP \fBde\fP)
+visualize tox environment dependencies
+.TP
+.B \fBman\fP
+Set up tox man page for current shell
+.TP
+.B \fBlist\fP (\fIor\fP \fBl\fP)
+list environments
+.TP
+.B \fBdevenv\fP (\fIor\fP \fBd\fP)
+sets up a development environment at ENVDIR based on the tox configuration specified
+.TP
+.B \fBschema\fP
+Generate schema for tox configuration
+.TP
+.B \fBconfig\fP (\fIor\fP \fBc\fP)
+show tox configuration
+.TP
+.B \fBquickstart\fP (\fIor\fP \fBq\fP)
+Command line script to quickly create a tox config file for a Python project
+.TP
+.B \fBexec\fP (\fIor\fP \fBe\fP)
+execute an arbitrary command within a tox environment
+.TP
+.B \fBlegacy\fP (\fIor\fP \fBle\fP)
+legacy entry\-point command
+.UNINDENT
+.sp
+For command\-specific help, use: \fBtox\fP \fIcommand\fP \fB\-\-help\fP
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \fB\-h\fP, \fB\-\-help\fP
+show this help message and exit
+.TP
+.B \fB\-\-colored\fP
+should output be enriched with colors, default is yes unless TERM=dumb or NO_COLOR is defined.
+.TP
+.B \fB\-\-stderr\-color\fP
+color for stderr output, use RESET for terminal defaults.
+.TP
+.B \fB\-v\fP, \fB\-\-verbose\fP
+increase verbosity
+.TP
+.B \fB\-q\fP, \fB\-\-quiet\fP
+decrease verbosity
+.TP
+.B \fB\-\-exit\-and\-dump\-after\fP \fIseconds\fP
+dump tox threads after n seconds and exit the app \- useful to debug when tox hangs, 0 means disabled
+.TP
+.B \fB\-c\fP, \fB\-\-conf\fP \fIfile\fP
+configuration file/folder for tox (if not specified will discover one)
+.TP
+.B \fB\-\-workdir\fP \fIdir\fP
+tox working directory (if not specified will be the folder of the config file)
+.TP
+.B \fB\-\-root\fP \fIdir\fP
+project root directory (if not specified will be the folder of the config file)
+.TP
+.B \fB\-\-runner\fP
+the tox run engine to use when not explicitly stated in tox env configuration
+.TP
+.B \fB\-\-version\fP
+show program\(aqs and plugins version number and exit
+.TP
+.B \fB\-\-no\-provision\fP \fIREQ_JSON\fP
+do not perform provision, but fail and if a path was provided write provision metadata as JSON to it
+.TP
+.B \fB\-\-no\-recreate\-provision\fP
+if recreate is set do not recreate provision tox environment
+.TP
+.B \fB\-r\fP, \fB\-\-recreate\fP
+recreate the tox environments
+.TP
+.B \fB\-x\fP, \fB\-\-override\fP
+configuration override(s), e.g., \-x testenv:pypy3.ignore_errors=True
+.UNINDENT
+.SH FILES
+.INDENT 0.0
+.TP
+.B \fBtox.toml\fP
+Primary configuration file in TOML format (recommended).
+.TP
+.B \fBtox.ini\fP
+Configuration file in INI format.
+.TP
+.B \fBpyproject.toml\fP
+Alternative configuration location under the \fB[tool.tox]\fP section.
+.TP
+.B \fBsetup.cfg\fP
+Legacy configuration location (deprecated).
+.UNINDENT
+.sp
+The configuration files are searched in the order listed above. The first file found is used.
+.SH ENVIRONMENT VARIABLES
+.INDENT 0.0
+.TP
+.B \fBTOX_*\fP
+Any tox configuration setting can be overridden via environment variables with the \fBTOX_\fP prefix.
+.TP
+.B \fBNO_COLOR\fP
+When set to any non\-empty value, disables colored output.
+.TP
+.B \fBFORCE_COLOR\fP
+When set to any non\-empty value, forces colored output even when stdout is not a terminal.
+.TP
+.B \fBTOX_PARALLEL_NO_SPINNER\fP
+When set, disables the progress spinner during parallel execution.
+.UNINDENT
+.SH SEE ALSO
+.sp
+Full documentation: \%<https://\:tox\:.wiki/>
+.sp
+\fBpip\fP(1), \fBpytest\fP(1), \fBvirtualenv\fP(1)
+.SH AUTHOR
+.sp
+tox development team
+.sp
+\%<https://\:github\:.com/\:tox-dev/\:tox>
+.\" End of generated man page.

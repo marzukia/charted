@@ -21,7 +21,11 @@ Example:
 from __future__ import annotations
 
 import dataclasses
-from typing import Self
+import sys
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 from charted.utils.themes import Theme
 from charted.utils.types import Labels, SeriesStyleConfig, Vector
