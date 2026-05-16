@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from charted.charts.chart import Chart
 from charted.config import get_bar_gap
+from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path
 from charted.utils.themes import Theme
 from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
@@ -37,8 +38,8 @@ class BarChart(Chart):
         data: Vector | Vector2D,
         labels: Labels = None,
         bar_gap: float = None,
-        width: float = 500,
-        height: float = 500,
+        width: float = DEFAULT_CHART_WIDTH,
+        height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
         title: str | None = None,
         theme: Theme | None = None,

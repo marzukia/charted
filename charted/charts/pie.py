@@ -4,6 +4,7 @@ import math
 
 from charted.charts.chart import Chart
 from charted.config import get_pie_label_font_size
+from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path, Text
 from charted.utils.colors import complementary_color, get_contrast_color
 from charted.utils.defaults import DEFAULT_COLORS
@@ -55,8 +56,8 @@ class PieChart(Chart):
         self,
         data: Vector,
         labels: Labels = None,
-        width: float = 500,
-        height: float = 500,
+        width: float = DEFAULT_CHART_WIDTH,
+        height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
         theme: Theme | None = None,
         inner_radius: float = 0,

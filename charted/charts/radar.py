@@ -3,6 +3,14 @@ from __future__ import annotations
 import math
 
 from charted.charts.chart import Chart
+from charted.constants import (
+    DEFAULT_CHART_HEIGHT,
+    DEFAULT_CHART_WIDTH,
+    DEFAULT_PADDING,
+    FULL_CIRCLE,
+    MAX_RADIAL_RADIUS_FACTOR,
+    RIGHT_ANGLE,
+)
 from charted.html.element import Circle, G, Path, Text
 from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.themes import Theme
@@ -54,8 +62,8 @@ class RadarChart(Chart):
         self,
         data: Vector | Vector2D,
         labels: Labels,
-        width: float = 500,
-        height: float = 500,
+        width: float = DEFAULT_CHART_WIDTH,
+        height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
@@ -160,7 +168,7 @@ class RadarChart(Chart):
 
     def _get_angle(self, index: int) -> float:
         """Get angle in degrees for axis index (0 = top, clockwise)."""
-        return (index * 360 / len(self._radar_labels)) - 90
+        return (index * FULL_CIRCLE / len(self._radar_labels)) - RIGHT_ANGLE
 
     def _polar_to_cartesian(
         self, cx: float, cy: float, radius: float, angle_deg: float
@@ -202,7 +210,7 @@ class RadarChart(Chart):
         cx = self.width / 2
         cy = self.height / 2
         min_dim = min(self.width, self.height)
-        self._max_radius = (min_dim / 2 - 40) * self.radius
+        self._max_radius = (min_dim / 2 - DEFAULT_PADDING * 2) * self.radius
 
         # Render concentric grid circles
         grid_color = self.theme.get("grid_color", "#e0e0e0")

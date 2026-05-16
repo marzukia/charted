@@ -1,5 +1,6 @@
 import math
 
+from charted.constants import DEFAULT_PADDING
 from charted.html.element import G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.helpers import (
@@ -336,7 +337,7 @@ class XAxis(Axis):
             font_family=DEFAULT_FONT,
             transform=translate(
                 x=self.parent.left_padding,
-                y=self.parent.top_padding + 18,
+                y=self.parent.top_padding + DEFAULT_PADDING,
             ),
         )
 

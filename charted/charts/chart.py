@@ -1,22 +1,36 @@
+"""Base chart class with reduced responsibilities.
+
+Refactored to extract validation, layout, and rendering utilities into
+separate modules to address God Class architectural debt (Issue #64).
+"""
+
 from charted.charts.axes import Axis, XAxis, YAxis
-from charted.config import get_chart_theme
+from charted.config import get_chart_theme, load_config
+from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH, STRAIGHT_ANGLE
 from charted.html.element import G, Path, Rect, Svg, Text
 from charted.utils.colors import generate_complementary_colors
 from charted.utils.defaults import DEFAULT_COLORS
-from charted.utils.exceptions import InvalidValue
-from charted.utils.helpers import (
-    calculate_rotation_angle,
-    calculate_text_dimensions,
-    rotate_coordinate,
+from charted.utils.layout import (
+    calculate_bottom_padding,
+    calculate_padding_from_labels,
+    calculate_top_padding,
+    calculate_viewbox,
+    calculate_x_label_rotation,
+    calculate_x_offset,
+    get_base_transform,
+)
+from charted.utils.rendering import (
+    generate_html_wrapper,
+    generate_markdown_image,
 )
 from charted.utils.themes import Theme
-from charted.utils.transform import translate
-from charted.utils.types import (
-    Labels,
-    MeasuredText,
-    SeriesStyleConfig,
-    Vector,
-    Vector2D,
+from charted.utils.transform import rotate, scale, translate
+from charted.utils.types import Labels, MeasuredText, SeriesStyleConfig, Vector, Vector2D
+from charted.utils.validation import (
+    create_default_labels,
+    get_data_length,
+    validate_attribute_value,
+    validate_data,
 )
 
 
@@ -26,6 +40,11 @@ class Chart(Svg):
     Provides common functionality for chart rendering including
     theme application, data validation, coordinate calculations,
     and SVG generation. All chart types inherit from this class.
+
+    This class has been refactored to focus on core responsibilities:
+    - Data representation and state management
+    - Coordinate system setup
+    - Delegating utilities to focused modules
 
     Attributes:
         x_stacked: If True, stack series along x-axis
@@ -44,77 +63,39 @@ class Chart(Svg):
     y_stacked: bool = False
     render_axes: bool = True
 
+    # =========================================================================
+    # Core Representation Methods
+    # =========================================================================
+
     def _repr_svg_(self) -> str:
-        """Return SVG string for Jupyter notebook display.
-
-        This method is automatically called by Jupyter to render
-        SVG charts inline in notebooks.
-
-        Returns:
-            str: The SVG string representation of the chart.
-        """
+        """Return SVG string for Jupyter notebook display."""
         return self.svg
 
     def to_svg(self) -> str:
-        """Get the SVG string representation of the chart.
-
-        Returns:
-            str: The complete SVG markup as a string.
-        """
+        """Get the SVG string representation of the chart."""
         return self.svg
 
     def to_markdown(self, alt_text: str | None = None, width: str | None = None) -> str:
-        """Generate markdown markup for the chart.
-
-        Args:
-            alt_text: Alternative text for the image. Defaults to title if available.
-            width: Optional width specification (e.g., '500px' or '100%').
-
-        Returns:
-            str: Markdown image syntax with data URL.
-
-        Example:
-            >>> chart = BarChart(data=[1, 2, 3], labels=['a', 'b', 'c'])
-            >>> print(chart.to_markdown())
-            ![chart](data:image/svg+xml,{encoded_svg})
-        """
-        from urllib.parse import quote
-
-        svg_data = self.svg
-        alt = alt_text or (self.title if self.title else "chart")
-
-        # Encode SVG as data URL
-        encoded = quote(svg_data)
-        data_url = f"data:image/svg+xml,{encoded}"
-
-        if width:
-            return f"![{alt}]({data_url}){{width={width}}}"
-        return f"![{alt}]({data_url})"
+        """Generate markdown markup for the chart."""
+        return generate_markdown_image(self.svg, alt_text, self.title.text if self._title else None, width)
 
     def _repr_html_(self) -> str:
-        """Return HTML wrapper for the chart.
-
-        This method is called by IPython/Jupyter when displaying
-        objects in HTML format. Wraps the SVG in a container div.
-
-        Returns:
-            str: HTML string with the embedded SVG.
-        """
-        return f'<div style="display: inline-block;">{self.svg}</div>'
+        """Return HTML wrapper for the chart."""
+        return generate_html_wrapper(self.svg)
 
     def save(self, path: str) -> None:
-        """Save the chart to a file.
-
-        Args:
-            path: File path to save the SVG file.
-        """
+        """Save the chart to a file."""
         with open(path, "w") as f:
             f.write(self.svg)
 
+    # =========================================================================
+    # Initialization
+    # =========================================================================
+
     def __init__(
         self,
-        width: float = 500,
-        height: float = 500,
+        width: float = DEFAULT_CHART_WIDTH,
+        height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
         x_data: Vector | Vector2D | None = None,
         y_data: Vector | Vector2D | None = None,
@@ -131,23 +112,24 @@ class Chart(Svg):
         super().__init__(
             width=width,
             height=height,
-            viewBox=self.calculate_viewbox(width, height),
+            viewBox=calculate_viewbox(width, height),
         )
 
+        # Validate and normalize data
         if not x_data and not y_data:
             raise Exception("No data was provided to the Chart element.")
 
         if not x_data and not x_labels:
-            array_len = len(y_data[0]) if type(y_data[0]) is list else len(y_data)
-            x_labels = [" " for i in range(array_len)]
+            array_len = get_data_length(y_data)
+            x_labels = create_default_labels(array_len)
 
         self.series_names = series_names
         self.series_styles = series_styles
         self.x_stacked = x_stacked
-
         self.zero_index = zero_index
         self.axis_tick_interval = axis_tick_interval
 
+        # Set data with validation
         self.x_labels = x_labels
         self.y_labels = y_labels
         self.x_data = x_data
@@ -161,8 +143,6 @@ class Chart(Svg):
 
         # Apply chart-type-specific overrides if available
         if chart_type:
-            from charted.config import load_config
-
             config = load_config()
             chart_override = get_chart_theme(config, chart_type)
             if chart_override:
@@ -184,9 +164,11 @@ class Chart(Svg):
 
         self.title = title
 
+        # Calculate counts
         self.x_count = (self.x_data, self.x_labels)
         self.y_count = (self.y_data, self.y_labels)
 
+        # Initialize axes
         self.x_axis = XAxis(
             parent=self,
             data=self.x_data,
@@ -211,44 +193,36 @@ class Chart(Svg):
             axis_tick_interval=self.axis_tick_interval,
         )
 
+        # Initialize offsets and values
         self.y_offsets = self.y_data
         self.x_offsets = self.x_data
-
         self.y_values = self.y_data
         self.x_values = self.x_data
 
+        # Initialize colors
         if not hasattr(self, "_colors"):
             self.colors = self.theme["colors"]
 
+        # Build SVG children
         children = [self.container, self.title]
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
         self.add_children(*children)
 
+    # =========================================================================
+    # Data Properties (with validation)
+    # =========================================================================
+
     @classmethod
     def _validate_data(cls, data: Vector | Vector2D | None) -> Vector2D:
-        if data is not None and len(data) == 0:
-            raise Exception("No data was provided.")
-
-        if not data:
-            return None
-
-        if type(data[0]) is not list:
-            data = [data]
-
-        max_length = max([len(i) for i in data])
-
-        if not all([len(i) == max_length for i in data]):
-            raise Exception("Not all vectors were same length")
-
-        return data
+        """Validate and normalize chart data (deprecated: use validation.validate_data)."""
+        return validate_data(data)
 
     @classmethod
     def _validate_attribute_value(cls, name: str, value: float):
-        if value < 0:
-            raise InvalidValue(name, value)
-        return value
+        """Validate attribute value (deprecated: use validation.validate_attribute_value)."""
+        return validate_attribute_value(name, value)
 
     @property
     def x_data(self) -> Vector2D:
@@ -256,7 +230,7 @@ class Chart(Svg):
 
     @x_data.setter
     def x_data(self, data: Vector | Vector2D | None = None) -> None:
-        validated_data = self._validate_data(data)
+        validated_data = validate_data(data)
         self._x_data = validated_data
 
     @property
@@ -265,7 +239,7 @@ class Chart(Svg):
 
     @y_data.setter
     def y_data(self, data: Vector | Vector2D | None = None) -> None:
-        validated_data = self._validate_data(data)
+        validated_data = validate_data(data)
         self._y_data = validated_data
 
     @property
@@ -274,7 +248,7 @@ class Chart(Svg):
 
     @width.setter
     def width(self, width: float) -> None:
-        self._width = self._validate_attribute_value("width", width)
+        self._width = validate_attribute_value("width", width)
 
     @property
     def height(self) -> float:
@@ -282,7 +256,7 @@ class Chart(Svg):
 
     @height.setter
     def height(self, height: float) -> None:
-        self._height = self._validate_attribute_value("height", height)
+        self._height = validate_attribute_value("height", height)
 
     @property
     def h_padding(self) -> float:
@@ -291,8 +265,8 @@ class Chart(Svg):
     @h_padding.setter
     def h_padding(self, h_padding: float) -> None:
         if h_padding > 1:
-            raise InvalidValue("h_padding", h_padding)
-        self._h_padding = self._validate_attribute_value("h_padding", h_padding)
+            raise Exception("h_padding must be <= 1")
+        self._h_padding = validate_attribute_value("h_padding", h_padding)
 
     @property
     def v_padding(self) -> float:
@@ -301,8 +275,12 @@ class Chart(Svg):
     @v_padding.setter
     def v_padding(self, v_padding: float) -> None:
         if v_padding > 1:
-            raise InvalidValue("v_padding", v_padding)
-        self._v_padding = self._validate_attribute_value("v_padding", v_padding)
+            raise Exception("v_padding must be <= 1")
+        self._v_padding = validate_attribute_value("v_padding", v_padding)
+
+    # =========================================================================
+    # Layout Properties (delegated to layout utilities)
+    # =========================================================================
 
     @property
     def plot_width(self) -> float:
@@ -313,14 +291,18 @@ class Chart(Svg):
         return self.height - (self.bottom_padding + self.top_padding)
 
     def get_base_transform(self) -> list:
-        from charted.utils.transform import rotate, scale
+        """Get base transformation matrix."""
 
         return [
             translate(-self.h_pad, -self.bottom_padding),
-            rotate(180, self.width / 2, self.height / 2),
+            rotate(STRAIGHT_ANGLE, self.width / 2, self.height / 2),
             scale(-1, 1),
             translate(-self.plot_width, 0),
         ]
+
+    def _apply_stacking(self, y: float, y_offset: float) -> float:
+        """Apply y-stacking if enabled."""
+        return y + y_offset if self.y_stacked else y
 
     @property
     def x_offset(self) -> float:
@@ -334,9 +316,39 @@ class Chart(Svg):
             return self.x_axis.reproject(1)
         return 0
 
-    def _apply_stacking(self, y: float, y_offset: float) -> float:
-        """Apply y-stacking if enabled."""
-        return y + y_offset if self.y_stacked else y
+    # =========================================================================
+    # Padding Calculations (delegated to layout utilities)
+    # =========================================================================
+
+    @property
+    def left_padding(self) -> float:
+        """Calculate left padding for y-axis labels."""
+        if not hasattr(self, 'y_axis') or self.y_axis is None:
+            return self.h_pad
+        return calculate_padding_from_labels(self.y_labels, self.h_pad, self.y_axis)
+
+    @property
+    def right_padding(self) -> float:
+        return self.h_pad
+
+    @property
+    def top_padding(self) -> float:
+        """Calculate top padding including title."""
+        return calculate_top_padding(self.v_pad, self._title)
+
+    @property
+    def bottom_padding(self) -> float:
+        """Calculate bottom padding including rotated labels."""
+        return calculate_bottom_padding(self.v_pad, self.x_label_rotation)
+
+    # =========================================================================
+    # Styling Properties
+    # =========================================================================
+
+    @property
+    def x_label_rotation(self) -> tuple[float, float] | None:
+        """Calculate rotation angle for x-axis labels."""
+        return calculate_x_label_rotation(self._x_labels, self.x_width)
 
     @property
     def colors(self) -> list[str]:
@@ -383,6 +395,8 @@ class Chart(Svg):
 
     @title.setter
     def title(self, text: str) -> None:
+        from charted.utils.helpers import calculate_text_dimensions
+
         if text:
             self._title = calculate_text_dimensions(
                 text,
@@ -407,12 +421,18 @@ class Chart(Svg):
             d=Path.get_path(0, 0, self.width, self.height),
         )
 
+    # =========================================================================
+    # Label Properties
+    # =========================================================================
+
     @property
     def x_labels(self) -> list[MeasuredText] | None:
         return self._x_labels
 
     @x_labels.setter
     def x_labels(self, x_labels: list[str]) -> None:
+        from charted.utils.helpers import calculate_text_dimensions
+
         if x_labels:
             x_labels = [calculate_text_dimensions(label) for label in x_labels]
         self._x_labels = x_labels
@@ -423,68 +443,15 @@ class Chart(Svg):
 
     @y_labels.setter
     def y_labels(self, y_labels: list[str]) -> None:
+        from charted.utils.helpers import calculate_text_dimensions
+
         if y_labels:
             y_labels = [calculate_text_dimensions(label) for label in y_labels]
         self._y_labels = y_labels
 
-    @property
-    def x_label_rotation(self) -> tuple[float, float, float]:
-        if not self.x_labels:
-            return None
-
-        rotation_angle = 0
-        width = 0
-        for label in self.x_labels:
-            angle = calculate_rotation_angle(label.width, self.x_width)
-            width = max(width, label.width)
-            if angle and (angle > rotation_angle):
-                rotation_angle = max(angle, rotation_angle)
-
-        return rotation_angle, width
-
-    @property
-    def left_padding(self) -> float:
-        labels = self.y_labels
-
-        if not labels:
-            _, values, _ = Axis.calculate_axis_values(
-                data=self.y_data,
-                stacked=self.y_stacked,
-                zero_index=self.zero_index,
-            )
-            labels = [str(round(x, 2)) for x in values]
-
-        max_width = 0.0
-        for label in labels:
-            if hasattr(label, "width"):
-                width = label.width
-            else:
-                width = calculate_text_dimensions(str(label)).width
-            if width > max_width:
-                max_width = width
-
-        return self.h_pad + max_width
-
-    @property
-    def right_padding(self) -> float:
-        return self.h_pad
-
-    @property
-    def top_padding(self) -> float:
-        offset = 0
-        if self._title:
-            offset += self._title.height * 1.5
-        return self.v_pad + offset
-
-    @property
-    def bottom_padding(self) -> float:
-        if not self.x_label_rotation:
-            return self.v_pad
-
-        rotation_angle, width = self.x_label_rotation
-        x, y = (width, 0)
-        _, dy = rotate_coordinate(x, y, rotation_angle)
-        return self.v_pad + abs((dy - y))
+    # =========================================================================
+    # Count Properties
+    # =========================================================================
 
     @property
     def x_count(self) -> int:
@@ -511,6 +478,10 @@ class Chart(Svg):
             return
         cnt = len(y_data[0])
         self._y_count = cnt
+
+    # =========================================================================
+    # Stacking Properties
+    # =========================================================================
 
     @property
     def y_offsets(self) -> Vector2D:
@@ -557,8 +528,6 @@ class Chart(Svg):
             ]
             return
 
-        # For x_stacked horizontal bars, accumulate offsets per bar index
-        # (mirrors y_offsets logic for vertical stacking)
         offsets = []
         negative_offsets = [0] * self.x_count
         positive_offsets = [0] * self.x_count
@@ -612,16 +581,9 @@ class Chart(Svg):
 
     @x_values.setter
     def x_values(self, x_data: Vector2D) -> None:
-        if not x_data and self.x_labels:
-            x_data = [[i for i in range(len(self.x_labels))]]
-        else:
-            x_data = [*x_data]
+        from charted.utils.validation import match_data_series
 
-        y_len = len(self.y_data) if self.y_data else 0
-        if len(x_data) != y_len:
-            if not len(x_data) == 1:
-                raise Exception("x and y data series do not match")
-            x_data = x_data * y_len
+        x_data = match_data_series(x_data, self.y_data)
 
         data = []
         for arr in x_data:
@@ -633,113 +595,47 @@ class Chart(Svg):
 
         self._x_values = data
 
+    # =========================================================================
+    # Rendering Properties
+    # =========================================================================
+
     @property
     def zero_line(self) -> Path:
-        paths = []
+        """Create zero line for charts with negative values."""
+        from charted.utils.rendering import create_zero_line_path
+
         is_bar_chart = getattr(self, "y_height", None) is not None
         is_xy_line = self._x_data is not None and not is_bar_chart
-        if self.x_axis.axis_dimension.min_value < 0 and not is_xy_line:
-            x = self.x_axis.zero
-            min_x = self.x_axis.axis_dimension.min_value
-            # Mirror y_stacked compensation: in stacked mode with negative
-            # values the x-axis reproject is relative-to-zero, so shift
-            # right by reproject(abs(min_x)) for absolute placement.
-            if self.x_stacked and min_x < 0:
-                x += self.x_axis.reproject(abs(min_x))
-            paths += [
-                f"M{x} {0}",
-                f"v{self.plot_height}z",
-            ]
 
-        if self.y_axis.axis_dimension.min_value < 0:
-            y = self.plot_height - self.y_axis.zero
-            min_y = self.y_axis.axis_dimension.min_value
-            if self.y_stacked and min_y < 0:
-                y -= self.y_axis.reproject(abs(min_y))
-
-            paths += [
-                f"M{0} {y}",
-                f"h{self.plot_width}z",
-            ]
-
-        if len(paths) > 0:
-            return Path(
-                transform=[translate(self.left_padding, self.top_padding)],
-                d=paths,
-                stroke="black",
-            )
+        return create_zero_line_path(
+            x_axis_zero=self.x_axis.zero,
+            y_axis_zero=self.y_axis.zero,
+            plot_width=self.plot_width,
+            plot_height=self.plot_height,
+            left_padding=self.left_padding,
+            x_stacked=self.x_stacked,
+            y_stacked=self.y_stacked,
+            x_min=self.x_axis.axis_dimension.min_value,
+            y_min=self.y_axis.axis_dimension.min_value,
+            is_bar_chart=is_bar_chart,
+            is_xy_line=is_xy_line,
+        )
 
     @property
     def representation(self) -> G:
+        """Subclass must implement this."""
         raise Exception("representation not implemented for instance of Chart.")
 
     @property
     def legend(self):
-        if not self.theme["legend"] or not self.series_names:
-            return None
+        """Create legend element."""
+        from charted.utils.rendering import create_legend
 
-        legend_entries = [
-            calculate_text_dimensions(x, font_size=self.theme["legend"]["font_size"])
-            for x in self.series_names
-        ]
-        icon_height = max(x.height for x in legend_entries)
-        legend_width = max(x.width for x in legend_entries) + icon_height + 2
-        legend_height = len(legend_entries) * (icon_height + 2)
-
-        # Anchor legend fully inside the plot borders. The background Rect is
-        # translated by -legend_width*padding/2 on x, so its right edge sits
-        # at x0 + legend_width*(1 + padding/2). We solve for x0 so the right
-        # edge lands just inside the plot's right border (with a small inset).
-        pad = self.theme["legend"]["legend_padding"]
-        plot_right = self.left_padding + self.plot_width
-        plot_left = self.left_padding
-        inset = 4
-        positions = {
-            "topright": {
-                "x0": plot_right - inset - legend_width * (1 + pad / 2),
-                "y0": self.top_padding + inset + legend_height * (pad / 2),
-            },
-            "topleft": {
-                "x0": plot_left + inset + legend_width * (pad / 2),
-                "y0": self.top_padding + inset + legend_height * (pad / 2),
-            },
-        }
-
-        position = positions.get(self.theme["legend"]["position"], None)
-        if not position:
-            raise Exception("Invalid position.")
-
-        x0, y0 = position["x0"], position["y0"]
-
-        legend = G()
-        legend.add_child(
-            Rect(
-                transform=translate(
-                    x=-(legend_width * self.theme["legend"]["legend_padding"] / 2),
-                    y=-(legend_height * self.theme["legend"]["legend_padding"] / 2),
-                ),
-                x=x0,
-                y=y0,
-                width=legend_width * (1 + self.theme["legend"]["legend_padding"]),
-                height=legend_height * (1 + self.theme["legend"]["legend_padding"]),
-                fill="#ffffff",
-                stroke="#CCCCCC",
-            )
+        return create_legend(
+            series_names=self.series_names,
+            colors=self.colors,
+            theme_config=self.theme.get("legend"),
+            plot_left=self.left_padding,
+            plot_right=self.left_padding + self.plot_width,
+            top_padding=self.top_padding,
         )
-
-        for i, (legend_text, color) in enumerate(zip(legend_entries, self.colors)):
-            h = legend_text.height
-            g = G(transform=translate(0, y=(2 * i) + h))
-            y = y0 + (i * h)
-            rect = Rect(y=y - h, x=x0, width=h, height=h, fill=color)
-            text = Text(
-                y=y - (h / 4),
-                x=x0 + 2 + h,
-                text=legend_text.text,
-                font_size=self.theme["legend"]["font_size"],
-                font_family=self.theme["title"]["font_family"],
-            )
-            g.add_children(rect, text)
-            legend.add_child(g)
-
-        return legend
