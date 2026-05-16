@@ -99,6 +99,17 @@ class PieChart(Chart):
         self._pie_data = list(data)  # Store original data for rendering
         self._pie_labels = labels
         self.series_styles = series_styles
+        
+        # Initialize _colors early so representation works during super().__init__()
+        n = len(data)
+        base_colors = list(DEFAULT_COLORS)
+        self._colors = []
+        for i in range(n):
+            color_idx = i % len(base_colors)
+            if i < len(base_colors):
+                self._colors.append(base_colors[color_idx])
+            else:
+                self._colors.append(complementary_color(base_colors[color_idx]))
 
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(len(data))]]
@@ -117,7 +128,8 @@ class PieChart(Chart):
         )
 
         # Override colors to match data length
-        self.colors = data  # Will trigger color generation
+        # Colors already initialized above before super().__init__()
+        pass  # No action needed, colors already set
 
     @property
     def colors(self) -> list[str]:

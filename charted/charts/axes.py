@@ -390,8 +390,8 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
-        # Use filtered values (self.values) for correct label positioning
-        values = self.values
+        # Use _grid_line_values for grid line positioning (full range)
+        values = self._grid_line_values
 
         offset = 0
         if self.stacked and self.axis_dimension.min_value < 0:
