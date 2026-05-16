@@ -311,8 +311,8 @@ class RadarChartConfig(ChartConfig):
     show_axis_labels: bool = True
     label_offset: float = 20.0
 
-    # Labels (required for radar)
-    labels: Labels
+    # Labels (required for radar, validated in __post_init__)
+    labels: Labels = dataclasses.field(default_factory=list)
 
 
 # Type alias for any chart config
