@@ -4,10 +4,10 @@ Refactored to extract validation, layout, and rendering utilities into
 separate modules to address God Class architectural debt (Issue #64).
 """
 
-from charted.charts.axes import Axis, XAxis, YAxis
+from charted.charts.axes import XAxis, YAxis
 from charted.config import get_chart_theme, load_config
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH, STRAIGHT_ANGLE
-from charted.html.element import G, Path, Rect, Svg, Text
+from charted.html.element import G, Path, Svg, Text
 from charted.utils.colors import generate_complementary_colors
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.layout import (
@@ -16,8 +16,6 @@ from charted.utils.layout import (
     calculate_top_padding,
     calculate_viewbox,
     calculate_x_label_rotation,
-    calculate_x_offset,
-    get_base_transform,
 )
 from charted.utils.rendering import (
     generate_html_wrapper,
@@ -25,7 +23,13 @@ from charted.utils.rendering import (
 )
 from charted.utils.themes import Theme
 from charted.utils.transform import rotate, scale, translate
-from charted.utils.types import Labels, MeasuredText, SeriesStyleConfig, Vector, Vector2D
+from charted.utils.types import (
+    Labels,
+    MeasuredText,
+    SeriesStyleConfig,
+    Vector,
+    Vector2D,
+)
 from charted.utils.validation import (
     create_default_labels,
     get_data_length,

@@ -4,13 +4,9 @@ from charted.charts.chart import Chart
 from charted.constants import (
     DEFAULT_CHART_HEIGHT,
     DEFAULT_CHART_WIDTH,
-    DEFAULT_PADDING,
-    FULL_CIRCLE,
-    MAX_RADIAL_RADIUS_FACTOR,
-    RIGHT_ANGLE,
 )
-from charted.html.element import Circle, G, Path, Text
-from charted.utils.defaults import DEFAULT_COLORS, DEFAULT_FONT, DEFAULT_FONT_SIZE
+from charted.html.element import G
+from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.radar_renderer import RadarRenderer
 from charted.utils.themes import Theme
 from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D

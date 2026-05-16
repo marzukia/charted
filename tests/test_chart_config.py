@@ -5,6 +5,7 @@ for Issue #76 (Design config object pattern for chart constructors).
 """
 
 import pytest
+
 from charted.chart_config import (
     BarChartConfig,
     ChartConfig,

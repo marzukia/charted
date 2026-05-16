@@ -7,7 +7,6 @@ and address long function issues (Issue #70).
 from __future__ import annotations
 
 from charted.html.element import Circle, G, Path, Rect
-from charted.utils.themes import Theme
 
 
 class LineRenderer:

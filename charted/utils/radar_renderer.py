@@ -11,7 +11,6 @@ import math
 from charted.constants import (
     DEFAULT_PADDING,
     FULL_CIRCLE,
-    MAX_RADIAL_RADIUS_FACTOR,
     RIGHT_ANGLE,
 )
 from charted.html.element import Circle, G, Path, Rect, Text

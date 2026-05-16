@@ -11,7 +11,7 @@ from charted.utils.transform import translate
 from charted.utils.types import MeasuredText
 
 
-def generate_markdown_image(svg_data: str, alt_text: str | None, 
+def generate_markdown_image(svg_data: str, alt_text: str | None,
                            title: str | None = None, width: str | None = None) -> str:
     """Generate markdown markup for an SVG chart.
 
@@ -35,7 +35,7 @@ def generate_markdown_image(svg_data: str, alt_text: str | None,
     return f"![{alt}]({data_url})"
 
 
-def create_legend_background(x: float, y: float, legend_width: float, 
+def create_legend_background(x: float, y: float, legend_width: float,
                              legend_height: float, padding: float) -> Rect:
     """Create legend background rectangle.
 
@@ -63,7 +63,7 @@ def create_legend_background(x: float, y: float, legend_width: float,
     )
 
 
-def calculate_legend_dimensions(series_names: list[str], 
+def calculate_legend_dimensions(series_names: list[str],
                                 font_size: float,
                                 legend_padding: float) -> tuple[float, float, float, float]:
     """Calculate legend dimensions based on series names.
@@ -87,7 +87,7 @@ def calculate_legend_dimensions(series_names: list[str],
     return legend_width, legend_height, icon_height, len(legend_entries)
 
 
-def calculate_legend_position(position: str, plot_right: float, 
+def calculate_legend_position(position: str, plot_right: float,
                               plot_left: float, legend_width: float,
                               legend_height: float, top_padding: float,
                               inset: float = 4, padding: float = 0.5) -> tuple[float, float]:
@@ -127,7 +127,7 @@ def calculate_legend_position(position: str, plot_right: float,
     return result["x0"], result["y0"]
 
 
-def create_legend_entry(rect_x: float, rect_y: float, 
+def create_legend_entry(rect_x: float, rect_y: float,
                         text: MeasuredText, color: str,
                         index: int, font_family: str) -> G:
     """Create a single legend entry (icon + text).
@@ -271,7 +271,7 @@ def create_zero_line_path(x_axis_zero: float, y_axis_zero: float,
     return None
 
 
-def generate_html_wrapper(svg_content: str, 
+def generate_html_wrapper(svg_content: str,
                          style: str = "display: inline-block;") -> str:
     """Generate HTML wrapper for SVG chart.
 

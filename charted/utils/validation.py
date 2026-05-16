@@ -3,7 +3,6 @@
 Extracted from Chart class to reduce coupling and improve testability.
 """
 
-from typing import Any
 
 from charted.utils.exceptions import InvalidValue
 from charted.utils.types import Vector, Vector2D
