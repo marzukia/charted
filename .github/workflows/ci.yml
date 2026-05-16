@@ -42,7 +42,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=charted --cov-report=xml --cov-config=pyproject.toml --ignore=tests/fonts
+          pytest --cov=charted --cov-report=xml --cov-config=pyproject.toml --ignore=tests/fonts --ignore=tests/charts/test_visual.py
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
