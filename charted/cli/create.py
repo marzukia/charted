@@ -120,6 +120,13 @@ def create_command(args: argparse.Namespace):
             f.write(svg)
 
         print(f"Chart saved to: {output_path}")
-    except Exception as e:
+    except (ValueError, FileNotFoundError) as e:
+        # Expected errors from chart creation
         print(f"Error creating chart: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        # Unexpected errors - log for debugging
+        import traceback
+        print(f"Unexpected error creating chart: {e}", file=sys.stderr)
+        traceback.print_exc()
         sys.exit(1)
