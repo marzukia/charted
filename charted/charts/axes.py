@@ -390,11 +390,8 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
-        # Use grid line values for full axis range (top/bottom lines included)
-        if hasattr(self, "_grid_line_values") and self._grid_line_values:
-            values = self._grid_line_values
-        else:
-            values = self.values
+        # Use filtered values (self.values) for correct label positioning
+        values = self.values
 
         offset = 0
         if self.stacked and self.axis_dimension.min_value < 0:
@@ -411,7 +408,6 @@ class YAxis(Axis):
             ]
 
         return [self.reproject(i + abs(offset)) for i in reversed(values)]
-
     @property
     def grid_lines(self) -> Path:
         if not self.config:

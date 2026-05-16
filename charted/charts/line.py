@@ -51,7 +51,7 @@ class LineChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
-        axis_tick_interval: int | None = None,
+        axis_tick_interval: float | str | None = None,
     ):
         super().__init__(
             y_data=data,
