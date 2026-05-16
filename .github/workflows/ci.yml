@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]  # Temporarily removed 3.10 - investigating exit code 2 issue
+        python-version: ["3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -34,17 +34,8 @@ jobs:
       - name: Install uv
         run: pip install uv
 
-      - name: Debug Python version
-        run: |
-          python --version
-          pip --version
-
       - name: Install dependencies
         run: uv pip install --system -e '.[dev]'
-
-      - name: Debug installed packages
-        run: |
-          pip list | grep -E "(pytest|coverage|ruff)"
 
       - name: Run ruff linter
         run: ruff check .
