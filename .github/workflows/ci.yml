@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +36,25 @@ jobs:
 
       - name: Install dependencies
         run: uv pip install --system -e '.[dev]'
+
+      - name: Debug Python version and packages
+        run: |
+          echo "Python version:"
+          python --version
+          echo ""
+          echo "Installed pytest packages:"
+          pip list | grep -E "(pytest|coverage)"
+          echo ""
+          echo "pytest-cov version info:"
+          pip show pytest-cov
+          echo ""
+          echo "coverage version info:"
+          pip show coverage
+
+      - name: Debug test collection
+        run: |
+          echo "Attempting to collect tests..."
+          pytest --collect-only --quiet || echo "Test collection failed!"
 
       - name: Run ruff linter
         run: ruff check .
