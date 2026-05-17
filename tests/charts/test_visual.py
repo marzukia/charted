@@ -71,7 +71,7 @@ DIFFS_DIR = Path(__file__).parent.parent / "diffs"
 
 
 def compare_png_baseline(
-    chart, baseline_name: str, tolerance: int = 5, width: int = 800, height: int = 600
+    chart, baseline_name: str, tolerance: int = 5, width: int = 500, height: int = 500
 ):
     """
     Compare chart rendering against PNG baseline with pixel-perfect accuracy.

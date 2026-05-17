@@ -183,7 +183,7 @@ def generate_diff_image(
     return False  # Images match
 
 
-def render_chart_to_png(chart, width: int = 800, height: int = 600):
+def render_chart_to_png(chart, width: int = 500, height: int = 500):
     """
     Render a chart object to PNG image.
 

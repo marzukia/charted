@@ -105,7 +105,7 @@ def make_readonly(path: pathlib.Path) -> None:
 
 
 def generate_png_from_chart(
-    chart, name: str, width: int = 800, height: int = 600
+    chart, name: str, width: int = 500, height: int = 500
 ) -> Optional[pathlib.Path]:
     """
     Generate PNG from chart SVG. Returns path to generated PNG or None on failure.
