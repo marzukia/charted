@@ -231,6 +231,7 @@ def create_legend(
     # Background y attribute is y0_center, but transform shifts it up by -(legend_height * padding / 2)
     transform_offset_y = -(legend_height * legend_padding / 2)
     bg_top_actual = y0_center + transform_offset_y
+    bg_bottom_actual = bg_top_actual + legend_height * (1 + legend_padding)
 
     # Create legend container
     legend = G()
@@ -242,10 +243,14 @@ def create_legend(
         )
     )
 
-    # Add entries (positioned from actual top of background)
+    # Add entries (vertically centered in background)
+    total_entries_height = entry_count * icon_height
+    vertical_padding = bg_bottom_actual - bg_top_actual - total_entries_height
+    entry_start_y = bg_top_actual + (vertical_padding / 2)
+
     for i, (name, color) in enumerate(zip(series_names, colors)):
         text = calculate_text_dimensions(name, font_size=font_size)
-        entry_top = bg_top_actual + i * icon_height
+        entry_top = entry_start_y + i * icon_height
         entry = create_legend_entry(
             x0, entry_top, text, color, i, font_family, icon_height
         )
