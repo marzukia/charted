@@ -102,7 +102,8 @@ def match_data_series(x_data: Vector2D | None, y_data: Vector2D) -> Vector2D:
         Exception: If series counts don't match and can't be auto-expanded.
     """
     if not x_data and y_data:
-        return [[i for i in range(len(y_data[0]))]]
+        # Return one row per y_data series (needed for stacked rendering)
+        return [[i for i in range(len(y_data[0]))] for _ in range(len(y_data))]
 
     x_data = [*x_data] if x_data else []
     y_len = len(y_data)
