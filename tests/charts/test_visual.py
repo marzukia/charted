@@ -277,6 +277,7 @@ def test_bar_chart_multi_series_png():
     chart = BarChart(
         data=[[1, 2, 3], [3, 2, 1]],
         labels=["a", "b", "c"],
+        x_stacked=True,
     )
     compare_png_baseline(chart, "bar_multi", tolerance=5)
 
