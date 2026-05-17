@@ -32,7 +32,9 @@ MANIFEST_PATH = BASELINES_DIR / "MANIFEST.sha256"
 CHARTS = {
     # Bar charts
     "bar_basic": BarChart(data=[1, 2, 3], labels=["a", "b", "c"]),
-    "bar_multi": BarChart(data=[[1, 2, 3], [3, 2, 1]], labels=["a", "b", "c"]),
+    "bar_multi": BarChart(
+        data=[[1, 2, 3], [3, 2, 1]], labels=["a", "b", "c"], x_stacked=True
+    ),
     "bar_stacked": BarChart(
         data=[[1, 2, 3], [3, 2, 1]], labels=["a", "b", "c"], x_stacked=True
     ),
