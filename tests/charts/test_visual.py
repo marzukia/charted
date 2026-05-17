@@ -130,6 +130,7 @@ def test_bar_chart_multi_series():
     chart = BarChart(
         data=[[1, 2, 3], [3, 2, 1]],
         labels=["a", "b", "c"],
+        x_stacked=True,  # Multi-series stacks along X axis for bar charts
     )
     baseline_path = BASELINES_DIR / "bar_multi.svg"
     with open(baseline_path, "r") as f:

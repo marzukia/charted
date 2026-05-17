@@ -16,3 +16,4 @@ AR.md
 coverage.xml
 coverage
 charted/commands/wip.py
+.venv-test/

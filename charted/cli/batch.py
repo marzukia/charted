@@ -64,7 +64,8 @@ def batch_command(args: argparse.Namespace):
             print(f"  Created: {output_path.name}")
             success_count += 1
 
-        except Exception as e:
+        except (FileNotFoundError, ValueError, KeyError) as e:
+            # Expected errors from data loading or chart creation
             error_msg = str(e)
             print(f"  Error with {data_file.name}: {e}", file=sys.stderr)
             if "not found" in error_msg:
@@ -82,6 +83,13 @@ def batch_command(args: argparse.Namespace):
                     "    Suggestion: Check that your CSV/JSON is properly formatted",
                     file=sys.stderr,
                 )
+            error_count += 1
+        except Exception as e:
+            # Unexpected errors - log and re-raise for debugging
+            import traceback
+
+            print(f"  Unexpected error with {data_file.name}: {e}", file=sys.stderr)
+            traceback.print_exc()
             error_count += 1
 
     print(f"\nCompleted: {success_count} succeeded, {error_count} failed")

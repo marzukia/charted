@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from charted.charts.chart import Chart
 from charted.config import get_bar_gap
+from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path
 from charted.utils.themes import Theme
 from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
@@ -37,8 +38,8 @@ class BarChart(Chart):
         data: Vector | Vector2D,
         labels: Labels = None,
         bar_gap: float = None,
-        width: float = 500,
-        height: float = 500,
+        width: float = DEFAULT_CHART_WIDTH,
+        height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
         title: str | None = None,
         theme: Theme | None = None,
@@ -80,6 +81,19 @@ class BarChart(Chart):
             chart_type="bar",
             series_styles=series_styles,
         )
+
+        # Refresh axes grid_lines after parent is fully initialized.
+        # During Chart.__init__, left_padding returns h_pad (25.0) because
+        # y_axis doesn't exist yet. After initialization, it correctly
+        # calculates from labels (32.0). We need to recreate the grid Path
+        # with correct values.
+        if self.y_axis and self.y_axis.config:
+            self.y_axis.children[0] = self.y_axis.grid_lines
+            self.y_axis.children[1] = self.y_axis.axis_labels
+
+        if self.x_axis and self.x_axis.config:
+            self.x_axis.children[0] = self.x_axis.grid_lines
+            self.x_axis.children[1] = self.x_axis.axis_labels
 
     @property
     def y_height(self) -> float:

@@ -1,5 +1,6 @@
 import math
 
+from charted.constants import DEFAULT_PADDING
 from charted.html.element import G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.helpers import (
@@ -336,7 +337,7 @@ class XAxis(Axis):
             font_family=DEFAULT_FONT,
             transform=translate(
                 x=self.parent.left_padding,
-                y=self.parent.top_padding + 18,
+                y=self.parent.top_padding + DEFAULT_PADDING,
             ),
         )
 
@@ -390,8 +391,11 @@ class YAxis(Axis):
 
     @property
     def coordinates(self):
-        # Use grid line values for full axis range (top/bottom lines included)
-        if hasattr(self, "_grid_line_values") and self._grid_line_values:
+        # For bar/column charts, use values (number of bars) not grid lines
+        bar_height = getattr(self.parent, "y_height", None)
+        if bar_height is not None:
+            values = self.values
+        elif hasattr(self, "_grid_line_values") and self._grid_line_values:
             values = self._grid_line_values
         else:
             values = self.values
@@ -400,7 +404,6 @@ class YAxis(Axis):
         if self.stacked and self.axis_dimension.min_value < 0:
             offset = self.axis_dimension.min_value
 
-        bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
             gap = bar_height * bar_gap

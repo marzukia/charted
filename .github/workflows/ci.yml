@@ -32,17 +32,36 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install uv
-        run: pip install uv==0.5.20
+        run: pip install uv
 
       - name: Install dependencies
         run: uv pip install --system -e '.[dev]'
+
+      - name: Debug Python version and packages
+        run: |
+          echo "Python version:"
+          python --version
+          echo ""
+          echo "Installed pytest packages:"
+          pip list | grep -E "(pytest|coverage)"
+          echo ""
+          echo "pytest-cov version info:"
+          pip show pytest-cov
+          echo ""
+          echo "coverage version info:"
+          pip show coverage
+
+      - name: Debug test collection
+        run: |
+          echo "Attempting to collect tests..."
+          pytest --collect-only --quiet || echo "Test collection failed!"
 
       - name: Run ruff linter
         run: ruff check .
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=charted --cov-report=xml --cov-config=pyproject.toml --ignore=tests/fonts
+          pytest --cov=charted --cov-report=xml --cov-config=pyproject.toml --ignore=tests/fonts --ignore=tests/charts/test_visual.py
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

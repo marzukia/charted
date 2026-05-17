@@ -8,6 +8,11 @@ try:
 except ImportError:
     import tomli as tomllib
 
+from .constants import (
+    DEFAULT_CHART_HEIGHT,
+    DEFAULT_CHART_WIDTH,
+    PIE_LABEL_FONT_SIZE,
+)
 from .fonts.wrapper import Font
 from .utils.defaults import (
     BASE_DEFINITIONS_DIR,
@@ -42,8 +47,8 @@ def load_config(config_path: str | Path | None = None) -> dict:
         "font_size": DEFAULT_FONT_SIZE,
         "title_font_size": DEFAULT_TITLE_FONT_SIZE,
         "colors": DEFAULT_COLORS,
-        "width": 500,
-        "height": 500,
+        "width": DEFAULT_CHART_WIDTH,
+        "height": DEFAULT_CHART_HEIGHT,
         "theme": None,
         "charts": {},
         "pie": {},
@@ -169,7 +174,7 @@ def get_pie_label_font_size(config: dict | None = None) -> int:
     if config is None:
         config = load_config()
 
-    return config.get("pie", {}).get("label_font_size", 14)
+    return config.get("pie", {}).get("label_font_size", PIE_LABEL_FONT_SIZE)
 
 
 def get_font_definitions_dir() -> str:
