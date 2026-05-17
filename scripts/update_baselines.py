@@ -8,13 +8,13 @@ After running, commit both the updated baselines and the new MANIFEST.
 Usage:
     # Update all baselines (SVG + PNG)
     python scripts/update_baselines.py
-    
+
     # Update only specific chart
     python scripts/update_baselines.py column_basic
-    
+
     # Update only SVGs (skip PNG generation)
     python scripts/update_baselines.py --svg-only
-    
+
     # Update only PNGs (skip SVG regeneration)
     python scripts/update_baselines.py --png-only
 
@@ -104,39 +104,40 @@ def make_readonly(path: pathlib.Path) -> None:
     path.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
 
-def generate_png_from_chart(chart, name: str, width: int = 800, height: int = 600) -> Optional[pathlib.Path]:
+def generate_png_from_chart(
+    chart, name: str, width: int = 800, height: int = 600
+) -> Optional[pathlib.Path]:
     """
     Generate PNG from chart SVG. Returns path to generated PNG or None on failure.
     """
     try:
         import cairosvg
-        from PIL import Image
     except ImportError as e:
         print(f"  ⚠ Skipping PNG for {name}: {e}")
         return None
-    
+
     try:
         # Get SVG data from chart
-        if hasattr(chart, 'html'):
+        if hasattr(chart, "html"):
             svg_data = chart.html
-        elif hasattr(chart, 'svg'):
+        elif hasattr(chart, "svg"):
             svg_data = chart.svg
         else:
             print(f"  ⚠ Chart {name} has no html/svg attribute")
             return None
-        
+
         # Convert SVG to PNG
         png_data = cairosvg.svg2png(
-            bytestring=svg_data.encode('utf-8'),
+            bytestring=svg_data.encode("utf-8"),
             output_width=width,
             output_height=height,
-            scale=2  # High resolution for better accuracy
+            scale=2,  # High resolution for better accuracy
         )
-        
+
         # Save PNG
         png_path = BASELINES_DIR / f"{name}.png"
         png_path.write_bytes(png_data)
-        
+
         return png_path
     except Exception as e:
         print(f"  ⚠ Failed to generate PNG for {name}: {e}")
@@ -149,24 +150,26 @@ def main():
     specific_name = None
     svg_only = "--svg-only" in args
     png_only = "--png-only" in args
-    
+
     if "--svg-only" in args:
         args.remove("--svg-only")
     if "--png-only" in args:
         args.remove("--png-only")
-    
+
     if args:
         specific_name = args[0]
-    
+
     # Filter charts if specific name provided
-    charts_to_update = {specific_name: CHARTS[specific_name]} if specific_name else CHARTS
-    
+    charts_to_update = (
+        {specific_name: CHARTS[specific_name]} if specific_name else CHARTS
+    )
+
     svg_manifest = {}
     png_manifest = {}
-    
+
     print("Updating baselines...")
     print()
-    
+
     # Update SVG baselines
     if not png_only:
         print("📄 SVG Baselines:")
@@ -180,7 +183,7 @@ def main():
             make_readonly(path)
             print(f"  ✓ updated {name}.svg ({h[:16]}...)")
         print()
-    
+
     # Update PNG baselines
     if not svg_only:
         print("🖼️  PNG Baselines:")
@@ -193,16 +196,16 @@ def main():
             else:
                 print(f"  ⚠ skipped {name}.png (dependencies missing?)")
         print()
-    
+
     # Update manifests
     if not png_only:
         MANIFEST_PATH.write_text(json.dumps(svg_manifest, indent=2) + "\n")
         print("✓ MANIFEST.sha256 updated")
-    
+
     if not svg_only:
         PNG_MANIFEST_PATH.write_text(json.dumps(png_manifest, indent=2) + "\n")
         print("✓ PNG_MANIFEST.sha256 updated")
-    
+
     print()
     print("=" * 60)
     print("Commit both baselines/ and MANIFEST files together:")
