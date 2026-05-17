@@ -21,7 +21,11 @@ dev = [
     "pytest-cov>=5.0.0",
     "pre-commit>=3.8.0",
     "tox-uv>=1.21.0",
-    "typing_extensions>=4.0.0; python_version < '3.11'"
+    "typing_extensions>=4.0.0; python_version < '3.11'",
+    # PNG visual testing dependencies (dev/test only)
+    "pillow>=10.0.0",
+    "numpy>=1.24.0",
+    "cairosvg>=2.7.0",
 ]
 docs = [
     "sphinx>=7.3.7",
@@ -41,7 +45,7 @@ omit = ["*/tests/*", "*/__pycache__/*"]
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
-    "if __name__ == .__main__.:",
+    "if __name__ == '__main__':",
     "raise NotImplementedError",
 ]
 

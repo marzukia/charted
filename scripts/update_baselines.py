@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 """
-Regenerate test baselines and update MANIFEST.sha256.
+Regenerate test baselines and update MANIFEST.sha256 for both SVG and PNG.
 
 Only run this when chart rendering changes are INTENTIONAL.
-After running, commit both the updated SVGs and the new MANIFEST.
+After running, commit both the updated baselines and the new MANIFEST.
 
 Usage:
+    # Update all baselines (SVG + PNG)
     python scripts/update_baselines.py
+
+    # Update only specific chart
+    python scripts/update_baselines.py column_basic
+
+    # Update only SVGs (skip PNG generation)
+    python scripts/update_baselines.py --svg-only
+
+    # Update only PNGs (skip SVG regeneration)
+    python scripts/update_baselines.py --png-only
+
+PNG baselines require dev dependencies:
+    pip install 'pillow>=10.0.0' 'numpy>=1.24.0' 'cairosvg>=2.7.0'
 """
 
 import hashlib
@@ -14,6 +27,7 @@ import json
 import pathlib
 import stat
 import sys
+from typing import Optional
 
 # Ensure the package root is on the path.
 ROOT = pathlib.Path(__file__).parent.parent
@@ -27,7 +41,9 @@ from charted.charts.radar import RadarChart
 from charted.charts.scatter import ScatterChart
 
 BASELINES_DIR = ROOT / "tests" / "baselines"
+DIFFS_DIR = ROOT / "tests" / "diffs"
 MANIFEST_PATH = BASELINES_DIR / "MANIFEST.sha256"
+PNG_MANIFEST_PATH = BASELINES_DIR / "PNG_MANIFEST.sha256"
 
 CHARTS = {
     # Bar charts
@@ -88,20 +104,114 @@ def make_readonly(path: pathlib.Path) -> None:
     path.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
 
-def main():
-    manifest = {}
-    for name, chart in CHARTS.items():
-        path = BASELINES_DIR / f"{name}.svg"
-        if path.exists():
-            make_writable(path)
-        path.write_text(chart.html)
-        h = hashlib.sha256(path.read_bytes()).hexdigest()
-        manifest[name + ".svg"] = h
-        make_readonly(path)
-        print(f"  updated {name}.svg ({h[:16]}...)")
+def generate_png_from_chart(
+    chart, name: str, width: int = 500, height: int = 500
+) -> Optional[pathlib.Path]:
+    """
+    Generate PNG from chart SVG. Returns path to generated PNG or None on failure.
+    """
+    try:
+        import cairosvg
+    except ImportError as e:
+        print(f"  ⚠ Skipping PNG for {name}: {e}")
+        return None
 
-    MANIFEST_PATH.write_text(json.dumps(manifest, indent=2) + "\n")
-    print("\nMANIFEST.sha256 updated — commit baselines/ + MANIFEST together.")
+    try:
+        # Get SVG data from chart
+        if hasattr(chart, "html"):
+            svg_data = chart.html
+        elif hasattr(chart, "svg"):
+            svg_data = chart.svg
+        else:
+            print(f"  ⚠ Chart {name} has no html/svg attribute")
+            return None
+
+        # Convert SVG to PNG
+        png_data = cairosvg.svg2png(
+            bytestring=svg_data.encode("utf-8"),
+            output_width=width,
+            output_height=height,
+            scale=2,  # High resolution for better accuracy
+        )
+
+        # Save PNG
+        png_path = BASELINES_DIR / f"{name}.png"
+        png_path.write_bytes(png_data)
+
+        return png_path
+    except Exception as e:
+        print(f"  ⚠ Failed to generate PNG for {name}: {e}")
+        return None
+
+
+def main():
+    # Parse arguments
+    args = sys.argv[1:]
+    specific_name = None
+    svg_only = "--svg-only" in args
+    png_only = "--png-only" in args
+
+    if "--svg-only" in args:
+        args.remove("--svg-only")
+    if "--png-only" in args:
+        args.remove("--png-only")
+
+    if args:
+        specific_name = args[0]
+
+    # Filter charts if specific name provided
+    charts_to_update = (
+        {specific_name: CHARTS[specific_name]} if specific_name else CHARTS
+    )
+
+    svg_manifest = {}
+    png_manifest = {}
+
+    print("Updating baselines...")
+    print()
+
+    # Update SVG baselines
+    if not png_only:
+        print("📄 SVG Baselines:")
+        for name, chart in charts_to_update.items():
+            path = BASELINES_DIR / f"{name}.svg"
+            if path.exists():
+                make_writable(path)
+            path.write_text(chart.html)
+            h = hashlib.sha256(path.read_bytes()).hexdigest()
+            svg_manifest[name + ".svg"] = h
+            make_readonly(path)
+            print(f"  ✓ updated {name}.svg ({h[:16]}...)")
+        print()
+
+    # Update PNG baselines
+    if not svg_only:
+        print("🖼️  PNG Baselines:")
+        for name, chart in charts_to_update.items():
+            png_path = generate_png_from_chart(chart, name)
+            if png_path and png_path.exists():
+                h = hashlib.sha256(png_path.read_bytes()).hexdigest()
+                png_manifest[name + ".png"] = h
+                print(f"  ✓ updated {name}.png ({h[:16]}...)")
+            else:
+                print(f"  ⚠ skipped {name}.png (dependencies missing?)")
+        print()
+
+    # Update manifests
+    if not png_only:
+        MANIFEST_PATH.write_text(json.dumps(svg_manifest, indent=2) + "\n")
+        print("✓ MANIFEST.sha256 updated")
+
+    if not svg_only:
+        PNG_MANIFEST_PATH.write_text(json.dumps(png_manifest, indent=2) + "\n")
+        print("✓ PNG_MANIFEST.sha256 updated")
+
+    print()
+    print("=" * 60)
+    print("Commit both baselines/ and MANIFEST files together:")
+    print("  git add tests/baselines/")
+    print("  git commit -m 'refactor: update visual baselines'")
+    print("=" * 60)
 
 
 if __name__ == "__main__":
