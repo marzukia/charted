@@ -139,40 +139,43 @@ def calculate_legend_position(
 
 def create_legend_entry(
     rect_x: float,
-    rect_y: float,
+    entry_top_y: float,
     text: MeasuredText,
     color: str,
     index: int,
     font_family: str,
+    entry_height: float,
 ) -> G:
     """Create a single legend entry (icon + text).
 
     Args:
         rect_x: X position for legend icon.
-        rect_y: Y position for legend icon.
+        entry_top_y: Y position of the top of this legend entry.
         text: Legend text measurement.
         color: Color for the legend icon.
         index: Series index.
         font_family: Font family for legend text.
+        entry_height: Height for each legend entry.
 
     Returns:
         G element containing the legend entry.
     """
     h = text.height
-    g = G(transform=translate(0, (2 * index) + h))
 
-    # Icon rectangle
-    rect = Rect(y=rect_y - h, x=rect_x, width=h, height=h, fill=color)
+    # Icon rectangle - positioned within this entry's vertical space
+    rect_y = entry_top_y + (entry_height - h) / 2
+    rect = Rect(y=rect_y, x=rect_x, width=h, height=h, fill=color)
 
-    # Legend text
+    # Legend text - vertically centered with icon
     legend_text = Text(
-        y=rect_y - (h / 4),
+        y=rect_y + h * 0.75,
         x=rect_x + 2 + h,
         text=text.text,
-        font_size=text.height,  # Use measured height as font_size
+        font_size=text.height,
         font_family=font_family,
     )
 
+    g = G()
     g.add_children(rect, legend_text)
     return g
 
@@ -211,9 +214,9 @@ def create_legend(
         series_names, font_size, legend_padding
     )
 
-    # Calculate position
+    # Calculate position (y0 is center of legend)
     inset = 4
-    x0, y0 = calculate_legend_position(
+    x0, y0_center = calculate_legend_position(
         position,
         plot_right,
         plot_left,
@@ -224,18 +227,28 @@ def create_legend(
         legend_padding,
     )
 
+    # Calculate actual top of background after transform
+    # Background y attribute is y0_center, but transform shifts it up by -(legend_height * padding / 2)
+    transform_offset_y = -(legend_height * legend_padding / 2)
+    bg_top_actual = y0_center + transform_offset_y
+
     # Create legend container
     legend = G()
 
-    # Add background
+    # Add background (centered at y0)
     legend.add_child(
-        create_legend_background(x0, y0, legend_width, legend_height, legend_padding)
+        create_legend_background(
+            x0, y0_center, legend_width, legend_height, legend_padding
+        )
     )
 
-    # Add entries
+    # Add entries (positioned from actual top of background)
     for i, (name, color) in enumerate(zip(series_names, colors)):
         text = calculate_text_dimensions(name, font_size=font_size)
-        entry = create_legend_entry(x0, y0, text, color, i, font_family)
+        entry_top = bg_top_actual + i * icon_height
+        entry = create_legend_entry(
+            x0, entry_top, text, color, i, font_family, icon_height
+        )
         legend.add_child(entry)
 
     return legend
