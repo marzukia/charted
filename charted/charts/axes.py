@@ -235,33 +235,35 @@ class Axis(G):
                 label_interval = 1
 
         # Label values: apply tick interval filtering from grid_values
-        # Key insight: when spanning zero, adjust start index so 0 is always selected
-        # This ensures 0 is labeled while maintaining uniform intervals
-        if min_value < 0 < max_value and label_interval > 1:
-            # Find where 0 is in grid_values
-            zero_idx_in_grid = next(
-                i for i, v in enumerate(grid_values) if abs(v) < 1e-9
-            )
-
-            # Calculate the "phase" - what offset would make 0 land on a selected index
-            # We want: (zero_idx_in_grid - offset) % label_interval == 0
-            # So: offset = zero_idx_in_grid % label_interval
-            offset = zero_idx_in_grid % label_interval
-
-            # Filter with the offset adjustment
-            label_values = [
-                t
-                for i, t in enumerate(grid_values)
-                if (i - offset) % label_interval == 0
-            ]
+        # Key requirements:
+        # 1. Always include min_value and max_value (axis endpoints)
+        # 2. Always include 0 when axis spans negative to positive
+        # 3. Fill intermediate labels with uniform spacing
+        if label_interval <= 1:
+            # No filtering needed
+            label_values = grid_values.copy()
         else:
-            # Standard filtering without zero alignment
-            if label_interval > 1:
-                label_values = [
-                    t for i, t in enumerate(grid_values) if i % label_interval == 0
-                ]
-            else:
-                label_values = grid_values.copy()
+            # Build label_values ensuring endpoints and zero are always included
+            # Start with required indices: first, zero (if applicable), last
+            required_indices = {0}  # Always include first (min_value)
+            if min_value < 0 < max_value:
+                zero_idx = next(i for i, v in enumerate(grid_values) if abs(v) < 1e-9)
+                required_indices.add(zero_idx)
+            required_indices.add(
+                len(grid_values) - 1
+            )  # Always include last (max_value)
+
+            # Build label_values: first all required indices in order, then fill gaps
+            label_values = []
+            for i in range(len(grid_values)):
+                if i in required_indices:
+                    label_values.append(grid_values[i])
+                elif (i % label_interval == 0) and i not in required_indices:
+                    # Fill with uniform spacing, skip required indices
+                    label_values.append(grid_values[i])
+
+            # Sort by value to maintain proper order
+            label_values = sorted(label_values)
 
         return label_values, grid_values
 
@@ -555,14 +557,10 @@ class YAxis(Axis):
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
             values = self.values
-        elif hasattr(self, "_grid_line_values") and self._grid_line_values:
-            values = self._grid_line_values
         else:
+            # Use label values (self.values) for coordinates to match displayed labels
+            # Previously used _grid_line_values which caused mismatch when labels filtered
             values = self.values
-
-        offset = 0
-        if self.stacked and self.axis_dimension.min_value < 0:
-            offset = self.axis_dimension.min_value
 
         if bar_height is not None:
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
@@ -574,8 +572,9 @@ class YAxis(Axis):
                 for i in range(len(values))
             ]
 
-        # Round reprojected coordinates (no need to reverse - reproject handles SVG inversion)
-        return [_round_coord(self.reproject(i + abs(offset)), 1) for i in values]
+        # Round reprojected coordinates - values are actual axis values, not indices
+        # No offset needed since reproject handles negative ranges correctly
+        return [_round_coord(self.reproject(v), 1) for v in values]
 
     @property
     def grid_lines(self) -> Path:
