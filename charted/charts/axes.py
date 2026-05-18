@@ -5,7 +5,6 @@ from charted.html.element import G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.helpers import (
     calculate_text_dimensions,
-    common_denominators,
     parse_tick_interval,
     round_to_clean_number,
 )
@@ -97,13 +96,21 @@ class Axis(G):
             min_value = min(agg)
             max_value = max(agg)
 
+        # Handle values between -1 and 1
         if abs(min_value) < 1 and abs(max_value) <= 1:
             min_value = math.floor(min_value)
             max_value = math.ceil(max_value)
 
-        if zero_index and min_value > 0:
-            min_value = 0
+        # Ensure zero is included if zero_index is True
+        # - If all values are positive, set min to 0
+        # - If all values are negative, set max to 0
+        if zero_index:
+            if min_value > 0:
+                min_value = 0
+            elif max_value < 0:
+                max_value = 0
 
+        # Clean up min/max for non-labeled axes
         if not has_labels:
             if min_value < 0:
                 min_value = -round_to_clean_number(abs(min_value))
@@ -114,6 +121,139 @@ class Axis(G):
         return AxisDimension(min_value, max_value, count)
 
     @classmethod
+    def _choose_tick_step(cls, value_range: float, max_ticks: int) -> float:
+        """Choose a clean step size for ticks based on the range.
+
+        Uses standard "nice" number progression: 1, 2, 5, 10, 20, 50, 100, etc.
+        """
+        if value_range <= 0:
+            return 1.0
+
+        # Calculate ideal step to get close to max_ticks
+        ideal_step = value_range / max_ticks
+
+        # Get the order of magnitude
+        if ideal_step == 0:
+            return 1.0
+        magnitude = 10 ** math.floor(math.log10(ideal_step))
+
+        # Normalize to [1, 10)
+        normalized = ideal_step / magnitude
+
+        # Choose from nice numbers: 1, 2, 5
+        if normalized <= 1:
+            step = 1
+        elif normalized <= 2:
+            step = 2
+        elif normalized <= 5:
+            step = 5
+        else:
+            step = 10
+
+        return step * magnitude
+
+    @classmethod
+    def generate_tick_values(
+        cls,
+        min_value: float,
+        max_value: float,
+        axis_tick_interval: float | str | None = None,
+        max_ticks: int = 10,
+    ) -> tuple[list[float], list[float]]:
+        """Generate tick values for both labels and grid lines.
+
+        Args:
+            min_value: Minimum axis value
+            max_value: Maximum axis value
+            axis_tick_interval: Optional tick interval (numeric or percentage string)
+                - int: Show every Nth tick label
+                - str with '%': Show percentage of tick labels (e.g., "25%")
+                - float < 1: Show proportion of tick labels (e.g., 0.25 = 25%)
+            max_ticks: Maximum number of ticks to generate
+
+        Returns:
+            Tuple of (label_values, grid_values) where:
+            - label_values: Filtered tick values for display (respects tick_interval)
+            - grid_values: All tick values for grid line rendering (always includes 0 if spanned)
+        """
+        value_range = max_value - min_value
+
+        # Handle zero or near-zero range
+        if value_range == 0:
+            return ([min_value], [min_value])
+
+        # Choose a clean step size
+        step = cls._choose_tick_step(value_range, max_ticks)
+
+        # Calculate tick positions aligned to the step
+        # Start from a nice round number <= min_value
+        start_tick = math.floor(min_value / step) * step
+        end_tick = math.ceil(max_value / step) * step
+
+        # Generate all tick positions (uniform spacing)
+        num_ticks = int(round((end_tick - start_tick) / step)) + 1
+        all_ticks = [round(start_tick + i * step, 6) for i in range(num_ticks)]
+
+        # Ensure we have at least one tick
+        if not all_ticks:
+            all_ticks = [min_value]
+
+        # Grid values: start with all ticks
+        grid_values = all_ticks.copy()
+
+        # Ensure 0 is included when the axis spans across zero (if not already present)
+        if min_value < 0 < max_value:
+            has_zero = any(abs(t) < 1e-9 for t in grid_values)
+            if not has_zero:
+                # Insert 0 at the correct position to maintain order
+                zero_idx = int(round(abs(min_value) / step))
+                grid_values.insert(zero_idx, 0.0)
+
+        # Determine the interval for filtering labels
+        if axis_tick_interval is not None:
+            parsed_interval = parse_tick_interval(axis_tick_interval, len(grid_values))
+            label_interval = (
+                parsed_interval if parsed_interval and parsed_interval > 1 else 1
+            )
+        else:
+            # Default: limit to max_ticks by filtering
+            if len(grid_values) > max_ticks:
+                label_interval = math.ceil(len(grid_values) / max_ticks)
+            else:
+                label_interval = 1
+
+        # Label values: apply tick interval filtering from grid_values
+        # Key insight: when spanning zero, adjust start index so 0 is always selected
+        # This ensures 0 is labeled while maintaining uniform intervals
+        if min_value < 0 < max_value and label_interval > 1:
+            # Find where 0 is in grid_values
+            zero_idx_in_grid = next(
+                i for i, v in enumerate(grid_values) if abs(v) < 1e-9
+            )
+
+            # Calculate the "phase" - what offset would make 0 land on a selected index
+            # We want: (zero_idx_in_grid - offset) % label_interval == 0
+            # So: offset = zero_idx_in_grid % label_interval
+            offset = zero_idx_in_grid % label_interval
+
+            # Filter with the offset adjustment
+            label_values = [
+                t
+                for i, t in enumerate(grid_values)
+                if (i - offset) % label_interval == 0
+            ]
+        else:
+            # Standard filtering without zero alignment
+            if label_interval > 1:
+                label_values = [
+                    t for i, t in enumerate(grid_values) if i % label_interval == 0
+                ]
+            else:
+                label_values = grid_values.copy()
+
+        return label_values, grid_values
+
+    @classmethod
     def calculate_axis_values(
         cls,
         data: Vector2D,
@@ -121,7 +261,7 @@ class Axis(G):
         zero_index: bool = True,
         stacked: bool | None = None,
         axis_tick_interval: int | None = None,
-    ) -> tuple[AxisDimension, list[float]]:
+    ) -> tuple[AxisDimension, list[float], list[float]]:
         axd = cls.calculate_axis_dimensions(
             data=data,
             has_labels=labels is not None,
@@ -138,64 +278,46 @@ class Axis(G):
             min_val = min(values)
             max_val = max(values)
             grid_line_values = list(range(int(min_val), int(max_val) + 1))
+
+            # Ensure zero is included in values when spanning negative to positive
+            if min_val < 0 < max_val and 0 not in values:
+                values = sorted(values + [0])
+
+            # Apply tick interval filtering if specified (for numeric X-axes with labels)
+            # This handles XY charts where both x_data and x_labels are provided
+            if axis_tick_interval is not None and min_val != max_val:
+                parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
+                if parsed_interval and parsed_interval > 1:
+                    # When spanning zero, adjust offset so 0 is always selected
+                    if min_val < 0 < max_val:
+                        zero_idx_in_values = next(
+                            i for i, v in enumerate(values) if abs(v) < 1e-9
+                        )
+                        offset = zero_idx_in_values % parsed_interval
+                        values = [
+                            v
+                            for i, v in enumerate(values)
+                            if (i - offset) % parsed_interval == 0
+                        ]
+                    else:
+                        values = [
+                            v for i, v in enumerate(values) if i % parsed_interval == 0
+                        ]
+
             return (axd, values, grid_line_values)
 
-        denominators = common_denominators(axd.min_value, axd.max_value)
-        value_range = axd.value_range
-        min_value = axd.min_value
-        max_value = axd.max_value
+        # Use the new tick generation logic
+        label_values, grid_values = cls.generate_tick_values(
+            min_value=axd.min_value,
+            max_value=axd.max_value,
+            axis_tick_interval=axis_tick_interval,
+        )
 
-        # Handle values that area -1 to 1.
-        # Round these to -1 and 1.
-        if axd.value_range < 2:
-            value_range = 1
-
-        if min_value > 0 and min_value < 1:
-            min_value = 0
-
-        if max_value > 0 and max_value < 1:
-            max_value = 1
-
-        # Generate all potential grid line positions (full range)
-        all_values = []
-        for denominator in reversed(denominators):
-            count = int(value_range / denominator)
-            all_values = [
-                min_value + (i * denominator) for i in reversed(range(count + 1))
-            ]
-            if len(all_values) > 5:
-                break
-
-        # Preserve original axis range for grid lines
-        original_min = all_values[-1]
-        original_max = all_values[0]
-
-        # Filter for label display only
-        values = all_values.copy()
-        while len(values) > 10 and 0 not in values:
-            values = [x for (i, x) in enumerate(values) if i % 2 == 0]
-            min_value, max_value = values[-1], values[0]
-
-        # Apply explicit tick interval if provided (for labels only)
-        if axis_tick_interval is not None:
-            parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
-            if parsed_interval and parsed_interval > 0:
-                values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
-
-        # Store full range for grid lines, filtered range for labels
-        if min_value > original_min:
-            min_value = original_min
-        if max_value < original_max:
-            max_value = original_max
-
-        # Store all grid line positions separately
-        grid_line_values = all_values
-        while len(grid_line_values) > 10 and 0 not in grid_line_values:
-            grid_line_values = [
-                x for (i, x) in enumerate(grid_line_values) if i % 2 == 0
-            ]
-
-        return AxisDimension(min_value, max_value, axd.count), values, grid_line_values
+        return (
+            AxisDimension(axd.min_value, axd.max_value, axd.count),
+            label_values,
+            grid_values,
+        )
 
     def reverse(self, value: float) -> float:
         raise Exception("reverse not implemented for instance of Axis.")
@@ -239,25 +361,6 @@ class Axis(G):
                 axis_tick_interval=self.axis_tick_interval,
             )
         )
-        # Store grid line values separately (full range, not filtered)
-        all_denominators = common_denominators(
-            self.axis_dimension.min_value, self.axis_dimension.max_value
-        )
-        value_range = self.axis_dimension.max_value - self.axis_dimension.min_value
-        self._grid_line_values = []
-        for denominator in reversed(all_denominators):
-            count = int(value_range / denominator)
-            self._grid_line_values = [
-                self.axis_dimension.min_value + (i * denominator)
-                for i in reversed(range(count + 1))
-            ]
-            if len(self._grid_line_values) > 5:
-                break
-        # Reduce grid lines if too many
-        while len(self._grid_line_values) > 10 and 0 not in self._grid_line_values:
-            self._grid_line_values = [
-                x for (i, x) in enumerate(self._grid_line_values) if i % 2 == 0
-            ]
 
     @property
     def labels(self) -> list[MeasuredText]:
@@ -276,7 +379,31 @@ class Axis(G):
                 value = round(label, precision) if precision > 0 else int(label)
                 labels.append(value)
         else:
-            labels = [*labels]
+            # When labels are provided but values have been filtered (via tick_interval),
+            # we need to filter the labels to match the filtered values.
+            # Map original data values to their corresponding labels, then filter.
+            if self.data and len(self.data) > 0:
+                original_values = list(self.data[0])
+                # Create a mapping from original values to labels
+                value_to_label = {}
+                for i, val in enumerate(original_values):
+                    if i < len(labels):
+                        value_to_label[val] = labels[i]
+
+                # Filter labels to match self.values (which may be filtered)
+                filtered_labels = []
+                for val in self.values:
+                    # Find the closest original value (for floating point tolerance)
+                    closest_val = min(original_values, key=lambda x: abs(x - val))
+                    if closest_val in value_to_label:
+                        filtered_labels.append(value_to_label[closest_val])
+
+                labels = (
+                    filtered_labels if filtered_labels else labels[: len(self.values)]
+                )
+            else:
+                labels = labels[: len(self.values)]
+
         self._labels = [calculate_text_dimensions(label) for label in labels]
 
     @property
@@ -304,7 +431,7 @@ class XAxis(Axis):
 
     @property
     def coordinates(self):
-        return [self.reproject(i) for i in self.values]
+        return [self.reproject(i) for i in self._grid_line_values]
 
     @property
     def grid_lines(self) -> Path:
@@ -352,7 +479,12 @@ class XAxis(Axis):
             dx = self.reproject(abs(min_v))
 
         y = self.parent.plot_height
-        for x, label in zip(self.coordinates, self.labels):
+
+        # Use values positions for labels (not all grid line positions)
+        # This ensures labels are positioned at the correct filtered tick locations
+        label_positions = [self.reproject(v) for v in self.values]
+
+        for x, label in zip(label_positions, self.labels):
             x = x + dx
             transformations = [translate(-label.width / 2, 0)]
             if rotation_angle > 0:

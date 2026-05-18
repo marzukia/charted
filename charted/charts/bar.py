@@ -46,6 +46,7 @@ class BarChart(Chart):
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
         x_stacked: bool = False,
+        axis_tick_interval: int | None = None,
     ):
         if bar_gap is None:
             bar_gap = get_bar_gap()
@@ -80,6 +81,7 @@ class BarChart(Chart):
             x_stacked=x_stacked,
             chart_type="bar",
             series_styles=series_styles,
+            axis_tick_interval=axis_tick_interval,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.

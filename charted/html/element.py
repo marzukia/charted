@@ -106,6 +106,11 @@ class Svg(Element):
         "xmlns": "http://www.w3.org/2000/svg",
     }
 
+    @property
+    def svg(self) -> str:
+        """Return SVG string representation."""
+        return self.html
+
     @classmethod
     def calculate_viewbox(cls, width: float, height: float) -> str:
         return f"0 0 {width} {height}"

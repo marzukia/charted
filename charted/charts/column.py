@@ -49,6 +49,7 @@ class ColumnChart(Chart):
         series_names: list[str] | None = None,
         y_stacked: bool = True,
         series_styles: list[SeriesStyleConfig] | None = None,
+        axis_tick_interval: int | None = None,
     ):
         if column_gap is None:
             column_gap = get_column_gap()
@@ -65,6 +66,7 @@ class ColumnChart(Chart):
             series_names=series_names,
             chart_type="column",
             series_styles=series_styles,
+            axis_tick_interval=axis_tick_interval,
         )
 
     @property
