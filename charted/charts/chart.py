@@ -113,7 +113,6 @@ class Chart(Svg):
         title: str | None = None,
         theme: Theme | None = None,
         chart_type: str | None = None,
-        axis_tick_interval: float | str | None = None,
     ):
         super().__init__(
             width=width,
@@ -133,7 +132,6 @@ class Chart(Svg):
         self.series_styles = series_styles
         self.x_stacked = x_stacked
         self.zero_index = zero_index
-        self.axis_tick_interval = axis_tick_interval
 
         # Set data with validation
         self.x_labels = x_labels
@@ -186,7 +184,6 @@ class Chart(Svg):
                 else self.zero_index
             ),
             config=self.theme["v_grid"],
-            axis_tick_interval=self.axis_tick_interval,
         )
 
         self.y_axis = YAxis(
@@ -196,7 +193,6 @@ class Chart(Svg):
             stacked=self.y_stacked,
             zero_index=self.zero_index,
             config=self.theme["h_grid"],
-            axis_tick_interval=self.axis_tick_interval,
         )
 
         # Initialize offsets and values
