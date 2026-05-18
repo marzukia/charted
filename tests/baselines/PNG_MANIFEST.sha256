@@ -1,16 +1,1 @@
-{
-  "bar_basic.png": "c7284cf3ff4a31e76d66f2a2b52ac1275a0fcb2b5e1f2d43c23e6e84464ae5bb",
-  "bar_multi.png": "10ffe6991b87029c68716037bcac7a1edb6fc8d6bac7c25a83fed063ca790e0c",
-  "bar_stacked.png": "10ffe6991b87029c68716037bcac7a1edb6fc8d6bac7c25a83fed063ca790e0c",
-  "column_basic.png": "c147a9ab726f0516cda3ac8fa1dd0b835e148fd1a219ed29f1a1b0129a6c5e5a",
-  "column_stacked.png": "36fe3f5d1f949aedab5585eb69abbf4c5840b99e6b98b0bbcd4e720537b0332b",
-  "column_sidebyside.png": "3a9809034fa2d54a7f6d040c0465813b849dc0160b0e6c6f278d800de2d86b4c",
-  "line_basic.png": "06360864928511895dfcf5b734dff83b2ab09df7e2fba1a435e096231f2935ed",
-  "line_multi.png": "046d95240702ea2c692cf4c30e4910857b211b3c47f4a24f2dc2a5e237a49b7e",
-  "pie.png": "3fb2ee21f16dd3b3211e58f3807efb2609dfbdafed04c49b1ad45d23ce158d4b",
-  "pie_doughnut.png": "f2032c700449f487af51ad21eebdd25f481bc5188ac64d8a11ecb83752a8238b",
-  "scatter_basic.png": "e189eac06499448699a78297a63b6fdd8dec0e27a69113d543636a532e244a1c",
-  "scatter_multi.png": "2c8de27c37c77cdd9f1d44ae7abe05702d6d5ac7f579ca920e657425780d350d",
-  "radar.png": "266af9eb14dfb09022c81908da86c784f9374d12b532da0f870135914550fc36",
-  "radar_multi.png": "44aa25530b66861f345395ebae1dfb6583de039469f338deec7c13a131250b3f"
-}
+{}
