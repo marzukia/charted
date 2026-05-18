@@ -6,7 +6,6 @@ from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.helpers import (
     calculate_text_dimensions,
     common_denominators,
-    parse_tick_interval,
     round_to_clean_number,
 )
 from charted.utils.themes import GridConfig
@@ -23,7 +22,6 @@ class Axis(G):
         stacked: bool = False,
         zero_index: bool = True,
         config: GridConfig | None = None,
-        axis_tick_interval: float | str | None = None,
     ):
         if not data and not labels:
             raise Exception("Need labels or data.")
@@ -34,7 +32,6 @@ class Axis(G):
         self.stacked = stacked
         self.data = data
         self.parent = parent
-        self.axis_tick_interval = axis_tick_interval
         self.values = (data, labels, zero_index)
         self.labels = labels
         self.config = config
@@ -120,7 +117,6 @@ class Axis(G):
         labels: list[str] | None = None,
         zero_index: bool = True,
         stacked: bool | None = None,
-        axis_tick_interval: int | None = None,
     ) -> tuple[AxisDimension, list[float]]:
         axd = cls.calculate_axis_dimensions(
             data=data,
@@ -176,12 +172,6 @@ class Axis(G):
             values = [x for (i, x) in enumerate(values) if i % 2 == 0]
             min_value, max_value = values[-1], values[0]
 
-        # Apply explicit tick interval if provided (for labels only)
-        if axis_tick_interval is not None:
-            parsed_interval = parse_tick_interval(axis_tick_interval, len(values))
-            if parsed_interval and parsed_interval > 0:
-                values = [v for i, v in enumerate(values) if i % parsed_interval == 0]
-
         # Store full range for grid lines, filtered range for labels
         if min_value > original_min:
             min_value = original_min
@@ -236,7 +226,6 @@ class Axis(G):
                 stacked=self.stacked,
                 labels=labels,
                 zero_index=zero_index,
-                axis_tick_interval=self.axis_tick_interval,
             )
         )
         # Store grid line values separately (full range, not filtered)
