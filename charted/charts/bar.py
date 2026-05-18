@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from charted.charts.axes import _round_coord
 from charted.charts.chart import Chart
 from charted.config import get_bar_gap
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
@@ -99,7 +100,9 @@ class BarChart(Chart):
 
     @property
     def y_height(self) -> float:
-        return self.plot_height / (self.y_count + (self.y_count + 1) * self.bar_gap)
+        return _round_coord(
+            self.plot_height / (self.y_count + (self.y_count + 1) * self.bar_gap), 1
+        )
 
     def get_base_transform(self):
         return []
@@ -107,12 +110,12 @@ class BarChart(Chart):
     @property
     def representation(self) -> G:
         slot_height = self.y_height
-        gap = slot_height * self.bar_gap
+        gap = _round_coord(slot_height * self.bar_gap, 1)
         start_y = gap
 
         num_series = len(self.x_values) if self.x_values else 1
         series_thickness = (
-            slot_height / num_series
+            _round_coord(slot_height / num_series, 1)
             if (num_series > 0 and not self.x_stacked)
             else slot_height
         )
@@ -128,7 +131,7 @@ class BarChart(Chart):
 
         bars_g = G(
             opacity="0.8",
-            transform=f"translate({self.left_padding + dx}, {self.top_padding})",
+            transform=f"translate({_round_coord(self.left_padding + dx, 1)}, {_round_coord(self.top_padding, 1)})",
         )
 
         if self.x_stacked:
@@ -149,14 +152,14 @@ class BarChart(Chart):
                 for bar_idx, (x, x_offset_val) in enumerate(
                     zip(x_values_series, x_offsets_series)
                 ):
-                    slot_y = start_y + bar_idx * (slot_height + gap)
+                    slot_y = _round_coord(start_y + bar_idx * (slot_height + gap), 1)
                     # x_offset_val is the reprojected cumulative start position
                     # and x is the reprojected signed value. Use the leftmost
                     # point and positive width regardless of sign so that a
                     # positive value stacked on top of a negative cumulative
                     # offset (or vice versa) renders correctly.
-                    left_x = min(x_offset_val, x_offset_val + x)
-                    width = abs(x)
+                    left_x = _round_coord(min(x_offset_val, x_offset_val + x), 1)
+                    width = _round_coord(abs(x), 1)
                     paths.append(Path.get_path(left_x, slot_y, width, series_thickness))
                 bars_g.add_child(Path(d=paths, fill=fill))
         else:
@@ -173,15 +176,25 @@ class BarChart(Chart):
 
                 paths = []
                 for bar_idx, x in enumerate(x_values_series):
-                    slot_y = start_y + bar_idx * (slot_height + gap)
-                    bar_y = slot_y + series_idx * series_thickness
+                    slot_y = _round_coord(start_y + bar_idx * (slot_height + gap), 1)
+                    bar_y = _round_coord(slot_y + series_idx * series_thickness, 1)
                     if x >= zero_x:
                         paths.append(
-                            Path.get_path(zero_x, bar_y, x - zero_x, series_thickness)
+                            Path.get_path(
+                                _round_coord(zero_x, 1),
+                                bar_y,
+                                _round_coord(x - zero_x, 1),
+                                series_thickness,
+                            )
                         )
                     else:
                         paths.append(
-                            Path.get_path(x, bar_y, zero_x - x, series_thickness)
+                            Path.get_path(
+                                _round_coord(x, 1),
+                                bar_y,
+                                _round_coord(zero_x - x, 1),
+                                series_thickness,
+                            )
                         )
                 bars_g.add_child(Path(d=paths, fill=fill))
 
@@ -190,30 +203,34 @@ class BarChart(Chart):
         if isinstance(self.theme, dict):
             grid_color = self.theme.get("h_grid", {}).get("stroke", "#CCCCCC")
 
-        border_transform = f"translate({self.left_padding}, {self.top_padding})"
+        border_transform = f"translate({_round_coord(self.left_padding, 1)}, {_round_coord(self.top_padding, 1)})"
         borders = [
             Path(
                 stroke=grid_color,
                 stroke_dasharray="None",
-                d=[f"M0 {self.plot_height} h{self.plot_width}"],
+                d=[
+                    f"M0 {_round_coord(self.plot_height, 1)} h{_round_coord(self.plot_width, 1)}"
+                ],
                 transform=border_transform,
             ),
             Path(
                 stroke=grid_color,
                 stroke_dasharray="None",
-                d=[f"M0 0 h{self.plot_width}"],
+                d=[f"M0 0 h{_round_coord(self.plot_width, 1)}"],
                 transform=border_transform,
             ),
             Path(
                 stroke=grid_color,
                 stroke_dasharray="None",
-                d=[f"M0 0 v{self.plot_height}"],
+                d=[f"M0 0 v{_round_coord(self.plot_height, 1)}"],
                 transform=border_transform,
             ),
             Path(
                 stroke=grid_color,
                 stroke_dasharray="None",
-                d=[f"M{self.plot_width} 0 v{self.plot_height}"],
+                d=[
+                    f"M{_round_coord(self.plot_width, 1)} 0 v{_round_coord(self.plot_height, 1)}"
+                ],
                 transform=border_transform,
             ),
         ]
