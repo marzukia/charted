@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Import rounding helper from axes module
+from charted.charts.axes import _round_coord
 from charted.charts.chart import Chart
 from charted.config import get_column_gap
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
@@ -71,7 +73,9 @@ class ColumnChart(Chart):
 
     @property
     def x_width(self) -> float:
-        return self.plot_width / (self.x_count + (self.x_count + 1) * self.column_gap)
+        return _round_coord(
+            self.plot_width / (self.x_count + (self.x_count + 1) * self.column_gap), 1
+        )
 
     @property
     def representation(self) -> G:
@@ -85,7 +89,7 @@ class ColumnChart(Chart):
             opacity="0.8",
             transform=[
                 *self.get_base_transform(),
-                translate(-self.x_width / 2, dy),
+                translate(_round_coord(-self.x_width / 2, 1), dy),
             ],
         )
 
@@ -102,14 +106,18 @@ class ColumnChart(Chart):
 
                 paths = []
                 for x, y, y_offset in zip(x_values, y_values, y_offsets):
-                    x += self.x_offset
+                    x = _round_coord(x + self.x_offset, 1)
                     paths.append(Path.get_path(x, y_offset, self.x_width, y))
                 g.add_child(Path(d=paths, fill=fill))
         else:
             # side-by-side mode
             num_series = len(self.y_values) if self.y_values else 1
-            bar_width = self.x_width / num_series if num_series > 0 else self.x_width
-            series_offset = (bar_width * (num_series - 1)) / 2 if num_series > 0 else 0
+            bar_width = _round_coord(
+                self.x_width / num_series if num_series > 0 else self.x_width, 1
+            )
+            series_offset = _round_coord(
+                (bar_width * (num_series - 1)) / 2 if num_series > 0 else 0, 1
+            )
 
             for series_idx, (y_values_series, color) in enumerate(
                 zip(self.y_values, self.colors)
@@ -123,11 +131,13 @@ class ColumnChart(Chart):
 
                 paths = []
                 for x_idx, y in enumerate(y_values_series):
-                    x = self.x_offset + x_idx * (
-                        self.x_width + self.column_gap * self.x_width
+                    x = _round_coord(
+                        self.x_offset
+                        + x_idx * (self.x_width + self.column_gap * self.x_width),
+                        1,
                     )
                     # center bar within its slot, offset from group center
-                    bar_x = x - series_offset + series_idx * bar_width
+                    bar_x = _round_coord(x - series_offset + series_idx * bar_width, 1)
                     if y >= 0:
                         paths.append(Path.get_path(bar_x, 0, bar_width, y))
                     else:

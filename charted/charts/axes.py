@@ -13,6 +13,16 @@ from charted.utils.transform import rotate, translate
 from charted.utils.types import AxisDimension, MeasuredText, Vector, Vector2D
 
 
+def _round_coord(value: float, decimals: int = 1) -> float:
+    """Round coordinate value to avoid floating-point artifacts.
+
+    SVG coordinates with excessive decimal precision (e.g., 266.40000000000003)
+    cause visual inconsistencies and bloated SVG output. Round to 1 decimal
+    place which is sufficient for pixel-perfect rendering at typical chart sizes.
+    """
+    return round(value, decimals)
+
+
 class Axis(G):
     def __init__(
         self,
@@ -54,7 +64,8 @@ class Axis(G):
         normalised_value = (value - min_value) / value_range
         if stacked:
             normalised_value = value / value_range
-        return normalised_value * length
+        # Round to avoid floating-point artifacts in SVG output
+        return _round_coord(normalised_value * length)
 
     @classmethod
     def _reverse(
@@ -68,7 +79,7 @@ class Axis(G):
         normalised_value = (value + min_value) / length
         if min_value:
             normalised_value = value / length
-        return normalised_value * value_range
+        return _round_coord(normalised_value * value_range)
 
     @classmethod
     def calculate_axis_dimensions(
@@ -192,7 +203,8 @@ class Axis(G):
 
         # Generate all tick positions (uniform spacing)
         num_ticks = int(round((end_tick - start_tick) / step)) + 1
-        all_ticks = [round(start_tick + i * step, 6) for i in range(num_ticks)]
+        # Round tick values to avoid floating-point accumulation
+        all_ticks = [_round_coord(start_tick + i * step, 1) for i in range(num_ticks)]
 
         # Ensure we have at least one tick
         if not all_ticks:
@@ -431,7 +443,8 @@ class XAxis(Axis):
 
     @property
     def coordinates(self):
-        return [self.reproject(i) for i in self._grid_line_values]
+        # Round all coordinates to avoid floating-point artifacts
+        return [_round_coord(self.reproject(i), 1) for i in self._grid_line_values]
 
     @property
     def grid_lines(self) -> Path:
@@ -447,13 +460,17 @@ class XAxis(Axis):
         if self.stacked and min_v < 0:
             dx = self.reproject(abs(min_v))
 
-        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in self.coordinates]
+        # Round coordinates in path data to avoid floating-point artifacts
+        d = [
+            f"M{_round_coord(x + dx, 1)} {0} v{_round_coord(self.parent.plot_height, 1)}"
+            for x in self.coordinates
+        ]
         return Path(
             **self.config,
             d=d,
             transform=translate(
-                x=self.parent.left_padding,
-                y=self.parent.top_padding,
+                x=_round_coord(self.parent.left_padding, 1),
+                y=_round_coord(self.parent.top_padding, 1),
             ),
         )
 
@@ -463,8 +480,8 @@ class XAxis(Axis):
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             transform=translate(
-                x=self.parent.left_padding,
-                y=self.parent.top_padding + DEFAULT_PADDING,
+                x=_round_coord(self.parent.left_padding, 1),
+                y=_round_coord(self.parent.top_padding + DEFAULT_PADDING, 1),
             ),
         )
 
@@ -478,18 +495,19 @@ class XAxis(Axis):
         if self.stacked and min_v < 0:
             dx = self.reproject(abs(min_v))
 
-        y = self.parent.plot_height
+        y = _round_coord(self.parent.plot_height, 1)
 
         # Use values positions for labels (not all grid line positions)
         # This ensures labels are positioned at the correct filtered tick locations
-        label_positions = [self.reproject(v) for v in self.values]
+        label_positions = [_round_coord(self.reproject(v), 1) for v in self.values]
 
         for x, label in zip(label_positions, self.labels):
-            x = x + dx
-            transformations = [translate(-label.width / 2, 0)]
+            x = _round_coord(x + dx, 1)
+            # Consistent centering: always translate by -width/2
+            transformations = [translate(_round_coord(-label.width / 2, 1), 0)]
             if rotation_angle > 0:
                 transformations = [
-                    translate(label.width / len(label.text) * -1, 0),
+                    translate(_round_coord(label.width / len(label.text) * -1, 1), 0),
                     rotate(rotation_angle, x, y),
                 ]
             text = Text(
@@ -505,12 +523,22 @@ class XAxis(Axis):
 
 class YAxis(Axis):
     def reproject(self, value: float) -> float:
-        return self._reproject(
-            value,
-            self.axis_dimension.max_value,
-            self.axis_dimension.min_value,
-            self.parent.plot_height,
-            self.stacked,
+        # For Y-axis in SVG: y=0 is TOP, so we need to invert
+        # Higher values should map to lower y-pixel values
+        value_range = self.axis_dimension.max_value - self.axis_dimension.min_value
+        if value_range == 0:
+            return 0.0
+
+        if self.stacked:
+            # In stacked mode, values are relative to zero, not min_value
+            # Subtract min_value to handle negative ranges correctly
+            normalized = (value - self.axis_dimension.min_value) / value_range
+        else:
+            normalized = (value - self.axis_dimension.min_value) / value_range
+
+        # Invert for SVG coordinates: max_value → 0, min_value → height
+        return _round_coord(
+            self.parent.plot_height - (normalized * self.parent.plot_height)
         )
 
     def reverse(self, value: float) -> float:
@@ -538,27 +566,33 @@ class YAxis(Axis):
 
         if bar_height is not None:
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
-            gap = bar_height * bar_gap
-            start_y = bar_height * bar_gap
+            gap = _round_coord(bar_height * bar_gap, 1)
+            start_y = _round_coord(bar_height * bar_gap, 1)
+            # Round all y-coordinates to avoid floating-point artifacts
             return [
-                start_y + i * (bar_height + gap) + bar_height / 2
+                _round_coord(start_y + i * (bar_height + gap) + bar_height / 2, 1)
                 for i in range(len(values))
             ]
 
-        return [self.reproject(i + abs(offset)) for i in reversed(values)]
+        # Round reprojected coordinates (no need to reverse - reproject handles SVG inversion)
+        return [_round_coord(self.reproject(i + abs(offset)), 1) for i in values]
 
     @property
     def grid_lines(self) -> Path:
         if not self.config:
             return None
 
-        d = [f"M{0} {y} h{self.parent.plot_width}" for y in self.coordinates]
+        # Round y-coordinates in path data to avoid floating-point artifacts
+        d = [
+            f"M{0} {_round_coord(y, 1)} h{_round_coord(self.parent.plot_width, 1)}"
+            for y in self.coordinates
+        ]
         return Path(
             **self.config,
             d=d,
             transform=translate(
-                x=self.parent.left_padding,
-                y=self.parent.top_padding,
+                x=_round_coord(self.parent.left_padding, 1),
+                y=_round_coord(self.parent.top_padding, 1),
             ),
         )
 
@@ -568,31 +602,33 @@ class YAxis(Axis):
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             transform=translate(
-                x=(self.parent.left_padding - 6),
-                y=self.parent.top_padding,
+                x=_round_coord(self.parent.left_padding - 6, 1),
+                y=_round_coord(self.parent.top_padding, 1),
             ),
         )
 
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
             bar_gap = getattr(self.parent, "bar_gap", 0.5)
-            gap = bar_height * bar_gap
-            start_y = bar_height * bar_gap
+            gap = _round_coord(bar_height * bar_gap, 1)
+            start_y = _round_coord(bar_height * bar_gap, 1)
             y_positions = [
-                start_y + i * (bar_height + gap) + bar_height / 2
+                _round_coord(start_y + i * (bar_height + gap) + bar_height / 2, 1)
                 for i in range(len(self.labels))
             ]
         else:
             y_positions = self.coordinates
 
         for y, label in zip(y_positions, self.labels):
-            y_offset = -label.height / 2 if bar_height is not None else label.height / 4
+            # Consistent vertical centering: use -height/2 for all cases
+            # This ensures labels are vertically centered on their grid lines
+            y_offset = _round_coord(-label.height / 2, 1)
             text = Text(
                 x=0,
-                y=y,
+                y=_round_coord(y, 1),
                 text=label.text,
                 transform=translate(
-                    x=-label.width,
+                    x=_round_coord(-label.width, 1),
                     y=y_offset,
                 ),
             )
