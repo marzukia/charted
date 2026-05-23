@@ -212,7 +212,7 @@ class GanttChart(Chart):
 
         # --- Draw dependency arrows ---
         if self.dependencies:
-            arrow_g = G(stroke=self.theme.grid_color, fill="none")
+            arrow_g = G(stroke=self.theme.arrow_color, fill="none")
             for from_task, to_task in self.dependencies:
                 if from_task >= self._total_tasks or to_task >= self._total_tasks:
                     continue
