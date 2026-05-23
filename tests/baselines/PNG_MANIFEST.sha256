@@ -15,6 +15,9 @@
   "pie_doughnut.png": "f2032c700449f487af51ad21eebdd25f481bc5188ac64d8a11ecb83752a8238b",
   "scatter_basic.png": "cdeb15bc9764221fb40f14e5a6592755ed1e8d19f385f70c5d17fa1c17a1b320",
   "scatter_multi.png": "be2fc2f493e22f23c4aa1d1dbe06e097a8cd9e0e88f964187faf5c0cc5e7ed94",
+  "gantt_basic.png": "53b2b2390f8752c494820b8f6abf338038974751466dc646636d9220d383eac3",
+  "gantt_dependencies.png": "73e909986c24bb73ac0b24f9c7bd041d8365bf4e7cccdcdc7c7ca1ef6e9e1e32",
+  "gantt_multi.png": "36fa5a462e221d5fb2befc2217c98f93820e09da9e111299232dc2d02a2dcef9",
   "radar.png": "092a401413763ba11158a8421689692736c7dcab5b4d7107552c09feb8ad35b4",
   "radar_multi.png": "c8260279f62e2e57b6c9335ff1288d316b59ae801382905e5f34ca1f1f76bb93"
 }
