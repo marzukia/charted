@@ -35,6 +35,7 @@ from lxml import etree
 
 from charted.charts.bar import BarChart
 from charted.charts.column import ColumnChart
+from charted.charts.gantt import GanttChart
 from charted.charts.line import LineChart
 from charted.charts.scatter import ScatterChart
 
@@ -327,3 +328,83 @@ def test_scatter_chart_empty_data():
     """Test ScatterChart with empty data raises an exception."""
     with pytest.raises(Exception, match="No data was provided"):
         ScatterChart(x_data=[], y_data=[])
+
+
+# ============================================================
+# Gantt Chart Visual Regression Tests
+# ============================================================
+
+
+def test_gantt_chart_basic():
+    """Visual regression test for basic GanttChart (SVG structure)."""
+    chart = GanttChart(
+        data=[(1, 3), (3, 5), (5, 7)],
+        labels=["Design", "Development", "Testing"],
+    )
+    baseline_path = BASELINES_DIR / "gantt_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_gantt_chart_basic_png():
+    """Visual regression test for basic GanttChart (PNG pixel-perfect)."""
+    chart = GanttChart(
+        data=[(1, 3), (3, 5), (5, 7)],
+        labels=["Design", "Development", "Testing"],
+    )
+    compare_png_baseline(chart, "gantt_basic", tolerance=5)
+
+
+def test_gantt_chart_dependencies():
+    """Visual regression test for GanttChart with dependencies (SVG structure)."""
+    chart = GanttChart(
+        data=[(1, 4), (3, 6), (5, 8)],
+        labels=["A", "B", "C"],
+        dependencies=[(0, 1), (1, 2)],
+        series_names=["Phase 1"],
+    )
+    baseline_path = BASELINES_DIR / "gantt_dependencies.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_gantt_chart_dependencies_png():
+    """Visual regression test for GanttChart with dependencies (PNG pixel-perfect)."""
+    chart = GanttChart(
+        data=[(1, 4), (3, 6), (5, 8)],
+        labels=["A", "B", "C"],
+        dependencies=[(0, 1), (1, 2)],
+        series_names=["Phase 1"],
+    )
+    compare_png_baseline(chart, "gantt_dependencies", tolerance=5)
+
+
+def test_gantt_chart_multi_series():
+    """Visual regression test for multi-series GanttChart (SVG structure)."""
+    chart = GanttChart(
+        data=[
+            [(1, 3), (4, 6)],
+            [(2, 5), (6, 8)],
+        ],
+        labels=["Phase 1 Task A", "Phase 1 Task B", "Phase 2 Task A", "Phase 2 Task B"],
+        series_names=["Phase 1", "Phase 2"],
+    )
+    baseline_path = BASELINES_DIR / "gantt_multi.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_gantt_chart_multi_series_png():
+    """Visual regression test for multi-series GanttChart (PNG pixel-perfect)."""
+    chart = GanttChart(
+        data=[
+            [(1, 3), (4, 6)],
+            [(2, 5), (6, 8)],
+        ],
+        labels=["Phase 1 Task A", "Phase 1 Task B", "Phase 2 Task A", "Phase 2 Task B"],
+        series_names=["Phase 1", "Phase 2"],
+    )
+    compare_png_baseline(chart, "gantt_multi", tolerance=5)
