@@ -15,6 +15,9 @@
   "pie_doughnut.svg": "f90d925dea6e93c35ec9f45107469e7bf8ac2d6989928b9e376a15f4f5aeaa35",
   "scatter_basic.svg": "141cdea560def11c1ce94527a76e32bdeb236c462905d5f56fdd5fdb984051b4",
   "scatter_multi.svg": "675835a7d9d92c9e5d2e0b8257c954235c05056955e66cf160b5d070924deb42",
+  "gantt_basic.svg": "073f6c66b15d49268f626a19bce31f35a6d182a68dee102d30ea9db2b83ad447",
+  "gantt_dependencies.svg": "d4b79ab3f2b03a55f496143be538c116ef06efee4eeb7d393f483c63591a2338",
+  "gantt_multi.svg": "d71385eece036af3ec8b41a95ac744c24fdd1fad0a2fef8737cb3ac207b4d6da",
   "radar.svg": "ba4827382ef6c31581ff95be25f0e3ac81503539435dd72f24fd7c36711e5e2d",
   "radar_multi.svg": "547e9a709a8e140b5cc8419fafa0e008c355987d61114c55fbf1348da75ed64a"
 }
