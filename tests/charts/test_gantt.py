@@ -75,7 +75,6 @@ class TestGanttChartRendering:
             labels=["Design", "Dev", "Testing"],
         )
         svg = chart.svg
-        # Check that path elements exist (bars are rendered as paths)
         assert "<path" in svg
 
     def test_task_labels_present(self):
@@ -96,7 +95,6 @@ class TestGanttChartRendering:
             dependencies=[(0, 1), (1, 2)],
         )
         svg = chart.svg
-        # Check for curve paths (Q commands indicate quadratic bezier)
         assert "Q" in svg
 
     def test_today_line(self):
@@ -117,7 +115,6 @@ class TestGanttChartRendering:
             labels=["A", "B"],
         )
         svg = chart.svg
-        # Borders are h/v paths
         assert "h" in svg and "v" in svg
 
     def test_bar_dimensions(self):
@@ -126,9 +123,7 @@ class TestGanttChartRendering:
             data=[(1, 3), (2, 5)],
             labels=["A", "B"],
         )
-        # row_height should be plot_height / 2
         assert chart.row_height == chart.plot_height / 2
-        # bar_height should be row_height * ratio
         assert chart.bar_height == chart.row_height * 0.6
 
 
