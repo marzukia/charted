@@ -36,6 +36,7 @@ from lxml import etree
 from charted.charts.bar import BarChart
 from charted.charts.column import ColumnChart
 from charted.charts.gantt import GanttChart
+from charted.charts.heatmap import HeatmapChart
 from charted.charts.line import LineChart
 from charted.charts.scatter import ScatterChart
 
@@ -408,3 +409,49 @@ def test_gantt_chart_multi_series_png():
         series_names=["Phase 1", "Phase 2"],
     )
     compare_png_baseline(chart, "gantt_multi", tolerance=5)
+
+
+def test_heatmap_chart_basic():
+    """Visual regression test for basic HeatmapChart (SVG structure)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+    )
+    baseline_path = BASELINES_DIR / "heatmap_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_heatmap_chart_basic_png():
+    """Visual regression test for basic HeatmapChart (PNG pixel-perfect)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+    )
+    compare_png_baseline(chart, "heatmap_basic", tolerance=5)
+
+
+def test_heatmap_chart_rectangular():
+    """Visual regression test for rectangular HeatmapChart (SVG structure)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3, 4], [5, 6, 7, 8]],
+        x_labels=["A", "B", "C", "D"],
+        y_labels=["X", "Y"],
+    )
+    baseline_path = BASELINES_DIR / "heatmap_rectangular.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_heatmap_chart_rectangular_png():
+    """Visual regression test for rectangular HeatmapChart (PNG pixel-perfect)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3, 4], [5, 6, 7, 8]],
+        x_labels=["A", "B", "C", "D"],
+        y_labels=["X", "Y"],
+    )
+    compare_png_baseline(chart, "heatmap_rectangular", tolerance=5)
