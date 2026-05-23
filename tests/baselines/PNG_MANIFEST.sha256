@@ -1,23 +1,3 @@
 {
-  "bar_basic.png": "ace4179cfe338ce0fc0d6d52306bd88d019a0f383e48f9a9dac3481d54bda972",
-  "bar_multi.png": "4d28a8e2990d382aaa22d544fa98c8a6f0d7c3526574f4f26a5987513068c3f6",
-  "bar_stacked.png": "4d28a8e2990d382aaa22d544fa98c8a6f0d7c3526574f4f26a5987513068c3f6",
-  "bar_negative.png": "2b041110026725cf32d7130257091fe458a0d5c9b9152a5d1a020f8a9be89680",
-  "bar_stacked_negative.png": "2f91717075bf91739dab4065ed7b3851734d5f50ebfeac70dc44aca35a1fd0d0",
-  "column_basic.png": "57570597f5e69803353d16623da4bb5e1539a50e6015ca096969a8e6945364ad",
-  "column_stacked.png": "d65fbca303fe158817e079aee80bdc9f2bc75f5bdd610b3c482ff0d562e719c7",
-  "column_negative.png": "742f7bbf57f475ed80de1f44f391c9b40961f944f263f06aab0bd78013f5b967",
-  "column_stacked_negative.png": "4e1d8bdf9f374b0b88d969c9637fc6023789c1b06a975861c7016d1bda29f3ec",
-  "column_sidebyside.png": "aba523847e3a9b4e9cd01204670dd52f32ede7d5ef34fc81718ac08c7221e8cb",
-  "line_basic.png": "78a6152acb1c2f423e6fde1a08cb6c4125cb8f2f132f4b1afe9feb4eb5c6852a",
-  "line_multi.png": "db2ef412765b3295350448a4533df9a48e34e1715324370eea04e135f790c7f1",
-  "pie.png": "3fb2ee21f16dd3b3211e58f3807efb2609dfbdafed04c49b1ad45d23ce158d4b",
-  "pie_doughnut.png": "f2032c700449f487af51ad21eebdd25f481bc5188ac64d8a11ecb83752a8238b",
-  "scatter_basic.png": "cdeb15bc9764221fb40f14e5a6592755ed1e8d19f385f70c5d17fa1c17a1b320",
-  "scatter_multi.png": "be2fc2f493e22f23c4aa1d1dbe06e097a8cd9e0e88f964187faf5c0cc5e7ed94",
-  "gantt_basic.png": "6a52511148d62e814b9ecb76b165308f058bf8675bafac2810270564b16c49dd",
-  "gantt_dependencies.png": "93a4badbdf2a5023068c55008927e1cea281b51dfdf7ea9d7240d6806387c899",
-  "gantt_multi.png": "0af0fd9b491020713fe2178f4040c7736cf71fd7ab4e490134e45ec6ea3d6b17",
-  "radar.png": "092a401413763ba11158a8421689692736c7dcab5b4d7107552c09feb8ad35b4",
-  "radar_multi.png": "c8260279f62e2e57b6c9335ff1288d316b59ae801382905e5f34ca1f1f76bb93"
+  "heatmap_rectangular.png": "0faebfaf3f29564d1f03128cc7147034711f02aafaa4055b9a716e35030e8c61"
 }
