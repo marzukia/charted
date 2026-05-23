@@ -1,8 +1,9 @@
 """Property-based tests for color utilities using hypothesis."""
 
 import re
+
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from charted.utils.colors import (
@@ -17,12 +18,12 @@ from charted.utils.colors import (
 hex_digits = "0123456789ABCDEFabcdef"
 
 hex3 = st.tuples(
-    st.sampled_from(hex_digits), st.sampled_from(hex_digits), st.sampled_from(hex_digits)
+    st.sampled_from(hex_digits),
+    st.sampled_from(hex_digits),
+    st.sampled_from(hex_digits),
 ).map(lambda t: f"#{t[0]}{t[1]}{t[2]}")
 
-hex6 = st.tuples(*[st.sampled_from(hex_digits)] * 6).map(
-    lambda t: f"#{''.join(t)}"
-)
+hex6 = st.tuples(*[st.sampled_from(hex_digits)] * 6).map(lambda t: f"#{''.join(t)}")
 
 valid_hex = st.one_of(hex3, hex6)
 
@@ -72,10 +73,14 @@ def test_rgb_to_hex_clamps_or_rejects(r, g, b):
         result = rgb_to_hex((r, g, b))
         assert re.match(r"^#[A-Fa-f0-9]{6}$", result)
         if not in_range:
-            pytest.fail(f"rgb_to_hex({r},{g},{b}) should have raised ValueError for out-of-range input")
+            pytest.fail(
+                f"rgb_to_hex({r},{g},{b}) should have raised ValueError for out-of-range input"
+            )
     except (ValueError, TypeError):
         if in_range:
-            pytest.fail(f"rgb_to_hex({r},{g},{b}) should not have raised for in-range input")
+            pytest.fail(
+                f"rgb_to_hex({r},{g},{b}) should not have raised for in-range input"
+            )
 
 
 @given(st.text(min_size=1, max_size=20))
