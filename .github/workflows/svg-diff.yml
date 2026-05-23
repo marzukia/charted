@@ -84,25 +84,3 @@ jobs:
             exit 1
           fi
           echo "All charts produce identical SVG output."
-
-#!/usr/bin/env bash
-set -euo pipefail
-CURRENT=$(git branch --show-current)
-BASELINE="${1:-main}"
-echo "=== SVG Output: $CURRENT vs $BASELINE ==="
-compare_chart() {
-    git checkout "$BASELINE" 2>/dev/null
-    python -c "$2" > /tmp/svg_base.svg
-    git checkout "$CURRENT" 2>/dev/null
-    python -c "$2" > /tmp/svg_cur.svg
-    if diff /tmp/svg_base.svg /tmp/svg_cur.svg > /dev/null 2>&1; then echo "  $1: OK"; else echo "  $1: DIFF"; diff /tmp/svg_base.svg /tmp/svg_cur.svg; return 1; fi
-}
-compare_chart bar "from charted import BarChart; print(BarChart(data=[10,20,30],labels=['a','b','c']).html)"
-compare_chart column "from charted import ColumnChart; print(ColumnChart(data=[10,20,30],labels=['a','b','c']).html)"
-compare_chart line "from charted import LineChart; print(LineChart(data=[10,20,30],labels=['a','b','c']).html)"
-compare_chart pie "from charted import PieChart; print(PieChart(data=[10,20,30],labels=['a','b','c']).html)"
-compare_chart scatter "from charted import ScatterChart; print(ScatterChart(x_data=[10,20,30],y_data=[10,20,30]).html)"
-compare_chart radar "from charted import RadarChart; print(RadarChart(data=[[10,20,30],[20,30,10]],labels=['a','b','c']).html)"
-rm -f /tmp/svg_base.svg /tmp/svg_cur.svg
-echo "Done"
-
