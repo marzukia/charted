@@ -44,6 +44,9 @@ class LineChart(Chart):
         ... )
     """
 
+    pad_x_labels: bool = False
+    markers: bool = False
+
     def __init__(
         self,
         data: Vector | Vector2D,
@@ -56,7 +59,9 @@ class LineChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        markers: bool = False,
     ):
+        self.markers = markers
         super().__init__(
             y_data=data,
             x_data=x_data,
@@ -70,6 +75,11 @@ class LineChart(Chart):
             series_styles=series_styles,
             chart_type="line",
         )
+
+    @property
+    def x_offset(self) -> float:
+        """Line charts use direct x positions, no label-padding offset."""
+        return 0.0
 
     @property
     def representation(self) -> G:

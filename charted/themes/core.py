@@ -29,12 +29,62 @@ def _is_valid_hex_color(color: str) -> bool:
     return False
 
 
+# Named color palettes for agent-friendly chart creation
+NAMED_PALETTES = {
+    "default": ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
+    "viridis": ["#440154", "#3b5282", "#2198c0", "#90d584", "#fde725"],
+    "ocean": ["#006994", "#48b5c4", "#7ec8a0", "#f4d03f", "#e67e22"],
+    "categorical": [
+        "#3b82f6",
+        "#10b981",
+        "#f59e0b",
+        "#8b5cf6",
+        "#ec4899",
+        "#06b6d4",
+        "#84cc16",
+        "#f97316",
+        "#6366f1",
+        "#14b8a6",
+    ],
+    "rainbow": ["#ff0000", "#ff8800", "#ffff00", "#00ff00", "#0088ff", "#8800ff"],
+    "monochrome": ["#1a1a1a", "#333333", "#555555", "#777777", "#999999"],
+    "pastel": ["#ffb3ba", "#bae1ff", "#baffc9", "#ffffba", "#e8baff"],
+    "sunset": ["#ff6b6b", "#ffa94d", "#ffd43b", "#69db69", "#4dabf7"],
+    "forest": ["#2d6a4f", "#40916c", "#52b788", "#95d5b2", "#d8f3dc"],
+    "inferno": ["#000004", "#1c1044", "#7e307a", "#e5612f", "#fca50a"],
+}
+
+
+def resolve_palette(palette_name: str | list[str] | None) -> list[str]:
+    """Resolve a palette name to a color list, or pass through a raw list.
+
+    Args:
+        palette_name: Named palette key, list of hex strings, or None for default.
+
+    Returns:
+        List of hex color strings.
+
+    Raises:
+        ValueError: If the palette name is unknown.
+    """
+    if palette_name is None:
+        return NAMED_PALETTES["default"].copy()
+    if isinstance(palette_name, list):
+        return list(palette_name)
+    if palette_name in NAMED_PALETTES:
+        return NAMED_PALETTES[palette_name].copy()
+    raise ValueError(
+        f"Unknown palette: {palette_name!r}. Available: {list(NAMED_PALETTES.keys())}"
+    )
+
+
 @dataclass(frozen=True)
 class ColorPalette:
     """A frozen color palette with automatic cycling.
 
     Args:
         colors: List of hex color strings. Defaults to light theme colors.
+                 Can also pass a named palette string (e.g. 'viridis').
     """
 
     colors: list[str] = field(

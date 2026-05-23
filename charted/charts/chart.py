@@ -54,6 +54,7 @@ class Chart(Svg):
     x_stacked: bool = False
     y_stacked: bool = False
     render_axes: bool = True
+    pad_x_labels: bool = True
 
     # =========================================================================
     # Core Representation Methods
@@ -73,14 +74,132 @@ class Chart(Svg):
             self.svg, alt_text, self.title.text if self._title else None, width
         )
 
+    def to_html(self, style: str = "display: inline-block;") -> str:
+        """Return standalone HTML with embedded SVG.
+
+        Args:
+            style: CSS style for the container div.
+
+        Returns:
+            HTML string with the SVG embedded in a div.
+        """
+        return generate_html_wrapper(self.svg, style)
+
     def _repr_html_(self) -> str:
         """Return HTML wrapper for the chart."""
-        return generate_html_wrapper(self.svg)
+        return self.to_html()
+
+    def to_base64(self) -> str:
+        """Return the SVG as a data URI for inline embedding.
+
+        Returns:
+            Data URL string (e.g. 'data:image/svg+xml,<encoded-svg>').
+        """
+        from urllib.parse import quote
+
+        return f"data:image/svg+xml,{quote(self.svg)}"
 
     def save(self, path: str) -> None:
         """Save the chart to a file."""
         with open(path, "w") as f:
             f.write(self.svg)
+
+    def style(self, **kwargs) -> "Chart":
+        """Fluently apply theme overrides.
+
+        Args:
+            **kwargs: Theme attribute overrides (e.g. background_color='#fff',
+                      font_family='sans-serif', legend_font_size=12).
+
+        Returns:
+            self for chaining.
+
+        Example:
+            >>> chart = BarChart(...).style(background_color='#fff', font_size=13)
+        """
+        from charted.themes.core import Theme
+
+        # Build an override Theme from kwargs
+        override = Theme(**{k: v for k, v in kwargs.items() if hasattr(Theme, k)})
+        self.theme = self.theme.compose(override)
+        return self
+
+    def to_config(self) -> dict:
+        """Serialize chart configuration to a dict.
+
+        Returns a dict with all constructor parameters needed to
+        recreate the chart, plus theme info.
+
+        Returns:
+            Dict suitable for JSON serialization or agent workflows.
+        """
+        import dataclasses
+
+        cfg = {
+            "chart_type": self.__class__.__name__,
+            "width": self._width,
+            "height": self._height,
+            "title": self._title.text if self._title else None,
+            "labels": [
+                label.text if hasattr(label, "text") else str(label)
+                for label in (self.x_labels or [])
+            ],
+            "series_names": self.series_names,
+            "x_stacked": self.x_stacked,
+            "zero_index": self.zero_index,
+        }
+        if self.data_model:
+            cfg["x_data"] = self.data_model.x_data
+            cfg["y_data"] = self.data_model.y_data
+        if self.series_styles:
+            cfg["series_styles"] = [
+                dataclasses.asdict(s) if dataclasses.is_dataclass(s) else s
+                for s in self.series_styles
+            ]
+        return cfg
+
+    @classmethod
+    def from_config(cls, config: dict, **overrides) -> "Chart":
+        """Recreate a chart from a config dict.
+
+        Merges ``overrides`` on top of ``config`` so agents can tweak
+        individual parameters without rebuilding the whole dict.
+
+        Args:
+            config: Dict returned by ``to_config()``.
+            **overrides: Override any config key.
+
+        Returns:
+            Chart instance of the appropriate subclass.
+        """
+        import inspect
+
+        from charted.charts import _CHART_CLASSES
+
+        merged = dict(config)
+        merged.update(overrides)
+
+        chart_type = merged.pop("chart_type", None)
+        cls_map = _CHART_CLASSES()
+        chart_cls = cls_map.get(chart_type, cls)
+        if chart_cls is None:
+            chart_cls = cls
+
+        # Only pass keys the target chart class accepts
+        sig = inspect.signature(chart_cls.__init__)
+        valid_params = set(sig.parameters.keys()) - {"self"}
+        filtered = {k: v for k, v in merged.items() if k in valid_params}
+
+        # Map common aliases: y_data -> data, x_data -> x_data
+        if "data" in valid_params and "data" not in filtered:
+            if "y_data" in merged:
+                filtered["data"] = merged["y_data"]
+            elif "x_data" in merged:
+                filtered["data"] = merged["x_data"]
+        if "y_data" in valid_params and "y_data" not in filtered and "data" in merged:
+            filtered["y_data"] = merged["data"]
+
+        return chart_cls(**filtered)
 
     # =========================================================================
     # Initialization
@@ -110,7 +229,9 @@ class Chart(Svg):
 
         # Validate and normalize data using DataModel
         if not x_data and not y_data:
-            raise Exception("No data was provided to the Chart element.")
+            from charted.utils.exceptions import NoDataError
+
+            raise NoDataError()
 
         # Create default x_labels if not provided (for ordinal charts)
         if not x_data and not x_labels:
@@ -183,6 +304,7 @@ class Chart(Svg):
                 else self.zero_index
             ),
             config=self.theme.grid_color,
+            pad_labels=self.pad_x_labels,
         )
 
         self.y_axis = YAxis(
