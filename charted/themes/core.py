@@ -121,6 +121,7 @@ class Theme:
     h_padding: float = 0.05
     v_padding: float = 0.05
     marker_size: float = 3.0
+    arrow_color: str = "#555555"
 
     def __post_init__(self) -> None:
         """Validate color format after initialization."""
@@ -140,6 +141,8 @@ class Theme:
             raise ValueError(
                 f"Invalid color for background_color: {self.background_color!r}"
             )
+        if not _is_valid_hex_color(self.arrow_color):
+            raise ValueError(f"Invalid color for arrow_color: {self.arrow_color!r}")
 
         # Validate legend contrast against background
         from charted.utils.colors import calculate_contrast_ratio
@@ -171,6 +174,7 @@ class Theme:
                 title_color="#1f2937",
                 grid_color="#6b7280",
                 background_color="#f9fafb",
+                arrow_color="#374151",
             ),
             "dark": cls(
                 colors=["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
@@ -178,6 +182,7 @@ class Theme:
                 title_color="#ffffff",
                 background_color="#1a1a1a",
                 legend_font_color="#e5e5e5",
+                arrow_color="#d1d5db",
             ),
             "high-contrast": cls(
                 colors=["#000000", "#FFFF00", "#00FFFF", "#FF00FF", "#00FF00"],
