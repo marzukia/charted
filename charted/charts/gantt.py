@@ -143,6 +143,16 @@ class GanttChart(Chart):
     # =========================================================================
 
     @property
+    def y_height(self) -> float:
+        """Height per task row — used by YAxis for label positioning (like BarChart)."""
+        return self.plot_height / self._total_tasks if self._total_tasks else 0
+
+    @property
+    def bar_gap(self) -> float:
+        """No gap between task rows — rows are flush."""
+        return 0.0
+
+    @property
     def row_height(self) -> float:
         """Height of each task row in the plot area."""
         return self.plot_height / self._total_tasks if self._total_tasks else 0
