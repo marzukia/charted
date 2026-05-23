@@ -36,6 +36,7 @@ sys.path.insert(0, str(ROOT))
 from charted.charts.bar import BarChart
 from charted.charts.column import ColumnChart
 from charted.charts.gantt import GanttChart
+from charted.charts.heatmap import HeatmapChart
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
 from charted.charts.radar import RadarChart
@@ -109,6 +110,17 @@ CHARTS = {
         ],
         labels=["Phase 1 Task A", "Phase 1 Task B", "Phase 2 Task A", "Phase 2 Task B"],
         series_names=["Phase 1", "Phase 2"],
+    ),
+    # Heatmap charts
+    "heatmap_basic": HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+    ),
+    "heatmap_rectangular": HeatmapChart(
+        data=[[1, 2, 3, 4], [5, 6, 7, 8]],
+        x_labels=["A", "B", "C", "D"],
+        y_labels=["X", "Y"],
     ),
     # Radar charts
     "radar": RadarChart(
