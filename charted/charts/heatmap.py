@@ -63,7 +63,7 @@ class HeatmapChart(Chart):
         >>> chart.save('matrix.svg')
     """
 
-    render_axes = False  # Heatmap renders its own labels inside the grid
+    render_axes = False
 
     def __init__(
         self,
@@ -148,6 +148,11 @@ class HeatmapChart(Chart):
             series_styles=series_styles,
             series_names=series_names,
         )
+
+        self.layout.h_padding = 0.07
+        self.children.clear()
+        children = [self.container, self.title, self.representation, self.legend]
+        self.add_children(*children)
 
     @property
     def cell_width(self) -> float:
@@ -280,7 +285,7 @@ class HeatmapChart(Chart):
                         bar_x,
                         bar_y + i * stop_height,
                         bar_width,
-                        stop_height + 1,  # +1 to avoid gaps
+                        stop_height + 1,
                     ),
                 )
             )
