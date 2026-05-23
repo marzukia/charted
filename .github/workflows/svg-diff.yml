@@ -1,0 +1,108 @@
+name: SVG output diff
+
+on:
+  pull_request:
+    paths:
+      - 'charted/**'
+
+jobs:
+  svg-diff:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.labels.*.name, 'svg-change-ok')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Generate SVG on PR
+        run: |
+          python -c "
+          from charted import BarChart, ColumnChart, LineChart, PieChart, ScatterChart, RadarChart
+          charts = {
+            'bar': BarChart(data=[10,20,30], labels=['a','b','c']).html,
+            'bar_multi': BarChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c']).html,
+            'column': ColumnChart(data=[10,20,30], labels=['a','b','c']).html,
+            'column_side': ColumnChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c'], y_stacked=False).html,
+            'line': LineChart(data=[10,20,30], labels=['a','b','c']).html,
+            'line_multi': LineChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c']).html,
+            'pie': PieChart(data=[10,20,30], labels=['a','b','c']).html,
+            'pie_exploded': PieChart(data=[10,20,30], labels=['a','b','c'], explode=[5,0,0]).html,
+            'scatter': ScatterChart(x_data=[10,20,30], y_data=[10,20,30]).html,
+            'radar': RadarChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c']).html,
+          }
+          import os
+          os.makedirs('/tmp/svg-pr', exist_ok=True)
+          for name, svg in charts.items():
+            with open(f'/tmp/svg-pr/{name}.svg', 'w') as f:
+                f.write(svg)
+          "
+
+      - name: Generate SVG on base
+        run: |
+          git checkout ${{ github.event.pull_request.base.sha }}
+          pip install -e .
+          python -c "
+          from charted import BarChart, ColumnChart, LineChart, PieChart, ScatterChart, RadarChart
+          charts = {
+            'bar': BarChart(data=[10,20,30], labels=['a','b','c']).html,
+            'bar_multi': BarChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c']).html,
+            'column': ColumnChart(data=[10,20,30], labels=['a','b','c']).html,
+            'column_side': ColumnChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c'], y_stacked=False).html,
+            'line': LineChart(data=[10,20,30], labels=['a','b','c']).html,
+            'line_multi': LineChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c']).html,
+            'pie': PieChart(data=[10,20,30], labels=['a','b','c']).html,
+            'pie_exploded': PieChart(data=[10,20,30], labels=['a','b','c'], explode=[5,0,0]).html,
+            'scatter': ScatterChart(x_data=[10,20,30], y_data=[10,20,30]).html,
+            'radar': RadarChart(data=[[10,20,30],[20,30,10]], labels=['a','b','c']).html,
+          }
+          import os
+          os.makedirs('/tmp/svg-base', exist_ok=True)
+          for name, svg in charts.items():
+            with open(f'/tmp/svg-base/{name}.svg', 'w') as f:
+                f.write(svg)
+          "
+
+      - name: Diff
+        run: |
+          diffs=0
+          for f in /tmp/svg-base/*.svg; do
+            name=$(basename "$f")
+            if ! diff "/tmp/svg-base/$name" "/tmp/svg-pr/$name" > "/tmp/diff-$name.diff" 2>&1; then
+              echo "::error::$name: SVG output changed"
+              diffs=$((diffs + 1))
+            fi
+          done
+          if [ "$diffs" -gt 0 ]; then
+            echo "$diffs chart(s) have changed output. Review diffs or add 'svg-change-ok' label to override."
+            exit 1
+          fi
+          echo "All charts produce identical SVG output."
+
+#!/usr/bin/env bash
+set -euo pipefail
+CURRENT=$(git branch --show-current)
+BASELINE="${1:-main}"
+echo "=== SVG Output: $CURRENT vs $BASELINE ==="
+compare_chart() {
+    git checkout "$BASELINE" 2>/dev/null
+    python -c "$2" > /tmp/svg_base.svg
+    git checkout "$CURRENT" 2>/dev/null
+    python -c "$2" > /tmp/svg_cur.svg
+    if diff /tmp/svg_base.svg /tmp/svg_cur.svg > /dev/null 2>&1; then echo "  $1: OK"; else echo "  $1: DIFF"; diff /tmp/svg_base.svg /tmp/svg_cur.svg; return 1; fi
+}
+compare_chart bar "from charted import BarChart; print(BarChart(data=[10,20,30],labels=['a','b','c']).html)"
+compare_chart column "from charted import ColumnChart; print(ColumnChart(data=[10,20,30],labels=['a','b','c']).html)"
+compare_chart line "from charted import LineChart; print(LineChart(data=[10,20,30],labels=['a','b','c']).html)"
+compare_chart pie "from charted import PieChart; print(PieChart(data=[10,20,30],labels=['a','b','c']).html)"
+compare_chart scatter "from charted import ScatterChart; print(ScatterChart(x_data=[10,20,30],y_data=[10,20,30]).html)"
+compare_chart radar "from charted import RadarChart; print(RadarChart(data=[[10,20,30],[20,30,10]],labels=['a','b','c']).html)"
+rm -f /tmp/svg_base.svg /tmp/svg_cur.svg
+echo "Done"
+
