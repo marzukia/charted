@@ -35,3 +35,4 @@ tests/diffs/*.png
 .DS_Store
 Thumbs.db
 *.cover
+.claude/worktrees/
