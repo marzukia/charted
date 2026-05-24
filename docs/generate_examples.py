@@ -13,8 +13,11 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "examples")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 from charted.charts import (
+    AreaChart,
     BarChart,
+    BoxPlot,
     ColumnChart,
+    Histogram,
     LineChart,
     PieChart,
     RadarChart,
@@ -122,10 +125,8 @@ save(
         width=700,
         height=500,
         theme={
-            "padding": {
-                "v_padding": 0.12,
-                "h_padding": 0.10,
-            }
+            "v_padding": 0.12,
+            "h_padding": 0.10,
         },
     ).html,
 )
@@ -211,91 +212,15 @@ anomalies = [
     45,
     70,
 ]
+# Baseline as a moving average trend instead of flat zero
+baseline = [round(5 + 2 * math.sin(i * 0.4) + i * 0.5, 1) for i in range(len(years))]
 save(
     "xy_line.svg",
     LineChart(
-        title="Temperature Anomaly vs Baseline (1990-2009)",
-        data=[anomalies, [0] * len(years)],
+        title="Temperature Anomaly vs 5-Year Rolling Baseline (1990-2009)",
+        data=[anomalies, baseline],
         x_data=years,
         labels=[str(y) for y in years],
-        width=700,
-        height=400,
-    ).html,
-)
-
-# Line with tick interval (every 4th label on x-axis)
-save(
-    "line_tick_interval_3.svg",
-    LineChart(
-        title="Temperature Trend (every 4th label)",
-        data=[[35, 32, 28, 23, 18, 12, 7, 8, 13, 19, 26, 32]],
-        labels=[
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ],
-        series_names=["Temperature (°C)"],
-        width=700,
-        height=400,
-    ).html,
-)
-
-# Line with tick interval (25% labels - string syntax)
-save(
-    "line_tick_interval_25pct.svg",
-    LineChart(
-        title="Temperature Trend (25% labels)",
-        data=[[35, 28, 21, 14, 7, 0]],
-        labels=[
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ],
-        series_names=["Temperature (°C)"],
-        width=700,
-        height=400,
-    ).html,
-)
-
-# Line with tick interval (25% labels - float syntax)
-save(
-    "line_tick_interval_025.svg",
-    LineChart(
-        title="Temperature Trend (0.25 proportion)",
-        data=[[35, 28, 21, 14, 7, 0]],
-        labels=[
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ],
-        series_names=["Temperature (°C)"],
         width=700,
         height=400,
     ).html,
@@ -332,26 +257,36 @@ save(
 # Scatter charts
 # ---------------------------------------------------------------------------
 
-# Multi-series scatter
+# Multi-series scatter — two distinct clusters with noise
+import random
+
+random.seed(42)
+cluster_a_x = [30 + random.gauss(0, 8) for _ in range(20)]
+cluster_a_y = [40 + random.gauss(0, 8) for _ in range(20)]
+cluster_b_x = [70 + random.gauss(0, 10) for _ in range(20)]
+cluster_b_y = [20 + random.gauss(0, 10) for _ in range(20)]
 save(
     "scatter.svg",
     ScatterChart(
-        title="Correlation Analysis",
-        x_data=[[0, 10, 20, 30, 40, 50], [5, 15, 25, 35, 45, 55]],
-        y_data=[[10, 20, 30, 40, 50, 60], [15, 25, 35, 50, 60, 70]],
-        series_names=["Group A", "Group B"],
+        title="Cluster Analysis — Two Distinct Populations",
+        x_data=[cluster_a_x, cluster_b_x],
+        y_data=[cluster_a_y, cluster_b_y],
+        series_names=["Cluster A", "Cluster B"],
         width=700,
         height=400,
     ).html,
 )
 
-# Single-series scatter
+# Single-series scatter — quadratic relationship with spread
+random.seed(1)
+x_vals = [i for i in range(5, 95, 5)]
+y_vals = [round(10 + (v - 50) ** 2 / 50 + random.gauss(0, 4), 1) for v in x_vals]
 save(
     "scatter_single.svg",
     ScatterChart(
-        title="Height vs Weight Distribution",
-        x_data=[160, 165, 170, 172, 175, 178, 180, 182, 185, 188, 190],
-        y_data=[55, 60, 65, 68, 72, 75, 78, 80, 85, 88, 92],
+        title="U-Shaped Response Curve — Signal vs Input",
+        x_data=x_vals,
+        y_data=y_vals,
         series_names=["Observations"],
         width=700,
         height=400,
@@ -413,6 +348,77 @@ save(
         series_names=["Player A", "Player B"],
         width=600,
         height=500,
+    ).html,
+)
+
+# ---------------------------------------------------------------------------
+# Area charts
+# ---------------------------------------------------------------------------
+
+# Single-series area — CPU temperature over a day
+temps = [42 + 10 * math.sin(i * 0.6) + (hash(str(i)) % 5 - 2) * 1.5 for i in range(24)]
+save(
+    "area.svg",
+    AreaChart(
+        title="CPU Temperature (°C) — 24-hour Cycle",
+        data=[round(t, 1) for t in temps],
+        labels=[f"{h}:00" for h in range(24)],
+        width=700,
+        height=400,
+    ).html,
+)
+
+# Multi-series area
+save(
+    "area_multi.svg",
+    AreaChart(
+        title="Multi-series Area — Revenue by Channel",
+        data=[
+            [30, 50, 45, 60, 70, 80, 65, 55],
+            [20, 35, 30, 45, 50, 55, 40, 35],
+        ],
+        labels=["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8"],
+        series_names=["Online", "Retail"],
+        width=700,
+        height=400,
+    ).html,
+)
+
+# ---------------------------------------------------------------------------
+# Box plot
+# ---------------------------------------------------------------------------
+
+# Box plot with clear quartiles and outliers
+random.seed(42)
+box_a = [round(random.gauss(50, 10), 1) for _ in range(50)] + [95, 5, 102]
+box_b = [round(random.gauss(70, 15), 1) for _ in range(50)] + [120, 30, 130]
+box_c = [round(random.gauss(30, 8), 1) for _ in range(50)] + [55, 8, 60]
+save(
+    "boxplot.svg",
+    BoxPlot(
+        title="Test Scores by Group — with Outliers",
+        data=[box_a, box_b, box_c],
+        labels=["Group A", "Group B", "Group C"],
+        width=700,
+        height=400,
+    ).html,
+)
+
+# ---------------------------------------------------------------------------
+# Histogram
+# ---------------------------------------------------------------------------
+
+# Histogram — 10-bin normal distribution (bell curve)
+random.seed(42)
+hist_data = [random.gauss(50, 15) for _ in range(500)]
+save(
+    "histogram.svg",
+    Histogram(
+        title="Exam Scores — Normal Distribution (500 Students, 10 Bins)",
+        data=hist_data,
+        bins=10,
+        width=700,
+        height=400,
     ).html,
 )
 

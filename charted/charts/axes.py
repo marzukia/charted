@@ -21,11 +21,13 @@ class Axis(G):
         stacked: bool = False,
         zero_index: bool = True,
         config: str | None = None,
+        pad_labels: bool = True,
     ):
         if not data and not labels:
             raise Exception("Need labels or data.")
         elif not data and labels:
-            labels = [" ", *labels, " "]
+            if pad_labels:
+                labels = [" ", *labels, " "]
             data = [[i for i in range(len(labels))]]
 
         self.stacked = stacked

@@ -25,6 +25,7 @@ PNG baselines require dev dependencies:
 import hashlib
 import json
 import pathlib
+import random
 import stat
 import sys
 from typing import Optional
@@ -33,10 +34,13 @@ from typing import Optional
 ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
+from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
+from charted.charts.box import BoxPlot
 from charted.charts.column import ColumnChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
+from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
 from charted.charts.radar import RadarChart
@@ -46,6 +50,8 @@ BASELINES_DIR = ROOT / "tests" / "baselines"
 DIFFS_DIR = ROOT / "tests" / "diffs"
 MANIFEST_PATH = BASELINES_DIR / "MANIFEST.sha256"
 PNG_MANIFEST_PATH = BASELINES_DIR / "PNG_MANIFEST.sha256"
+
+_HIST_RNG = random.Random(42)
 
 CHARTS = {
     # Bar charts
@@ -121,6 +127,24 @@ CHARTS = {
         data=[[1, 2, 3, 4], [5, 6, 7, 8]],
         x_labels=["A", "B", "C", "D"],
         y_labels=["X", "Y"],
+    ),
+    # Area chart
+    "area_basic": AreaChart(
+        data=[15, 30, 45, 70, 55, 80, 75, 90, 85, 95],
+        labels=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    ),
+    # Box plot
+    "boxplot_basic": BoxPlot(
+        data=[
+            [3, 5, 7, 9, 10, 12, 14, 16, 18, 20],
+            [4, 6, 8, 10, 11, 13, 15, 17, 19, 21],
+            [2, 4, 6, 8, 9, 11, 13, 15, 17, 19],
+        ],
+        labels=["Series A", "Series B", "Series C"],
+    ),
+    # Histogram — use module-level seed so each call advances state
+    "histogram_basic": Histogram(
+        data=[_HIST_RNG.gauss(50, 15) for _ in range(200)],
     ),
     # Radar charts
     "radar": RadarChart(
