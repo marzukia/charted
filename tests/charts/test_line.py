@@ -16,7 +16,8 @@ class TestLineChartHappyPath:
         chart = LineChart(data=[10, 20, 30], labels=["a", "b", "c"])
         html = chart.html
         assert "svg" in html.lower()
-        assert "<circle" in html.lower()  # LineChart uses circles for points
+        assert "<path" in html.lower()  # LineChart renders paths
+        assert "<circle" not in html.lower()  # Markers off by default
 
     def test_multi_series_line_chart(self):
         """Test line chart with multiple series."""
@@ -95,5 +96,5 @@ class TestLineChartMarkerRendering:
             series_styles=[{"marker_shape": "circle", "marker_size": 5}],
         )
         html = chart.html
-        # Should have markers by default
-        assert "<circle" in html.lower()
+        # Should NOT have markers by default anymore
+        assert "<circle" not in html.lower()

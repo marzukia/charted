@@ -73,12 +73,23 @@ class LineRenderer:
             transform=[*self.chart.get_base_transform()],
         )
 
+        # Compute x positions spanning the full plot area
+        # Labels sit at i/(n-1) * plot_w, from 0 to plot_w
+        n = self.chart.x_count
+        plot_w = self.chart.plot_width
+        if n > 1:
+            x_positions = [i / (n - 1) * plot_w for i in range(n)]
+        else:
+            x_positions = [plot_w / 2]
+        # Share the same x_positions for all series
+        x_positions_by_series = [x_positions] * len(self.chart.y_values or [])
+
         colors = self._color_manager.ensure_palette_size(len(self.chart.y_values or []))
         for series_idx, (y_values, y_offsets, x_values, color) in enumerate(
             zip(
                 self.chart.y_values,
                 self.chart.y_offsets,
-                self.chart.x_values,
+                x_positions_by_series,
                 colors,
             )
         ):
@@ -175,9 +186,16 @@ class LineRenderer:
         # Apply per-series override if available
         if self.chart.series_styles and index < len(self.chart.series_styles):
             override = self.chart.series_styles[index] or {}
-            return {**base_style, **override}
+            style = {**base_style, **override}
+        else:
+            style = dict(base_style)
 
-        return base_style
+        # Disable markers by default unless chart-level markers=True or per-series overrides it
+        chart_markers = getattr(self.chart, "markers", False)
+        if not chart_markers and "show_markers" not in style:
+            style["show_markers"] = False
+
+        return style
 
     def _get_marker(
         self,

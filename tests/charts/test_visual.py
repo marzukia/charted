@@ -33,10 +33,13 @@ from pathlib import Path
 import pytest
 from lxml import etree
 
+from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
+from charted.charts.box import BoxPlot
 from charted.charts.column import ColumnChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
+from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.scatter import ScatterChart
 
@@ -455,3 +458,81 @@ def test_heatmap_chart_rectangular_png():
         y_labels=["X", "Y"],
     )
     compare_png_baseline(chart, "heatmap_rectangular", tolerance=5)
+
+
+# ============================================================
+# New Chart Type Tests: Area, BoxPlot, Histogram
+# ============================================================
+
+
+def test_area_chart_basic():
+    """Visual regression test for basic AreaChart (SVG structure)."""
+    chart = AreaChart(
+        data=[15, 30, 45, 70, 55, 80, 75, 90, 85, 95],
+        labels=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    )
+    baseline_path = BASELINES_DIR / "area_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_area_chart_basic_png():
+    """Visual regression test for basic AreaChart (PNG pixel-perfect)."""
+    chart = AreaChart(
+        data=[15, 30, 45, 70, 55, 80, 75, 90, 85, 95],
+        labels=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    )
+    compare_png_baseline(chart, "area_basic", tolerance=5)
+
+
+def test_boxplot_chart_basic():
+    """Visual regression test for basic BoxPlot (SVG structure)."""
+    chart = BoxPlot(
+        data=[
+            [3, 5, 7, 9, 10, 12, 14, 16, 18, 20],
+            [4, 6, 8, 10, 11, 13, 15, 17, 19, 21],
+            [2, 4, 6, 8, 9, 11, 13, 15, 17, 19],
+        ],
+        labels=["Series A", "Series B", "Series C"],
+    )
+    baseline_path = BASELINES_DIR / "boxplot_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_boxplot_chart_basic_png():
+    """Visual regression test for basic BoxPlot (PNG pixel-perfect)."""
+    chart = BoxPlot(
+        data=[
+            [3, 5, 7, 9, 10, 12, 14, 16, 18, 20],
+            [4, 6, 8, 10, 11, 13, 15, 17, 19, 21],
+            [2, 4, 6, 8, 9, 11, 13, 15, 17, 19],
+        ],
+        labels=["Series A", "Series B", "Series C"],
+    )
+    compare_png_baseline(chart, "boxplot_basic", tolerance=5)
+
+
+def test_histogram_chart_basic():
+    """Visual regression test for basic Histogram (SVG structure)."""
+    import random
+
+    random.seed(42)
+    data = [random.gauss(50, 15) for _ in range(200)]
+    chart = Histogram(data=data)
+    baseline_path = BASELINES_DIR / "histogram_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_histogram_chart_basic_png():
+    """Visual regression test for basic Histogram (PNG pixel-perfect)."""
+    import random
+
+    random.seed(42)
+    data = [random.gauss(50, 15) for _ in range(200)]
+    chart = Histogram(data=data)
+    compare_png_baseline(chart, "histogram_basic", tolerance=5)
