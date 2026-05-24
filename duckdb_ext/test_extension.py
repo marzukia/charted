@@ -8,9 +8,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import duckdb
+
 from duckdb_ext.extension import (
     CHART_TYPES,
-    _build_chart,
     _extract_chart_data_from_result,
     charted_query,
     charted_svg,
@@ -193,7 +193,7 @@ if __name__ == "__main__":
             print(f"  FAIL: {test.__name__} — {e}")
             failed += 1
 
-    print(f"\nChart type coverage:")
+    print("\nChart type coverage:")
     test_all_chart_types()
 
     print(f"\n{'='*40}")

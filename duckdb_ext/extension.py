@@ -38,7 +38,6 @@ import duckdb
 
 import charted
 
-
 # Map short names to chart classes
 CHART_TYPES = {
     "bar": charted.BarChart,

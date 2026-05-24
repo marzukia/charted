@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from duckdb_ext.extension import load, charted_query, charted_svg
+from duckdb_ext.extension import charted_query, charted_svg, load
 
 
 def main():
