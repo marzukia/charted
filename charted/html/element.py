@@ -147,3 +147,11 @@ class Text(Element):
 
 class Rect(Element):
     tag = "rect"
+
+
+class ClipPath(Element):
+    tag = "clipPath"
+
+
+class Defs(Element):
+    tag = "defs"

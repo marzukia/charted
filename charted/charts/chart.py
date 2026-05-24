@@ -6,7 +6,7 @@ separate modules to address God Class architectural debt (Issue #64).
 
 from charted.charts.axes import XAxis, YAxis
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import G, Path, Svg, Text
+from charted.html.element import ClipPath, Defs, G, Path, Rect, Svg, Text
 from charted.themes.core import Theme
 from charted.utils.color_manager import ColorManager
 from charted.utils.data_model import DataModel
@@ -400,8 +400,22 @@ class Chart(Svg):
         if not hasattr(self, "_colors"):
             self._colors = self.theme.colors
 
-        # Build SVG children
-        children = [self.container, self.title]
+        # Build SVG children with plot clipping mask
+        plot_clip = ClipPath(
+            id="plot-clip",
+        )
+        plot_clip.add_child(
+            Rect(
+                x=0,
+                y=0,
+                width=self.plot_width,
+                height=self.plot_height,
+            )
+        )
+        defs = Defs()
+        defs.add_child(plot_clip)
+
+        children = [self.container, self.title, defs]
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
