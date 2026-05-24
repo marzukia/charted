@@ -98,10 +98,44 @@ class Chart(Svg):
 
         return f"data:image/svg+xml,{quote(self.svg)}"
 
-    def save(self, path: str) -> None:
-        """Save the chart to a file."""
-        with open(path, "w") as f:
-            f.write(self.svg)
+    def save(self, path: str, *, scale: int = 2) -> None:
+        """Save the chart to a file.
+
+        File format is detected from the extension:
+        - .svg: writes raw SVG markup
+        - .png: rasterizes via cairosvg (must be installed separately)
+
+        Args:
+            path: Destination file path.
+            scale: Resolution multiplier for PNG output (default 2x).
+
+        Raises:
+            ImportError: If saving as PNG and cairosvg is not installed.
+            ValueError: If the file extension is not supported.
+        """
+        import os
+
+        ext = os.path.splitext(path)[1].lower()
+
+        if ext == ".svg":
+            with open(path, "w") as f:
+                f.write(self.svg)
+        elif ext == ".png":
+            try:
+                import cairosvg
+            except ImportError:
+                raise ImportError(
+                    "PNG export requires cairosvg. "
+                    "Install it with: pip install cairosvg"
+                ) from None
+            cairosvg.svg2png(
+                bytestring=self.svg.encode(), write_to=path, scale=scale
+            )
+        else:
+            raise ValueError(
+                f"Unsupported file extension '{ext}'. "
+                f"Supported: .svg, .png"
+            )
 
     def style(self, **kwargs) -> "Chart":
         """Fluently apply theme overrides.
