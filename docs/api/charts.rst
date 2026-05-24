@@ -227,6 +227,161 @@ Radar Chart
       )
       chart.save("radar.svg")
 
+Area Chart
+----------
+
+.. autoclass:: charted.AreaChart
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+   Line chart with filled area underneath.
+
+   **Key Parameters:**
+
+   - ``data`` — Single list or list of lists for multi-series
+   - ``labels`` — X-axis labels
+   - ``fill_opacity`` — Area fill opacity (0.0-1.0, default 0.3)
+   - ``theme`` — Theme instance or preset name
+
+   **Example:**
+
+   .. code-block:: python
+
+      from charted import AreaChart
+
+      chart = AreaChart(
+          data=[[10, 20, 30], [15, 25, 35]],
+          labels=["Q1", "Q2", "Q3"],
+          series_names=["Revenue", "Profit"],
+          fill_opacity=0.4,
+          title="Growth"
+      )
+      chart.save("area.svg")
+
+Box Plot
+--------
+
+.. autoclass:: charted.BoxPlot
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+   Statistical distribution chart showing quartiles, median, and range.
+
+   **Key Parameters:**
+
+   - ``data`` — List of series (each a list of values)
+   - ``labels`` — Labels for each box
+   - ``theme`` — Theme instance or preset name
+
+   **Example:**
+
+   .. code-block:: python
+
+      from charted import BoxPlot
+
+      chart = BoxPlot(
+          data=[[1, 2, 3, 4, 5], [2, 3, 4, 5, 6, 7]],
+          labels=["Group A", "Group B"],
+          title="Distribution"
+      )
+      chart.save("boxplot.svg")
+
+Histogram
+---------
+
+.. autoclass:: charted.Histogram
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+   Frequency distribution across auto-computed bins.
+
+   **Key Parameters:**
+
+   - ``data`` — Flat list of values to bin
+   - ``bins`` — Number of bins (auto via Sturges' rule if None)
+   - ``theme`` — Theme instance or preset name
+
+   **Example:**
+
+   .. code-block:: python
+
+      from charted import Histogram
+
+      chart = Histogram(
+          data=[1, 2, 2, 3, 3, 3, 4, 4, 5],
+          bins=5,
+          title="Value Distribution"
+      )
+      chart.save("histogram.svg")
+
+Heatmap Chart
+-------------
+
+.. autoclass:: charted.HeatmapChart
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+   2D matrix with color-coded cells.
+
+   **Key Parameters:**
+
+   - ``data`` — 2D list (rows x columns)
+   - ``x_labels`` — Column labels
+   - ``y_labels`` — Row labels
+   - ``low_color`` / ``high_color`` — Color scale endpoints
+   - ``show_values`` — Display value annotations (default True)
+   - ``theme`` — Theme instance or preset name
+
+   **Example:**
+
+   .. code-block:: python
+
+      from charted import HeatmapChart
+
+      chart = HeatmapChart(
+          data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+          x_labels=["A", "B", "C"],
+          y_labels=["X", "Y", "Z"],
+          title="Correlation Matrix"
+      )
+      chart.save("heatmap.svg")
+
+Gantt Chart
+-----------
+
+.. autoclass:: charted.GanttChart
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+   Project timeline / task scheduling chart.
+
+   **Key Parameters:**
+
+   - ``data`` — List of (start, end) tuples, or list of lists for multi-series
+   - ``labels`` — Task names
+   - ``dependencies`` — List of (from_index, to_index) tuples for arrows
+   - ``bar_height_ratio`` — Bar height as fraction of row (default 0.6)
+   - ``theme`` — Theme instance or preset name
+
+   **Example:**
+
+   .. code-block:: python
+
+      from charted import GanttChart
+
+      chart = GanttChart(
+          data=[(0, 3), (2, 5), (4, 7)],
+          labels=["Design", "Build", "Test"],
+          dependencies=[(0, 1), (1, 2)],
+          title="Project Plan"
+      )
+      chart.save("gantt.svg")
+
 Common Methods
 --------------
 
@@ -236,13 +391,34 @@ All chart types share these methods:
 
    Generate the SVG string representation of the chart.
 
-.. py:method:: save(filepath)
+.. py:method:: save(filepath, *, scale=2)
 
-   Save the chart to a file. Supports .svg extension.
+   Save the chart to a file. Supports ``.svg`` and ``.png`` extensions.
+   PNG export requires the ``cairosvg`` optional dependency.
 
-.. py:method:: to_markdown(path=None)
+.. py:method:: to_markdown(alt_text=None, width=None)
 
-   Generate markdown embedding. If path is provided, uses image reference. Otherwise returns inline data URL.
+   Generate markdown embedding with inline data URL.
+
+.. py:method:: to_html(style="display: inline-block;")
+
+   Wrap the SVG in an HTML div with optional inline style.
+
+.. py:method:: to_base64()
+
+   Return the SVG as a base64-encoded data URI string.
+
+.. py:method:: to_config()
+
+   Serialize the chart to a dictionary suitable for JSON storage.
+
+.. py:classmethod:: from_config(config, **overrides)
+
+   Recreate a chart from a config dict (from ``to_config()``).
+
+.. py:method:: describe()
+
+   Return structured metadata about the chart (type, dimensions, series stats).
 
 .. py:method:: _repr_html_()
 
@@ -305,12 +481,15 @@ Theme API
 
 .. autofunction:: charted.get_theme
 
-   Get a built-in theme by name or return a custom theme dictionary.
+   Get a registered theme by name.
 
    **Parameters:**
 
-   - ``theme_name`` — Theme name string or theme dictionary
+   - ``name`` — Registered theme name string
 
-   **Returns:** Theme dictionary with chart styling
+   **Returns:** Theme instance
 
-Built-in themes: ``"dark"``, ``"light"``, ``"high-contrast"``, ``"blue"``, ``"green"``, ``"purple"``, ``"orange"``, ``"red"``, ``"pastel"``, ``"vibrant"``.
+Built-in presets: ``"dark"``, ``"light"``, ``"high-contrast"``.
+
+See :doc:`themes` for full theme documentation including ``Theme.from_preset()``,
+``Theme.compose()``, ``register_theme()``, and ``validate_theme()``.

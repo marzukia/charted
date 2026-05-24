@@ -93,7 +93,7 @@ Theme definitions can be referenced in your config:
 theme = "dark"
 ```
 
-Themes are loaded from the `charted/utils/themes.py` module.
+Themes are loaded from the `charted.themes` module (see `Theme.from_preset()`).
 
 ## CLI Usage
 
@@ -122,15 +122,14 @@ export CHARTED_FONT=Roboto
 
 ### Programmatic Configuration
 
-Load and modify config in Python:
+Load config in Python:
 
 ```python
-from charted.config import load_config, save_config
+from charted.config import load_config
 
 config = load_config()
-config["width"] = 800
-config["theme"] = "dark"
-save_config(config, path="/path/to/custom/.chartedrc.toml")
+print(config["width"])   # Current width setting
+print(config["theme"])   # Current theme setting
 ```
 
 ### Chart-Specific Defaults

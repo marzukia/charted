@@ -13,7 +13,7 @@ charted
 **Key Features:**
 
 - **Zero runtime dependencies** — pure Python stdlib, no numpy/pandas needed
-- **6 chart types** — Bar, Column, Line, Scatter, Pie, Radar
+- **11 chart types** — Bar, Column, Line, Scatter, Pie, Radar, Area, BoxPlot, Histogram, Heatmap, Gantt
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
 - **Theme system** — 3 built-in themes + custom dict overrides
@@ -23,6 +23,12 @@ charted
 - **Jupyter ready** — charts render inline automatically
 - **Base Chart class** — unified API for dynamic chart type selection
 - **Font system** — 8 font definitions (Arial, Inter, Roboto, Helvetica, etc.)
+- **PNG export** — rasterize to PNG via cairosvg (optional dependency)
+- **auto() detection** — auto-picks chart type from data shape
+- **DataFrame support** — create charts directly from pandas DataFrames
+- **MCP server** — expose chart generation to AI agents via MCP protocol
+- **DuckDB extension** — generate charts from SQL queries
+- **describe()** — structured metadata for AI agent introspection
 
 Why Charted?
 ------------
@@ -53,7 +59,7 @@ That's it — no dependencies, no configuration needed.
 Chart Types
 -----------
 
-charted provides 6 chart types, all with consistent API:
+charted provides 11 chart types, all with consistent API:
 
 - **ColumnChart** — vertical bars, multi-series with stacked/side-by-side layouts
 - **BarChart** — horizontal bars, single or multi-series
@@ -61,6 +67,11 @@ charted provides 6 chart types, all with consistent API:
 - **ScatterChart** — scatter plots with marker customization
 - **PieChart** — pie/doughnut charts with per-slice styling
 - **RadarChart** — multi-axis spider/radar charts for comparison
+- **AreaChart** — line chart with filled area underneath
+- **BoxPlot** — statistical distribution (quartiles, outliers)
+- **Histogram** — frequency distribution across bins
+- **HeatmapChart** — 2D matrix with color-coded cells
+- **GanttChart** — project timeline / task scheduling
 
 .. toctree::
    :maxdepth: 2
@@ -72,6 +83,11 @@ charted provides 6 chart types, all with consistent API:
    charts/scatter
    charts/pie
    charts/radar
+   charts/area
+   charts/boxplot
+   charts/histogram
+   charts/heatmap
+   charts/gantt
 
 .. toctree::
    :maxdepth: 2
@@ -82,6 +98,123 @@ charted provides 6 chart types, all with consistent API:
 
 Advanced Features
 -----------------
+
+auto() — Smart Chart Creation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Let charted pick the best chart type based on your data shape:
+
+.. code-block:: python
+
+   from charted import auto
+
+   # 1D list with <=6 items → PieChart
+   chart = auto([40, 35, 15, 10], title="Market Share")
+
+   # 1D list with >6 items → BarChart
+   chart = auto([10, 20, 30, 40, 50, 60, 70], title="Scores")
+
+   # 2D matrix → HeatmapChart
+   chart = auto([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+
+   # Dict → from_dataframe fallback
+   chart = auto({"Sales": [10, 20, 30], "Profit": [5, 12, 18]})
+
+from_dataframe() — Pandas Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Create charts directly from pandas DataFrames:
+
+.. code-block:: python
+
+   from charted import from_dataframe
+   import pandas as pd
+
+   df = pd.DataFrame({"Revenue": [120, 180, 210], "Costs": [80, 95, 110]},
+                     index=["Q1", "Q2", "Q3"])
+   chart = from_dataframe(df, chart_type="ColumnChart", title="Quarterly")
+   chart.save("quarterly.svg")
+
+Also works with plain dicts (no pandas required):
+
+.. code-block:: python
+
+   chart = from_dataframe({"A": [1, 2, 3], "B": [4, 5, 6]})
+
+describe() — Chart Metadata
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Get structured metadata about a chart for AI agent workflows:
+
+.. code-block:: python
+
+   from charted import BarChart
+
+   chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
+   info = chart.describe()
+   # {'chart_type': 'BarChart', 'title': None, 'dimensions': {...},
+   #  'series': [{'name': None, 'count': 3, 'min': 120, ...}], ...}
+
+PNG Export
+~~~~~~~~~~
+
+Save charts as PNG (requires ``cairosvg`` optional dependency):
+
+.. code-block:: python
+
+   from charted import BarChart
+
+   chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
+   chart.save("chart.png")          # Default 2x resolution
+   chart.save("chart.png", scale=3) # 3x resolution
+
+Install the optional dependency:
+
+.. code-block:: bash
+
+   pip install cairosvg
+
+Serialization (to_config / from_config)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Serialize charts to dicts for storage or agent workflows:
+
+.. code-block:: python
+
+   from charted import BarChart
+   from charted.charts.chart import Chart
+
+   chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
+   config = chart.to_config()  # Dict suitable for JSON serialization
+
+   # Recreate later, optionally overriding parameters
+   chart2 = Chart.from_config(config, title="Updated Title")
+
+MCP Server
+~~~~~~~~~~
+
+charted ships with an MCP (Model Context Protocol) server that exposes chart generation
+to AI agents. Tools provided: ``create_chart``, ``chart_from_csv``, ``list_chart_types``,
+``list_themes``.
+
+.. code-block:: bash
+
+   # Run the MCP server (stdio transport)
+   python -m mcp_server
+
+DuckDB Extension
+~~~~~~~~~~~~~~~~
+
+Generate charts directly from SQL queries:
+
+.. code-block:: python
+
+   from duckdb_ext import load
+   from duckdb_ext.extension import charted_query
+
+   con = load()
+   charted_query(con, 'SELECT quarter, revenue FROM sales',
+                 chart_type='bar', title='Revenue', output='chart.svg')
 
 CLI Usage
 ~~~~~~~~~

@@ -36,93 +36,69 @@ chart = BarChart(
 chart.save("accessible_chart.svg")
 ```
 
-### Using Theme.load()
+### Using Theme.from_preset()
 
 Load themes by name string:
 
 ```python
 from charted import BarChart
-from charted.utils.themes import Theme
+from charted.themes import Theme
 
 chart = BarChart(
     data=[120, 180, 210],
     labels=["Q1", "Q2", "Q3"],
-    theme=Theme.load("dark")  # Alternative: "light", "high-contrast"
+    theme=Theme.from_preset("dark")  # Alternative: "light", "high-contrast"
 )
 ```
 ## Theme Structure
 
-A theme is a dictionary with the following structure:
+Themes are frozen dataclass instances (``charted.themes.Theme``). Construct them directly or load presets:
 
 ```python
-{
-    # Color palette (5 colors, cycles for additional series)
-    "colors": ["#2e7d32", "#1565c0", "#c62828", "#f57c00", "#6a1b9a"],
-    
-    # Vertical grid lines (x-axis grid)
-    "v_grid": {
-        "stroke": "#E0E0E0",           # Grid line color
-        "stroke_dasharray": "2,2",     # Dashed pattern (None = solid)
-    },
-    
-    # Horizontal grid lines (y-axis grid)
-    "h_grid": {
-        "stroke": "#E0E0E0",
-        "stroke_dasharray": "2,2",
-    },
-    
-    # Default styling for all data series
-    "series_style": {
-        "stroke_width": 2.0,           # Line thickness
-        "stroke_opacity": 1.0,         # 0.0-1.0
-        "fill": None,                  # Bar/column fill color
-        "marker_shape": "circle",      # "circle"|"square"|"diamond"|"none"
-        "marker_size": 3.0,            # Marker size in pixels
-    },
-    
-    # Legend configuration
-    "legend": {
-        "font_size": 11,
-        "legend_padding": 0.25,
-        "position": "topright",        # "topright"|"topleft"|"bottomright"|etc.
-    },
-    
-    # Title configuration
-    "title": {
-        "font_size": 14,
-        "font_family": "Arial",
-        "font_weight": "bold",
-        "font_color": "#333333",
-    },
-    
-    # Chart padding
-    "padding": {
-        "h_padding": 0.05,             # Horizontal padding (0.0-1.0)
-        "v_padding": 0.05,             # Vertical padding (0.0-1.0)
-    },
-}
+from charted.themes import Theme
+
+# Direct construction — all fields optional, uses defaults for omitted
+theme = Theme(
+    colors=["#2e7d32", "#1565c0", "#c62828", "#f57c00", "#6a1b9a"],
+    grid_color="#E0E0E0",
+    grid_dasharray="2,2",
+    grid_visible=True,
+    legend_position="topright",
+    legend_font_size=11,
+    legend_font_family="Arial",
+    legend_font_color="#444444",
+    title_color="#333333",
+    title_font_size=16,
+    title_font_family="Arial",
+    background_color="#FFFFFF",
+    h_padding=0.05,
+    v_padding=0.05,
+    marker_size=3.0,
+)
+
+# Or load a preset and override specific fields
+theme = Theme.from_preset("dark").compose(Theme(
+    colors=["#ff6b6b", "#4ecdc4", "#45b7d1"],
+    title_font_size=20,
+))
 ```
 
 ## Creating Custom Themes
 
 ### Basic Custom Theme
 
-Create a theme by providing a dictionary with any overrides:
+Create a theme by constructing a ``Theme`` object:
 
 ```python
 from charted import BarChart
+from charted.themes import Theme
 
-corporate_theme = {
-    "colors": ["#003366", "#0066cc", "#6699cc", "#99c2ff", "#cce5ff"],
-    "title": {
-        "font_color": "#003366",
-        "font_weight": "bold",
-    },
-    "v_grid": {
-        "stroke": "#cccccc",
-        "stroke_dasharray": "4,4",
-    },
-}
+corporate_theme = Theme(
+    colors=["#003366", "#0066cc", "#6699cc", "#99c2ff", "#cce5ff"],
+    title_color="#003366",
+    grid_color="#cccccc",
+    grid_dasharray="4,4",
+)
 
 chart = BarChart(
     data=[120, 180, 210],
@@ -132,22 +108,23 @@ chart = BarChart(
 chart.save("corporate_chart.svg")
 ```
 
-### Theme Merging
+### Theme Composition
 
-Themes use deep merging - unspecified values inherit from defaults:
+Use ``compose()`` to layer customizations on top of a preset — unspecified values inherit from the base:
 
 ```python
 from charted import BarChart
+from charted.themes import Theme
 
-# This only changes colors, everything else uses defaults
-custom_colors = {
-    "colors": ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f7b731", "#5f27cd"],
-}
+# Start from preset, override just colors
+custom = Theme.from_preset("light").compose(
+    Theme(colors=["#ff6b6b", "#4ecdc4", "#45b7d1", "#f7b731", "#5f27cd"])
+)
 
 chart = BarChart(
     data=[120, 180, 210],
     labels=["Q1", "Q2", "Q3"],
-    theme=custom_colors
+    theme=custom
 )
 ```
 
@@ -241,12 +218,13 @@ chart.save("square_markers.svg")
 - **Best for:** Reducing eye strain in low-light environments
 
 ```python
-dark_theme = {
-    "colors": ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
-    "title": {"font_color": "#E0E0E0"},
-    "v_grid": {"stroke": "#444444"},
-    "h_grid": {"stroke": "#444444"},
-}
+from charted.themes import Theme
+
+dark = Theme.from_preset("dark")
+# colors: ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"]
+# title_color: "#ffffff"
+# grid_color: "#444444"
+# background_color: "#1a1a1a"
 ```
 
 ### Light Theme
@@ -258,118 +236,74 @@ dark_theme = {
 - **Best for:** Corporate documents, accessibility
 
 ```python
-light_theme = {
+from charted.themes import Theme
+
+light = Theme.from_preset("light")
+# colors: ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"]
+# title_color: "#444444"
+# grid_color: "#CCCCCC"
+# background_color: "#FFFFFF"
+```
 
 ## Complete Theme Reference
 
-### Full Theme Dictionary Structure
+### Theme Dataclass Fields
 
-Every theme is a dictionary with these keys:
+Every theme is a frozen dataclass with these fields:
 
 ```python
-complete_theme = {
-    # Primary color palette (5 colors, cycles for additional series)
-    "colors": ["#2e7d32", "#1565c0", "#c62828", "#f57c00", "#6a1b9a"],
-    
-    # Vertical grid (x-axis grid lines)
-    "v_grid": {
-        "stroke": "#E0E0E0",           # Grid line color
-        "stroke_dasharray": "2,2",     # Dashed pattern (None = solid)
-        "stroke_width": 0.5,           # Line thickness
-    },
-    
-    # Horizontal grid (y-axis grid lines)
-    "h_grid": {
-        "stroke": "#E0E0E0",
-        "stroke_dasharray": "2,2",
-        "stroke_width": 0.5,
-    },
-    
-    # Default series styling (applied to all data series)
-    "series_style": {
-        "stroke_width": 2.0,           # Border/line thickness
-        "stroke_opacity": 1.0,         # 0.0-1.0 transparency
-        "fill": None,                  # Bar/column fill (None = use stroke)
-        "marker_shape": "circle",      # "circle"|"square"|"diamond"|"none"
-        "marker_size": 3.0,            # Marker size in pixels
-    },
-    
-    # Legend configuration
-    "legend": {
-        "font_size": 11,               # Legend text size
-        "font_family": "Arial",        # Legend font
-        "font_color": "#666666",       # Legend text color
-        "legend_padding": 0.25,        # Padding around legend
-        "position": "topright",        # "topright"|"topleft"|"bottomright"|
-                                       # "bottomleft"|"center"|"top"|"bottom"
-    },
-    
-    # Title configuration
-    "title": {
-        "font_size": 14,               # Title font size
-        "font_family": "Arial",        # Title font family
-        "font_weight": "bold",         # "normal"|"bold"|"bolder"|"lighter"
-        "font_color": "#333333",       # Title text color
-    },
-    
-    # Axis labels configuration
-    "axis_labels": {
-        "font_size": 10,               # Axis label text size
-        "font_family": "Arial",        # Axis label font
-        "font_color": "#666666",       # Axis label color
-    },
-    
-    # Chart padding (fraction of chart dimensions)
-    "padding": {
-        "h_padding": 0.05,             # Horizontal padding (5%)
-        "v_padding": 0.05,             # Vertical padding (5%)
-    },
-    
-    # Doughnut chart specific (for PieChart)
-    "doughnut": {
-        "inner_radius": 0.6,           # Inner radius as fraction (0-1)
-        "stroke": "#FFFFFF",           # Center hole border color
-        "stroke_width": 2.0,           # Center hole border width
-    },
-}
+from charted.themes import Theme
+
+theme = Theme(
+    colors=["#2e7d32", "#1565c0", "#c62828", "#f57c00", "#6a1b9a"],
+    grid_color="#E0E0E0",              # Grid line color
+    grid_dasharray="2,2",             # Dashed pattern (None = solid)
+    grid_visible=True,                # Show/hide grid
+    legend_position="topright",       # "topright"|"topleft"|"bottomright"|"bottomleft"
+    legend_font_size=11,              # Legend text size
+    legend_font_family="Arial",       # Legend font
+    legend_font_color="#444444",      # Legend text color
+    title_color="#444444",            # Title text color
+    title_font_size=16,              # Title font size
+    title_font_family="Arial",       # Title font family
+    background_color="#FFFFFF",       # Chart background
+    h_padding=0.05,                  # Horizontal padding (5%)
+    v_padding=0.05,                  # Vertical padding (5%)
+    marker_size=3.0,                 # Data point marker size
+    arrow_color="#555555",           # Gantt chart dependency arrows
+)
 ```
 
-### Theme Merging Behavior
+### Theme Composition Behavior
 
-Themes use **deep merging** - partial themes inherit unspecified values from defaults:
+``compose()`` layers overrides field-by-field — omitted fields inherit from the base:
 
 ```python
 from charted import BarChart
+from charted.themes import Theme
 
-# Minimal theme - only changes colors
-color_only_theme = {
-    "colors": ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f7b731", "#5f27cd"],
-}
-
-# Everything else uses library defaults
-chart = BarChart(
-    data=[120, 180, 210],
-    labels=["Q1", "Q2", "Q3"],
-    theme=color_only_theme
+# Minimal override — only changes colors, everything else from "light" preset
+custom = Theme.from_preset("light").compose(
+    Theme(colors=["#ff6b6b", "#4ecdc4", "#45b7d1", "#f7b731", "#5f27cd"])
 )
 
-# Partial theme - changes title and grid
-partial_theme = {
-    "title": {
-        "font_color": "#003366",
-        "font_weight": "bold",
-    },
-    "v_grid": {
-        "stroke": "#cccccc",
-        "stroke_dasharray": "4,4",
-    },
-}
-
-# Colors, series_style, legend, etc. use defaults
 chart = BarChart(
     data=[120, 180, 210],
     labels=["Q1", "Q2", "Q3"],
-    theme=partial_theme
+    theme=custom
+)
+
+# Override title and grid on a dark base
+dark_custom = Theme.from_preset("dark").compose(Theme(
+    title_color="#003366",
+    grid_color="#cccccc",
+    grid_dasharray="4,4",
+))
+
+chart = BarChart(
+    data=[120, 180, 210],
+    labels=["Q1", "Q2", "Q3"],
+    theme=dark_custom
 )
 ```
 
@@ -379,21 +313,17 @@ Apply different themes per chart type in multi-chart layouts:
 
 ```python
 from charted import BarChart, LineChart
+from charted.themes import Theme
 
-# Bar chart with custom theme
-bar_theme = {
-    "colors": ["#5fab9e", "#f58b51", "#f7dd72"],
-    "title": {"font_color": "#2e4756"},
-}
+bar_theme = Theme(
+    colors=["#5fab9e", "#f58b51", "#f7dd72"],
+    title_color="#2e4756",
+)
 
-# Line chart with different theme
-line_theme = {
-    "colors": ["#db504a", "#36a2eb", "#ffce56"],
-    "series_style": {
-        "stroke_width": 3.0,
-        "marker_shape": "square",
-    },
-}
+line_theme = Theme(
+    colors=["#db504a", "#36a2eb", "#ffce56"],
+    marker_size=5.0,
+)
 
 bar_chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"], theme=bar_theme)
 line_chart = LineChart(data=[150, 200, 180], labels=["Q1", "Q2", "Q3"], theme=line_theme)
@@ -405,35 +335,30 @@ Store custom themes in a module for reuse across projects:
 
 ```python
 # myproject/themes.py
+from charted.themes import Theme
 
-CORPORATE_BLUE = {
-    "colors": ["#003366", "#0066cc", "#6699cc", "#99c2ff", "#cce5ff"],
-    "title": {
-        "font_color": "#003366",
-        "font_weight": "bold",
-    },
-    "v_grid": {"stroke": "#e0e0e0", "stroke_dasharray": "2,2"},
-    "h_grid": {"stroke": "#e0e0e0", "stroke_dasharray": "2,2"},
-    "legend": {"font_color": "#555555"},
-    "axis_labels": {"font_color": "#666666"},
-}
+CORPORATE_BLUE = Theme(
+    colors=["#003366", "#0066cc", "#6699cc", "#99c2ff", "#cce5ff"],
+    title_color="#003366",
+    grid_color="#e0e0e0",
+    grid_dasharray="2,2",
+    legend_font_color="#555555",
+)
 
-ACCESSIBILITY_HIGH_CONTRAST = {
-    "colors": ["#000000", "#FFFFFF", "#0066CC", "#CC0000", "#006600"],
-    "title": {"font_color": "#000000", "font_weight": "bold", "font_size": 16},
-    "v_grid": {"stroke": "#000000", "stroke_width": 1.0},
-    "h_grid": {"stroke": "#000000", "stroke_width": 1.0},
-    "series_style": {"stroke_width": 3.0},
-}
+ACCESSIBILITY_HIGH_CONTRAST = Theme(
+    colors=["#000000", "#FFFFFF", "#0066CC", "#CC0000", "#006600"],
+    title_color="#000000",
+    title_font_size=16,
+    grid_color="#000000",
+)
 
-DARK_MODE = {
-    "colors": ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
-    "title": {"font_color": "#E0E0E0"},
-    "v_grid": {"stroke": "#444444"},
-    "h_grid": {"stroke": "#444444"},
-    "legend": {"font_color": "#CCCCCC"},
-    "axis_labels": {"font_color": "#AAAAAA"},
-}
+DARK_MODE = Theme(
+    colors=["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
+    title_color="#E0E0E0",
+    grid_color="#444444",
+    legend_font_color="#CCCCCC",
+    background_color="#1a1a1a",
+)
 ```
 
 Usage:
@@ -451,50 +376,48 @@ chart = BarChart(
 
 ### Theme Validation
 
-Themes are validated at chart creation time. Common errors:
+Themes are validated at construction time. Common errors:
 
 ```python
-from charted import BarChart
+from charted.themes import Theme
 
-# Invalid: colors must be list of at least 1 color
+# Invalid: colors must contain valid hex/HSL values
 try:
-    chart = BarChart(data=[1,2,3], labels=["a","b","c"], theme={"colors": []})
+    theme = Theme(colors=["not-a-color"])
 except ValueError as e:
     print(f"Invalid theme: {e}")
 
-# Invalid: position must be valid string
+# Invalid: grid_color must be valid
 try:
-    chart = BarChart(
-        data=[1,2,3], labels=["a","b","c"],
-        theme={"legend": {"position": "invalid"}}
-    )
-except ValueError as e:
-    print(f"Invalid theme: {e}")
-
-# Invalid: padding must be 0-1
-try:
-    chart = BarChart(
-        data=[1,2,3], labels=["a","b","c"],
-        theme={"padding": {"h_padding": 1.5}}
-    )
+    theme = Theme(grid_color="bad")
 except ValueError as e:
     print(f"Invalid theme: {e}")
 ```
 
+You can also use ``validate_theme()`` for WCAG contrast warnings:
+
+```python
+from charted import validate_theme
+from charted.themes import Theme
+
+theme = Theme(legend_font_color="#eeeeee", background_color="#ffffff")
+warnings = validate_theme(theme)
+if warnings:
+    print("Contrast issues:", warnings)
+```
+
 ### Debugging Theme Issues
 
-Print effective theme to debug:
+Inspect the effective theme on any chart:
 
 ```python
 from charted import BarChart
-from charted.config import load_config, merge_theme
+from charted.themes import Theme
 
-# Load config and theme
-config = load_config()
-effective_theme = merge_theme(config.get("theme", "light"), config)
-
-print(f"Effective theme colors: {effective_theme['colors']}")
-print(f"Title font: {effective_theme['title']}")
+chart = BarChart(data=[1, 2, 3], labels=["a", "b", "c"], theme="dark")
+print(f"Colors: {chart.theme.colors}")
+print(f"Title color: {chart.theme.title_color}")
+print(f"Background: {chart.theme.background_color}")
 ```
 
 ### Theme Best Practices
@@ -537,12 +460,12 @@ print(f"Title font: {effective_theme['title']}")
 - **Best for:** WCAG compliance, large venue displays
 
 ```python
-high_contrast_theme = {
-    "colors": ["#000000", "#FFFF00", "#00FFFF", "#FF00FF", "#00FF00"],
-    "title": {"font_size": 18, "font_weight": "bold", "font_color": "#000000"},
-    "v_grid": {"stroke": "#000000"},
-    "h_grid": {"stroke": "#000000"},
-}
+from charted.themes import Theme
+
+high_contrast = Theme.from_preset("high-contrast")
+# colors: bold primaries for maximum visibility
+# title_color: "#000000"
+# grid_color: "#000000"
 ```
 
 ## Color Palettes
@@ -584,18 +507,15 @@ pastel = ["#a8e6cf", "#dcedc1", "#ffd3b6", "#ffaaa5", "#ff8b94"]
 
 ```python
 from charted import BarChart
+from charted.themes import Theme
 
-# Match your company branding
-brand_theme = {
-    "colors": ["#0066cc", "#004c99", "#003366", "#6699cc", "#99c2ff"],
-    "title": {
-        "font_color": "#003366",
-        "font_family": "Helvetica",
-        "font_weight": "bold",
-    },
-    "v_grid": {"stroke": "#e0e0e0", "stroke_dasharray": "2,2"},
-    "h_grid": {"stroke": "#e0e0e0", "stroke_dasharray": "2,2"},
-}
+brand_theme = Theme(
+    colors=["#0066cc", "#004c99", "#003366", "#6699cc", "#99c2ff"],
+    title_color="#003366",
+    title_font_family="Helvetica",
+    grid_color="#e0e0e0",
+    grid_dasharray="2,2",
+)
 
 chart = BarChart(
     data=[120, 180, 210],
@@ -607,23 +527,28 @@ chart = BarChart(
 ### Print-Friendly Charts
 
 ```python
-print_theme = {
-    "colors": ["#000000", "#444444", "#888888", "#aaaaaa", "#cccccc"],
-    "title": {"font_color": "#000000", "font_weight": "bold"},
-    "v_grid": {"stroke": "#000000", "stroke_dasharray": None},
-    "h_grid": {"stroke": "#000000", "stroke_dasharray": None},
-}
+from charted.themes import Theme
+
+print_theme = Theme(
+    colors=["#000000", "#444444", "#888888", "#aaaaaa", "#cccccc"],
+    title_color="#000000",
+    grid_color="#000000",
+    grid_dasharray=None,
+)
 ```
 
 ### Dark Mode Dashboard
 
 ```python
-dashboard_theme = {
-    "colors": ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
-    "title": {"font_color": "#ffffff", "font_size": 16},
-    "v_grid": {"stroke": "#333333"},
-    "h_grid": {"stroke": "#333333"},
-}
+from charted.themes import Theme
+
+dashboard_theme = Theme(
+    colors=["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
+    title_color="#ffffff",
+    title_font_size=16,
+    grid_color="#333333",
+    background_color="#1a1a1a",
+)
 ```
 
 ## Theme Validation
@@ -646,7 +571,7 @@ PieChart(data=test_data, labels=test_labels, theme=my_theme).save("test_pie.svg"
 
 - **Cache theme objects** - Don't recreate themes in loops
 - **Use presets when possible** - They're pre-validated
-- **Minimize overrides** - Fewer nested dicts = faster merging
+- **Minimize overrides** - Compose only what you need
 - **Avoid complex stroke_dasharray** - Solid lines render faster
 
 ## Troubleshooting
@@ -659,7 +584,7 @@ PieChart(data=test_data, labels=test_labels, theme=my_theme).save("test_pie.svg"
 ### Grid lines not visible
 - Check `stroke` color isn't same as background
 - Ensure `stroke_dasharray` isn't `"0,0"` (invisible)
-- Verify theme is loaded correctly with `Theme.load()`
+- Verify theme is loaded correctly with `Theme.from_preset()`
 
 ### Title not showing
 - Ensure `title` parameter is set on chart
@@ -668,35 +593,52 @@ PieChart(data=test_data, labels=test_labels, theme=my_theme).save("test_pie.svg"
 
 ## API Reference
 
-### Theme.load()
+### Theme.from_preset() / Theme.compose()
 
-Load a theme from various input types:
+Load built-in themes and layer customizations:
 
 ```python
-from charted.utils.themes import Theme
+from charted.themes import Theme
 
 # From preset name
-theme = Theme.load("dark")
+theme = Theme.from_preset("dark")
 
-# From dictionary
-theme = Theme.load({"colors": ["#ff0000", "#00ff00"]})
+# Compose custom overrides on top of a preset
+theme = Theme.from_preset("light").compose(Theme(colors=["#ff0000", "#00ff00"]))
 
-# From None (returns default)
-theme = Theme.load(None)
+# Direct construction with defaults
+theme = Theme(colors=["#ff0000", "#00ff00"], grid_color="#999999")
 ```
 
-**Parameters:**
-- `theme` (str | dict | None): Preset name, theme dict, or None
-- **Returns:** Theme dictionary with defaults merged in
+**Theme.from_preset(name):**
+- `name` (str): Preset name — "light", "dark", or "high-contrast"
+- **Returns:** Frozen Theme dataclass instance
 
-### Theme Structure
+**Theme.compose(overrides):**
+- `overrides` (Theme | None): Theme with fields to override
+- **Returns:** New Theme with overrides applied on top of self
 
-All theme keys are optional - missing keys use defaults:
+### Theme Fields
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `colors` | list[str] | Color palette (5 hex codes) |
-| `v_grid` | dict | Vertical grid configuration |
+Theme is a frozen dataclass with these fields:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `colors` | list[str] | 5 default colors | Color palette for series |
+| `grid_color` | str | "#CCCCCC" | Grid line color |
+| `grid_dasharray` | str \| None | None | Dash pattern (e.g., "2,2") |
+| `grid_visible` | bool | True | Show/hide grid |
+| `legend_position` | str | "topright" | Legend placement |
+| `legend_font_size` | int | 11 | Legend text size |
+| `legend_font_family` | str | "Arial" | Legend font |
+| `legend_font_color` | str | "#444444" | Legend text color |
+| `title_color` | str | "#444444" | Title text color |
+| `title_font_size` | int | 16 | Title font size |
+| `title_font_family` | str | "Arial" | Title font |
+| `background_color` | str | "#FFFFFF" | Chart background |
+| `h_padding` | float | 0.05 | Horizontal padding ratio |
+| `v_padding` | float | 0.05 | Vertical padding ratio |
+| `marker_size` | float | 3.0 | Marker size in pixels |
 | `h_grid` | dict | Horizontal grid configuration |
 | `series_style` | dict | Default series styling |
 | `legend` | dict | Legend appearance |

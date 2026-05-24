@@ -1,179 +1,137 @@
 Themes API
 ==========
 
-charted includes a comprehensive theme system with 3 built-in themes and full custom theme support.
+charted includes a modern, type-safe theming system using frozen dataclasses for immutability and IDE support.
 
 Built-in Themes
 ---------------
 
-The following presets are available out of the box:
+Three presets are available:
 
 - ``"dark"`` — Dark background with high-contrast light colors
-- ``"light"`` — Light background with subtle grid lines
+- ``"light"`` — Light background with subtle grid lines (default)
 - ``"high-contrast"`` — Maximum visibility with bold colors
 
-Using the ``theme.load()`` method to load a theme by name:
+Using ``Theme.from_preset()`` to load a theme:
 
 .. code-block:: python
 
    from charted import BarChart
-   from charted.utils.themes import Theme
+   from charted.themes import Theme
 
    # Use built-in theme by name
    chart = BarChart(
        data=[120, 180, 210],
        labels=["Q1", "Q2", "Q3"],
-       theme=Theme.load("dark")
+       theme=Theme.from_preset("dark")
    )
 
-   # Override specific properties
+   # Or pass the string directly — charts accept preset names
    chart = BarChart(
        data=[120, 180, 210],
        labels=["Q1", "Q2", "Q3"],
-       theme={
-           "colors": ["#FF6B6B", "#4ECDC4", "#45B7D1"]
-       }
+       theme="dark"
    )
 
-   # Merge built-in with custom overrides
-   dark_overrides = Theme.load("dark")
-   dark_overrides["title"]["font_size"] = "24px"
+   # Compose overrides on top of a preset
+   custom = Theme.from_preset("dark").compose(Theme(
+       colors=["#FF6B6B", "#4ECDC4", "#45B7D1"],
+       title_font_size=24,
+   ))
    chart = BarChart(
        data=[120, 180, 210],
        labels=["Q1", "Q2", "Q3"],
-       theme=dark_overrides
+       theme=custom
    )
 
-Theme Dictionary Structure
---------------------------
+Theme Dataclass
+---------------
 
-Complete theme configuration dictionary structure:
+.. autoclass:: charted.themes.Theme
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. code-block:: python
+   **Fields:**
 
-   {
-       # Legend configuration
-       "legend": {
-           "font_size": str,       # Font size (e.g., "11px")
-           "legend_padding": float, # Padding ratio (e.g., 0.25)
-           "position": str,        # "topright", "topleft", "bottomright", etc.
-       },
+   - ``colors`` — List of hex color strings (default 5-color palette)
+   - ``grid_color`` — Grid line color (default "#CCCCCC")
+   - ``grid_dasharray`` — Dash pattern for grid (e.g., "2,2"), None = solid
+   - ``grid_visible`` — Show/hide grid lines (default True)
+   - ``legend_position`` — "topright", "topleft", "bottomright", "bottomleft"
+   - ``legend_font_size`` — Legend text size (default 11)
+   - ``legend_font_family`` — Legend font (default "Arial")
+   - ``legend_font_color`` — Legend text color (default "#444444")
+   - ``title_color`` — Chart title color (default "#444444")
+   - ``title_font_size`` — Title size (default 16)
+   - ``title_font_family`` — Title font (default "Arial")
+   - ``background_color`` — Chart background (default "#FFFFFF")
+   - ``h_padding`` — Horizontal padding as fraction (default 0.05)
+   - ``v_padding`` — Vertical padding as fraction (default 0.05)
+   - ``marker_size`` — Data point marker size (default 3.0)
+   - ``arrow_color`` — Dependency arrow color for Gantt charts (default "#555555")
 
-       # Marker configuration
-       "marker": {
-           "marker_size": float,   # Marker size in pixels (e.g., 3.0)
-       },
+   **Class Methods:**
 
-       # Title configuration
-       "title": {
-           "font_size": str,       # Font size (e.g., "18px")
-           "font_family": str,     # Font family (e.g., "Arial")
-           "font_weight": str,     # "normal", "bold", "lighter"
-           "font_color": str,      # Hex color (e.g., "#333333")
-       },
+   - ``from_preset(name)`` — Load a built-in theme ("light", "dark", "high-contrast")
+   - ``compose(overrides)`` — Return new Theme with overrides layered on top
 
-       # Colors configuration
-       "colors": list[str],        # List of hex colors for data series
+ColorPalette
+------------
 
-       # Vertical grid configuration
-       "v_grid": {
-           "stroke": str,          # Grid line color
-           "stroke_dasharray": str,# "2,2" for dashed, None for solid
-       },
+.. autoclass:: charted.themes.ColorPalette
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-       # Horizontal grid configuration
-       "h_grid": {
-           "stroke": str,
-           "stroke_dasharray": str,
-       },
+   Frozen dataclass for automatic color cycling. Used internally by charts.
 
-       # Padding configuration
-       "padding": {
-           "h_padding": float,     # Horizontal padding ratio (e.g., 0.05)
-           "v_padding": float,     # Vertical padding ratio (e.g., 0.05)
-       },
+   **Methods:**
 
-       # Series style configuration (optional)
-       "series_style": {
-           # Per-series style overrides
-       },
-   }
+   - ``get_color(index)`` — Get color at index, cycling through the palette
+   - ``expand(min_colors)`` — Expand palette with generated HSL colors if needed
 
-Example: Dark Theme
-~~~~~~~~~~~~~~~~~~~
+Named Palettes
+--------------
+
+charted provides named color palettes accessible via ``resolve_palette()``:
 
 .. code-block:: python
 
-   DARK_THEME = {
-       "legend": {
-           "font_size": "11px",
-           "legend_padding": 0.25,
-           "position": "topright",
-       },
-       "marker": {
-           "marker_size": 3.0,
-       },
-       "title": {
-           "font_size": "18px",
-           "font_family": "Arial",
-           "font_weight": "bold",
-           "font_color": "#E0E0E0",
-       },
-       "colors": ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
-       "v_grid": {
-           "stroke": "#444444",
-           "stroke_dasharray": None,
-       },
-       "h_grid": {
-           "stroke": "#444444",
-           "stroke_dasharray": None,
-       },
-       "padding": {
-           "h_padding": 0.05,
-           "v_padding": 0.05,
-       },
-       "series_style": None,
-   }
+   from charted.themes.core import NAMED_PALETTES, resolve_palette
 
-Creating Custom Themes
-----------------------
+   # Available palettes
+   print(list(NAMED_PALETTES.keys()))
+   # ['default', 'viridis', 'ocean', 'categorical', 'rainbow',
+   #  'monochrome', 'pastel', 'sunset', 'forest', 'inferno']
 
-You can create custom themes by defining a dictionary with the structure above:
+   colors = resolve_palette("viridis")
+
+Theme Registration
+------------------
+
+Register custom themes globally for reuse:
 
 .. code-block:: python
 
-   custom_theme = {
-       "colors": ["#1e88e5", "#e53935", "#43a047", "#fb8c00"],
-       "title": {
-           "font_size": "20px",
-           "font_weight": "bold",
-       },
-   }
+   from charted import register_theme, list_themes, get_theme
+   from charted.themes import Theme
 
-   chart = BarChart(
-       data=[120, 180, 210],
-       labels=["Q1", "Q2", "Q3"],
-       theme=custom_theme
-   )
+   register_theme("corporate", Theme(
+       colors=["#1a365d", "#2b6cb0", "#3182ce", "#4299e1", "#63b3ed"],
+       background_color="#f7fafc"
+   ))
 
-The theme dictionary is merged with ``DEFAULT_THEME``, so you only need to specify the properties you want to override.
+   # Now usable by name
+   chart = BarChart(data=[1, 2, 3], labels=["a", "b", "c"], theme="corporate")
 
-Theme Loading
--------------
+   # List all available themes
+   print(list_themes())
 
-Use ``Theme.load()`` to load themes safely:
+Theme Validation
+----------------
 
-.. code-block:: python
+.. autofunction:: charted.themes.validate_theme
 
-   from charted.utils.themes import Theme
-
-   # Load by name (returns preset or default)
-   theme = Theme.load("dark")
-
-   # Load custom dict (merges with defaults)
-   theme = Theme.load({"colors": ["#FF0000", "#00FF00"]})
-
-   # Load None (returns default theme)
-   theme = Theme.load(None)
-
-This ensures all required fields are present with proper defaults.
+   Validate a theme for WCAG contrast compliance. Returns a list of warning strings
+   for any issues found (e.g., insufficient contrast between legend text and background).
