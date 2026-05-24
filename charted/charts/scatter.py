@@ -68,6 +68,7 @@ class ScatterChart(Chart):
         g = G(
             opacity=0.8,
             transform=[*self.get_base_transform()],
+            clip_path="url(#plot-clip)",
         )
         for series_idx, (y_values, y_offsets, x_values, color) in enumerate(
             zip(self.y_values, self.y_offsets, self.x_values, self.colors),
