@@ -693,6 +693,7 @@ class Chart(Svg):
             "font_size": self.theme.legend_font_size,
             "position": self.theme.legend_position,
             "font_family": self.theme.legend_font_family,
+            "font_color": self.theme.legend_font_color,
             "background_color": self.theme.background_color,
         }
 

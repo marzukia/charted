@@ -12,23 +12,42 @@ from charted.utils.transform import translate
 from charted.utils.types import MeasuredText
 
 
-def _derive_legend_stroke(background_color: str) -> str:
-    """Derive a legend border color from the background.
+def _adjust_color(hex_color: str, amount: int) -> str:
+    """Shift a hex color lighter (positive) or darker (negative)."""
+    bg = hex_color.lstrip("#")
+    if len(bg) == 3:
+        bg = "".join(c * 2 for c in bg)
+    r, g, b = int(bg[0:2], 16), int(bg[2:4], 16), int(bg[4:6], 16)
+    r = max(0, min(255, r + amount))
+    g = max(0, min(255, g + amount))
+    b = max(0, min(255, b + amount))
+    return f"#{r:02x}{g:02x}{b:02x}"
 
-    For dark backgrounds, lighten; for light backgrounds, darken.
-    """
+
+def _derive_legend_stroke(background_color: str) -> str:
+    """Derive a legend border color from the background."""
     bg = background_color.lstrip("#")
     if len(bg) == 3:
         bg = "".join(c * 2 for c in bg)
     r, g, b = int(bg[0:2], 16), int(bg[2:4], 16), int(bg[4:6], 16)
     luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
     if luminance < 0.5:
-        # Dark background: lighten by adding 40 to each channel
-        r, g, b = min(r + 60, 255), min(g + 60, 255), min(b + 60, 255)
+        return _adjust_color(background_color, 60)
     else:
-        # Light background: darken
-        r, g, b = max(r - 40, 0), max(g - 40, 0), max(b - 40, 0)
-    return f"#{r:02x}{g:02x}{b:02x}"
+        return _adjust_color(background_color, -40)
+
+
+def _derive_legend_background(background_color: str) -> str:
+    """Derive a slightly offset legend background from the chart background."""
+    bg = background_color.lstrip("#")
+    if len(bg) == 3:
+        bg = "".join(c * 2 for c in bg)
+    r, g, b = int(bg[0:2], 16), int(bg[2:4], 16), int(bg[4:6], 16)
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    if luminance < 0.5:
+        return _adjust_color(background_color, 20)
+    else:
+        return _adjust_color(background_color, -10)
 
 
 def generate_markdown_image(
@@ -168,6 +187,7 @@ def create_legend_entry(
     index: int,
     font_family: str,
     entry_height: float,
+    font_color: str = "#000000",
 ) -> G:
     """Create a single legend entry (icon + text).
 
@@ -179,6 +199,7 @@ def create_legend_entry(
         index: Series index.
         font_family: Font family for legend text.
         entry_height: Height for each legend entry.
+        font_color: Text color for the legend label.
 
     Returns:
         G element containing the legend entry.
@@ -196,6 +217,7 @@ def create_legend_entry(
         text=text.text,
         font_size=text.height,
         font_family=font_family,
+        fill=font_color,
     )
 
     g = G()
@@ -232,17 +254,20 @@ def create_legend(
         font_size = getattr(theme_config, "legend_font_size", 12)
         legend_padding = 0.5  # Default
         font_family = getattr(theme_config, "legend_font_family", "Arial")
+        font_color = getattr(theme_config, "legend_font_color", "#444444")
         position = getattr(theme_config, "legend_position", "topright")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = theme_config.get("font_size", 12)
         legend_padding = theme_config.get("legend_padding", 0.5)
         font_family = theme_config.get("font_family", "Arial")
+        font_color = theme_config.get("font_color", "#444444")
         position = theme_config.get("position", "topright")
         background_color = theme_config.get("background_color", "#ffffff")
 
-    # Derive a subtle border color from the background
+    # Derive legend-specific colors from the background
     stroke_color = _derive_legend_stroke(background_color)
+    legend_bg = _derive_legend_background(background_color)
 
     # Calculate dimensions
     legend_width, legend_height, icon_height, entry_count = calculate_legend_dimensions(
@@ -275,7 +300,7 @@ def create_legend(
     legend.add_child(
         create_legend_background(
             x0, y0_center, legend_width, legend_height, legend_padding,
-            background_color=background_color,
+            background_color=legend_bg,
             stroke_color=stroke_color,
         )
     )
@@ -289,7 +314,8 @@ def create_legend(
         text = calculate_text_dimensions(name, font_size=font_size)
         entry_top = entry_start_y + i * icon_height
         entry = create_legend_entry(
-            x0, entry_top, text, color, i, font_family, icon_height
+            x0, entry_top, text, color, i, font_family, icon_height,
+            font_color=font_color,
         )
         legend.add_child(entry)
 
