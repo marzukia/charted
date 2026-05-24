@@ -1,386 +1,338 @@
-# Charted - AI Agent & Developer Guide
+# AGENTS.md — Charted (Python SVG Chart Library)
 
-This document provides guidance for AI coding assistants (Hermes, Claude Code, etc.) and human developers working on the Charted repository.
+## Quick API Reference
 
-## Quick Start
+```python
+import charted
+from charted import (
+    BarChart, ColumnChart, LineChart, ScatterChart,
+    PieChart, RadarChart, AreaChart, BoxPlot, Histogram,
+    HeatmapChart, GanttChart,
+)
 
-```bash
-# Clone and setup
-git clone https://github.com/marzukia/charted.git
-cd charted
+# Bar (horizontal)
+BarChart(data=[10, 20, 30], labels=["A", "B", "C"], title="Sales")
 
-# Install with dev dependencies (includes PNG testing)
+# Column (vertical)
+ColumnChart(data=[10, 20, 30], labels=["A", "B", "C"])
+
+# Line
+LineChart(data=[[10, 20, 30]], labels=["Jan", "Feb", "Mar"])
+
+# Scatter — NOTE: uses x_data/y_data, NOT data=
+ScatterChart(x_data=[1, 2, 3], y_data=[10, 20, 30])
+
+# Pie
+PieChart(data=[35, 28, 18], labels=["A", "B", "C"])
+
+# Radar
+RadarChart(data=[85, 90, 75, 88, 92], labels=["Spd", "Str", "Def", "Tech", "Sta"])
+
+# Area
+AreaChart(data=[10, 20, 15, 25], labels=["Q1", "Q2", "Q3", "Q4"])
+
+# Box Plot — each item in data is a raw distribution list
+BoxPlot(data=[[1,2,3,4,5,6,7], [2,4,6,8,10]], labels=["A", "B"])
+
+# Histogram — single flat list, bins param
+Histogram(data=[1.2, 2.3, 2.5, 3.1, 4.0], bins=5)
+
+# Heatmap — 2D matrix
+HeatmapChart(data=[[1,2,3],[4,5,6],[7,8,9]], labels=["R1","R2","R3"])
+
+# Gantt
+GanttChart(tasks=[{"name": "Task 1", "start": 0, "end": 5}])
+```
+
+## Common Patterns
+
+### Single series
+```python
+chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"], title="Revenue")
+chart.save("chart.svg")
+```
+
+### Multi-series
+```python
+chart = ColumnChart(
+    data=[[12, 22, 30], [-8, -15, -20]],
+    labels=["Q1", "Q2", "Q3"],
+    series_names=["Revenue", "Costs"],
+)
+```
+
+### Stacked vs side-by-side
+```python
+# Column: stacked by default (y_stacked=True). Disable:
+ColumnChart(data=[[1,2],[3,4]], labels=["A","B"], y_stacked=False)
+
+# Bar: side-by-side by default. Stack with:
+BarChart(data=[[1,2],[3,4]], labels=["A","B"], x_stacked=True)
+```
+
+### Dark theme
+```python
+chart = BarChart(data=[1,2,3], labels=["A","B","C"], theme="dark")
+```
+
+### Custom dimensions
+```python
+chart = LineChart(data=[[1,2,3]], labels=["A","B","C"], width=800, height=400)
+```
+
+## Auto Chart Type
+
+```python
+from charted import auto
+
+chart = auto([10, 20, 30])                    # <= 6 items -> PieChart
+chart = auto([10, 20, 30, 40, 50, 60, 70])   # > 6 items -> BarChart
+chart = auto([[1,2,3,4,5],[6,7,8,9,10]])      # few rows, many cols -> ColumnChart
+chart = auto({"col_a": [1,2,3], "col_b": [4,5,6]})  # dict -> from_dataframe
+```
+
+## Output Formats
+
+```python
+chart = BarChart(data=[1,2,3], labels=["A","B","C"])
+
+chart.save("out.svg")              # SVG file
+chart.save("out.png")              # PNG (requires cairosvg)
+chart.save("out.png", scale=3)     # PNG at 3x resolution
+
+svg_str = chart.to_svg()           # Raw SVG string
+html_str = chart.to_html()         # Standalone HTML with embedded SVG
+b64_uri = chart.to_base64()        # data:image/svg+xml,... URI
+md_str = chart.to_markdown()       # Markdown image tag with inline data URL
+```
+
+## Themes
+
+### Built-in presets
+```python
+chart = BarChart(data=[1,2,3], labels=["A","B","C"], theme="light")     # default
+chart = BarChart(data=[1,2,3], labels=["A","B","C"], theme="dark")
+chart = BarChart(data=[1,2,3], labels=["A","B","C"], theme="high-contrast")
+```
+
+### Register custom theme
+```python
+from charted import Theme, register_theme
+
+register_theme("corporate", Theme(
+    background_color="#1a1a2e",
+    text_color="#eaeaea",
+    colors=["#0f3460", "#e94560", "#16213e"],
+))
+chart = BarChart(data=[1,2,3], labels=["A","B","C"], theme="corporate")
+```
+
+### Fluent style override
+```python
+chart = BarChart(data=[1,2,3], labels=["A","B","C"]).style(
+    background_color="#000", text_color="#fff", font_size=14
+)
+```
+
+### Named palettes
+```python
+from charted.themes.core import NAMED_PALETTES, resolve_palette
+# Available: default, viridis, ocean, categorical, rainbow, monochrome,
+#            pastel, sunset, forest, inferno
+colors = resolve_palette("viridis")
+```
+
+## Data Loading
+
+```python
+from charted import load_csv, load_json, load_data
+
+# Generic (auto-detects .csv/.json/.tsv)
+x, y, labels = load_data("sales.csv", x_col="Quarter", y_col="Revenue")
+
+# Specific
+x, y, labels = load_csv("sales.csv", x_col="Quarter", y_col="Revenue")
+x, y, labels = load_json("data.json")
+```
+
+### From pandas DataFrame
+```python
+from charted import from_dataframe
+chart = from_dataframe(df, chart_type="BarChart", title="Sales")
+```
+
+### From dict
+```python
+from charted import from_dict
+chart = from_dict({
+    "chart_type": "BarChart",
+    "data": [10, 20, 30],
+    "title": "Sales",
+})
+```
+
+## Config Serialization
+
+```python
+# Save chart config for later replay
+config = chart.to_config()  # -> dict with chart_type, data, labels, theme, etc.
+
+# Recreate chart from config
+from charted.charts.chart import Chart
+new_chart = Chart.from_config(config)
+
+# Override specific params on recreation
+new_chart = Chart.from_config(config, title="Updated Title", width=800)
+```
+
+## describe()
+
+Returns structured metadata for agent reasoning about a chart:
+
+```python
+chart = BarChart(data=[120, -50, 210], labels=["Q1", "Q2", "Q3"], title="P&L")
+info = chart.describe()
+# {
+#   "chart_type": "BarChart",
+#   "title": "P&L",
+#   "dimensions": {"width": 500, "height": 500},
+#   "series": [{"name": None, "count": 3, "min": -50.0, "max": 210.0, "mean": 93.33, "sum": 280.0}],
+#   "labels": ["Q1", "Q2", "Q3"],
+#   "label_count": 3,
+#   "series_count": 1,
+#   "theme": "light",
+#   "has_negative_values": True,
+#   "stacked": False,
+# }
+```
+
+## MCP Server
+
+The `mcp_server/` directory exists but is not yet implemented. When available, install with:
+```sh
+pip install 'charted[mcp]'
+```
+
+## DuckDB Integration
+
+Located in `duckdb_ext/` (separate package, not part of core charted wheel).
+
+```python
+import duckdb
+from duckdb_ext.extension import charted_query, load
+
+con = load()  # returns a duckdb connection with UDFs registered
+
+# Python helper — runs query, generates chart
+charted_query(
+    con,
+    "SELECT quarter, revenue FROM sales",
+    chart_type="bar",
+    title="Sales",
+    output="/tmp/chart.svg",
+)
+```
+
+Chart type short names: `bar`, `column`, `line`, `scatter`, `pie`, `radar`, `area`, `box`, `histogram`, `heatmap`.
+
+## CLI
+
+```sh
+# Create a chart from data file
+python -m charted create bar output.svg --data sales.csv
+python -m charted create column chart.svg -d data.json
+
+# Batch: convert all files in a directory
+python -m charted batch input_dir/ output_dir/
+python -m charted batch input_dir/ output_dir/ --chart-type line
+
+# Help
+python -m charted --help
+```
+
+Supported chart types in CLI: `bar`, `column`, `line`, `pie`, `radar`, `scatter`.
+
+## Development
+
+```sh
+# Install with dev deps
 uv pip install -e '.[dev]'
 
-# Run tests
+# Run all tests
 pytest tests/ -v
 
-# Run pre-commit hooks
-pre-commit run --all-files
-```
-
-## Project Overview
-
-**Charted** is a zero-dependency SVG chart generation library. It provides simple interfaces for creating bar charts, column charts, line charts, pie charts, scatter plots, and radar charts.
-
-### Key Principles
-- **Zero runtime dependencies** - Main package has 0 dependencies
-- **Dev/test dependencies only** - PNG visual testing uses pillow, numpy, cairosvg (dev optional-dependencies)
-- **Pure SVG output** - All charts render to standalone SVG files
-
-## Architecture
-
-```
-charted/
-├── charted/
-│   ├── __init__.py        # Package exports
-│   ├── base.py            # BaseChart abstract class
-│   ├── charts/            # Chart implementations
-│   │   ├── bar.py         # BarChart
-│   │   ├── column.py      # ColumnChart
-│   │   ├── line.py        # LineChart
-│   │   ├── pie.py         # PieChart
-│   │   ├── scatter.py     # ScatterChart
-│   │   └── radar.py       # RadarChart
-│   └── utils/             # Utility functions
-├── tests/
-│   ├── charts/            # Test files per chart type
-│   │   ├── test_bar.py
-│   │   ├── test_column.py
-│   │   ├── test_line.py
-│   │   ├── test_pie.py
-│   │   ├── test_scatter.py
-│   │   ├── test_radar.py
-│   │   └── test_visual.py  # Visual regression tests (SVG + PNG)
-│   ├── utils/
-│   │   └── image_comparison.py  # PNG comparison utilities
-│   ├── baselines/         # SVG + PNG baseline files
-│   │   ├── *.svg          # SVG baselines
-│   │   ├── *.png          # PNG baselines
-│   │   ├── MANIFEST.sha256      # SVG integrity manifest
-│   │   └── PNG_MANIFEST.sha256  # PNG integrity manifest
-│   ├── diffs/             # Generated test diff images
-│   └── conftest.py        # Baseline protection fixture
-├── scripts/
-│   └── update_baselines.py  # Regenerate all baselines
-├── .pre-commit-config.yaml  # Pre-commit hooks (ruff)
-└── pyproject.toml         # Project config & dependencies
-```
-
-## Development Workflow
-
-### 1. Branch Strategy
-
-**Always use feature branches - never push directly to `main`:**
-
-```bash
-# Start from latest main
-git checkout main && git pull
-
-# Create feature branch
-git checkout -b feat/description
-# or for bug fixes:
-git checkout -b fix/issue-number
-```
-
-### 2. Make Changes
-
-- Use **conventional commits**:
-  - `feat:` - new feature
-  - `fix:` - bug fix
-  - `refactor:` - code refactoring (no behavior change)
-  - `docs:` - documentation changes
-  - `test:` - test additions/modifications
-  - `chore:` - maintenance tasks
-
-- **Type safety**: No `any`, `as any`, or type ignores
-- **Tests**: All tests must pass before committing
-
-### 3. Run Pre-commit Hooks
-
-```bash
-# Check all files
-pre-commit run --all-files
-
-# Auto-fix linting issues
-ruff check --fix .
-ruff format .
-```
-
-### 4. Update Visual Baselines (When Needed)
-
-If you change chart rendering and tests fail:
-
-```bash
-# Regenerate all baselines
-python scripts/update_baselines.py
-
-# Or regenerate specific baseline
-python scripts/update_baselines.py column_basic
-```
-
-**Important:** The script generates both SVG and PNG baselines with matching dimensions (500x500).
-
-### 5. Open Pull Request
-
-```bash
-git push origin feat/your-feature-name
-# Open PR on GitHub against main
-```
-
-**CI must pass** before merge. Use squash merge to keep history clean.
-
-## Visual Testing System
-
-Charted uses a **hybrid visual testing approach** with both SVG and PNG baselines:
-
-### SVG Baselines (`tests/baselines/*.svg`)
-- **Structural testing** - Verify chart elements exist (axes, labels, legend)
-- **Fast comparison** - Text-based diffing
-- **Human readable** - Can inspect in browser
-
-### PNG Baselines (`tests/baselines/*.png`)
-- **Pixel-perfect verification** - Detects rendering differences
-- **Prevents AI cheating** - Visual pixel checks catch subtle mutations
-- **Diff generation** - On failure, creates `_diff.png` showing changes
-
-### Baseline Integrity Protection
-
-**⚠️ CRITICAL: BASELINES ARE SACRED AND NON-NEGOTIABLE ⚠️**
-
-The baselines in `tests/baselines/` represent the **AUTHORITATIVE SOURCE OF TRUTH** for correct chart rendering. They define what the OUTPUT MUST BE after any code changes.
-
-**THE GOLDEN RULE: NEVER EVER MODIFY BASELINES TO MATCH BUGGY CODE**
-
-This is an absolute prohibition with ZERO exceptions:
-- ❌ **NEVER** update baselines because "tests are failing"
-- ❌ **NEVER** update baselines to make broken code pass tests  
-- ❌ **NEVER** assume a baseline change is "fine" or "minor"
-- ❌ **NEVER** update baselines without explicit user approval
-
-**THE CORRECT APPROACH (Always):**
-- ✅ **ALWAYS** investigate WHY tests are failing first
-- ✅ **ALWAYS** fix the CODE to match the baseline output
-- ✅ **ALWAYS** treat baseline failures as bugs in your implementation
-- ✅ **ALWAYS** assume the baseline is correct and your code is wrong
-
-**When baselines MAY be updated (ALL conditions must be met):**
-1. User explicitly requests a rendering change with clear justification
-2. Adding NEW chart types (no existing baseline exists)
-3. Fixing a bug where the baseline itself was demonstrably wrong (document extensively)
-4. You have explicit approval BEFORE making any changes
-
-**Consequences of violating this rule:**
-- Updates that circumvent this rule will be **REJECTED IMMEDIATELY**
-- This is considered a critical violation of testing principles
-- AI agents that update baselines without justification **defeat the entire purpose** of visual regression testing
-- The baseline protection system exists specifically to prevent "cheating" by matching broken code
-
-Both baselines are protected by SHA256 manifests:
-- `MANIFEST.sha256` - Tracks SVG files
-- `PNG_MANIFEST.sha256` - Tracks PNG files
-
-**How it works:**
-1. `conftest.py` loads manifests at test start
-2. Computes SHA256 of each baseline file
-3. Compares against committed hashes
-4. **Fails immediately** if baselines were mutated outside update script
-
-### Test Execution Flow
-
-```
-pytest tests/charts/test_visual.py
-  ↓
-conftest.py: pytest_sessionstart()
-  ↓
-[1] Load MANIFEST.sha256
-[2] Load PNG_MANIFEST.sha256  
-[3] Hash all baseline files
-[4] Verify hashes match manifests
-  ↓
-If verification fails → pytest.exit() with error message
-  ↓
-Run individual tests:
-  - test_column_chart_basic (SVG)
-  - test_column_chart_basic_png (PNG)
-  ↓
-On PNG failure:
-  - Generate diff image to tests/diffs/
-  - Report failure with diff path
-```
-
-### Adding New Charts
-
-1. Create chart implementation in `charted/charts/newchart.py`
-2. Add unit tests in `tests/charts/test_newchart.py`
-3. Add visual test in `tests/charts/test_visual.py`:
-   ```python
-   def test_newchart_basic():
-       chart = NewChart(data=[1, 2, 3], labels=["a", "b", "c"])
-       compare_svg_baseline(chart, "newchart_basic")
-       compare_png_baseline(chart, "newchart_basic")
-   ```
-4. Add to baseline script in `scripts/update_baselines.py`:
-   ```python
-   CHARTS = {
-       # ... existing charts ...
-       "newchart_basic": NewChart(data=[1, 2, 3], labels=["a", "b", "c"]),
-   }
-   ```
-5. Run: `python scripts/update_baselines.py newchart_basic`
-
-## Common Tasks
-
-### Fixing Linting Errors
-
-```bash
-# Auto-fix all fixable issues
-ruff check --fix .
-
-# Format code
-ruff format .
-
-# Check specific file
-ruff check path/to/file.py
-```
-
-### Running Specific Tests
-
-```bash
-# Single test
+# Run specific test
 pytest tests/charts/test_visual.py::test_column_chart_basic -v
 
-# All PNG tests
-pytest tests/charts/test_visual.py -k png -v
-
-# All SVG tests
-pytest tests/charts/test_visual.py -k svg -v
-```
-
-### Debugging Failed Visual Tests
-
-1. Run test to generate diff:
-   ```bash
-   pytest tests/charts/test_visual.py::test_column_chart_basic_png -v
-   ```
-
-2. Compare images:
-   ```bash
-   # Baseline
-   cat tests/baselines/column_basic.png
-   
-   # Actual (generated during test)
-   cat tests/diffs/column_basic_actual.png
-   
-   # Diff (if mismatch)
-   cat tests/diffs/column_basic_diff.png
-   ```
-
-3. If change is intentional, update baseline:
-   ```bash
-   python scripts/update_baselines.py column_basic
-   ```
-
-### Adding Dev Dependencies
-
-PNG testing requires these optional dependencies (never main runtime):
-
-```toml
-# In pyproject.toml [project.optional-dependencies].dev
-"pillow>=10.0.0",      # PNG image handling
-"numpy>=1.24.0",       # Array operations for comparison
-"cairosvg>=2.7.0",     # SVG to PNG conversion
-```
-
-Install with:
-```bash
-uv pip install -e '.[dev]'
-```
-
-## Code Quality Standards
-
-### Type Safety
-- Use explicit type annotations
-- No `any` or untyped imports
-- Use `Optional[T]` for nullable values
-- Runtime type guards when needed
-
-### Testing
-- All tests must pass before committing
-- Tests should gracefully skip when optional deps unavailable
-- Use lazy imports in test utilities to avoid runtime dependencies
-
-### File Organization
-- Chart implementations: `charted/charts/*.py`
-- Tests per chart: `tests/charts/test_*.py`
-- Visual tests: `tests/charts/test_visual.py`
-- Utilities: `tests/utils/*.py`
-- Scripts: `scripts/*.py`
-
-## Git Conventions
-
-### Branch Naming
-- `feat/feature-name` - new features
-- `fix/issue-number` or `fix/description` - bug fixes
-- `refactor/description` - refactoring
-- `docs/description` - documentation
-
-### Commit Messages
-- Present tense: "add feature" not "added feature"
-- Imperative mood: "fix bug" not "fixes bug"
-- First line under 72 chars
-- Body explains WHY, not WHAT (code shows what)
-
-## Troubleshooting
-
-### Test fails with "Baseline integrity check failed"
-
-Baselines were modified outside the update script:
-
-```bash
-# If change is intentional:
-python scripts/update_baselines.py <chart-name>
-
-# If unintentional, restore from git:
-git checkout tests/baselines/
-```
-
-### PNG tests skip with "dependencies not installed"
-
-Install dev dependencies:
-```bash
-uv pip install -e '.[dev]'
-```
-
-### Pre-commit hooks fail
-
-```bash
-# Check what failed
-pre-commit run --all-files
-
-# Auto-fix if possible
-ruff check --fix .
+# Lint
+ruff check .
 ruff format .
 
-# Commit again
-git add -A && git commit -m "fix: resolve linting issues"
-```
+# Auto-fix lint
+ruff check --fix .
 
-### Missing PNG baseline manifest
+# Pre-commit hooks
+pre-commit run --all-files
 
-```bash
-# Generate manifest from existing PNG files
+# Update visual baselines (ONLY when intentional rendering changes are approved)
 python scripts/update_baselines.py
+python scripts/update_baselines.py column_basic  # specific chart
 ```
 
-## Security & Best Practices
+### TDD approach
 
-- **Never expose secrets** in code or logs
-- **Baseline protection** prevents silent test mutations
-- **Lazy imports** keep runtime dependency-free
-- **Pre-commit hooks** enforce code quality before commit
+1. Write/modify tests first
+2. Run tests to confirm failure
+3. Implement the change
+4. Confirm tests pass
+5. Run `ruff check .` before committing
 
----
+## Baseline Protection
 
-*Last updated: May 2026*
-*For questions, see CONTRIBUTING.md or open an issue*
+**BASELINES ARE SACRED AND NON-NEGOTIABLE.**
+
+The `tests/baselines/` directory contains SVG + PNG files that define correct rendering output. They are protected by SHA256 manifests (`MANIFEST.sha256`, `PNG_MANIFEST.sha256`).
+
+**Rules:**
+- NEVER update baselines to make broken code pass tests
+- NEVER assume a baseline change is "fine" or "minor"
+- ALWAYS treat baseline failures as bugs in your code
+- ALWAYS fix the code to match the baseline, not the other way around
+
+**When baselines MAY be updated (ALL conditions required):**
+1. User explicitly requests a rendering change
+2. Adding NEW chart types (no existing baseline)
+3. Fixing a provably wrong baseline (document extensively)
+4. Explicit approval BEFORE making changes
+
+**How protection works:**
+- `conftest.py` loads manifests at session start
+- Computes SHA256 of each baseline file
+- If hashes don't match manifests, pytest exits immediately
+- On PNG failure, diff images are written to `tests/diffs/`
+
+## Pitfalls
+
+| Mistake | Fix |
+|---------|-----|
+| `chart.save("out.png")` fails | Install cairosvg: `pip install cairosvg` |
+| ScatterChart with `data=[...]` | Use `x_data=` and `y_data=` params instead |
+| Multi-series scatter with flat lists | Wrap in lists: `x_data=[[1,2],[3,4]], y_data=[[5,6],[7,8]]` |
+| LineChart with flat `data=[1,2,3]` | Wrap: `data=[[1,2,3]]` (expects list-of-lists) |
+| BoxPlot with summary stats | Pass raw distributions, not quartiles |
+| Histogram with labels | Histogram auto-bins; don't pass labels |
+| Updated baselines to fix test | NEVER do this. Fix the code. |
+| Importing pandas/numpy in core | Zero-dep principle: never in `charted/` package |
+| Missing series_names in legend | Pass `series_names=["A", "B"]` for multi-series |
+
+## Zero-dep Principle
+
+The `charted` package itself has **zero runtime dependencies**. Everything in `charted/` must be pure Python stdlib only.
+
+Optional extras pull their own deps:
+- PNG export: `cairosvg` (via `pip install charted[png]` or just `pip install cairosvg`)
+- Dev/test: `pytest`, `pillow`, `numpy`, `cairosvg`, `ruff`, `pre-commit`
+- DuckDB extension: `duckdb` (separate package in `duckdb_ext/`)
+- MCP server: not yet implemented
+
+Never add runtime deps to `[project.dependencies]` in pyproject.toml.
