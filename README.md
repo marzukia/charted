@@ -500,20 +500,12 @@ md = chart.to_markdown()
 pip install charted
 ```
 
-For PNG export support:
+Optional extras (these add dependencies — the core library stays zero-dep):
 ```sh
-pip install 'charted[png]'
-# or just: pip install cairosvg
-```
-
-For DuckDB integration (generate charts directly from SQL queries):
-```sh
-pip install 'charted[duckdb]'
-```
-
-For PNG visual testing (dev):
-```sh
-pip install 'charted[dev]'
+pip install 'charted[png]'     # PNG export via cairosvg
+pip install 'charted[mcp]'     # MCP server for AI agent integration
+pip install 'charted[duckdb]'  # generate charts from SQL queries
+pip install 'charted[dev]'     # dev tools including PNG visual testing
 ```
 
 ## PNG Export
@@ -528,6 +520,22 @@ chart.save("chart.png", scale=3) # PNG at 3x resolution
 ```
 
 PNG export requires `cairosvg`. If it's not installed, `save()` raises a helpful `ImportError` with install instructions.
+
+---
+
+## MCP Server (AI Agent Integration)
+
+Charted includes an MCP server so AI agents (Claude Code, Cursor, etc.) can generate charts without writing Python:
+
+```sh
+# Register with Claude Code
+claude mcp add charted -- charted-mcp
+
+# Or run standalone
+charted-mcp
+```
+
+Exposes tools: `create_chart`, `list_chart_types`, `list_themes`, `chart_from_csv`. Requires `pip install charted[mcp]`.
 
 ---
 
