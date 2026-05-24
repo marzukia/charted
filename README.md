@@ -17,6 +17,7 @@ chart = BarChart(
     labels=["Q1", "Q2", "Q3", "Q4"],
 )
 chart.save("chart.svg")
+chart.save("chart.png")  # PNG export (requires cairosvg)
 ```
 
 ---
@@ -27,6 +28,7 @@ chart.save("chart.svg")
 - **9 chart types** — Bar, Column, Line, Scatter, Pie, Radar, Area, Box Plot, Histogram
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
+- **SVG and PNG output** — save as SVG natively, or PNG with optional `cairosvg`
 - **Theme system** — 3 built-in presets + custom theme composition
 - **Per-series styling** — granular control with SeriesStyle builders
 - **Data loading** — CSV/JSON parsers built-in
@@ -496,10 +498,29 @@ md = chart.to_markdown()
 pip install charted
 ```
 
+For PNG export support:
+```sh
+pip install 'charted[png]'
+# or just: pip install cairosvg
+```
+
 For PNG visual testing (dev):
 ```sh
 pip install 'charted[dev]'
 ```
+
+## PNG Export
+
+Save charts directly as PNG by using the `.png` extension:
+
+```python
+chart = BarChart(data=[10, 20, 30], labels=["A", "B", "C"])
+chart.save("chart.svg")          # SVG (no extra dependencies)
+chart.save("chart.png")          # PNG (requires cairosvg)
+chart.save("chart.png", scale=3) # PNG at 3x resolution
+```
+
+PNG export requires `cairosvg`. If it's not installed, `save()` raises a helpful `ImportError` with install instructions.
 
 ---
 
