@@ -70,9 +70,8 @@ class Chart(Svg):
 
     def to_markdown(self, alt_text: str | None = None, width: str | None = None) -> str:
         """Generate markdown markup for the chart."""
-        return generate_markdown_image(
-            self.svg, alt_text, self.title.text if self._title else None, width
-        )
+        title_text = self._title.text if self._title else None
+        return generate_markdown_image(self.svg, alt_text, title_text, width)
 
     def to_html(self, style: str = "display: inline-block;") -> str:
         """Return standalone HTML with embedded SVG.

@@ -20,13 +20,15 @@ def _quartiles(data: list[float]) -> tuple[float, float, float, float, float]:
         return (0, 0, 0, 0, 0)
 
     def median(arr):
+        if not arr:
+            return 0
         mid = len(arr) // 2
         if len(arr) % 2 == 0:
             return (arr[mid - 1] + arr[mid]) / 2
         return arr[mid]
 
-    q1 = median(sorted_data[: n // 2])
-    q3 = median(sorted_data[(n + 1) // 2 :])
+    q1 = median(sorted_data[: max(n // 2, 1)])
+    q3 = median(sorted_data[n - max(n // 2, 1) :])
     med = median(sorted_data)
     return sorted_data[0], q1, med, q3, sorted_data[-1]
 
