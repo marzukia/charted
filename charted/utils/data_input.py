@@ -94,8 +94,29 @@ def from_dict(data: dict, **kwargs) -> Any:
         for key in ("x_labels", "y_labels", "series", "x_data", "y_data"):
             if key in raw:
                 cfg.setdefault(key, raw[key])
+        # Map 'series' to 'data' or 'y_data' depending on target chart class
+        import inspect
 
-    return chart_cls(**cfg)
+        sig = inspect.signature(chart_cls.__init__)
+        valid_params = set(sig.parameters.keys()) - {"self"}
+        if "series" in cfg and "data" not in cfg:
+            if "data" in valid_params:
+                cfg["data"] = cfg.pop("series")
+            elif "y_data" in valid_params:
+                cfg["y_data"] = cfg.pop("series")
+            else:
+                cfg.pop("series", None)
+    elif raw is not None:
+        # Pass raw data back as the chart's data parameter
+        cfg["data"] = raw
+
+    # Filter kwargs to only valid params for the chart class
+    import inspect
+
+    sig = inspect.signature(chart_cls.__init__)
+    valid_params = set(sig.parameters.keys()) - {"self"}
+    filtered_cfg = {k: v for k, v in cfg.items() if k in valid_params}
+    return chart_cls(**filtered_cfg)
 
 
 def from_dataframe(df, **kwargs) -> Any:
@@ -162,16 +183,33 @@ def from_dataframe(df, **kwargs) -> Any:
         if not keys:
             raise ValueError("Empty dict provided. Supply at least one data column.")
 
-        # Pick first numeric-ish column as y_data
+        # All column values become series data
         y_data = [v for v in df.values()]
         series_names = keys
 
-        # Use first key as x_labels if it's not numeric
+        # Use index as x_labels
         x_labels = list(range(len(y_data[0]))) if y_data else []
 
-        return chart_cls(
-            y_data=y_data, x_labels=x_labels, series_names=series_names, **kwargs
-        )
+        # Build kwargs matching the chart class signature
+        import inspect
+
+        sig = inspect.signature(chart_cls.__init__)
+        valid_params = set(sig.parameters.keys()) - {"self"}
+        chart_kwargs = {}
+        # Map x_labels -> labels for classes that expect labels
+        labels_param = "labels" if "labels" in valid_params else "x_labels"
+        if labels_param in valid_params:
+            chart_kwargs[labels_param] = x_labels
+        if "series_names" in valid_params:
+            chart_kwargs["series_names"] = series_names
+        # Map data param: 'data' or 'y_data'
+        data_param = "data" if "data" in valid_params else "y_data"
+        chart_kwargs[data_param] = y_data
+        # Forward any extra kwargs that match valid params
+        for k, v in kwargs.items():
+            if k in valid_params:
+                chart_kwargs[k] = v
+        return chart_cls(**chart_kwargs)
 
     raise TypeError(
         f"Expected a pandas DataFrame or dict, got {type(df).__name__}. "
@@ -230,11 +268,11 @@ def auto(data, **kwargs) -> Any:
         if n_rows <= 3 and n_cols > 3:
             # Few rows, many columns — could be grouped bar or line
             chart_cls = cls_map.get("ColumnChart")
-            return chart_cls(y_data=data, **kwargs)
+            return chart_cls(data=data, **kwargs)
         elif n_rows > 3 and n_cols <= 6:
             # Many rows, few columns — line chart
             chart_cls = cls_map.get("LineChart")
-            return chart_cls(y_data=data, **kwargs)
+            return chart_cls(data=data, **kwargs)
         else:
             # Square-ish matrix — heatmap
             chart_cls = cls_map.get("HeatmapChart")

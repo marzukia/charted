@@ -28,6 +28,10 @@ def _compute_bins(data: list[float], n_bins: int) -> tuple[list[float], list[str
         return [0.0] * n_bins, [str(i) for i in range(n_bins + 1)]
 
     min_v, max_v = min(data), max(data)
+    if max_v == min_v:
+        return [float(len(data))] + [0.0] * (n_bins - 1), [
+            f"{min_v:.1f}" for _ in range(n_bins + 1)
+        ]
     bin_w = (max_v - min_v) / n_bins if n_bins > 0 else 1
     counts = [0.0] * n_bins
     for v in data:

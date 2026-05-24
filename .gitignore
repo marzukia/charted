@@ -34,3 +34,4 @@ tests/diffs/*.png
 # OS files
 .DS_Store
 Thumbs.db
+*.cover
