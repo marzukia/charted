@@ -4,6 +4,8 @@
 
 **Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. Nine chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
 
+> **Core principle:** charted itself has zero runtime dependencies. PNG export and MCP server support are opt-in extras that pull in their own dependencies — the base library stays pure Python.
+
 ```sh
 pip install charted
 ```
@@ -17,6 +19,7 @@ chart = BarChart(
     labels=["Q1", "Q2", "Q3", "Q4"],
 )
 chart.save("chart.svg")
+chart.save("chart.png")  # PNG export (requires cairosvg)
 ```
 
 ---
@@ -27,6 +30,7 @@ chart.save("chart.svg")
 - **9 chart types** — Bar, Column, Line, Scatter, Pie, Radar, Area, Box Plot, Histogram
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
+- **SVG and PNG output** — SVG natively, PNG via optional `cairosvg` (`pip install charted[png]`)
 - **Theme system** — 3 built-in presets + custom theme composition
 - **Per-series styling** — granular control with SeriesStyle builders
 - **Data loading** — CSV/JSON parsers built-in
@@ -496,10 +500,29 @@ md = chart.to_markdown()
 pip install charted
 ```
 
+For PNG export support:
+```sh
+pip install 'charted[png]'
+# or just: pip install cairosvg
+```
+
 For PNG visual testing (dev):
 ```sh
 pip install 'charted[dev]'
 ```
+
+## PNG Export
+
+Save charts directly as PNG by using the `.png` extension:
+
+```python
+chart = BarChart(data=[10, 20, 30], labels=["A", "B", "C"])
+chart.save("chart.svg")          # SVG (no extra dependencies)
+chart.save("chart.png")          # PNG (requires cairosvg)
+chart.save("chart.png", scale=3) # PNG at 3x resolution
+```
+
+PNG export requires `cairosvg`. If it's not installed, `save()` raises a helpful `ImportError` with install instructions.
 
 ---
 
