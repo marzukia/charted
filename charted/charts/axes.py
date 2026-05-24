@@ -460,15 +460,26 @@ class YAxis(Axis):
             y_positions = self.coordinates
 
         for y, label in zip(y_positions, self.labels):
-            y_offset = -label.height / 2 if bar_height is not None else label.height / 4
-            text = Text(
-                x=0,
-                y=y,
-                text=label.text,
-                transform=translate(
-                    x=-label.width,
-                    y=y_offset,
-                ),
-            )
+            if bar_height is not None:
+                text = Text(
+                    x=0,
+                    y=y,
+                    text=label.text,
+                    dominant_baseline="central",
+                    transform=translate(
+                        x=-label.width,
+                        y=0,
+                    ),
+                )
+            else:
+                text = Text(
+                    x=0,
+                    y=y,
+                    text=label.text,
+                    transform=translate(
+                        x=-label.width,
+                        y=label.height / 4,
+                    ),
+                )
             labels.add_child(text)
         return labels
