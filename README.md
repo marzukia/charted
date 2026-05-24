@@ -4,6 +4,8 @@
 
 **Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. Nine chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
 
+> **Core principle:** charted itself has zero runtime dependencies. PNG export and MCP server support are opt-in extras that pull in their own dependencies — the base library stays pure Python.
+
 ```sh
 pip install charted
 ```
@@ -28,7 +30,7 @@ chart.save("chart.png")  # PNG export (requires cairosvg)
 - **9 chart types** — Bar, Column, Line, Scatter, Pie, Radar, Area, Box Plot, Histogram
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
-- **SVG and PNG output** — save as SVG natively, or PNG with optional `cairosvg`
+- **SVG and PNG output** — SVG natively, PNG via optional `cairosvg` (`pip install charted[png]`)
 - **Theme system** — 3 built-in presets + custom theme composition
 - **Per-series styling** — granular control with SeriesStyle builders
 - **Data loading** — CSV/JSON parsers built-in
