@@ -37,6 +37,7 @@ docs = [
     "sphinx>=7.3.7",
     "furo>=2024.1.29",
 ]
+mcp = ["mcp>=1.0"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -74,6 +75,7 @@ indent-style = "space"
 
 [project.scripts]
 charted = "charted.__main__:main"
+charted-mcp = "mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["charted", "duckdb_ext"]
+packages = ["charted", "duckdb_ext", "mcp_server"]
