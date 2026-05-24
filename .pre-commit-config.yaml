@@ -5,3 +5,10 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: check-docs
+        name: Check documentation coverage
+        entry: python scripts/check_docs_coverage.py
+        language: python
+        pass_filenames: false
