@@ -139,7 +139,7 @@ class Theme:
         grid_color: Grid line color.
         grid_dasharray: Dash pattern for grid lines (e.g., "2,2").
         grid_visible: Whether grid lines are visible.
-        legend_position: Legend position ("topright", "topleft", etc.).
+        legend_position: Legend position ("topright", "topleft", "bottomright", "bottomleft").
         legend_font_size: Font size for legend text.
         legend_font_family: Font family for legend text.
         legend_font_color: Color for legend text.

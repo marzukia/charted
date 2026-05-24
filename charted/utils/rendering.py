@@ -142,11 +142,12 @@ def calculate_legend_position(
     top_padding: float,
     inset: float = 4,
     padding: float = 0.5,
+    plot_height: float = 0,
 ) -> tuple[float, float]:
     """Calculate legend position coordinates.
 
     Args:
-        position: Legend position ('topright' or 'topleft').
+        position: Legend position ('topright', 'topleft', 'bottomright', 'bottomleft').
         plot_right: Right edge of plot area.
         plot_left: Left edge of plot area.
         legend_width: Width of legend.
@@ -154,6 +155,7 @@ def calculate_legend_position(
         top_padding: Top padding of chart.
         inset: Small inset from plot border.
         padding: Legend padding value.
+        plot_height: Height of the plot area (required for bottom positions).
 
     Returns:
         Tuple of (x0, y0) coordinates for legend placement.
@@ -169,6 +171,14 @@ def calculate_legend_position(
         "topleft": {
             "x0": plot_left + inset + legend_width * (padding / 2),
             "y0": top_padding + inset + legend_height * (padding / 2),
+        },
+        "bottomright": {
+            "x0": plot_right - inset - legend_width * (1 + padding / 2),
+            "y0": top_padding + plot_height - inset - legend_height * (1 + padding / 2),
+        },
+        "bottomleft": {
+            "x0": plot_left + inset + legend_width * (padding / 2),
+            "y0": top_padding + plot_height - inset - legend_height * (1 + padding / 2),
         },
     }
 
@@ -232,6 +242,7 @@ def create_legend(
     plot_left: float,
     plot_right: float,
     top_padding: float,
+    plot_height: float = 0,
 ) -> G | None:
     """Create complete legend element.
 
@@ -242,6 +253,7 @@ def create_legend(
         plot_left: Left edge of plot area.
         plot_right: Right edge of plot area.
         top_padding: Top padding of chart.
+        plot_height: Height of the plot area (required for bottom positions).
 
     Returns:
         G element containing legend, or None if no legend should be shown.
@@ -285,6 +297,7 @@ def create_legend(
         top_padding,
         inset,
         legend_padding,
+        plot_height,
     )
 
     # Calculate actual top of background after transform
