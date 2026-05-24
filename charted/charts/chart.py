@@ -704,6 +704,7 @@ class Chart(Svg):
             plot_left=self.left_padding,
             plot_right=self.left_padding + self.plot_width,
             top_padding=self.top_padding,
+            plot_height=self.plot_height,
         )
 
     @property
