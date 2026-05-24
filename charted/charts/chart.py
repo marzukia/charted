@@ -741,6 +741,101 @@ class Chart(Svg):
             plot_height=self.plot_height,
         )
 
+    # =========================================================================
+    # Introspection
+    # =========================================================================
+
+    def describe(self) -> dict:
+        """Return a structured dictionary of chart metadata.
+
+        Useful for AI agents that need to reason about a chart they just
+        created. Contains chart type, dimensions, series statistics,
+        labels, and layout flags.
+
+        Returns:
+            Dict with keys: chart_type, title, dimensions, series,
+            labels, label_count, series_count, theme, has_negative_values,
+            stacked.
+        """
+        # Determine the raw data series to compute stats over.
+        # PieChart stores its real data in _pie_data; base class gets synthetic data.
+        # BarChart stores values in x_data (horizontal bars); detect via x_stacked attr.
+        if hasattr(self, "_pie_data"):
+            raw_series = [self._pie_data]
+        elif getattr(self, "x_stacked", False) or (
+            self.data_model.x_data and self.__class__.__name__ == "BarChart"
+        ):
+            raw_series = self.data_model.x_data
+        else:
+            raw_series = self.data_model.y_data
+
+        # Build per-series stats
+        series_info = []
+        for i, series_data in enumerate(raw_series):
+            name = None
+            if self.series_names and i < len(self.series_names):
+                name = self.series_names[i]
+            count = len(series_data)
+            s_min = float(min(series_data))
+            s_max = float(max(series_data))
+            s_sum = float(sum(series_data))
+            s_mean = s_sum / count if count else 0.0
+            series_info.append({
+                "name": name,
+                "count": count,
+                "min": s_min,
+                "max": s_max,
+                "mean": s_mean,
+                "sum": s_sum,
+            })
+
+        # Determine labels list — check pie labels, then y_labels (BarChart),
+        # then x_labels (most chart types)
+        if hasattr(self, "_pie_labels") and self._pie_labels:
+            labels = [
+                lbl.text if hasattr(lbl, "text") else str(lbl)
+                for lbl in self._pie_labels
+            ]
+        elif self.y_labels:
+            labels = [
+                lbl.text if hasattr(lbl, "text") else str(lbl)
+                for lbl in self.y_labels
+            ]
+        elif self.x_labels:
+            labels = [
+                lbl.text if hasattr(lbl, "text") else str(lbl)
+                for lbl in self.x_labels
+            ]
+        else:
+            labels = None
+
+        label_count = len(labels) if labels else (
+            len(raw_series[0]) if raw_series else 0
+        )
+
+        # Detect negative values across all series
+        has_negative = any(
+            val < 0 for series_data in raw_series for val in series_data
+        )
+
+        # Stacked flag: either x_stacked (BarChart) or y_stacked (ColumnChart)
+        stacked = bool(
+            getattr(self, "x_stacked", False) or getattr(self, "y_stacked", False)
+        )
+
+        return {
+            "chart_type": self.__class__.__name__,
+            "title": self._title.text if self._title else None,
+            "dimensions": {"width": self._width, "height": self._height},
+            "series": series_info,
+            "labels": labels,
+            "label_count": label_count,
+            "series_count": len(raw_series),
+            "theme": "default",
+            "has_negative_values": has_negative,
+            "stacked": stacked,
+        }
+
     @property
     def svg(self) -> str:
         """Get SVG string representation of the chart.
