@@ -1,6 +1,6 @@
 ![charted-logo](https://github.com/marzukia/charted/blob/main/docs/_static/charted-logo.png?raw=true)
 
-[![codecov](https://codecov.io/github/marzukia/charted/graph/badge.svg?token=*** [![charted-ci](https://github.com/marzukia/charted/actions/workflows/ci.yml/badge.svg)](https://github.com/marzukia/charted/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/github/marzukia/charted/graph/badge.svg)](https://codecov.io/github/marzukia/charted) [![charted-ci](https://github.com/marzukia/charted/actions/workflows/ci.yml/badge.svg)](https://github.com/marzukia/charted/actions/workflows/ci.yml)
 
 **Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. Nine chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
 
