@@ -506,6 +506,11 @@ pip install 'charted[png]'
 # or just: pip install cairosvg
 ```
 
+For DuckDB integration (generate charts directly from SQL queries):
+```sh
+pip install 'charted[duckdb]'
+```
+
 For PNG visual testing (dev):
 ```sh
 pip install 'charted[dev]'
