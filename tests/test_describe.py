@@ -1,6 +1,5 @@
 """Tests for Chart.describe() method (Issue #14)."""
 
-import pytest
 
 from charted.charts.bar import BarChart
 from charted.charts.column import ColumnChart
