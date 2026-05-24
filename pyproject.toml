@@ -32,6 +32,7 @@ dev = [
     # Performance benchmarks
     "pytest-benchmark>=4.0.0",
 ]
+duckdb = ["duckdb>=0.9"]
 docs = [
     "sphinx>=7.3.7",
     "furo>=2024.1.29",
@@ -75,4 +76,4 @@ indent-style = "space"
 charted = "charted.__main__:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["charted"]
+packages = ["charted", "duckdb_ext"]
