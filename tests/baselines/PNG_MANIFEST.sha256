@@ -24,5 +24,13 @@
   "boxplot_basic.png": "1b768af9def4b0c226e427b2d12bd60dcc91602586ab03b1dd3a3c0a485f8ceb",
   "histogram_basic.png": "6f06b4221698f051f8c127dcec4db84a426bcee725dcbe39551fd82247714e0c",
   "radar.png": "babf8f68e0aa78db3f94a7ef5f446c7fe62ea14a56cb8ba9c47af5030966266a",
-  "radar_multi.png": "9b0df6bb2fb4fc72bad8709a30b6b546a957911f017012a95dffe70a33216ff3"
+  "radar_multi.png": "9b0df6bb2fb4fc72bad8709a30b6b546a957911f017012a95dffe70a33216ff3",
+  "scatter_data_labels.png": "507014c819e5a5ffe83ac8993dc2c3dc38cd56642d28dc4a6f6441777289b84a",
+  "scatter_quadrant_labels.png": "7a9d340159ce1127190ec89b90c50bdd7ac4125a7bb422a7a3f8d0e220d6ae51",
+  "line_data_labels.png": "933af079893e9059ed9f4e35716248d295265684f8a7b997773c59550d0eb782",
+  "bar_data_labels.png": "d0f339d2474fbd7c239ca4669b9551a42c60f4c64fde4572e921c7ebc5c7e23d",
+  "column_data_labels.png": "ceb5fc8abd74253b61e7577e06e03019cd87876492dd0213028fec5ce5814bad",
+  "scatter_axis_titles.png": "52ae921d8d0a8f1178ebe912681aa8bfcf09edb924de1486f86f0cf67faef54f",
+  "scatter_reference_lines.png": "117d41fb0888ad309b16214ab7b4e7af319015d3a93ab6431292fa9acc1b5b9b",
+  "pie_percentages.png": "d3f92a8d91b1e6b3ffad8c0dfaa236b7d206757e30c03a9ebab15125b222de13"
 }
