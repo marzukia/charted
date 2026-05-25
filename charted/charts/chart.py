@@ -10,7 +10,6 @@ from charted.constants import (
     AXIS_BORDER_WIDTH,
     DEFAULT_CHART_HEIGHT,
     DEFAULT_CHART_WIDTH,
-    REFERENCE_LINE_COLOR,
     REFERENCE_LINE_DASH,
     REFERENCE_LINE_WIDTH,
 )
@@ -136,13 +135,10 @@ class Chart(Svg):
                     "PNG export requires cairosvg. "
                     "Install it with: pip install cairosvg"
                 ) from None
-            cairosvg.svg2png(
-                bytestring=self.svg.encode(), write_to=path, scale=scale
-            )
+            cairosvg.svg2png(bytestring=self.svg.encode(), write_to=path, scale=scale)
         else:
             raise ValueError(
-                f"Unsupported file extension '{ext}'. "
-                f"Supported: .svg, .png"
+                f"Unsupported file extension '{ext}'. Supported: .svg, .png"
             )
 
     def style(self, **kwargs) -> "Chart":
@@ -356,7 +352,7 @@ class Chart(Svg):
                 if (x_data is not None and x_labels is not None)
                 else self.zero_index
             ),
-            config=self.theme.grid_color,
+            config=self.theme.resolved_grid_color,
             pad_labels=self.pad_x_labels,
         )
 
@@ -366,7 +362,7 @@ class Chart(Svg):
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
-            config=self.theme.grid_color,
+            config=self.theme.resolved_grid_color,
         )
 
         # Initialize internal offsets and values directly (properties are read-only)
@@ -825,14 +821,16 @@ class Chart(Svg):
             s_max = float(max(series_data))
             s_sum = float(sum(series_data))
             s_mean = s_sum / count if count else 0.0
-            series_info.append({
-                "name": name,
-                "count": count,
-                "min": s_min,
-                "max": s_max,
-                "mean": s_mean,
-                "sum": s_sum,
-            })
+            series_info.append(
+                {
+                    "name": name,
+                    "count": count,
+                    "min": s_min,
+                    "max": s_max,
+                    "mean": s_mean,
+                    "sum": s_sum,
+                }
+            )
 
         # Determine labels list — check pie labels, then y_labels (BarChart),
         # then x_labels (most chart types)
@@ -843,25 +841,21 @@ class Chart(Svg):
             ]
         elif self.y_labels:
             labels = [
-                lbl.text if hasattr(lbl, "text") else str(lbl)
-                for lbl in self.y_labels
+                lbl.text if hasattr(lbl, "text") else str(lbl) for lbl in self.y_labels
             ]
         elif self.x_labels:
             labels = [
-                lbl.text if hasattr(lbl, "text") else str(lbl)
-                for lbl in self.x_labels
+                lbl.text if hasattr(lbl, "text") else str(lbl) for lbl in self.x_labels
             ]
         else:
             labels = None
 
-        label_count = len(labels) if labels else (
-            len(raw_series[0]) if raw_series else 0
+        label_count = (
+            len(labels) if labels else (len(raw_series[0]) if raw_series else 0)
         )
 
         # Detect negative values across all series
-        has_negative = any(
-            val < 0 for series_data in raw_series for val in series_data
-        )
+        has_negative = any(val < 0 for series_data in raw_series for val in series_data)
 
         # Stacked flag: either x_stacked (BarChart) or y_stacked (ColumnChart)
         stacked = bool(
@@ -894,7 +888,7 @@ class Chart(Svg):
             transform=f"translate({self.left_padding}, {self.top_padding})",
         )
 
-        ref_color = REFERENCE_LINE_COLOR
+        ref_color = self.theme.resolved_reference_line_color
 
         if self._h_lines:
             for val in self._h_lines:
@@ -929,7 +923,7 @@ class Chart(Svg):
         elements = []
         font_size = self.theme.title_font_size - 2
         font_family = self.theme.title_font_family
-        font_color = self.theme.title_color or "#333"
+        font_color = self.theme.resolved_axis_title_color
 
         if self._x_label:
             # Centered below the x-axis, below the tick labels
@@ -994,7 +988,7 @@ class Chart(Svg):
         g = G()
         font_size = max(8, self.theme.title_font_size - 4)
         font_family = self.theme.title_font_family
-        font_color = self.theme.title_color or "#333"
+        font_color = self.theme.resolved_axis_title_color
 
         for series_idx, label_row in enumerate(labels):
             if series_idx >= len(self.y_values):
@@ -1002,7 +996,9 @@ class Chart(Svg):
             y_vals = self.y_values[series_idx]
             y_offs = self.y_offsets[series_idx]
             x_vals = self.x_values[series_idx]
-            series_color = self.colors[series_idx] if series_idx < len(self.colors) else None
+            series_color = (
+                self.colors[series_idx] if series_idx < len(self.colors) else None
+            )
 
             for i, label_text in enumerate(label_row):
                 if i >= len(x_vals) or not label_text:
@@ -1026,10 +1022,14 @@ class Chart(Svg):
                 )
                 # Nudge label away from grid lines for breathing room
                 grid_margin = font_size * 0.6
-                if hasattr(self, 'y_axis'):
+                if hasattr(self, "y_axis"):
                     for tick_y in self.y_axis.coordinates:
                         if abs(ty - tick_y) < grid_margin:
-                            ty = tick_y - grid_margin if ty > tick_y else tick_y + grid_margin
+                            ty = (
+                                tick_y - grid_margin
+                                if ty > tick_y
+                                else tick_y + grid_margin
+                            )
                             break
                 # Use contrast-aware color when label is inside a colored area
                 fill = font_color

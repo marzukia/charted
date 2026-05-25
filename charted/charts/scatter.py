@@ -106,9 +106,7 @@ class ScatterChart(Chart):
             series = G(fill=fill)
             x_offset = self.x_offset
 
-            for i, (x, y, y_offset) in enumerate(
-                zip(x_values, y_values, y_offsets)
-            ):
+            for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
                 # Render marker based on shape
@@ -173,7 +171,7 @@ class ScatterChart(Chart):
         g = G()
         font_size = max(8, self.theme.title_font_size - 4)
         font_family = self.theme.title_font_family
-        font_color = self.theme.grid_color or "#999"
+        font_color = self.theme.resolved_quadrant_label_color
         pw = self.plot_width
         ph = self.plot_height
         padding = 8
@@ -198,7 +196,11 @@ class ScatterChart(Chart):
                 if is_top:
                     ty = ph - top_margin - line_idx * line_height
                 else:
-                    ty = bottom_margin + font_size + (len(lines) - 1 - line_idx) * line_height
+                    ty = (
+                        bottom_margin
+                        + font_size
+                        + (len(lines) - 1 - line_idx) * line_height
+                    )
                 g.add_child(
                     Text(
                         text=line,

@@ -126,6 +126,19 @@ class ColorPalette:
         return ColorPalette(colors=base_colors)
 
 
+# Opacity tiers for deriving colors from root_color.
+# Each key maps to a default opacity applied when the corresponding
+# theme field is at its class default value.
+OPACITY_TIERS = {
+    "grid_color": 0.20,
+    "axis_border_color": 0.60,
+    "reference_line_color": 0.50,
+    "axis_title_color": 0.80,
+    "label_color": 1.0,
+    "quadrant_label_color": 0.18,
+}
+
+
 @dataclass(frozen=True)
 class Theme:
     """Immutable theme configuration for charted charts.
@@ -136,6 +149,7 @@ class Theme:
 
     Args:
         colors: Color palette (list of hex strings). Empty = use defaults.
+        root_color: Base color for deriving opacity-tiered colors.
         grid_color: Grid line color.
         grid_dasharray: Dash pattern for grid lines (e.g., "2,2").
         grid_visible: Whether grid lines are visible.
@@ -157,6 +171,7 @@ class Theme:
     colors: list[str] = field(
         default_factory=lambda: ["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"]
     )
+    root_color: str = "#000000"
     grid_color: str = "#CCCCCC"
     grid_dasharray: Optional[str] = None
     grid_visible: bool = True
@@ -179,6 +194,8 @@ class Theme:
             if not _is_valid_hex_color(color):
                 raise ValueError(f"Invalid color in palette: {color!r}")
 
+        if not _is_valid_hex_color(self.root_color):
+            raise ValueError(f"Invalid color for root_color: {self.root_color!r}")
         if not _is_valid_hex_color(self.grid_color):
             raise ValueError(f"Invalid color for grid_color: {self.grid_color!r}")
         if not _is_valid_hex_color(self.title_color):
@@ -205,6 +222,57 @@ class Theme:
                 f"Legend font color contrast ratio ({contrast:.2f}) is below WCAG AA threshold (4.5)"
             )
 
+    def _is_explicit(self, field_name: str) -> bool:
+        """Check if a field was explicitly set (differs from class default)."""
+        class_default = self.__class__.__dataclass_fields__[field_name].default
+        return getattr(self, field_name) != class_default
+
+    @property
+    def resolved_grid_color(self) -> str:
+        """Grid color: explicit override or root_color at 20% opacity."""
+        if self._is_explicit("grid_color"):
+            return self.grid_color
+        from charted.utils.colors import derive_color
+
+        return derive_color(self.root_color, OPACITY_TIERS["grid_color"], self.background_color)
+
+    @property
+    def resolved_axis_border_color(self) -> str:
+        """Axis border color: root_color at 60% opacity."""
+        from charted.utils.colors import derive_color
+
+        return derive_color(self.root_color, OPACITY_TIERS["axis_border_color"], self.background_color)
+
+    @property
+    def resolved_reference_line_color(self) -> str:
+        """Reference line color: root_color at 50% opacity."""
+        from charted.utils.colors import derive_color
+
+        return derive_color(self.root_color, OPACITY_TIERS["reference_line_color"], self.background_color)
+
+    @property
+    def resolved_axis_title_color(self) -> str:
+        """Axis title color: explicit override or root_color at 80% opacity."""
+        if self._is_explicit("title_color"):
+            return self.title_color
+        from charted.utils.colors import derive_color
+
+        return derive_color(self.root_color, OPACITY_TIERS["axis_title_color"], self.background_color)
+
+    @property
+    def resolved_label_color(self) -> str:
+        """Label color: root_color at 100% opacity."""
+        from charted.utils.colors import derive_color
+
+        return derive_color(self.root_color, OPACITY_TIERS["label_color"], self.background_color)
+
+    @property
+    def resolved_quadrant_label_color(self) -> str:
+        """Quadrant label color: root_color at 18% opacity."""
+        from charted.utils.colors import derive_color
+
+        return derive_color(self.root_color, OPACITY_TIERS["quadrant_label_color"], self.background_color)
+
     @classmethod
     def from_preset(cls, name: str) -> "Theme":
         """Load a built-in preset theme.
@@ -228,6 +296,7 @@ class Theme:
             ),
             "dark": cls(
                 colors=["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
+                root_color="#ffffff",
                 grid_color="#9ca3af",
                 title_color="#ffffff",
                 background_color="#1a1a1a",

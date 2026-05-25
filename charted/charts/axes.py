@@ -330,7 +330,7 @@ class XAxis(Axis):
         labels = G(
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
-            fill=self.parent.theme.title_color
+            fill=self.parent.theme.resolved_label_color
             if hasattr(self.parent, "theme")
             else "#444444",
             transform=translate(
@@ -438,7 +438,7 @@ class YAxis(Axis):
         labels = G(
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
-            fill=self.parent.theme.title_color
+            fill=self.parent.theme.resolved_label_color
             if hasattr(self.parent, "theme")
             else "#444444",
             transform=translate(
