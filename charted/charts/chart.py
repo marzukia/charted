@@ -465,17 +465,21 @@ class Chart(Svg):
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
-        # Add plot border (bottom and left edges)
+        # Add plot border (bottom and left edges) darker than grid
         if self.render_axes:
-            border_color = self.theme.grid_color or "#ddd"
+            axis_color = "#999"
+            lp = self.left_padding
+            tp = self.top_padding
+            pw = self.plot_width
+            ph = self.plot_height
             children.append(
                 Path(
                     d=[
-                        f"M{self.left_padding} {self.top_padding + self.plot_height} "
-                        f"h{self.plot_width}"
+                        f"M{lp} {tp} v{ph}",
+                        f"M{lp} {tp + ph} h{pw}",
                     ],
-                    stroke=border_color,
-                    stroke_width=1,
+                    stroke=axis_color,
+                    stroke_width=1.5,
                     fill="none",
                 )
             )
