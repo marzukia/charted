@@ -3,7 +3,11 @@
 Extracted from Chart class to reduce coupling and improve testability.
 """
 
-from charted.utils.exceptions import InvalidValue
+from charted.utils.exceptions import (
+    DataShapeError,
+    InvalidValue,
+    NoDataError,
+)
 from charted.utils.types import Vector, Vector2D
 
 
@@ -20,7 +24,7 @@ def validate_data(data: Vector | Vector2D | None) -> Vector2D:
         Exception: If data is empty or inconsistent lengths.
     """
     if data is not None and len(data) == 0:
-        raise Exception("No data was provided.")
+        raise NoDataError()
 
     if not data:
         return None
@@ -32,7 +36,11 @@ def validate_data(data: Vector | Vector2D | None) -> Vector2D:
     max_length = max([len(i) for i in data])
 
     if not all([len(i) == max_length for i in data]):
-        raise Exception("Not all vectors were same length")
+        raise DataShapeError(
+            expected=f"all series length {max_length}",
+            actual="series lengths differ",
+            detail=f"Series lengths: {[len(i) for i in data]}",
+        )
 
     return data
 
@@ -110,7 +118,12 @@ def match_data_series(x_data: Vector2D | None, y_data: Vector2D) -> Vector2D:
 
     if len(x_data) != y_len:
         if not len(x_data) == 1:
-            raise Exception("x and y data series do not match")
+            raise DataShapeError(
+                expected=f"x_data series count matches y_data ({y_len})",
+                actual=f"x_data has {len(x_data)} series",
+                detail=f"x_data has {len(x_data)} series but y_data has {y_len}. "
+                "Either match the count or provide a single shared x series.",
+            )
         x_data = x_data * y_len
 
     return x_data

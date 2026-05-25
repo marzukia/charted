@@ -1,0 +1,26 @@
+name: docs-coverage
+
+on:
+  pull_request:
+    paths:
+      - "charted/**"
+      - "docs/**"
+      - "AGENTS.md"
+      - "scripts/check_docs_coverage.py"
+
+jobs:
+  check-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Check documentation coverage
+        run: python scripts/check_docs_coverage.py

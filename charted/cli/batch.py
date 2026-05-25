@@ -101,7 +101,7 @@ def batch_command(args: argparse.Namespace):
 def _infer_chart_type(filename: str) -> str:
     """Infer chart type from filename."""
     # Look for chart type keywords in filename
-    keywords = ["bar", "column", "line", "pie", "scatter"]
+    keywords = ["bar", "column", "line", "pie", "scatter", "area", "boxplot", "histogram", "heatmap", "gantt"]
 
     for keyword in keywords:
         if keyword in filename:

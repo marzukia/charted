@@ -35,4 +35,5 @@ tests/diffs/*.png
 .DS_Store
 Thumbs.db
 *.cover
+*.py,cover
 .claude/worktrees/
