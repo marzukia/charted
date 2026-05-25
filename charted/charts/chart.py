@@ -613,7 +613,7 @@ class Chart(Svg):
         return Text(
             transform=[
                 translate(
-                    x=-self._title.width / 2,
+                    x=0,
                     y=self._title.height,
                 )
             ],
@@ -622,6 +622,7 @@ class Chart(Svg):
             font_family=self.theme.title_font_family,
             font_weight="normal",
             font_size=self.theme.title_font_size,
+            text_anchor="middle",
             x=plot_center_x,
             y=self.v_pad / 2,
         )
