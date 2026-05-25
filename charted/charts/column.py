@@ -84,6 +84,10 @@ class ColumnChart(Chart):
         return self.plot_width / (self.x_count + (self.x_count + 1) * self.column_gap)
 
     @property
+    def _data_label_x_offset(self) -> float:
+        return self.x_width / 2
+
+    @property
     def representation(self) -> G:
         dy = 0
         if self.y_axis.axis_dimension.min_value < 0:
