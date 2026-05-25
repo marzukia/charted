@@ -234,21 +234,21 @@ class Theme:
             return self.grid_color
         from charted.utils.colors import derive_color
 
-        return derive_color(self.root_color, OPACITY_TIERS["grid_color"])
+        return derive_color(self.root_color, OPACITY_TIERS["grid_color"], self.background_color)
 
     @property
     def resolved_axis_border_color(self) -> str:
         """Axis border color: root_color at 60% opacity."""
         from charted.utils.colors import derive_color
 
-        return derive_color(self.root_color, OPACITY_TIERS["axis_border_color"])
+        return derive_color(self.root_color, OPACITY_TIERS["axis_border_color"], self.background_color)
 
     @property
     def resolved_reference_line_color(self) -> str:
         """Reference line color: root_color at 50% opacity."""
         from charted.utils.colors import derive_color
 
-        return derive_color(self.root_color, OPACITY_TIERS["reference_line_color"])
+        return derive_color(self.root_color, OPACITY_TIERS["reference_line_color"], self.background_color)
 
     @property
     def resolved_axis_title_color(self) -> str:
@@ -257,21 +257,21 @@ class Theme:
             return self.title_color
         from charted.utils.colors import derive_color
 
-        return derive_color(self.root_color, OPACITY_TIERS["axis_title_color"])
+        return derive_color(self.root_color, OPACITY_TIERS["axis_title_color"], self.background_color)
 
     @property
     def resolved_label_color(self) -> str:
         """Label color: root_color at 100% opacity."""
         from charted.utils.colors import derive_color
 
-        return derive_color(self.root_color, OPACITY_TIERS["label_color"])
+        return derive_color(self.root_color, OPACITY_TIERS["label_color"], self.background_color)
 
     @property
     def resolved_quadrant_label_color(self) -> str:
         """Quadrant label color: root_color at 18% opacity."""
         from charted.utils.colors import derive_color
 
-        return derive_color(self.root_color, OPACITY_TIERS["quadrant_label_color"])
+        return derive_color(self.root_color, OPACITY_TIERS["quadrant_label_color"], self.background_color)
 
     @classmethod
     def from_preset(cls, name: str) -> "Theme":
