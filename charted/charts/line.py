@@ -125,15 +125,17 @@ class LineChart(Chart):
                         continue
                     x = x_positions[i] + self.x_offset
                     y = self._apply_stacking(y_vals[i], y_offs[i])
+                    ty = y - 6
                     g.add_child(
                         Text(
                             text=str(label_text),
                             x=x,
-                            y=y - 6,
+                            y=ty,
                             fill=font_color,
                             font_size=font_size,
                             font_family=font_family,
                             text_anchor="middle",
+                            transform=f"translate({x},{ty}) scale(1,-1) translate({-x},{-ty})",
                         )
                     )
 

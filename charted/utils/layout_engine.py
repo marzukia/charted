@@ -36,6 +36,8 @@ class LayoutEngine:
         x_labels: list["MeasuredText"] | None = None,
         y_labels: list["MeasuredText"] | None = None,
         title: "MeasuredText | None" = None,
+        has_x_axis_label: bool = False,
+        has_y_axis_label: bool = False,
     ):
         self.width = width
         self.height = height
@@ -44,6 +46,8 @@ class LayoutEngine:
         self.x_labels = x_labels or []
         self.y_labels = y_labels or []
         self.title = title
+        self.has_x_axis_label = has_x_axis_label
+        self.has_y_axis_label = has_y_axis_label
 
     @property
     def plot_width(self) -> float:
@@ -71,6 +75,10 @@ class LayoutEngine:
             Total left padding in pixels (base padding + max label width).
         """
         h_pad = self.h_padding * self.width
+
+        # Extra space for y-axis title label (rendered vertically to the left)
+        if self.has_y_axis_label:
+            h_pad += 16
 
         if not self.y_labels:
             return h_pad
@@ -114,10 +122,16 @@ class LayoutEngine:
         Returns:
             Total bottom padding in pixels (base padding + rotated label space if any).
         """
+        base = self.v_padding * self.height
+
+        # Extra space for x-axis title label (rendered below tick labels)
+        if self.has_x_axis_label:
+            base += 18
+
         rotation = self.x_label_rotation
 
         if not rotation:
-            return self.v_padding * self.height
+            return base
 
         _, width = rotation
         from .helpers import rotate_coordinate
@@ -125,7 +139,7 @@ class LayoutEngine:
         x, y = (width, 0)
         _, dy = rotate_coordinate(x, y, rotation[0])
 
-        return self.v_padding * self.height + abs((dy - y))
+        return base + abs((dy - y))
 
     @property
     def x_label_rotation(self) -> tuple[float, float] | None:
