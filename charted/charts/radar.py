@@ -28,7 +28,7 @@ class RadarChart(Chart):
         theme: Optional theme configuration
         series_names: Names for each series (shown in legend)
         series_styles: Per-series style overrides (stroke, fill, etc.)
-        radius: Chart radius as ratio of min(width, height) (default 0.35)
+        radius: Chart radius as ratio of min(width, height) (default 0.75)
         axis_count: Number of axes (defaults to len(labels))
         grid_levels: Number of concentric grid circles (default 5)
         show_axis_labels: Whether to display axis labels (default True)
@@ -63,7 +63,7 @@ class RadarChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
-        radius: float = 0.45,
+        radius: float = 0.75,
         axis_count: int | None = None,
         grid_levels: int = 5,
         show_axis_labels: bool = True,
@@ -79,7 +79,7 @@ class RadarChart(Chart):
             theme: Optional theme configuration
             series_names: Names for each series (shown in legend)
             series_styles: Per-series style overrides (stroke, fill, etc.)
-            radius: Chart radius as ratio of min(width, height) (default 0.35)
+            radius: Chart radius as ratio of min(width, height) (default 0.75)
             axis_count: Number of axes (defaults to len(labels))
             grid_levels: Number of concentric grid circles (default 5)
             show_axis_labels: Whether to display axis labels (default True)
