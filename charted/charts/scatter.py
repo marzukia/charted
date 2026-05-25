@@ -168,7 +168,7 @@ class ScatterChart(Chart):
         g = G()
         font_size = max(8, self.theme.title_font_size - 4)
         font_family = self.theme.title_font_family
-        font_color = self.theme.grid_color or "#999"
+        font_color = self.theme.resolved_quadrant_label_color
         pw = self.plot_width
         ph = self.plot_height
         padding = 8

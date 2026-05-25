@@ -348,7 +348,7 @@ class Chart(Svg):
                 if (x_data is not None and x_labels is not None)
                 else self.zero_index
             ),
-            config=self.theme.grid_color,
+            config=self.theme.resolved_grid_color,
             pad_labels=self.pad_x_labels,
         )
 
@@ -358,7 +358,7 @@ class Chart(Svg):
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
-            config=self.theme.grid_color,
+            config=self.theme.resolved_grid_color,
         )
 
         # Initialize internal offsets and values directly (properties are read-only)
@@ -869,7 +869,7 @@ class Chart(Svg):
             transform=f"translate({self.left_padding}, {self.top_padding})",
         )
 
-        ref_color = self.theme.grid_color or "#999"
+        ref_color = self.theme.resolved_reference_line_color
 
         if self._h_lines:
             for val in self._h_lines:
@@ -904,7 +904,7 @@ class Chart(Svg):
         elements = []
         font_size = self.theme.title_font_size - 2
         font_family = self.theme.title_font_family
-        font_color = self.theme.title_color or "#333"
+        font_color = self.theme.resolved_axis_title_color
 
         if self._x_label:
             # Centered below the x-axis, below the tick labels
@@ -969,7 +969,7 @@ class Chart(Svg):
         g = G()
         font_size = max(8, self.theme.title_font_size - 4)
         font_family = self.theme.title_font_family
-        font_color = self.theme.title_color or "#333"
+        font_color = self.theme.resolved_axis_title_color
 
         for series_idx, label_row in enumerate(labels):
             if series_idx >= len(self.y_values):
