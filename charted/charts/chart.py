@@ -977,8 +977,22 @@ class Chart(Svg):
                     continue
                 x = x_vals[i] + self.x_offset + self._data_label_x_offset
                 y = self._apply_stacking(y_vals[i], y_offs[i])
-                # Position label slightly above the point
-                ty = y - 6
+                label_offset = font_size + 4
+                if y_vals[i] < 0:
+                    ty = y + label_offset + font_size
+                else:
+                    ty = y - label_offset
+                anchor = "middle"
+                # Clamp labels that would go off-chart vertically
+                if ty < font_size:
+                    ty = y + label_offset + font_size
+                if ty > self.plot_height - font_size:
+                    ty = y - label_offset
+                # Clamp labels at horizontal edges
+                if x > self.plot_width * 0.85:
+                    anchor = "end"
+                elif x < self.plot_width * 0.15:
+                    anchor = "start"
                 g.add_child(
                     Text(
                         text=str(label_text),
@@ -987,7 +1001,7 @@ class Chart(Svg):
                         fill=font_color,
                         font_size=font_size,
                         font_family=font_family,
-                        text_anchor="middle",
+                        text_anchor=anchor,
                         transform=f"translate({x},{ty}) scale(1,-1) translate({-x},{-ty})",
                     )
                 )
