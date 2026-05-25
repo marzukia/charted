@@ -79,7 +79,7 @@ def test_validate_data_empty_raises(data):
 def test_validate_data_mismatched_lengths_raises(data1, data2):
     """validate_data should raise for mismatched series lengths."""
     if len(data1) != len(data2):
-        with pytest.raises(Exception, match="Not all vectors"):
+        with pytest.raises(Exception, match="Data shape mismatch"):
             validate_data([data1, data2])
 
 

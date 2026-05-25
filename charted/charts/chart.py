@@ -654,7 +654,7 @@ class Chart(Svg):
         return self._y_offsets
 
     @property
-    def x_offsets(self):
+    def x_offsets(self) -> Vector2D | None:
         """Get x-offsets (read-only)."""
         return self._x_offsets
 
@@ -738,7 +738,7 @@ class Chart(Svg):
         raise Exception("representation not implemented for instance of Chart.")
 
     @property
-    def legend(self):
+    def legend(self) -> G | None:
         """Create legend element."""
         from charted.utils.rendering import create_legend
 
