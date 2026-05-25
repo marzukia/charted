@@ -9,6 +9,26 @@ description = "Charted is a zero dependency SVG chart generator that aims to pro
 authors = [{ name = "Andryo Marzuki", email = "andryo@mrzk.io" }]
 readme = "README.md"
 requires-python = ">=3.10, <3.15"
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics :: Presentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["svg", "chart", "graph", "visualization", "zero-dependency"]
+
+[project.urls]
+homepage = "https://github.com/marzukia/charted"
+repository = "https://github.com/marzukia/charted"
+documentation = "https://github.com/marzukia/charted"
+changelog = "https://github.com/marzukia/charted/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
