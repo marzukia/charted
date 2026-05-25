@@ -873,7 +873,7 @@ class Chart(Svg):
 
         if self._h_lines:
             for val in self._h_lines:
-                y = self.y_axis.reproject(val)
+                y = self.plot_height - self.y_axis.reproject(val)
                 g.add_child(
                     Path(
                         d=[f"M0 {y} h{self.plot_width}"],
