@@ -204,7 +204,7 @@ class Axis(G):
         raise Exception("axis_labels not implemented for instance of Axis.")
 
     @property
-    def reprojected_values(self):
+    def reprojected_values(self) -> list[float]:
         return [self.reproject(v) for v in self.values]
 
     @property
@@ -293,7 +293,7 @@ class XAxis(Axis):
         )
 
     @property
-    def coordinates(self):
+    def coordinates(self) -> list[float]:
         return [self.reproject(i) for i in self.values]
 
     @property
@@ -388,7 +388,7 @@ class YAxis(Axis):
         )
 
     @property
-    def coordinates(self):
+    def coordinates(self) -> list[float]:
         # For bar/column charts, use values (number of bars) not grid lines
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:

@@ -86,7 +86,12 @@ def test_rgb_to_hex_clamps_or_rejects(r, g, b):
 @given(st.text(min_size=1, max_size=20))
 @settings(max_examples=200)
 def test_hex_to_rgb_rejects_invalid(hex_str):
-    if not re.match(r"^#[A-Fa-f0-9]{3,8}$", hex_str):
+    """hex_to_rgb should raise for strings that aren't 3/6/8 hex chars."""
+    stripped = hex_str.lstrip("#")
+    valid_lengths = (3, 6, 8)
+    is_valid_len = len(stripped) in valid_lengths
+    is_hex = all(c in "0123456789abcdefABCDEF" for c in stripped)
+    if not (is_valid_len and is_hex):
         with pytest.raises(ValueError):
             hex_to_rgb(hex_str)
 
