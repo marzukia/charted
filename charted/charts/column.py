@@ -50,6 +50,11 @@ class ColumnChart(Chart):
         series_names: list[str] | None = None,
         y_stacked: bool = True,
         series_styles: list[SeriesStyleConfig] | None = None,
+        data_labels: list[str] | list[list[str]] | None = None,
+        x_label: str | None = None,
+        y_label: str | None = None,
+        h_lines: list[float] | None = None,
+        v_lines: list[float] | None = None,
     ):
         if column_gap is None:
             column_gap = get_column_gap()
@@ -67,6 +72,11 @@ class ColumnChart(Chart):
             series_names=series_names,
             chart_type="column",
             series_styles=series_styles,
+            data_labels=data_labels,
+            x_label=x_label,
+            y_label=y_label,
+            h_lines=h_lines,
+            v_lines=v_lines,
         )
 
     @property
@@ -133,5 +143,10 @@ class ColumnChart(Chart):
                     else:
                         paths.append(Path.get_path(bar_x, y, bar_width, -y))
                 g.add_child(Path(d=paths, fill=fill))
+
+        # Render data labels above columns
+        data_labels_g = self._render_data_labels()
+        if data_labels_g:
+            g.add_child(data_labels_g)
 
         return g

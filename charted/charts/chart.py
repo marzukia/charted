@@ -253,6 +253,11 @@ class Chart(Svg):
         title: str | None = None,
         theme: Theme | None = None,
         chart_type: str | None = None,
+        x_label: str | None = None,
+        y_label: str | None = None,
+        data_labels: list[str] | list[list[str]] | None = None,
+        h_lines: list[float] | None = None,
+        v_lines: list[float] | None = None,
     ):
         super().__init__(
             width=width,
@@ -290,6 +295,11 @@ class Chart(Svg):
         self.series_styles = series_styles
         self.x_stacked = x_stacked
         self.zero_index = zero_index
+        self._x_label = x_label
+        self._y_label = y_label
+        self._data_labels = data_labels
+        self._h_lines = h_lines
+        self._v_lines = v_lines
 
         # Set internal attributes directly (properties are read-only)
         self._width = width
@@ -453,6 +463,14 @@ class Chart(Svg):
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
+        # Add reference lines (rendered inside the plot area)
+        ref_lines = self._render_reference_lines()
+        if ref_lines:
+            children.append(ref_lines)
+        # Add axis title labels
+        axis_labels = self._render_axis_labels()
+        if axis_labels:
+            children.extend(axis_labels)
         self.add_children(*children)
 
     # =========================================================================
@@ -835,6 +853,137 @@ class Chart(Svg):
             "has_negative_values": has_negative,
             "stacked": stacked,
         }
+
+    # =========================================================================
+    # Reference Lines & Axis Labels
+    # =========================================================================
+
+    def _render_reference_lines(self) -> G | None:
+        """Render horizontal and vertical reference lines in the plot area."""
+        if not self._h_lines and not self._v_lines:
+            return None
+
+        g = G(
+            transform=f"translate({self.left_padding}, {self.top_padding})",
+        )
+
+        ref_color = self.theme.grid_color or "#999"
+
+        if self._h_lines:
+            for val in self._h_lines:
+                y = self.y_axis.reproject(val)
+                g.add_child(
+                    Path(
+                        d=[f"M0 {y} h{self.plot_width}"],
+                        stroke=ref_color,
+                        stroke_width=1.5,
+                        stroke_dasharray="6 3",
+                        fill="none",
+                    )
+                )
+
+        if self._v_lines:
+            for val in self._v_lines:
+                x = self.x_axis.reproject(val)
+                g.add_child(
+                    Path(
+                        d=[f"M{x} 0 v{self.plot_height}"],
+                        stroke=ref_color,
+                        stroke_width=1.5,
+                        stroke_dasharray="6 3",
+                        fill="none",
+                    )
+                )
+
+        return g
+
+    def _render_axis_labels(self) -> list:
+        """Render x-axis and y-axis title labels."""
+        elements = []
+        font_size = self.theme.title_font_size - 2
+        font_family = self.theme.title_font_family
+        font_color = self.theme.title_color or "#333"
+
+        if self._x_label:
+            # Centered below the x-axis
+            x = self.left_padding + self.plot_width / 2
+            y = self._height - 4
+            elements.append(
+                Text(
+                    text=self._x_label,
+                    x=x,
+                    y=y,
+                    fill=font_color,
+                    font_size=font_size,
+                    font_family=font_family,
+                    text_anchor="middle",
+                )
+            )
+
+        if self._y_label:
+            # Centered along the y-axis, rotated -90 degrees
+            x = 12
+            y = self.top_padding + self.plot_height / 2
+            elements.append(
+                Text(
+                    text=self._y_label,
+                    x=x,
+                    y=y,
+                    fill=font_color,
+                    font_size=font_size,
+                    font_family=font_family,
+                    text_anchor="middle",
+                    transform=f"rotate(-90, {x}, {y})",
+                )
+            )
+
+        return elements
+
+    def _render_data_labels(self) -> G | None:
+        """Render data labels on data points.
+
+        Returns a G element with text labels positioned at each data point.
+        Subclasses call this from their representation property.
+        """
+        if not self._data_labels:
+            return None
+
+        labels = self._data_labels
+        # Normalize to 2D list
+        if labels and not isinstance(labels[0], list):
+            labels = [labels]
+
+        g = G()
+        font_size = max(8, self.theme.title_font_size - 4)
+        font_family = self.theme.title_font_family
+        font_color = self.theme.title_color or "#333"
+
+        for series_idx, label_row in enumerate(labels):
+            if series_idx >= len(self.y_values):
+                break
+            y_vals = self.y_values[series_idx]
+            y_offs = self.y_offsets[series_idx]
+            x_vals = self.x_values[series_idx]
+
+            for i, label_text in enumerate(label_row):
+                if i >= len(x_vals) or not label_text:
+                    continue
+                x = x_vals[i] + self.x_offset
+                y = self._apply_stacking(y_vals[i], y_offs[i])
+                # Position label slightly above the point
+                g.add_child(
+                    Text(
+                        text=str(label_text),
+                        x=x,
+                        y=y - 6,
+                        fill=font_color,
+                        font_size=font_size,
+                        font_family=font_family,
+                        text_anchor="middle",
+                    )
+                )
+
+        return g
 
     @property
     def svg(self) -> str:

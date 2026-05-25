@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import Circle, G, Path, Rect
+from charted.html.element import Circle, G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.types import SeriesStyleConfig, Vector, Vector2D
 
@@ -50,7 +50,14 @@ class ScatterChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        data_labels: list[str] | list[list[str]] | None = None,
+        x_label: str | None = None,
+        y_label: str | None = None,
+        h_lines: list[float] | None = None,
+        v_lines: list[float] | None = None,
+        quadrant_labels: list[str] | None = None,
     ):
+        self._quadrant_labels = quadrant_labels
         super().__init__(
             y_data=y_data,
             x_data=x_data,
@@ -61,6 +68,11 @@ class ScatterChart(Chart):
             series_names=series_names,
             chart_type="scatter",
             series_styles=series_styles,
+            data_labels=data_labels,
+            x_label=x_label,
+            y_label=y_label,
+            h_lines=h_lines,
+            v_lines=v_lines,
         )
 
     @property
@@ -89,7 +101,9 @@ class ScatterChart(Chart):
             series = G(fill=fill)
             x_offset = self.x_offset
 
-            for x, y, y_offset in zip(x_values, y_values, y_offsets):
+            for i, (x, y, y_offset) in enumerate(
+                zip(x_values, y_values, y_offsets)
+            ):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
                 # Render marker based on shape
@@ -114,5 +128,64 @@ class ScatterChart(Chart):
                 elif marker_shape != "none":  # circle
                     series.add_child(Circle(cx=x, cy=y, r=marker_size))
             g.add_children(series)
+
+        # Render data labels
+        data_labels_g = self._render_data_labels()
+        if data_labels_g:
+            g.add_child(data_labels_g)
+
+        # Render quadrant labels
+        quadrant_g = self._render_quadrant_labels()
+        if quadrant_g:
+            g.add_child(quadrant_g)
+
+        return g
+
+    def _render_quadrant_labels(self) -> G | None:
+        """Render text labels in each quadrant of the scatter plot.
+
+        Expects a list of 4 strings: [top-left, top-right, bottom-left, bottom-right].
+        Each string may contain newlines for multi-line labels.
+        """
+        if not self._quadrant_labels:
+            return None
+
+        labels = self._quadrant_labels
+        if len(labels) < 4:
+            labels = list(labels) + [""] * (4 - len(labels))
+
+        g = G()
+        font_size = max(8, self.theme.title_font_size - 4)
+        font_family = self.theme.title_font_family
+        font_color = self.theme.grid_color or "#999"
+        pw = self.plot_width
+        ph = self.plot_height
+        padding = 8
+
+        # Positions: [top-left, top-right, bottom-left, bottom-right]
+        positions = [
+            (padding, padding + font_size, "start"),             # top-left
+            (pw - padding, padding + font_size, "end"),          # top-right
+            (padding, ph - padding, "start"),                    # bottom-left
+            (pw - padding, ph - padding, "end"),                 # bottom-right
+        ]
+
+        for label_text, (x, y, anchor) in zip(labels, positions):
+            if not label_text:
+                continue
+            lines = str(label_text).split("\n")
+            for line_idx, line in enumerate(lines):
+                g.add_child(
+                    Text(
+                        text=line,
+                        x=x,
+                        y=y + line_idx * (font_size + 2),
+                        fill=font_color,
+                        font_size=font_size,
+                        font_family=font_family,
+                        text_anchor=anchor,
+                        opacity=0.6,
+                    )
+                )
 
         return g
