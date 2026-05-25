@@ -5,7 +5,7 @@ All notable changes to Charted will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2026-05-25
 
 ### Added
 - MCP server for AI-agent integration (`charted-mcp` CLI command)
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dark-mode legend contrast fixes
 - Bar chart y-label alignment improvements
 - Python 3.13 CI coverage
+- Theme opacity tiers with `root_color` derivation
 
 ### Changed
 - Comprehensive AGENTS.md rewrite for AI agent guidance
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed padding labels for line/area continuous-data chart types
 - Validation errors now use typed exceptions (DataShapeError, NoDataError)
 - CLI now supports all 11 chart types (area, boxplot, histogram, heatmap, gantt added)
+- Bumped radar chart default radius from 0.45 to 0.75 (reduces whitespace)
 
 ### Fixed
 - Heatmap right-padding clipping with color bar
@@ -48,82 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Orphan SVG baselines (bar, column, line, scatter, xy_line single-file variants)
 - Stale inline comments from heatmap.py, gantt.py
-
-### Security
-- None
-
-## [1.0.2] - 2026-04-23
-
-### Fixed
-- Homebrew formula installation (changed from `pip install .` to wheel download)
-- Command Line Tools compatibility warnings on macOS
-
-### Changed
-- None
-
-### Deprecated
-- None
-
-### Removed
-- None
-
-### Added
-- None
-
-### Security
-- None
-
-## [1.0.1] - 2026-04-23
-
-### Added
-- Package manager install scripts (homebrew tap, apt, dnf, universal)
-- Fallback to pipx/pip when system packages unavailable
-- Installation documentation in scripts/install/
-
-### Fixed
-- CLI usage examples in install readme
-- Theme examples across chart documentation
-- Sphinx documentation structure and API reference
-- Duplicate sections and fake theme constants in docs
-
-### Changed
-- Comprehensive documentation overhaul
-
-### Deprecated
-- None
-
-### Removed
-- Fake CLI section and fake theme sections
-
-### Security
-- None
-
-## [1.0.0] - 2026-04-23
-
-### Added
-- Zero-dependency SVG chart generation (bar, column, line, pie, scatter)
-- Embedded font definitions for portable rendering
-- CLI interface with batch processing
-- Python API with theme support (10 built-in themes)
-- Markdown integration (data URLs, inline SVG)
-- HTML element generation
-- Data transformation utilities
-- Color palette utilities
-- Visual regression testing
-- Comprehensive documentation
-- Portable zip bundle distribution
-
-### Changed
-- None
-
-### Deprecated
-- None
-
-### Removed
-- None
-
-### Fixed
-- None
 
 ### Security
 - None
