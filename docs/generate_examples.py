@@ -26,6 +26,9 @@ from charted.charts import (
     RadarChart,
     ScatterChart,
 )
+from charted.themes.core import Theme
+
+EXAMPLE_THEME = Theme(title_font_family="JetBrains Mono")
 
 
 def save(name: str, svg: str) -> None:
@@ -49,6 +52,8 @@ save(
         x_label="Rating (out of 5)",
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -66,6 +71,8 @@ save(
         x_label="Temperature (°C)",
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -85,6 +92,8 @@ save(
         x_label="Spend ($K)",
         width=600,
         height=350,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -102,6 +111,8 @@ save(
         x_label="Value ($B)",
         width=600,
         height=350,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -124,6 +135,8 @@ save(
         y_label="Revenue ($M)",
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -142,6 +155,8 @@ save(
         y_label="Visits (K)",
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -160,6 +175,8 @@ save(
         y_label="Respondents (%)",
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -184,6 +201,8 @@ save(
         series_names=["ACME Corp", "Globex Inc", "Initech"],
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -203,6 +222,8 @@ save(
         labels=[str(y) for y in years],
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -226,6 +247,8 @@ save(
         ],
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -264,6 +287,8 @@ save(
         ],
         width=600,
         height=500,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -287,6 +312,8 @@ save(
         y_label="Price ($K)",
         width=600,
         height=450,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -303,6 +330,8 @@ save(
         labels=["AWS", "Azure", "GCP", "Alibaba", "Others"],
         width=550,
         height=450,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -316,6 +345,8 @@ save(
         inner_radius=0.5,
         width=550,
         height=450,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -332,6 +363,8 @@ save(
         labels=["Performance", "Ecosystem", "DX", "Bundle Size", "TypeScript", "Community"],
         width=550,
         height=450,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -345,6 +378,8 @@ save(
         series_names=["Sprinter", "Marathoner"],
         width=550,
         height=450,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -363,6 +398,8 @@ save(
         labels=[str(d + 1) for d in range(30)],
         width=600,
         height=380,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -380,6 +417,8 @@ save(
         series_names=["Solar", "Wind", "Coal"],
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -399,6 +438,8 @@ save(
         labels=["US-East", "EU-West", "AP-South"],
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -416,6 +457,8 @@ save(
         bins=10,
         width=600,
         height=400,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -445,6 +488,8 @@ save(
         high_color="#f97316",
         show_values=True,
         value_format=".0f",
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
@@ -463,6 +508,8 @@ save(
         dependencies=[(0, 1), (0, 2), (2, 3), (3, 4)],
         show_today_line=True,
         x_position=4.5,
+
+        theme=EXAMPLE_THEME,
     ).html,
 )
 
