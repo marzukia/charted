@@ -106,7 +106,8 @@ def create_legend_background(
         width=legend_width * (1 + padding),
         height=legend_height * (1 + padding),
         fill=background_color,
-        stroke=stroke_color,
+        fill_opacity=0.85,
+        stroke="none",
     )
 
 
@@ -264,14 +265,14 @@ def create_legend(
     # Handle both dict and Theme object
     if isinstance(theme_config, Theme):
         font_size = getattr(theme_config, "legend_font_size", 12)
-        legend_padding = 0.5  # Default
+        legend_padding = 0.15
         font_family = getattr(theme_config, "legend_font_family", "Arial")
         font_color = getattr(theme_config, "legend_font_color", "#444444")
         position = getattr(theme_config, "legend_position", "topright")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = theme_config.get("font_size", 12)
-        legend_padding = theme_config.get("legend_padding", 0.5)
+        legend_padding = theme_config.get("legend_padding", 0.15)
         font_family = theme_config.get("font_family", "Arial")
         font_color = theme_config.get("font_color", "#444444")
         position = theme_config.get("position", "topright")

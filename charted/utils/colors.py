@@ -200,6 +200,28 @@ def calculate_contrast_ratio(color1: str, color2: str) -> float:
     return (lighter + 0.05) / (darker + 0.05)
 
 
+def derive_color(base_hex: str, opacity: float, background_hex: str = "#ffffff") -> str:
+    """Derive a blended color from a base color, opacity, and background.
+
+    Pre-blends the opacity into a solid 6-digit hex color for maximum
+    compatibility (cairosvg doesn't support 8-digit hex).
+
+    Args:
+        base_hex: Base color in hex format (e.g., '#FF5733').
+        opacity: Opacity value from 0.0 (transparent) to 1.0 (opaque).
+        background_hex: Background color to blend against (default white).
+
+    Returns:
+        6-digit hex color string (e.g., '#cccccc').
+    """
+    r, g, b = hex_to_rgb(base_hex)
+    br, bg_g, bb = hex_to_rgb(background_hex)
+    blended_r = int(r * opacity + br * (1 - opacity))
+    blended_g = int(g * opacity + bg_g * (1 - opacity))
+    blended_b = int(b * opacity + bb * (1 - opacity))
+    return "#{:02x}{:02x}{:02x}".format(blended_r, blended_g, blended_b)
+
+
 def generate_complementary_colors(hex_colors: list[str]) -> Generator[str, None, None]:
     """Generate complementary colors for a list of input colors.
 

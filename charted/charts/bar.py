@@ -205,7 +205,7 @@ class BarChart(Chart):
 
             font_size = max(8, self.theme.title_font_size - 4)
             font_family = self.theme.title_font_family
-            font_color = self.theme.title_color or "#333"
+            font_color = self.theme.resolved_axis_title_color
 
             for series_idx, label_row in enumerate(labels):
                 if series_idx >= len(self.x_values):
@@ -252,7 +252,7 @@ class BarChart(Chart):
                         )
 
         # Plot borders — all four sides.
-        grid_color = self.theme.grid_color
+        grid_color = self.theme.resolved_grid_color
         border_transform = f"translate({self.left_padding}, {self.top_padding})"
         borders = [
             Path(
