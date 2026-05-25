@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from charted.charts.chart import Chart
-from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
+from charted.constants import (
+    DEFAULT_CHART_HEIGHT,
+    DEFAULT_CHART_WIDTH,
+    QUADRANT_BOTTOM_MARGIN_FACTOR,
+    QUADRANT_LABEL_LINE_GAP,
+)
 from charted.html.element import Circle, G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.types import SeriesStyleConfig, Vector, Vector2D
@@ -101,9 +106,7 @@ class ScatterChart(Chart):
             series = G(fill=fill)
             x_offset = self.x_offset
 
-            for i, (x, y, y_offset) in enumerate(
-                zip(x_values, y_values, y_offsets)
-            ):
+            for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
                 # Render marker based on shape
@@ -174,21 +177,30 @@ class ScatterChart(Chart):
         padding = 8
 
         # In the flipped coordinate system, high Y = top of chart
-        # Positions: [top-left, top-right, bottom-left, bottom-right]
-        inset = padding + font_size
-        positions = [
-            (padding, ph - inset, "start"),          # top-left
-            (pw - padding, ph - inset, "end"),       # top-right
-            (padding, inset, "start"),               # bottom-left
-            (pw - padding, inset, "end"),             # bottom-right
-        ]
+        # Corner-aligned: top labels hug top edge growing down,
+        # bottom labels hug bottom edge growing up
+        line_height = font_size + QUADRANT_LABEL_LINE_GAP
+        top_margin = padding + font_size
+        bottom_margin = padding * QUADRANT_BOTTOM_MARGIN_FACTOR
 
-        for label_text, (x, y, anchor) in zip(labels, positions):
+        for idx, label_text in enumerate(labels):
             if not label_text:
                 continue
             lines = str(label_text).split("\n")
+            is_left = idx % 2 == 0
+            is_top = idx < 2
+            anchor = "start" if is_left else "end"
+            x = padding if is_left else pw - padding
+
             for line_idx, line in enumerate(lines):
-                ty = y + line_idx * (font_size + 2)
+                if is_top:
+                    ty = ph - top_margin - line_idx * line_height
+                else:
+                    ty = (
+                        bottom_margin
+                        + font_size
+                        + (len(lines) - 1 - line_idx) * line_height
+                    )
                 g.add_child(
                     Text(
                         text=line,

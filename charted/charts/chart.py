@@ -5,7 +5,14 @@ separate modules to address God Class architectural debt (Issue #64).
 """
 
 from charted.charts.axes import XAxis, YAxis
-from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
+from charted.constants import (
+    AXIS_BORDER_COLOR,
+    AXIS_BORDER_WIDTH,
+    DEFAULT_CHART_HEIGHT,
+    DEFAULT_CHART_WIDTH,
+    REFERENCE_LINE_DASH,
+    REFERENCE_LINE_WIDTH,
+)
 from charted.html.element import ClipPath, Defs, G, Path, Rect, Svg, Text
 from charted.themes.core import Theme
 from charted.utils.color_manager import ColorManager
@@ -128,13 +135,10 @@ class Chart(Svg):
                     "PNG export requires cairosvg. "
                     "Install it with: pip install cairosvg"
                 ) from None
-            cairosvg.svg2png(
-                bytestring=self.svg.encode(), write_to=path, scale=scale
-            )
+            cairosvg.svg2png(bytestring=self.svg.encode(), write_to=path, scale=scale)
         else:
             raise ValueError(
-                f"Unsupported file extension '{ext}'. "
-                f"Supported: .svg, .png"
+                f"Unsupported file extension '{ext}'. Supported: .svg, .png"
             )
 
     def style(self, **kwargs) -> "Chart":
@@ -465,6 +469,23 @@ class Chart(Svg):
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
+        # Add plot border (bottom and left edges) darker than grid
+        if self.render_axes:
+            lp = self.left_padding
+            tp = self.top_padding
+            pw = self.plot_width
+            ph = self.plot_height
+            children.append(
+                Path(
+                    d=[
+                        f"M{lp} {tp} v{ph}",
+                        f"M{lp} {tp + ph} h{pw}",
+                    ],
+                    stroke=AXIS_BORDER_COLOR,
+                    stroke_width=AXIS_BORDER_WIDTH,
+                    fill="none",
+                )
+            )
         # Add reference lines (rendered inside the plot area)
         ref_lines = self._render_reference_lines()
         if ref_lines:
@@ -800,14 +821,16 @@ class Chart(Svg):
             s_max = float(max(series_data))
             s_sum = float(sum(series_data))
             s_mean = s_sum / count if count else 0.0
-            series_info.append({
-                "name": name,
-                "count": count,
-                "min": s_min,
-                "max": s_max,
-                "mean": s_mean,
-                "sum": s_sum,
-            })
+            series_info.append(
+                {
+                    "name": name,
+                    "count": count,
+                    "min": s_min,
+                    "max": s_max,
+                    "mean": s_mean,
+                    "sum": s_sum,
+                }
+            )
 
         # Determine labels list — check pie labels, then y_labels (BarChart),
         # then x_labels (most chart types)
@@ -818,25 +841,21 @@ class Chart(Svg):
             ]
         elif self.y_labels:
             labels = [
-                lbl.text if hasattr(lbl, "text") else str(lbl)
-                for lbl in self.y_labels
+                lbl.text if hasattr(lbl, "text") else str(lbl) for lbl in self.y_labels
             ]
         elif self.x_labels:
             labels = [
-                lbl.text if hasattr(lbl, "text") else str(lbl)
-                for lbl in self.x_labels
+                lbl.text if hasattr(lbl, "text") else str(lbl) for lbl in self.x_labels
             ]
         else:
             labels = None
 
-        label_count = len(labels) if labels else (
-            len(raw_series[0]) if raw_series else 0
+        label_count = (
+            len(labels) if labels else (len(raw_series[0]) if raw_series else 0)
         )
 
         # Detect negative values across all series
-        has_negative = any(
-            val < 0 for series_data in raw_series for val in series_data
-        )
+        has_negative = any(val < 0 for series_data in raw_series for val in series_data)
 
         # Stacked flag: either x_stacked (BarChart) or y_stacked (ColumnChart)
         stacked = bool(
@@ -873,13 +892,13 @@ class Chart(Svg):
 
         if self._h_lines:
             for val in self._h_lines:
-                y = self.y_axis.reproject(val)
+                y = self.plot_height - self.y_axis.reproject(val)
                 g.add_child(
                     Path(
                         d=[f"M0 {y} h{self.plot_width}"],
                         stroke=ref_color,
-                        stroke_width=1.5,
-                        stroke_dasharray="6 3",
+                        stroke_width=REFERENCE_LINE_WIDTH,
+                        stroke_dasharray=REFERENCE_LINE_DASH,
                         fill="none",
                     )
                 )
@@ -891,8 +910,8 @@ class Chart(Svg):
                     Path(
                         d=[f"M{x} 0 v{self.plot_height}"],
                         stroke=ref_color,
-                        stroke_width=1.5,
-                        stroke_dasharray="6 3",
+                        stroke_width=REFERENCE_LINE_WIDTH,
+                        stroke_dasharray=REFERENCE_LINE_DASH,
                         fill="none",
                     )
                 )
@@ -977,7 +996,9 @@ class Chart(Svg):
             y_vals = self.y_values[series_idx]
             y_offs = self.y_offsets[series_idx]
             x_vals = self.x_values[series_idx]
-            series_color = self.colors[series_idx] if series_idx < len(self.colors) else None
+            series_color = (
+                self.colors[series_idx] if series_idx < len(self.colors) else None
+            )
 
             for i, label_text in enumerate(label_row):
                 if i >= len(x_vals) or not label_text:
@@ -1001,10 +1022,14 @@ class Chart(Svg):
                 )
                 # Nudge label away from grid lines for breathing room
                 grid_margin = font_size * 0.6
-                if hasattr(self, 'y_axis'):
+                if hasattr(self, "y_axis"):
                     for tick_y in self.y_axis.coordinates:
                         if abs(ty - tick_y) < grid_margin:
-                            ty = tick_y - grid_margin if ty > tick_y else tick_y + grid_margin
+                            ty = (
+                                tick_y - grid_margin
+                                if ty > tick_y
+                                else tick_y + grid_margin
+                            )
                             break
                 # Use contrast-aware color when label is inside a colored area
                 fill = font_color
