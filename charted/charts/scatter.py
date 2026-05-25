@@ -129,17 +129,28 @@ class ScatterChart(Chart):
                     series.add_child(Circle(cx=x, cy=y, r=marker_size))
             g.add_children(series)
 
-        # Render data labels
+        # Data labels and quadrant labels rendered outside the clip group
+        # so they don't get clipped at chart edges
+        wrapper = G()
+        wrapper.add_child(g)
+
         data_labels_g = self._render_data_labels()
         if data_labels_g:
-            g.add_child(data_labels_g)
+            unclipped = G(
+                transform=[*self.get_base_transform()],
+            )
+            unclipped.add_child(data_labels_g)
+            wrapper.add_child(unclipped)
 
-        # Render quadrant labels
         quadrant_g = self._render_quadrant_labels()
         if quadrant_g:
-            g.add_child(quadrant_g)
+            unclipped_q = G(
+                transform=[*self.get_base_transform()],
+            )
+            unclipped_q.add_child(quadrant_g)
+            wrapper.add_child(unclipped_q)
 
-        return g
+        return wrapper
 
     def _render_quadrant_labels(self) -> G | None:
         """Render text labels in each quadrant of the scatter plot.
@@ -162,12 +173,13 @@ class ScatterChart(Chart):
         ph = self.plot_height
         padding = 8
 
+        # In the flipped coordinate system, high Y = top of chart
         # Positions: [top-left, top-right, bottom-left, bottom-right]
         positions = [
-            (padding, padding + font_size, "start"),             # top-left
-            (pw - padding, padding + font_size, "end"),          # top-right
-            (padding, ph - padding, "start"),                    # bottom-left
-            (pw - padding, ph - padding, "end"),                 # bottom-right
+            (padding, ph - padding - font_size, "start"),        # top-left
+            (pw - padding, ph - padding - font_size, "end"),     # top-right
+            (padding, padding + font_size * 2, "start"),         # bottom-left
+            (pw - padding, padding + font_size * 2, "end"),      # bottom-right
         ]
 
         for label_text, (x, y, anchor) in zip(labels, positions):

@@ -125,7 +125,18 @@ class LineChart(Chart):
                         continue
                     x = x_positions[i] + self.x_offset
                     y = self._apply_stacking(y_vals[i], y_offs[i])
-                    ty = y - 6
+                    label_offset = font_size + 4
+                    ty = y - label_offset
+                    anchor = "middle"
+                    # If label would go below chart or clash with axis at bottom
+                    if ty < font_size:
+                        ty = y + label_offset + font_size
+                    # If label would go above chart
+                    if ty > self.plot_height - font_size:
+                        ty = y - label_offset
+                    # Shift labels at left edge rightward to avoid axis clash
+                    if x < font_size * 2:
+                        anchor = "start"
                     g.add_child(
                         Text(
                             text=str(label_text),
@@ -134,7 +145,7 @@ class LineChart(Chart):
                             fill=font_color,
                             font_size=font_size,
                             font_family=font_family,
-                            text_anchor="middle",
+                            text_anchor=anchor,
                             transform=f"translate({x},{ty}) scale(1,-1) translate({-x},{-ty})",
                         )
                     )
