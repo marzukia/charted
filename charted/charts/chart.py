@@ -883,7 +883,7 @@ class Chart(Svg):
             transform=f"translate({self.left_padding}, {self.top_padding})",
         )
 
-        ref_color = self.theme.grid_color or "#999"
+        ref_color = "#666"
 
         if self._h_lines:
             for val in self._h_lines:
