@@ -29,8 +29,8 @@ from charted.charts import (
 from charted.themes.core import Theme
 
 EXAMPLE_THEME = Theme(
-    title_font_family="JetBrains Mono",
-    legend_font_family="JetBrains Mono",
+    title_font_family="Roboto",
+    legend_font_family="Roboto",
 )
 
 
