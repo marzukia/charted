@@ -35,21 +35,21 @@ class TestRootColorField:
 
 class TestDeriveColor:
     def test_full_opacity(self):
-        assert derive_color("#000000", 1.0) == "#000000ff"
+        assert derive_color("#000000", 1.0) == "#000000"
 
     def test_half_opacity(self):
-        assert derive_color("#000000", 0.5) == "#0000007f"
+        assert derive_color("#000000", 0.5, "#ffffff") == "#7f7f7f"
 
     def test_twenty_percent(self):
-        assert derive_color("#000000", 0.20) == "#00000033"
+        assert derive_color("#000000", 0.20, "#ffffff") == "#cccccc"
 
-    def test_white_root(self):
-        assert derive_color("#ffffff", 1.0) == "#ffffffff"
+    def test_white_root_on_black(self):
+        assert derive_color("#ffffff", 0.6, "#000000") == "#999999"
 
-    def test_preserves_rgb(self):
-        result = derive_color("#ff5733", 0.5)
-        assert result.startswith("#ff5733")
-        assert len(result) == 9  # #RRGGBBAA
+    def test_preserves_rgb_channel(self):
+        result = derive_color("#ff0000", 0.5, "#ffffff")
+        assert result == "#ff7f7f"
+        assert len(result) == 7
 
 
 # =========================================================================
@@ -61,7 +61,7 @@ class TestResolvedColors:
     def test_resolved_grid_color_default(self):
         """Default grid_color (#CCCCCC) should resolve to root at 20%."""
         t = Theme()
-        assert t.resolved_grid_color == derive_color("#000000", 0.20)
+        assert t.resolved_grid_color == derive_color("#000000", 0.20, "#FFFFFF")
 
     def test_resolved_grid_color_explicit(self):
         """Explicit override should be returned as-is."""
@@ -70,16 +70,16 @@ class TestResolvedColors:
 
     def test_resolved_axis_border_color_default(self):
         t = Theme()
-        assert t.resolved_axis_border_color == derive_color("#000000", 0.60)
+        assert t.resolved_axis_border_color == derive_color("#000000", 0.60, "#FFFFFF")
 
     def test_resolved_reference_line_color_default(self):
         t = Theme()
-        assert t.resolved_reference_line_color == derive_color("#000000", 0.50)
+        assert t.resolved_reference_line_color == derive_color("#000000", 0.50, "#FFFFFF")
 
     def test_resolved_axis_title_color_default(self):
         """Default title_color (#444444) should resolve to root at 80%."""
         t = Theme()
-        assert t.resolved_axis_title_color == derive_color("#000000", 0.80)
+        assert t.resolved_axis_title_color == derive_color("#000000", 0.80, "#FFFFFF")
 
     def test_resolved_axis_title_color_explicit(self):
         t = Theme(title_color="#ff0000")
@@ -87,11 +87,11 @@ class TestResolvedColors:
 
     def test_resolved_label_color_default(self):
         t = Theme()
-        assert t.resolved_label_color == derive_color("#000000", 1.0)
+        assert t.resolved_label_color == derive_color("#000000", 1.0, "#FFFFFF")
 
     def test_resolved_quadrant_label_color_default(self):
         t = Theme()
-        assert t.resolved_quadrant_label_color == derive_color("#000000", 0.18)
+        assert t.resolved_quadrant_label_color == derive_color("#000000", 0.18, "#FFFFFF")
 
 
 # =========================================================================
