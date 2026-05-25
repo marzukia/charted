@@ -341,5 +341,5 @@ class HeatmapChart(Chart):
         return result
 
     @property
-    def legend(self):
+    def legend(self) -> None:
         return None

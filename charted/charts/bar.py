@@ -100,7 +100,7 @@ class BarChart(Chart):
     def y_height(self) -> float:
         return self.plot_height / (self.y_count + (self.y_count + 1) * self.bar_gap)
 
-    def get_base_transform(self):
+    def get_base_transform(self) -> list:
         return []
 
     @property

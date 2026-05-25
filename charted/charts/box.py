@@ -19,7 +19,7 @@ def _quartiles(data: list[float]) -> tuple[float, float, float, float, float]:
     if n == 0:
         return (0, 0, 0, 0, 0)
 
-    def median(arr):
+    def median(arr) -> float:
         if not arr:
             return 0
         mid = len(arr) // 2
@@ -91,7 +91,7 @@ class BoxPlot(Chart):
 
             cx = self.left_padding + self.x_axis.coordinates[i + 1]
 
-            def map_y(v):
+            def map_y(v: float) -> float:
                 return self.top_padding + plot_h - self.y_axis.reproject(v)
 
             y_min = map_y(min_v)

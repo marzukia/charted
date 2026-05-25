@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/github/marzukia/charted/graph/badge.svg)](https://codecov.io/github/marzukia/charted) [![charted-ci](https://github.com/marzukia/charted/actions/workflows/ci.yml/badge.svg)](https://github.com/marzukia/charted/actions/workflows/ci.yml)
 
-**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. Nine chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
+**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. 11 chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
 
 > **Core principle:** charted itself has zero runtime dependencies. PNG export and MCP server support are opt-in extras that pull in their own dependencies — the base library stays pure Python.
 
@@ -27,7 +27,7 @@ chart.save("chart.png")  # PNG export (requires cairosvg)
 ## Why Charted?
 
 - **Zero runtime dependencies** — pure Python, no numpy/pandas required
-- **9 chart types** — Bar, Column, Line, Scatter, Pie, Radar, Area, Box Plot, Histogram
+- **11 chart types** — Bar, Column, Line, Scatter, Pie, Radar, Area, Box Plot, Histogram, Heatmap, Gantt
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
 - **SVG and PNG output** — SVG natively, PNG via optional `cairosvg` (`pip install charted[png]`)
@@ -360,6 +360,48 @@ Histogram(
 
 ---
 
+```python
+# Heatmap — monthly temperature matrix
+from charted.charts import HeatmapChart
+
+HeatmapChart(
+    title="Average Temperature (°C) — Monthly by City",
+    data=[
+        [35, 36, 38, 40, 43, 45, 47, 46, 44, 41, 38, 36],
+        [22, 24, 28, 32, 36, 40, 42, 41, 38, 33, 27, 23],
+        [15, 18, 22, 27, 32, 37, 40, 39, 35, 29, 22, 17],
+        [5, 8, 14, 20, 26, 32, 35, 34, 29, 22, 14, 7],
+        [-2, 2, 10, 18, 25, 31, 34, 33, 27, 19, 10, 3],
+    ],
+    x_labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    y_labels=["Dubai", "Sydney", "Tokyo", "Berlin", "Moscow"],
+    width=700, height=450,
+    low_color="#21639e", high_color="#f97316",
+    show_values=True, value_format=".0f",
+).save("heatmap.svg")
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/heatmap.svg)
+
+```python
+# Gantt — software project timeline
+from charted.charts import GanttChart
+
+GanttChart(
+    title="Software Project Timeline — Q1 2026",
+    data=[(0, 2), (1, 4), (3, 6), (5, 8), (6, 9)],
+    labels=["Design", "Frontend", "Backend", "Testing", "Deployment"],
+    width=700, height=400,
+    dependencies=[(0, 1), (0, 2), (2, 3), (3, 4)],
+    show_today_line=True,
+    x_position=4.5,
+).save("gantt.svg")
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/gantt.svg)
+
+---
+
 ## Theming
 
 Three built-in presets — light, dark, high-contrast — plus custom theme composition:
@@ -483,7 +525,7 @@ chart = Chart(
     data=[120, 180, 210],
     labels=["Q1", "Q2", "Q3"],
     title="Sales",
-    chart_type="bar",  # or "column", "line", "scatter", "pie"
+    chart_type="bar",  # or column, line, scatter, pie, area, boxplot, histogram, heatmap, gantt
 )
 chart.save("chart.svg")
 

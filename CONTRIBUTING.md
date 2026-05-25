@@ -13,10 +13,10 @@ uv pip install -e '.[dev]'
 
 ```bash
 # Run all tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run with coverage
-pytest tests/ --cov=charted --cov-report=html
+uv run pytest tests/ --cov=charted --cov-report=html
 ```
 
 ## Updating Visual Baselines
