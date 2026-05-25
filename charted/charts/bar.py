@@ -197,6 +197,8 @@ class BarChart(Chart):
 
         # Render data labels at end of bars
         if self._bar_data_labels:
+            from charted.utils.helpers import calculate_text_dimensions
+
             labels = self._bar_data_labels
             if labels and not isinstance(labels[0], list):
                 labels = [labels]
@@ -215,17 +217,39 @@ class BarChart(Chart):
                     x = x_vals[bar_idx]
                     slot_y = start_y + bar_idx * (slot_height + gap)
                     bar_y = slot_y + series_idx * series_thickness
-                    bars_g.add_child(
-                        Text(
-                            text=str(label_text),
-                            x=x + 4,
-                            y=bar_y + series_thickness / 2 + font_size / 3,
-                            fill=font_color,
-                            font_size=font_size,
-                            font_family=font_family,
-                            text_anchor="start",
-                        )
+
+                    # Check if label would overflow the chart boundary
+                    measured = calculate_text_dimensions(
+                        str(label_text),
+                        font=font_family,
+                        font_size=font_size,
                     )
+                    label_right = x + 4 + measured.width
+                    if label_right > self.plot_width:
+                        # Place label inside the bar, right-aligned
+                        bars_g.add_child(
+                            Text(
+                                text=str(label_text),
+                                x=x - 4,
+                                y=bar_y + series_thickness / 2 + font_size / 3,
+                                fill="#ffffff",
+                                font_size=font_size,
+                                font_family=font_family,
+                                text_anchor="end",
+                            )
+                        )
+                    else:
+                        bars_g.add_child(
+                            Text(
+                                text=str(label_text),
+                                x=x + 4,
+                                y=bar_y + series_thickness / 2 + font_size / 3,
+                                fill=font_color,
+                                font_size=font_size,
+                                font_family=font_family,
+                                text_anchor="start",
+                            )
+                        )
 
         # Plot borders — all four sides.
         grid_color = self.theme.grid_color

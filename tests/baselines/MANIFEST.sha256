@@ -25,12 +25,12 @@
   "histogram_basic.svg": "e60792daa5985081d7b3872e72484b0708c4cffe68e9eebc8ddf00d1ccf07a70",
   "radar.svg": "c2d2ef6dde45e54c6a275e126d99f495f7f5dfda2ad4eab93299ec83f9467ff8",
   "radar_multi.svg": "0b95b664e976a19d3fb75d82a2e36f544dfdc4335cf9579f92877dcdcdcf039b",
-  "scatter_data_labels.svg": "06ae81c0d042291c747a001e198c9deaeb4cf6cce1fca1d996480b6fa30b04cd",
-  "scatter_quadrant_labels.svg": "4a7934db46245cf339ea543bd12530b1d17ee2d5873caba6a8d1123eb985f8b6",
-  "line_data_labels.svg": "d3bc1cbcd5dd9211f43f65da4e1a7e6648385d75f894a29e4a1888d04189218a",
-  "bar_data_labels.svg": "a0eafe42628716306428b7ab24942ffaa4fd7fe118025983f4af358509d68195",
-  "column_data_labels.svg": "b5a1b51310b808320231a5976eee291ce669da0b3de7737e4666ea8a207301a3",
-  "scatter_axis_titles.svg": "63c9d08cb26c2e3aa1b480a54316ceff6c8d615136f9f01612be2c5cd4a7315d",
+  "scatter_data_labels.svg": "003d1d6e2c7231dea84cb02cb239b2276632b0d64cecfed4f57dbb125afe1f1f",
+  "scatter_quadrant_labels.svg": "69ba3de36e324e7e784eb1b7dc239aadf529f63dc72c961a001e47aef59f79d7",
+  "line_data_labels.svg": "1828fd9c01a5d1c139ede8cb21a094a272c4eee50783433f7874a72179ec82cc",
+  "bar_data_labels.svg": "75cc2d636b3a2253412038c14fed6c2ddccab2b440ba5e45d684cbf3cbb24d8a",
+  "column_data_labels.svg": "ef10821fa277610064a5e909572122b06a549a7fcdc401f33899ac0ccd75df19",
+  "scatter_axis_titles.svg": "0d87f1e62cc31fec9d7c9b764a718b6bbf77ccba598625426ceeaf3cfd394f69",
   "scatter_reference_lines.svg": "7cf2593e8f16a1882c84ed6e4de437c35a15730547792ddd87ed09414e40cb12",
   "pie_percentages.svg": "24f351963266bd6402642512cfcd2a618b0e72021aecbe580e7fd511e188cbd8"
 }

@@ -333,6 +333,8 @@ class Chart(Svg):
             x_labels=self.data_model.x_labels,
             y_labels=self.data_model.y_labels,
             title=self._title,
+            has_x_axis_label=bool(x_label),
+            has_y_axis_label=bool(y_label),
         )
 
         # Initialize axes
@@ -905,9 +907,9 @@ class Chart(Svg):
         font_color = self.theme.title_color or "#333"
 
         if self._x_label:
-            # Centered below the x-axis
+            # Centered below the x-axis, below the tick labels
             x = self.left_padding + self.plot_width / 2
-            y = self._height - 4
+            y = self._height - 2
             elements.append(
                 Text(
                     text=self._x_label,
@@ -922,7 +924,8 @@ class Chart(Svg):
 
         if self._y_label:
             # Centered along the y-axis, rotated -90 degrees
-            x = 12
+            # Position outside (to the left of) the tick labels
+            x = font_size
             y = self.top_padding + self.plot_height / 2
             elements.append(
                 Text(
@@ -971,15 +974,17 @@ class Chart(Svg):
                 x = x_vals[i] + self.x_offset
                 y = self._apply_stacking(y_vals[i], y_offs[i])
                 # Position label slightly above the point
+                ty = y - 6
                 g.add_child(
                     Text(
                         text=str(label_text),
                         x=x,
-                        y=y - 6,
+                        y=ty,
                         fill=font_color,
                         font_size=font_size,
                         font_family=font_family,
                         text_anchor="middle",
+                        transform=f"translate({x},{ty}) scale(1,-1) translate({-x},{-ty})",
                     )
                 )
 

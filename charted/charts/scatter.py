@@ -175,16 +175,18 @@ class ScatterChart(Chart):
                 continue
             lines = str(label_text).split("\n")
             for line_idx, line in enumerate(lines):
+                ty = y + line_idx * (font_size + 2)
                 g.add_child(
                     Text(
                         text=line,
                         x=x,
-                        y=y + line_idx * (font_size + 2),
+                        y=ty,
                         fill=font_color,
                         font_size=font_size,
                         font_family=font_family,
                         text_anchor=anchor,
-                        opacity=0.6,
+                        opacity=0.8,
+                        transform=f"translate({x},{ty}) scale(1,-1) translate({-x},{-ty})",
                     )
                 )
 
