@@ -6,8 +6,13 @@ import sys
 from pathlib import Path
 
 from ..charts import (
+    AreaChart,
     BarChart,
+    BoxPlot,
     ColumnChart,
+    GanttChart,
+    HeatmapChart,
+    Histogram,
     LineChart,
     PieChart,
     RadarChart,
@@ -15,8 +20,13 @@ from ..charts import (
 )
 
 CHART_TYPES = {
+    "area": AreaChart,
     "bar": BarChart,
+    "boxplot": BoxPlot,
     "column": ColumnChart,
+    "gantt": GanttChart,
+    "heatmap": HeatmapChart,
+    "histogram": Histogram,
     "line": LineChart,
     "pie": PieChart,
     "radar": RadarChart,

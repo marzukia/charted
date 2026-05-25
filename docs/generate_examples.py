@@ -17,6 +17,8 @@ from charted.charts import (
     BarChart,
     BoxPlot,
     ColumnChart,
+    GanttChart,
+    HeatmapChart,
     Histogram,
     LineChart,
     PieChart,
@@ -419,6 +421,52 @@ save(
         bins=10,
         width=700,
         height=400,
+    ).html,
+)
+
+# ---------------------------------------------------------------------------
+# Heatmap
+# ---------------------------------------------------------------------------
+
+# Heatmap — monthly temperature matrix (°C)
+save(
+    "heatmap.svg",
+    HeatmapChart(
+        title="Average Temperature (°C) — Monthly by City",
+        data=[
+            [35, 36, 38, 40, 43, 45, 47, 46, 44, 41, 38, 36],
+            [22, 24, 28, 32, 36, 40, 42, 41, 38, 33, 27, 23],
+            [15, 18, 22, 27, 32, 37, 40, 39, 35, 29, 22, 17],
+            [5, 8, 14, 20, 26, 32, 35, 34, 29, 22, 14, 7],
+            [-2, 2, 10, 18, 25, 31, 34, 33, 27, 19, 10, 3],
+        ],
+        x_labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        y_labels=["Dubai", "Sydney", "Tokyo", "Berlin", "Moscow"],
+        width=700,
+        height=450,
+        low_color="#21639e",
+        high_color="#f97316",
+        show_values=True,
+        value_format=".0f",
+    ).html,
+)
+
+# ---------------------------------------------------------------------------
+# Gantt chart
+# ---------------------------------------------------------------------------
+
+# Gantt — software project timeline
+save(
+    "gantt.svg",
+    GanttChart(
+        title="Software Project Timeline — Q1 2026",
+        data=[(0, 2), (1, 4), (3, 6), (5, 8), (6, 9)],
+        labels=["Design", "Frontend", "Backend", "Testing", "Deployment"],
+        width=700,
+        height=400,
+        dependencies=[(0, 1), (0, 2), (2, 3), (3, 4)],
+        show_today_line=True,
+        x_position=4.5,
     ).html,
 )
 
