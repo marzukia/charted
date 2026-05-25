@@ -159,6 +159,49 @@ CHARTS = {
         labels=["Speed", "Power", "Range", "Armor", "Stealth"],
         series_names=["Unit A", "Unit B"],
     ),
+    # Matplotlib parity features
+    "scatter_data_labels": ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        data_labels=["origin", "alpha", "beta", "peak"],
+    ),
+    "scatter_quadrant_labels": ScatterChart(
+        x_data=[1, 2, 4, 5],
+        y_data=[4, 16, 8, 20],
+        quadrant_labels=["Top Left", "Top Right", "Bottom Left", "Bottom Right"],
+    ),
+    "line_data_labels": LineChart(
+        data=[0, 8, 16],
+        labels=["Q1", "Q2", "Q3"],
+        data_labels=["low", "mid", "high"],
+    ),
+    "bar_data_labels": BarChart(
+        data=[30, 90, 150],
+        labels=["X", "Y", "Z"],
+        data_labels=["30u", "90u", "150u"],
+    ),
+    "column_data_labels": ColumnChart(
+        data=[4, 12, 20],
+        labels=["A", "B", "C"],
+        data_labels=["four", "twelve", "twenty"],
+    ),
+    "scatter_axis_titles": ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        x_label="Velocity",
+        y_label="Altitude",
+    ),
+    "scatter_reference_lines": ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        h_lines=[8.0, 16.0],
+        v_lines=[2.0, 4.0],
+    ),
+    "pie_percentages": PieChart(
+        data=[25, 25, 50],
+        labels=["A", "B", "C"],
+        show_percentages=True,
+    ),
 }
 
 

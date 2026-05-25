@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import Circle, G, Path, Rect
+from charted.html.element import Circle, G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.types import SeriesStyleConfig, Vector, Vector2D
 
@@ -50,7 +50,14 @@ class ScatterChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        data_labels: list[str] | list[list[str]] | None = None,
+        x_label: str | None = None,
+        y_label: str | None = None,
+        h_lines: list[float] | None = None,
+        v_lines: list[float] | None = None,
+        quadrant_labels: list[str] | None = None,
     ):
+        self._quadrant_labels = quadrant_labels
         super().__init__(
             y_data=y_data,
             x_data=x_data,
@@ -61,6 +68,11 @@ class ScatterChart(Chart):
             series_names=series_names,
             chart_type="scatter",
             series_styles=series_styles,
+            data_labels=data_labels,
+            x_label=x_label,
+            y_label=y_label,
+            h_lines=h_lines,
+            v_lines=v_lines,
         )
 
     @property
@@ -89,7 +101,9 @@ class ScatterChart(Chart):
             series = G(fill=fill)
             x_offset = self.x_offset
 
-            for x, y, y_offset in zip(x_values, y_values, y_offsets):
+            for i, (x, y, y_offset) in enumerate(
+                zip(x_values, y_values, y_offsets)
+            ):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
                 # Render marker based on shape
@@ -114,5 +128,79 @@ class ScatterChart(Chart):
                 elif marker_shape != "none":  # circle
                     series.add_child(Circle(cx=x, cy=y, r=marker_size))
             g.add_children(series)
+
+        # Data labels and quadrant labels rendered outside the clip group
+        # so they don't get clipped at chart edges
+        wrapper = G()
+        wrapper.add_child(g)
+
+        data_labels_g = self._render_data_labels()
+        if data_labels_g:
+            unclipped = G(
+                transform=[*self.get_base_transform()],
+            )
+            unclipped.add_child(data_labels_g)
+            wrapper.add_child(unclipped)
+
+        quadrant_g = self._render_quadrant_labels()
+        if quadrant_g:
+            unclipped_q = G(
+                transform=[*self.get_base_transform()],
+            )
+            unclipped_q.add_child(quadrant_g)
+            wrapper.add_child(unclipped_q)
+
+        return wrapper
+
+    def _render_quadrant_labels(self) -> G | None:
+        """Render text labels in each quadrant of the scatter plot.
+
+        Expects a list of 4 strings: [top-left, top-right, bottom-left, bottom-right].
+        Each string may contain newlines for multi-line labels.
+        """
+        if not self._quadrant_labels:
+            return None
+
+        labels = self._quadrant_labels
+        if len(labels) < 4:
+            labels = list(labels) + [""] * (4 - len(labels))
+
+        g = G()
+        font_size = max(8, self.theme.title_font_size - 4)
+        font_family = self.theme.title_font_family
+        font_color = self.theme.grid_color or "#999"
+        pw = self.plot_width
+        ph = self.plot_height
+        padding = 8
+
+        # In the flipped coordinate system, high Y = top of chart
+        # Positions: [top-left, top-right, bottom-left, bottom-right]
+        inset = padding + font_size
+        positions = [
+            (padding, ph - inset, "start"),          # top-left
+            (pw - padding, ph - inset, "end"),       # top-right
+            (padding, inset, "start"),               # bottom-left
+            (pw - padding, inset, "end"),             # bottom-right
+        ]
+
+        for label_text, (x, y, anchor) in zip(labels, positions):
+            if not label_text:
+                continue
+            lines = str(label_text).split("\n")
+            for line_idx, line in enumerate(lines):
+                ty = y + line_idx * (font_size + 2)
+                g.add_child(
+                    Text(
+                        text=line,
+                        x=x,
+                        y=ty,
+                        fill=font_color,
+                        font_size=font_size,
+                        font_family=font_family,
+                        text_anchor=anchor,
+                        opacity=0.8,
+                        transform=f"translate({x},{ty}) scale(1,-1) translate({-x},{-ty})",
+                    )
+                )
 
         return g

@@ -3,7 +3,7 @@ from __future__ import annotations
 from charted.charts.chart import Chart
 from charted.config import get_bar_gap
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import G, Path
+from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.series_style import SeriesStyleConfig
 from charted.utils.types import Labels, Vector, Vector2D
@@ -47,7 +47,13 @@ class BarChart(Chart):
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
         x_stacked: bool = False,
+        data_labels: list[str] | list[list[str]] | None = None,
+        x_label: str | None = None,
+        y_label: str | None = None,
+        h_lines: list[float] | None = None,
+        v_lines: list[float] | None = None,
     ):
+        self._bar_data_labels = data_labels
         if bar_gap is None:
             bar_gap = get_bar_gap()
         self.bar_gap = bar_gap
@@ -81,6 +87,11 @@ class BarChart(Chart):
             x_stacked=x_stacked,
             chart_type="bar",
             series_styles=series_styles,
+            data_labels=data_labels,
+            x_label=x_label,
+            y_label=y_label,
+            h_lines=h_lines,
+            v_lines=v_lines,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.
@@ -183,6 +194,62 @@ class BarChart(Chart):
                             Path.get_path(x, bar_y, zero_x - x, series_thickness)
                         )
                 bars_g.add_child(Path(d=paths, fill=fill))
+
+        # Render data labels at end of bars
+        if self._bar_data_labels:
+            from charted.utils.helpers import calculate_text_dimensions
+
+            labels = self._bar_data_labels
+            if labels and not isinstance(labels[0], list):
+                labels = [labels]
+
+            font_size = max(8, self.theme.title_font_size - 4)
+            font_family = self.theme.title_font_family
+            font_color = self.theme.title_color or "#333"
+
+            for series_idx, label_row in enumerate(labels):
+                if series_idx >= len(self.x_values):
+                    break
+                x_vals = self.x_values[series_idx]
+                for bar_idx, label_text in enumerate(label_row):
+                    if bar_idx >= len(x_vals) or not label_text:
+                        continue
+                    x = x_vals[bar_idx]
+                    slot_y = start_y + bar_idx * (slot_height + gap)
+                    bar_y = slot_y + series_idx * series_thickness
+
+                    # Check if label would overflow the chart boundary
+                    measured = calculate_text_dimensions(
+                        str(label_text),
+                        font=font_family,
+                        font_size=font_size,
+                    )
+                    label_right = x + 4 + measured.width
+                    if label_right > self.plot_width:
+                        # Place label inside the bar, right-aligned
+                        bars_g.add_child(
+                            Text(
+                                text=str(label_text),
+                                x=x - 4,
+                                y=bar_y + series_thickness / 2 + font_size / 3,
+                                fill="#ffffff",
+                                font_size=font_size,
+                                font_family=font_family,
+                                text_anchor="end",
+                            )
+                        )
+                    else:
+                        bars_g.add_child(
+                            Text(
+                                text=str(label_text),
+                                x=x + 4,
+                                y=bar_y + series_thickness / 2 + font_size / 3,
+                                fill=font_color,
+                                font_size=font_size,
+                                font_family=font_family,
+                                text_anchor="start",
+                            )
+                        )
 
         # Plot borders — all four sides.
         grid_color = self.theme.grid_color

@@ -41,6 +41,7 @@ from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
 from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
+from charted.charts.pie import PieChart
 from charted.charts.scatter import ScatterChart
 
 # ============================================================
@@ -536,3 +537,197 @@ def test_histogram_chart_basic_png():
     data = [random.gauss(50, 15) for _ in range(200)]
     chart = Histogram(data=data)
     compare_png_baseline(chart, "histogram_basic", tolerance=5)
+
+
+# ============================================================
+# Matplotlib Parity Feature Tests (data labels, axis titles,
+# quadrant labels, reference lines, pie percentages)
+# ============================================================
+
+
+def test_scatter_data_labels():
+    """Visual regression test for ScatterChart with data labels (SVG structure)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        data_labels=["origin", "alpha", "beta", "peak"],
+    )
+    baseline_path = BASELINES_DIR / "scatter_data_labels.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_scatter_data_labels_png():
+    """Visual regression test for ScatterChart with data labels (PNG pixel-perfect)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        data_labels=["origin", "alpha", "beta", "peak"],
+    )
+    compare_png_baseline(chart, "scatter_data_labels", tolerance=5)
+
+
+def test_scatter_quadrant_labels():
+    """Visual regression test for ScatterChart with quadrant labels (SVG structure)."""
+    chart = ScatterChart(
+        x_data=[1, 2, 4, 5],
+        y_data=[4, 16, 8, 20],
+        quadrant_labels=["Top Left", "Top Right", "Bottom Left", "Bottom Right"],
+    )
+    baseline_path = BASELINES_DIR / "scatter_quadrant_labels.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_scatter_quadrant_labels_png():
+    """Visual regression test for ScatterChart with quadrant labels (PNG pixel-perfect)."""
+    chart = ScatterChart(
+        x_data=[1, 2, 4, 5],
+        y_data=[4, 16, 8, 20],
+        quadrant_labels=["Top Left", "Top Right", "Bottom Left", "Bottom Right"],
+    )
+    compare_png_baseline(chart, "scatter_quadrant_labels", tolerance=5)
+
+
+def test_line_data_labels():
+    """Visual regression test for LineChart with data labels (SVG structure)."""
+    chart = LineChart(
+        data=[0, 8, 16],
+        labels=["Q1", "Q2", "Q3"],
+        data_labels=["low", "mid", "high"],
+    )
+    baseline_path = BASELINES_DIR / "line_data_labels.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_line_data_labels_png():
+    """Visual regression test for LineChart with data labels (PNG pixel-perfect)."""
+    chart = LineChart(
+        data=[0, 8, 16],
+        labels=["Q1", "Q2", "Q3"],
+        data_labels=["low", "mid", "high"],
+    )
+    compare_png_baseline(chart, "line_data_labels", tolerance=5)
+
+
+def test_bar_data_labels():
+    """Visual regression test for BarChart with data labels (SVG structure)."""
+    chart = BarChart(
+        data=[30, 90, 150],
+        labels=["X", "Y", "Z"],
+        data_labels=["30u", "90u", "150u"],
+    )
+    baseline_path = BASELINES_DIR / "bar_data_labels.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_bar_data_labels_png():
+    """Visual regression test for BarChart with data labels (PNG pixel-perfect)."""
+    chart = BarChart(
+        data=[30, 90, 150],
+        labels=["X", "Y", "Z"],
+        data_labels=["30u", "90u", "150u"],
+    )
+    compare_png_baseline(chart, "bar_data_labels", tolerance=5)
+
+
+def test_column_data_labels():
+    """Visual regression test for ColumnChart with data labels (SVG structure)."""
+    chart = ColumnChart(
+        data=[4, 12, 20],
+        labels=["A", "B", "C"],
+        data_labels=["four", "twelve", "twenty"],
+    )
+    baseline_path = BASELINES_DIR / "column_data_labels.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_column_data_labels_png():
+    """Visual regression test for ColumnChart with data labels (PNG pixel-perfect)."""
+    chart = ColumnChart(
+        data=[4, 12, 20],
+        labels=["A", "B", "C"],
+        data_labels=["four", "twelve", "twenty"],
+    )
+    compare_png_baseline(chart, "column_data_labels", tolerance=5)
+
+
+def test_scatter_axis_titles():
+    """Visual regression test for ScatterChart with axis titles (SVG structure)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        x_label="Velocity",
+        y_label="Altitude",
+    )
+    baseline_path = BASELINES_DIR / "scatter_axis_titles.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_scatter_axis_titles_png():
+    """Visual regression test for ScatterChart with axis titles (PNG pixel-perfect)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        x_label="Velocity",
+        y_label="Altitude",
+    )
+    compare_png_baseline(chart, "scatter_axis_titles", tolerance=5)
+
+
+def test_scatter_reference_lines():
+    """Visual regression test for ScatterChart with reference lines (SVG structure)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        h_lines=[8.0, 16.0],
+        v_lines=[2.0, 4.0],
+    )
+    baseline_path = BASELINES_DIR / "scatter_reference_lines.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_scatter_reference_lines_png():
+    """Visual regression test for ScatterChart with reference lines (PNG pixel-perfect)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6],
+        y_data=[0, 8, 16, 20],
+        h_lines=[8.0, 16.0],
+        v_lines=[2.0, 4.0],
+    )
+    compare_png_baseline(chart, "scatter_reference_lines", tolerance=5)
+
+
+def test_pie_percentages():
+    """Visual regression test for PieChart with percentages (SVG structure)."""
+    chart = PieChart(
+        data=[25, 25, 50],
+        labels=["A", "B", "C"],
+        show_percentages=True,
+    )
+    baseline_path = BASELINES_DIR / "pie_percentages.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_pie_percentages_png():
+    """Visual regression test for PieChart with percentages (PNG pixel-perfect)."""
+    chart = PieChart(
+        data=[25, 25, 50],
+        labels=["A", "B", "C"],
+        show_percentages=True,
+    )
+    compare_png_baseline(chart, "pie_percentages", tolerance=5)

@@ -54,6 +54,7 @@ class PieChart(Chart):
         explode: float | Vector = 0,
         start_angle: float = 0,
         series_styles: list[SeriesStyleConfig] | None = None,
+        show_percentages: bool = False,
     ):
         """Initialize pie chart.
 
@@ -67,6 +68,7 @@ class PieChart(Chart):
             explode: Single value or list to offset slices from center (pixels)
             start_angle: Starting angle in degrees (0 = top, clockwise)
             series_styles: Optional per-slice styling overrides
+            show_percentages: If True, show percentage values on each slice
         """
         # Validate inputs
         if not data or len(data) == 0:
@@ -87,6 +89,7 @@ class PieChart(Chart):
         self.inner_radius = inner_radius
         self.explode = explode if isinstance(explode, list) else [explode] * len(data)
         self.start_angle = start_angle
+        self.show_percentages = show_percentages
         self._pie_data = list(data)  # Store original data for rendering
         self._pie_labels = labels
         self.series_styles = series_styles
@@ -310,10 +313,15 @@ class PieChart(Chart):
             # Use contrast-aware text color
             text_color = get_contrast_color(slice_color)
 
+            label_display = str(label)
+            if self.show_percentages:
+                pct = (value / total) * 100
+                label_display = f"{label_display} ({pct:.1f}%)"
+
             label_text = Text(
                 x=label_x,
                 y=label_y,
-                text=str(label),
+                text=label_display,
                 fill=text_color,
                 font_size=get_pie_label_font_size(),
                 font_family=self.theme.title_font_family,
