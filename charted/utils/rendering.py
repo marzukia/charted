@@ -163,6 +163,9 @@ def calculate_legend_position(
     Raises:
         Exception: If position is invalid.
     """
+    plot_center_x = (plot_left + plot_right) / 2
+    center_x = plot_center_x - legend_width / 2
+
     positions = {
         "topright": {
             "x0": plot_right - inset - legend_width * (1 + padding / 2),
@@ -178,6 +181,14 @@ def calculate_legend_position(
         },
         "bottomleft": {
             "x0": plot_left + inset + legend_width * (padding / 2),
+            "y0": top_padding + plot_height - inset - legend_height * (1 + padding / 2),
+        },
+        "topcenter": {
+            "x0": center_x,
+            "y0": top_padding + inset + legend_height * (padding / 2),
+        },
+        "bottomcenter": {
+            "x0": center_x,
             "y0": top_padding + plot_height - inset - legend_height * (1 + padding / 2),
         },
     }

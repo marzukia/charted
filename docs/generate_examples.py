@@ -290,8 +290,11 @@ save(
         ],
         width=600,
         height=500,
-
-        theme=EXAMPLE_THEME,
+        theme=Theme(
+            title_font_family="Roboto",
+            legend_font_family="Roboto",
+            legend_position="bottomcenter",
+        ),
     ).html,
 )
 
