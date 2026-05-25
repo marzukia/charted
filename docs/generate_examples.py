@@ -28,7 +28,10 @@ from charted.charts import (
 )
 from charted.themes.core import Theme
 
-EXAMPLE_THEME = Theme(title_font_family="JetBrains Mono")
+EXAMPLE_THEME = Theme(
+    title_font_family="JetBrains Mono",
+    legend_font_family="JetBrains Mono",
+)
 
 
 def save(name: str, svg: str) -> None:
@@ -277,8 +280,8 @@ save(
         series_names=["High Performers", "Growth Potential", "Steady Contributors"],
         x_label="Skills Score",
         y_label="Engagement Score",
-        h_lines=[50.0],
-        v_lines=[50.0],
+        h_lines=[42.5],
+        v_lines=[42.5],
         quadrant_labels=[
             "Disengaged Experts",
             "Stars",
