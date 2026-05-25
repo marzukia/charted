@@ -44,6 +44,45 @@ class TestScatterChartHappyPath:
         assert "-Infinity" not in html
 
 
+    def test_scatter_chart_custom_axis_bounds(self):
+        """Test scatter chart with custom x_min/x_max/y_min/y_max."""
+        chart = ScatterChart(
+            x_data=[5],
+            y_data=[5],
+            x_min=0,
+            x_max=10,
+            y_min=0,
+            y_max=10,
+        )
+        html = chart.html
+        # Verify axis dimensions reflect custom bounds
+        assert chart.x_axis.axis_dimension.min_value == 0
+        assert chart.x_axis.axis_dimension.max_value == 10
+        assert chart.y_axis.axis_dimension.min_value == 0
+        assert chart.y_axis.axis_dimension.max_value == 10
+        # Verify axis labels include 0 and 10
+        x_label_texts = [lbl.text for lbl in chart.x_axis._labels]
+        y_label_texts = [lbl.text for lbl in chart.y_axis._labels]
+        assert "0" in x_label_texts
+        assert "10" in x_label_texts
+        assert "0" in y_label_texts
+        assert "10" in y_label_texts
+        # Verify chart renders without errors
+        assert "<circle" in html.lower()
+
+    def test_scatter_chart_partial_axis_bounds(self):
+        """Test scatter chart with only some axis bounds overridden."""
+        chart = ScatterChart(
+            x_data=[3, 7],
+            y_data=[3, 7],
+            x_min=0,
+            y_max=20,
+        )
+        assert chart.x_axis.axis_dimension.min_value == 0
+        assert chart.y_axis.axis_dimension.max_value == 20
+        assert "<circle" in chart.html.lower()
+
+
 class TestScatterChartSadPath:
     """Sad path tests for ScatterChart edge cases and error conditions."""
 

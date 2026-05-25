@@ -266,6 +266,10 @@ class Chart(Svg):
         data_labels: list[str] | list[list[str]] | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        x_axis_min: float | None = None,
+        x_axis_max: float | None = None,
+        y_axis_min: float | None = None,
+        y_axis_max: float | None = None,
     ):
         super().__init__(
             width=width,
@@ -368,6 +372,16 @@ class Chart(Svg):
             zero_index=self.zero_index,
             config=self.theme.grid_color,
         )
+
+        # Override axis bounds if custom min/max values were provided.
+        # This must happen after axis creation but before value reprojection.
+        # We override axis_dimension and regenerate tick values/labels/grid lines
+        # to match the new range.
+        if any(v is not None for v in (x_axis_min, x_axis_max, y_axis_min, y_axis_max)):
+            self._apply_axis_overrides(
+                self.x_axis, x_axis_min, x_axis_max,
+                self.y_axis, y_axis_min, y_axis_max,
+            )
 
         # Initialize internal offsets and values directly (properties are read-only)
         # For ordinal charts (no x_data), generate default x-values [0, 1, 2, ...]
@@ -882,6 +896,105 @@ class Chart(Svg):
             "has_negative_values": has_negative,
             "stacked": stacked,
         }
+
+    # =========================================================================
+    # Axis Bound Overrides
+    # =========================================================================
+
+    @staticmethod
+    def _apply_axis_overrides(
+        x_axis,
+        x_min: float | None,
+        x_max: float | None,
+        y_axis,
+        y_min: float | None,
+        y_max: float | None,
+    ) -> None:
+        """Override axis dimensions with user-supplied min/max bounds.
+
+        Replaces the auto-calculated axis_dimension, then regenerates tick
+        values, grid lines, and labels so that the rendered axis reflects the
+        custom range.
+        """
+        from charted.utils.helpers import (
+            calculate_text_dimensions,
+            common_denominators,
+            round_to_clean_number,
+        )
+        from charted.utils.types import AxisDimension
+
+        def _override_axis(axis, new_min, new_max):
+            old = axis.axis_dimension
+            mn = new_min if new_min is not None else old.min_value
+            mx = new_max if new_max is not None else old.max_value
+            axis.axis_dimension = AxisDimension(mn, mx, old.count)
+
+            # Regenerate tick values and grid lines for the new range
+            value_range = mx - mn
+            if value_range <= 0:
+                return
+
+            # Round bounds for clean tick marks
+            clean_min = mn
+            clean_max = mx
+            if mn < 0:
+                clean_min = -round_to_clean_number(abs(mn))
+            else:
+                clean_min = round_to_clean_number(mn, round_down=True)
+            clean_max = round_to_clean_number(mx)
+
+            # Recompute axis_dimension with clean bounds
+            axis.axis_dimension = AxisDimension(clean_min, clean_max, old.count)
+            value_range = clean_max - clean_min
+            if value_range <= 0:
+                return
+
+            denominators = common_denominators(clean_min, clean_max)
+            all_values = []
+            for denominator in reversed(denominators):
+                count = int(value_range / denominator)
+                all_values = [
+                    clean_min + (i * denominator)
+                    for i in reversed(range(count + 1))
+                ]
+                if len(all_values) > 5:
+                    break
+
+            # Filter for label display
+            values = all_values.copy()
+            while len(values) > 10 and 0 not in values:
+                values = [x for (i, x) in enumerate(values) if i % 2 == 0]
+
+            # Grid lines
+            grid_line_values = all_values.copy()
+            while len(grid_line_values) > 10 and 0 not in grid_line_values:
+                grid_line_values = [
+                    x for (i, x) in enumerate(grid_line_values) if i % 2 == 0
+                ]
+
+            axis._values = values
+            axis._grid_line_values = grid_line_values
+
+            # Regenerate labels from new tick values
+            labels = []
+            precision = 0
+            for label in values:
+                if "." in str(label):
+                    decimal_value = str(label).split(".")[-1]
+                    if float(decimal_value) > 0:
+                        precision = 1
+                value = round(label, precision) if precision > 0 else int(label)
+                labels.append(value)
+            axis._labels = [calculate_text_dimensions(lbl) for lbl in labels]
+
+            # Rebuild child elements (grid lines + axis labels)
+            axis.children = []
+            axis.add_children(axis.grid_lines, axis.axis_labels)
+
+        if x_min is not None or x_max is not None:
+            _override_axis(x_axis, x_min, x_max)
+        if y_min is not None or y_max is not None:
+            _override_axis(y_axis, y_min, y_max)
 
     # =========================================================================
     # Reference Lines & Axis Labels

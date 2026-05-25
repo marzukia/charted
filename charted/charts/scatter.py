@@ -61,6 +61,10 @@ class ScatterChart(Chart):
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
         quadrant_labels: list[str] | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
     ):
         self._quadrant_labels = quadrant_labels
         super().__init__(
@@ -78,6 +82,10 @@ class ScatterChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            x_axis_min=x_min,
+            x_axis_max=x_max,
+            y_axis_min=y_min,
+            y_axis_max=y_max,
         )
 
     @property
