@@ -105,7 +105,7 @@ class BoxPlot(Chart):
                 Path(
                     d=f"M{cx} {y_min} L{cx} {y_max}",
                     stroke=color,
-                    stroke_width=2,
+                    stroke_width=1.5,
                 )
             )
             # Whisker caps
@@ -114,18 +114,18 @@ class BoxPlot(Chart):
                 Path(
                     d=f"M{cx - cap_w} {y_min} L{cx + cap_w} {y_min}",
                     stroke=color,
-                    stroke_width=2,
+                    stroke_width=1.5,
                 )
             )
             g.add_child(
                 Path(
                     d=f"M{cx - cap_w} {y_max} L{cx + cap_w} {y_max}",
                     stroke=color,
-                    stroke_width=2,
+                    stroke_width=1.5,
                 )
             )
 
-            # Box (Q1 to Q3) — prominent IQR rectangle
+            # Box (Q1 to Q3)
             g.add_child(
                 Rect(
                     x=cx - box_w / 2,
@@ -133,17 +133,17 @@ class BoxPlot(Chart):
                     width=box_w,
                     height=y_q3 - y_q1,
                     fill=color,
-                    fill_opacity=0.6,
+                    fill_opacity=0.3,
                     stroke=color,
-                    stroke_width=2.5,
+                    stroke_width=1.5,
                 )
             )
-            # Median line — thicker to stand out inside the box
+            # Median line
             g.add_child(
                 Path(
                     d=f"M{cx - box_w / 2} {y_med} L{cx + box_w / 2} {y_med}",
-                    stroke="#333333",
-                    stroke_width=3,
+                    stroke=color,
+                    stroke_width=2,
                 )
             )
 
