@@ -177,7 +177,7 @@ class ScatterChart(Chart):
         # Corner-aligned: top labels hug top edge growing down,
         # bottom labels hug bottom edge growing up
         line_height = font_size + 2
-        margin = ph * 0.04
+        margin = ph * 0.015
 
         for idx, label_text in enumerate(labels):
             if not label_text:
