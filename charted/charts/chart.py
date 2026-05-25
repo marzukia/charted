@@ -5,7 +5,15 @@ separate modules to address God Class architectural debt (Issue #64).
 """
 
 from charted.charts.axes import XAxis, YAxis
-from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
+from charted.constants import (
+    AXIS_BORDER_COLOR,
+    AXIS_BORDER_WIDTH,
+    DEFAULT_CHART_HEIGHT,
+    DEFAULT_CHART_WIDTH,
+    REFERENCE_LINE_COLOR,
+    REFERENCE_LINE_DASH,
+    REFERENCE_LINE_WIDTH,
+)
 from charted.html.element import ClipPath, Defs, G, Path, Rect, Svg, Text
 from charted.themes.core import Theme
 from charted.utils.color_manager import ColorManager
@@ -465,6 +473,23 @@ class Chart(Svg):
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
+        # Add plot border (bottom and left edges) darker than grid
+        if self.render_axes:
+            lp = self.left_padding
+            tp = self.top_padding
+            pw = self.plot_width
+            ph = self.plot_height
+            children.append(
+                Path(
+                    d=[
+                        f"M{lp} {tp} v{ph}",
+                        f"M{lp} {tp + ph} h{pw}",
+                    ],
+                    stroke=AXIS_BORDER_COLOR,
+                    stroke_width=AXIS_BORDER_WIDTH,
+                    fill="none",
+                )
+            )
         # Add reference lines (rendered inside the plot area)
         ref_lines = self._render_reference_lines()
         if ref_lines:
@@ -869,17 +894,17 @@ class Chart(Svg):
             transform=f"translate({self.left_padding}, {self.top_padding})",
         )
 
-        ref_color = self.theme.grid_color or "#999"
+        ref_color = REFERENCE_LINE_COLOR
 
         if self._h_lines:
             for val in self._h_lines:
-                y = self.y_axis.reproject(val)
+                y = self.plot_height - self.y_axis.reproject(val)
                 g.add_child(
                     Path(
                         d=[f"M0 {y} h{self.plot_width}"],
                         stroke=ref_color,
-                        stroke_width=1.5,
-                        stroke_dasharray="6 3",
+                        stroke_width=REFERENCE_LINE_WIDTH,
+                        stroke_dasharray=REFERENCE_LINE_DASH,
                         fill="none",
                     )
                 )
@@ -891,8 +916,8 @@ class Chart(Svg):
                     Path(
                         d=[f"M{x} 0 v{self.plot_height}"],
                         stroke=ref_color,
-                        stroke_width=1.5,
-                        stroke_dasharray="6 3",
+                        stroke_width=REFERENCE_LINE_WIDTH,
+                        stroke_dasharray=REFERENCE_LINE_DASH,
                         fill="none",
                     )
                 )
