@@ -465,6 +465,20 @@ class Chart(Svg):
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
+        # Add plot border (bottom and left edges)
+        if self.render_axes:
+            border_color = self.theme.grid_color or "#ddd"
+            children.append(
+                Path(
+                    d=[
+                        f"M{self.left_padding} {self.top_padding + self.plot_height} "
+                        f"h{self.plot_width}"
+                    ],
+                    stroke=border_color,
+                    stroke_width=1,
+                    fill="none",
+                )
+            )
         # Add reference lines (rendered inside the plot area)
         ref_lines = self._render_reference_lines()
         if ref_lines:
