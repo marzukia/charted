@@ -8,6 +8,7 @@ All output SVGs are written to docs/examples/.
 
 import math
 import os
+import random
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "examples")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -38,74 +39,69 @@ def save(name: str, svg: str) -> None:
 # Bar charts
 # ---------------------------------------------------------------------------
 
-# Single-series bar
+# Single-series bar — app store ratings by category
 save(
     "bar.svg",
     BarChart(
-        title="Profit/Loss by Region ($M)",
-        data=[-12, 34, -8, 52, -5, 28, 41, -19, 15, 60],
-        labels=[
-            "North",
-            "South",
-            "East",
-            "West",
-            "Central",
-            "Pacific",
-            "Atlantic",
-            "Mountain",
-            "Plains",
-            "Metro",
-        ],
-        width=700,
-        height=500,
+        title="Average App Rating by Category",
+        data=[4.6, 4.2, 3.8, 4.5, 3.1, 4.0, 4.3],
+        labels=["Games", "Social", "News", "Health", "Finance", "Music", "Photo"],
+        x_label="Rating (out of 5)",
+        width=600,
+        height=400,
     ).html,
 )
 
-# Multi-series bar (grouped / side-by-side)
+# Multi-series bar — city temperature ranges
 save(
     "bar_multi.svg",
     BarChart(
-        title="Revenue vs Expenses by Quarter ($K)",
+        title="Summer vs Winter Avg. Temperature (°C)",
         data=[
-            [120, -45, 180, -30, 210, -60],
-            [-80, -20, -95, -15, -110, -25],
+            [35, 28, 22, 14, 8],
+            [18, 12, 5, -2, -12],
         ],
-        labels=["Q1 Prod", "Q1 Ops", "Q2 Prod", "Q2 Ops", "Q3 Prod", "Q3 Ops"],
-        width=700,
-        height=500,
+        labels=["Dubai", "Sydney", "Tokyo", "London", "Moscow"],
+        series_names=["Summer", "Winter"],
+        x_label="Temperature (°C)",
+        width=600,
+        height=400,
     ).html,
 )
 
-# Stacked bar
+# Stacked bar — marketing spend by channel
 save(
     "bar_stacked.svg",
     BarChart(
-        title="Budget by Department ($K)",
+        title="Marketing Spend by Channel ($K)",
         data=[
-            [100, -50, 120],
-            [80, 60, -40],
+            [45, 60, 55, 70],
+            [30, 25, 40, 35],
+            [15, 20, 18, 22],
         ],
-        labels=["Q1", "Q2", "Q3"],
-        series_names=["Revenue", "Expenses"],
+        labels=["Q1", "Q2", "Q3", "Q4"],
+        series_names=["Digital", "Print", "Events"],
         x_stacked=True,
-        width=700,
-        height=400,
+        x_label="Spend ($K)",
+        width=600,
+        height=350,
     ).html,
 )
 
-# Side-by-side bar
+# Side-by-side bar — export vs import by country
 save(
     "bar_sidebyside.svg",
     BarChart(
-        title="Revenue vs Expenses by Quarter ($K)",
+        title="Trade Balance: Exports vs Imports ($B)",
         data=[
-            [120, 180, 210],
-            [-80, -95, -110],
+            [320, 180, 95, 210],
+            [-280, -195, -110, -165],
         ],
-        labels=["Q1", "Q2", "Q3"],
-        series_names=["Revenue", "Expenses"],
-        width=700,
-        height=400,
+        labels=["China", "Germany", "Australia", "Japan"],
+        series_names=["Exports", "Imports"],
+        x_label="Value ($B)",
+        width=600,
+        height=350,
     ).html,
 )
 
@@ -117,54 +113,53 @@ save(
 save(
     "column.svg",
     ColumnChart(
-        title="Year-over-Year Growth Rate (%) by Segment",
+        title="Quarterly Revenue by Product Line ($M)",
         data=[
-            [12, -8, 22, 18, -5, 30],
-            [-3, -15, 5, -2, -20, 8],
-            [9, -23, 17, 16, -25, 38],
+            [12, 18, 22, 28],
+            [8, 10, 15, 19],
+            [5, 7, 6, 11],
         ],
-        labels=["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"],
-        width=700,
-        height=500,
-        theme={
-            "v_padding": 0.12,
-            "h_padding": 0.10,
-        },
+        labels=["Q1", "Q2", "Q3", "Q4"],
+        series_names=["SaaS", "Consulting", "Hardware"],
+        y_label="Revenue ($M)",
+        width=600,
+        height=400,
     ).html,
 )
 
-# Stacked column
+# Stacked column — website traffic sources
 save(
     "column_stacked.svg",
     ColumnChart(
-        title="Year-over-Year Growth by Segment",
+        title="Website Traffic by Source (K visits)",
         data=[
-            [12, 22, 30],
-            [-8, -15, -20],
-            [4, 7, 10],
+            [120, 140, 165, 180, 210],
+            [80, 75, 90, 95, 100],
+            [40, 55, 60, 70, 85],
         ],
-        labels=["Q1", "Q2", "Q3"],
-        series_names=["Revenue", "Costs", "Net"],
-        width=700,
+        labels=["Jan", "Feb", "Mar", "Apr", "May"],
+        series_names=["Organic", "Paid", "Referral"],
+        y_label="Visits (K)",
+        width=600,
         height=400,
     ).html,
 )
 
-# Side-by-side column
+# Side-by-side column — programming language popularity
 save(
     "column_sidebyside.svg",
     ColumnChart(
-        title="Sales Performance by Region",
+        title="Developer Survey: Language Popularity (%)",
         data=[
-            [45, 52, 38, 61],
-            [38, 46, 52, 49],
-            [52, 39, 46, 51],
+            [67, 45, 38, 30, 22],
+            [62, 48, 42, 35, 28],
         ],
-        labels=["Q1", "Q2", "Q3", "Q4"],
-        series_names=["North", "South", "East"],
-        width=700,
-        height=400,
+        labels=["Python", "JavaScript", "Go", "Rust", "TypeScript"],
+        series_names=["2024", "2025"],
         y_stacked=False,
+        y_label="Respondents (%)",
+        width=600,
+        height=400,
     ).html,
 )
 
@@ -172,20 +167,22 @@ save(
 # Line charts
 # ---------------------------------------------------------------------------
 
-n = 20
-
-# Multi-series line
+# Multi-series line — stock price comparison (normalized)
 save(
     "line.svg",
     LineChart(
-        title="Signal Analysis: Raw vs Filtered vs Baseline",
+        title="Stock Price (Normalized to 100)",
         data=[
-            [math.sin(i * 0.5) * 30 + (i % 7 - 3) * 5 for i in range(n)],
-            [math.sin(i * 0.5) * 25 for i in range(n)],
-            [math.sin(i * 0.5) * 10 - 5 for i in range(n)],
+            [100, 105, 98, 112, 120, 115, 125, 130, 128, 140, 138, 150],
+            [100, 97, 102, 108, 104, 110, 115, 112, 118, 122, 125, 130],
+            [100, 103, 106, 104, 108, 112, 110, 115, 120, 118, 122, 128],
         ],
-        labels=[str(i) for i in range(n)],
-        width=700,
+        labels=[
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ],
+        series_names=["ACME Corp", "Globex Inc", "Initech"],
+        width=600,
         height=400,
     ).html,
 )
@@ -193,28 +190,9 @@ save(
 # XY mode line (temperature anomaly)
 years = list(range(1990, 2010))
 anomalies = [
-    -15,
-    -5,
-    10,
-    20,
-    5,
-    25,
-    15,
-    30,
-    10,
-    20,
-    40,
-    25,
-    45,
-    30,
-    50,
-    35,
-    60,
-    55,
-    45,
-    70,
+    -15, -5, 10, 20, 5, 25, 15, 30, 10, 20,
+    40, 25, 45, 30, 50, 35, 60, 55, 45, 70,
 ]
-# Baseline as a moving average trend instead of flat zero
 baseline = [round(5 + 2 * math.sin(i * 0.4) + i * 0.5, 1) for i in range(len(years))]
 save(
     "xy_line.svg",
@@ -223,34 +201,30 @@ save(
         data=[anomalies, baseline],
         x_data=years,
         labels=[str(y) for y in years],
-        width=700,
+        width=600,
         height=400,
     ).html,
 )
 
 
-# Single-series line
+# Single-series line — monthly coffee shop revenue
 save(
     "line_single.svg",
     LineChart(
-        title="Monthly Active Users (K)",
-        data=[[42, 48, 55, 61, 58, 70, 80, 78, 85, 92, 88, 100]],
+        title="Monthly Revenue — Corner Coffee Co. ($K)",
+        data=[[18, 22, 19, 25, 28, 32, 35, 38, 30, 27, 24, 42]],
         labels=[
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         ],
-        series_names=["MAU"],
-        width=700,
+        series_names=["Revenue"],
+        y_label="Revenue ($K)",
+        h_lines=[28.3],
+        data_labels=[
+            "", "", "", "", "", "",
+            "", "", "", "", "", "$42K",
+        ],
+        width=600,
         height=400,
     ).html,
 )
@@ -259,39 +233,60 @@ save(
 # Scatter charts
 # ---------------------------------------------------------------------------
 
-# Multi-series scatter — two distinct clusters with noise
-import random
-
+# Multi-series scatter — employee performance quadrant analysis
 random.seed(42)
-cluster_a_x = [30 + random.gauss(0, 8) for _ in range(20)]
-cluster_a_y = [40 + random.gauss(0, 8) for _ in range(20)]
-cluster_b_x = [70 + random.gauss(0, 10) for _ in range(20)]
-cluster_b_y = [20 + random.gauss(0, 10) for _ in range(20)]
+# High performers
+hp_x = [round(65 + random.gauss(0, 8), 1) for _ in range(12)]
+hp_y = [round(70 + random.gauss(0, 10), 1) for _ in range(12)]
+# Growth potential
+gp_x = [round(35 + random.gauss(0, 8), 1) for _ in range(12)]
+gp_y = [round(65 + random.gauss(0, 10), 1) for _ in range(12)]
+# Steady contributors
+sc_x = [round(60 + random.gauss(0, 10), 1) for _ in range(12)]
+sc_y = [round(35 + random.gauss(0, 8), 1) for _ in range(12)]
+
 save(
     "scatter.svg",
     ScatterChart(
-        title="Cluster Analysis — Two Distinct Populations",
-        x_data=[cluster_a_x, cluster_b_x],
-        y_data=[cluster_a_y, cluster_b_y],
-        series_names=["Cluster A", "Cluster B"],
-        width=700,
-        height=400,
+        title="Employee Performance Quadrant",
+        x_data=[hp_x, gp_x, sc_x],
+        y_data=[hp_y, gp_y, sc_y],
+        series_names=["High Performers", "Growth Potential", "Steady Contributors"],
+        x_label="Skills Score",
+        y_label="Engagement Score",
+        h_lines=[50.0],
+        v_lines=[50.0],
+        quadrant_labels=[
+            "Disengaged Experts",
+            "Stars",
+            "At Risk",
+            "Rising Talent",
+        ],
+        width=600,
+        height=500,
     ).html,
 )
 
-# Single-series scatter — quadratic relationship with spread
-random.seed(1)
-x_vals = [i for i in range(5, 95, 5)]
-y_vals = [round(10 + (v - 50) ** 2 / 50 + random.gauss(0, 4), 1) for v in x_vals]
+# Single-series scatter — house price vs square footage with data labels
+random.seed(7)
+cities = [
+    "Austin", "Denver", "Portland", "Nashville", "Raleigh",
+    "Boise", "Tampa", "Phoenix", "Atlanta", "Seattle",
+]
+sqft = [1200, 1450, 1600, 1800, 2000, 2200, 2500, 2800, 3100, 3500]
+prices = [round(180 + (s - 1200) * 0.12 + random.gauss(0, 30), 0) for s in sqft]
 save(
     "scatter_single.svg",
     ScatterChart(
-        title="U-Shaped Response Curve — Signal vs Input",
-        x_data=x_vals,
-        y_data=y_vals,
-        series_names=["Observations"],
-        width=700,
-        height=400,
+        title="Home Price vs Size — Mid-Market Cities",
+        x_data=sqft,
+        y_data=prices,
+        series_names=["Median Price"],
+        data_labels=cities,
+        x_label="Square Footage",
+        y_label="Price ($K)",
+        width=600,
+        height=450,
     ).html,
 )
 
@@ -303,11 +298,11 @@ save(
 save(
     "pie.svg",
     PieChart(
-        title="Market Share by Product Line",
-        data=[35, 28, 18, 12, 7],
-        labels=["Product A", "Product B", "Product C", "Product D", "Other"],
-        width=600,
-        height=500,
+        title="Global Cloud Market Share (2025)",
+        data=[33, 22, 10, 8, 27],
+        labels=["AWS", "Azure", "GCP", "Alibaba", "Others"],
+        width=550,
+        height=450,
     ).html,
 )
 
@@ -315,12 +310,12 @@ save(
 save(
     "pie_doughnut.svg",
     PieChart(
-        title="Operating System Market Share",
-        data=[72, 15, 8, 5],
-        labels=["Windows", "macOS", "Linux", "Other"],
+        title="Time Spent Per Day (hours)",
+        data=[8, 7, 2, 3, 2, 2],
+        labels=["Sleep", "Work", "Exercise", "Commute", "Cooking", "Leisure"],
         inner_radius=0.5,
-        width=600,
-        height=500,
+        width=550,
+        height=450,
     ).html,
 )
 
@@ -332,24 +327,24 @@ save(
 save(
     "radar.svg",
     RadarChart(
-        title="Character Stats Comparison",
-        data=[20, 35, 30, 45, 25],
-        labels=["Speed", "Power", "Endurance", "Defense", "Skill"],
-        width=600,
-        height=500,
+        title="Frontend Framework Evaluation",
+        data=[85, 70, 90, 60, 75, 80],
+        labels=["Performance", "Ecosystem", "DX", "Bundle Size", "TypeScript", "Community"],
+        width=550,
+        height=450,
     ).html,
 )
 
-# Multi-series radar
+# Multi-series radar — comparing two athletes
 save(
     "radar_multi.svg",
     RadarChart(
-        title="Player Comparison",
-        data=[[20, 35, 30, 45, 25], [30, 25, 40, 35, 30]],
-        labels=["Speed", "Power", "Endurance", "Defense", "Skill"],
-        series_names=["Player A", "Player B"],
-        width=600,
-        height=500,
+        title="Athlete Comparison: Sprint vs Endurance",
+        data=[[92, 65, 55, 80, 70], [60, 90, 95, 65, 85]],
+        labels=["Speed", "Stamina", "Recovery", "Power", "Agility"],
+        series_names=["Sprinter", "Marathoner"],
+        width=550,
+        height=450,
     ).html,
 )
 
@@ -357,31 +352,33 @@ save(
 # Area charts
 # ---------------------------------------------------------------------------
 
-# Single-series area — CPU temperature over a day
-temps = [42 + 10 * math.sin(i * 0.6) + (hash(str(i)) % 5 - 2) * 1.5 for i in range(24)]
+# Single-series area — daily step count over a month
+random.seed(99)
+steps = [round(6000 + 4000 * math.sin(i * 0.45) + random.gauss(0, 800)) for i in range(30)]
 save(
     "area.svg",
     AreaChart(
-        title="CPU Temperature (°C) — 24-hour Cycle",
-        data=[round(t, 1) for t in temps],
-        labels=[f"{h}:00" for h in range(24)],
-        width=700,
-        height=400,
+        title="Daily Step Count — April 2025",
+        data=steps,
+        labels=[str(d + 1) for d in range(30)],
+        width=600,
+        height=380,
     ).html,
 )
 
-# Multi-series area
+# Multi-series area — energy production by source
 save(
     "area_multi.svg",
     AreaChart(
-        title="Multi-series Area — Revenue by Channel",
+        title="Energy Production by Source (GWh)",
         data=[
-            [30, 50, 45, 60, 70, 80, 65, 55],
-            [20, 35, 30, 45, 50, 55, 40, 35],
+            [120, 125, 130, 140, 155, 170, 180, 190],
+            [80, 90, 95, 100, 110, 115, 125, 135],
+            [60, 55, 50, 48, 45, 40, 38, 35],
         ],
-        labels=["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8"],
-        series_names=["Online", "Retail"],
-        width=700,
+        labels=["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"],
+        series_names=["Solar", "Wind", "Coal"],
+        width=600,
         height=400,
     ).html,
 )
@@ -390,7 +387,6 @@ save(
 # Box plot
 # ---------------------------------------------------------------------------
 
-# Box plot with clear quartiles and outliers
 random.seed(42)
 box_a = [round(random.gauss(50, 10), 1) for _ in range(50)] + [95, 5, 102]
 box_b = [round(random.gauss(70, 15), 1) for _ in range(50)] + [120, 30, 130]
@@ -398,10 +394,10 @@ box_c = [round(random.gauss(30, 8), 1) for _ in range(50)] + [55, 8, 60]
 save(
     "boxplot.svg",
     BoxPlot(
-        title="Test Scores by Group — with Outliers",
+        title="Response Time by Server Region (ms)",
         data=[box_a, box_b, box_c],
-        labels=["Group A", "Group B", "Group C"],
-        width=700,
+        labels=["US-East", "EU-West", "AP-South"],
+        width=600,
         height=400,
     ).html,
 )
@@ -410,16 +406,15 @@ save(
 # Histogram
 # ---------------------------------------------------------------------------
 
-# Histogram — 10-bin normal distribution (bell curve)
 random.seed(42)
 hist_data = [random.gauss(50, 15) for _ in range(500)]
 save(
     "histogram.svg",
     Histogram(
-        title="Exam Scores — Normal Distribution (500 Students, 10 Bins)",
+        title="Exam Score Distribution (500 Students)",
         data=hist_data,
         bins=10,
-        width=700,
+        width=600,
         height=400,
     ).html,
 )
@@ -428,7 +423,6 @@ save(
 # Heatmap
 # ---------------------------------------------------------------------------
 
-# Heatmap — monthly temperature matrix (°C)
 save(
     "heatmap.svg",
     HeatmapChart(
@@ -440,10 +434,13 @@ save(
             [5, 8, 14, 20, 26, 32, 35, 34, 29, 22, 14, 7],
             [-2, 2, 10, 18, 25, 31, 34, 33, 27, 19, 10, 3],
         ],
-        x_labels=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        x_labels=[
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ],
         y_labels=["Dubai", "Sydney", "Tokyo", "Berlin", "Moscow"],
-        width=700,
-        height=450,
+        width=600,
+        height=400,
         low_color="#21639e",
         high_color="#f97316",
         show_values=True,
@@ -455,15 +452,14 @@ save(
 # Gantt chart
 # ---------------------------------------------------------------------------
 
-# Gantt — software project timeline
 save(
     "gantt.svg",
     GanttChart(
-        title="Software Project Timeline — Q1 2026",
+        title="Product Launch Timeline — Q1 2026",
         data=[(0, 2), (1, 4), (3, 6), (5, 8), (6, 9)],
-        labels=["Design", "Frontend", "Backend", "Testing", "Deployment"],
-        width=700,
-        height=400,
+        labels=["Research", "Design", "Development", "QA", "Launch"],
+        width=600,
+        height=380,
         dependencies=[(0, 1), (0, 2), (2, 3), (3, 4)],
         show_today_line=True,
         x_position=4.5,
