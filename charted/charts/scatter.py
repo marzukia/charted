@@ -175,11 +175,12 @@ class ScatterChart(Chart):
 
         # In the flipped coordinate system, high Y = top of chart
         # Positions: [top-left, top-right, bottom-left, bottom-right]
+        inset = padding + font_size
         positions = [
-            (padding, ph - padding - font_size, "start"),        # top-left
-            (pw - padding, ph - padding - font_size, "end"),     # top-right
-            (padding, padding + font_size * 2, "start"),         # bottom-left
-            (pw - padding, padding + font_size * 2, "end"),      # bottom-right
+            (padding, ph - inset, "start"),          # top-left
+            (pw - padding, ph - inset, "end"),       # top-right
+            (padding, inset, "start"),               # bottom-left
+            (pw - padding, inset, "end"),             # bottom-right
         ]
 
         for label_text, (x, y, anchor) in zip(labels, positions):
