@@ -609,6 +609,7 @@ class Chart(Svg):
     def title(self) -> MeasuredText | None:
         if not self._title:
             return None
+        plot_center_x = self.left_padding + self.plot_width / 2
         return Text(
             transform=[
                 translate(
@@ -621,7 +622,7 @@ class Chart(Svg):
             font_family=self.theme.title_font_family,
             font_weight="normal",
             font_size=self.theme.title_font_size,
-            x=self.width / 2,
+            x=plot_center_x,
             y=self.v_pad / 2,
         )
 
