@@ -955,6 +955,8 @@ class Chart(Svg):
         if not self._data_labels:
             return None
 
+        from charted.utils.colors import get_contrast_color
+
         labels = self._data_labels
         # Normalize to 2D list
         if labels and not isinstance(labels[0], list):
@@ -971,6 +973,7 @@ class Chart(Svg):
             y_vals = self.y_values[series_idx]
             y_offs = self.y_offsets[series_idx]
             x_vals = self.x_values[series_idx]
+            series_color = self.colors[series_idx] if series_idx < len(self.colors) else None
 
             for i, label_text in enumerate(label_row):
                 if i >= len(x_vals) or not label_text:
@@ -988,6 +991,19 @@ class Chart(Svg):
                     ty = y + label_offset + font_size
                 if ty > self.plot_height - font_size:
                     ty = y - label_offset
+                # Detect if label is inside the bar/column area
+                inside = (y_vals[i] >= 0 and 0 < ty < y) or (y_vals[i] < 0 and y < ty < 0)
+                # Nudge label away from grid lines for breathing room
+                grid_margin = font_size * 0.6
+                if hasattr(self, 'y_axis'):
+                    for tick_y in self.y_axis.coordinates:
+                        if abs(ty - tick_y) < grid_margin:
+                            ty = tick_y - grid_margin if ty > tick_y else tick_y + grid_margin
+                            break
+                # Use contrast-aware color when label is inside a colored area
+                fill = font_color
+                if inside and series_color:
+                    fill = get_contrast_color(series_color)
                 # Clamp labels at horizontal edges
                 if x > self.plot_width * 0.85:
                     anchor = "end"
@@ -998,7 +1014,7 @@ class Chart(Svg):
                         text=str(label_text),
                         x=x,
                         y=ty,
-                        fill=font_color,
+                        fill=fill,
                         font_size=font_size,
                         font_family=font_family,
                         text_anchor=anchor,
