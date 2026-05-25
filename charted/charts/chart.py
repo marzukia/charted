@@ -615,7 +615,7 @@ class Chart(Svg):
             text=self._title.text,
             fill=self.theme.title_color,
             font_family=self.theme.title_font_family,
-            font_weight="normal",
+            font_weight="bold",
             font_size=self.theme.title_font_size,
             x=self.width / 2,
             y=self.v_pad / 2,
