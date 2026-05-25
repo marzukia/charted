@@ -88,6 +88,10 @@ class ColumnChart(Chart):
         return self.x_width / 2
 
     @property
+    def _data_labels_use_contrast(self) -> bool:
+        return True
+
+    @property
     def representation(self) -> G:
         dy = 0
         if self.y_axis.axis_dimension.min_value < 0:

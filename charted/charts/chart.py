@@ -946,6 +946,10 @@ class Chart(Svg):
     def _data_label_x_offset(self) -> float:
         return 0
 
+    @property
+    def _data_labels_use_contrast(self) -> bool:
+        return False
+
     def _render_data_labels(self) -> G | None:
         """Render data labels on data points.
 
@@ -992,7 +996,9 @@ class Chart(Svg):
                 if ty > self.plot_height - font_size:
                     ty = y - label_offset
                 # Detect if label is inside the bar/column area
-                inside = (y_vals[i] >= 0 and 0 < ty < y) or (y_vals[i] < 0 and y < ty < 0)
+                inside = self._data_labels_use_contrast and (
+                    (y_vals[i] >= 0 and 0 < ty < y) or (y_vals[i] < 0 and y < ty < 0)
+                )
                 # Nudge label away from grid lines for breathing room
                 grid_margin = font_size * 0.6
                 if hasattr(self, 'y_axis'):
