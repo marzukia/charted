@@ -942,6 +942,10 @@ class Chart(Svg):
 
         return elements
 
+    @property
+    def _data_label_x_offset(self) -> float:
+        return 0
+
     def _render_data_labels(self) -> G | None:
         """Render data labels on data points.
 
@@ -971,7 +975,7 @@ class Chart(Svg):
             for i, label_text in enumerate(label_row):
                 if i >= len(x_vals) or not label_text:
                     continue
-                x = x_vals[i] + self.x_offset
+                x = x_vals[i] + self.x_offset + self._data_label_x_offset
                 y = self._apply_stacking(y_vals[i], y_offs[i])
                 # Position label slightly above the point
                 ty = y - 6
