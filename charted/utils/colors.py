@@ -200,6 +200,21 @@ def calculate_contrast_ratio(color1: str, color2: str) -> float:
     return (lighter + 0.05) / (darker + 0.05)
 
 
+def derive_color(base_hex: str, opacity: float) -> str:
+    """Derive an RGBA hex color from a base hex color and opacity.
+
+    Args:
+        base_hex: Base color in hex format (e.g., '#FF5733').
+        opacity: Opacity value from 0.0 (transparent) to 1.0 (opaque).
+
+    Returns:
+        8-digit hex color string with alpha channel (e.g., '#ff573380').
+    """
+    r, g, b = hex_to_rgb(base_hex)
+    a = max(0, min(255, int(opacity * 255)))
+    return "#{:02x}{:02x}{:02x}{:02x}".format(r, g, b, a)
+
+
 def generate_complementary_colors(hex_colors: list[str]) -> Generator[str, None, None]:
     """Generate complementary colors for a list of input colors.
 
