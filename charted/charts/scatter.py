@@ -183,12 +183,16 @@ class ScatterChart(Chart):
             (pw - padding, inset, "end"),             # bottom-right
         ]
 
-        for label_text, (x, y, anchor) in zip(labels, positions):
+        for idx, (label_text, (x, y, anchor)) in enumerate(zip(labels, positions)):
             if not label_text:
                 continue
             lines = str(label_text).split("\n")
+            is_top = idx < 2
             for line_idx, line in enumerate(lines):
-                ty = y + line_idx * (font_size + 2)
+                if is_top:
+                    ty = y - line_idx * (font_size + 2)
+                else:
+                    ty = y + line_idx * (font_size + 2)
                 g.add_child(
                     Text(
                         text=line,
