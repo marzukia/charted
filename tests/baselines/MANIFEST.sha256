@@ -10,19 +10,19 @@
   "column_stacked_negative.svg": "d30b4b7b5c7dc8c030e626f51239981aca709c5419f5d4cee0b9aac396306452",
   "column_sidebyside.svg": "b7f5baa3ff46b49748409ed6674ac88ee4a6cfb781907903cbd8e1548242e621",
   "line_basic.svg": "c01a2bbfdae068d92092dad67fe8acb4b71b85df5a58d20dd3bf5b62001b8e73",
-  "line_multi.svg": "6db91c29ef62b173cae81ab01b0176a497fc7cfec60feb3656bee34d89f31a09",
+  "line_multi.svg": "0a1a5ef029fc5e29be8f1016ffba803f349d5c75e3dc004078b634737071f660",
   "pie.svg": "9e5a4da4273b20ece11facd8ba362df4ce9efa8ca43f7004866902a61981a701",
   "pie_doughnut.svg": "812258cb8969c9377ce7bd0f3e44b6aa66ef21afe7c790f611b4a49ba7f2ef45",
   "scatter_basic.svg": "f884e49fc8af42b9d901f4ededbf71275e0d479beb4bb340947462be45664839",
   "scatter_multi.svg": "6977c9092d2b72b067c4e666a6724a0ef6a48c19e50a2d775ab48c8b95743138",
   "gantt_basic.svg": "2a113e27062f3e75cddd8151c4458587c053f2bb1d144d44887ac2be445848f0",
-  "gantt_dependencies.svg": "70b87ab491fa6078250b26080c7dad4d9f8265935ab345393a16e35b99124321",
-  "gantt_multi.svg": "ad501133bbf4370e30421c3d66b713b0f961beed468854b4c748c738ee991afc",
+  "gantt_dependencies.svg": "df419b4334baa6a3ab403d08441205d16145bd05ce7814d4359347dcf8f0f22a",
+  "gantt_multi.svg": "4a7f5031f9976cb9c124f354f446d62e3e98c8487ec4989e9ccb039b881ea67f",
   "heatmap_basic.svg": "07ce40d49c382392f9f93ce9ee195707e05281c1e8f74d23938a486945b15190",
   "heatmap_rectangular.svg": "b60b951f3e1c135a90b5c725f9152c083969ccea208b35331958cf28fa674a0f",
   "area_basic.svg": "343c55c8e3c129412ecdd8e765018f228dd329cc0bde4571361e731fd787f104",
   "boxplot_basic.svg": "0d0906b79eb4112a04346fb8cf3efba5dbd1988a9532a3ddbf535adaf1626168",
   "histogram_basic.svg": "e60792daa5985081d7b3872e72484b0708c4cffe68e9eebc8ddf00d1ccf07a70",
   "radar.svg": "c2d2ef6dde45e54c6a275e126d99f495f7f5dfda2ad4eab93299ec83f9467ff8",
-  "radar_multi.svg": "0b95b664e976a19d3fb75d82a2e36f544dfdc4335cf9579f92877dcdcdcf039b"
+  "radar_multi.svg": "86b1f12145cc31f6271860b0e5902baf1a3f24fd751e86dab38d9d788a3d0a83"
 }

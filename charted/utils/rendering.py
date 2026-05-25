@@ -24,19 +24,6 @@ def _adjust_color(hex_color: str, amount: int) -> str:
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
-def _derive_legend_stroke(background_color: str) -> str:
-    """Derive a legend border color from the background."""
-    bg = background_color.lstrip("#")
-    if len(bg) == 3:
-        bg = "".join(c * 2 for c in bg)
-    r, g, b = int(bg[0:2], 16), int(bg[2:4], 16), int(bg[4:6], 16)
-    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    if luminance < 0.5:
-        return _adjust_color(background_color, 60)
-    else:
-        return _adjust_color(background_color, -40)
-
-
 def _derive_legend_background(background_color: str) -> str:
     """Derive a slightly offset legend background from the chart background."""
     bg = background_color.lstrip("#")
@@ -79,8 +66,12 @@ def generate_markdown_image(
 
 
 def create_legend_background(
-    x: float, y: float, legend_width: float, legend_height: float, padding: float,
-    background_color: str = "#ffffff", stroke_color: str = "#CCCCCC",
+    x: float,
+    y: float,
+    legend_width: float,
+    legend_height: float,
+    padding: float,
+    background_color: str = "#ffffff",
 ) -> Rect:
     """Create legend background rectangle.
 
@@ -91,10 +82,9 @@ def create_legend_background(
         legend_height: Height of legend content.
         padding: Legend padding value.
         background_color: Fill color for legend background.
-        stroke_color: Border/stroke color for legend.
 
     Returns:
-        Rect element for legend background.
+        Rect element for legend background (no border).
     """
     return Rect(
         transform=translate(
@@ -106,7 +96,6 @@ def create_legend_background(
         width=legend_width * (1 + padding),
         height=legend_height * (1 + padding),
         fill=background_color,
-        stroke=stroke_color,
     )
 
 
@@ -277,8 +266,7 @@ def create_legend(
         position = theme_config.get("position", "topright")
         background_color = theme_config.get("background_color", "#ffffff")
 
-    # Derive legend-specific colors from the background
-    stroke_color = _derive_legend_stroke(background_color)
+    # Derive legend background color
     legend_bg = _derive_legend_background(background_color)
 
     # Calculate dimensions
@@ -312,9 +300,12 @@ def create_legend(
     # Add background (centered at y0)
     legend.add_child(
         create_legend_background(
-            x0, y0_center, legend_width, legend_height, legend_padding,
+            x0,
+            y0_center,
+            legend_width,
+            legend_height,
+            legend_padding,
             background_color=legend_bg,
-            stroke_color=stroke_color,
         )
     )
 
@@ -327,7 +318,13 @@ def create_legend(
         text = calculate_text_dimensions(name, font_size=font_size)
         entry_top = entry_start_y + i * icon_height
         entry = create_legend_entry(
-            x0, entry_top, text, color, i, font_family, icon_height,
+            x0,
+            entry_top,
+            text,
+            color,
+            i,
+            font_family,
+            icon_height,
             font_color=font_color,
         )
         legend.add_child(entry)

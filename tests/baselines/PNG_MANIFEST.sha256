@@ -10,19 +10,19 @@
   "column_stacked_negative.png": "4e1d8bdf9f374b0b88d969c9637fc6023789c1b06a975861c7016d1bda29f3ec",
   "column_sidebyside.png": "aba523847e3a9b4e9cd01204670dd52f32ede7d5ef34fc81718ac08c7221e8cb",
   "line_basic.png": "02485ba06f6b4709d3f79900c5f331fac2fa745b7a2948caf23692ef0b9d0af7",
-  "line_multi.png": "e98305c2e1d8aab7c691d27e8febafb0bf6ba63d1b18d99f1c8b7618c22e4003",
+  "line_multi.png": "a2e3d7b0acf0796759f68e588af7066d639a42456ee51d00b9916558dbb459fe",
   "pie.png": "3fb2ee21f16dd3b3211e58f3807efb2609dfbdafed04c49b1ad45d23ce158d4b",
   "pie_doughnut.png": "f2032c700449f487af51ad21eebdd25f481bc5188ac64d8a11ecb83752a8238b",
   "scatter_basic.png": "1346e2d5a282b9ffb906edf4388041c6fc8ad8857917875218be22d4b637262e",
   "scatter_multi.png": "3c73f167410fec5cb50d0c0fc4fd5c474049471d36e6094ca98ad4de15a81920",
   "gantt_basic.png": "b9fda0772cb606c2baaaa21b9e705e2b429aa3dab3017195174c4183b7bef989",
-  "gantt_dependencies.png": "b5bbc19dbf26a73a741e111430d56aa090ef482fd609e4faa94dfeb1e95da295",
-  "gantt_multi.png": "4a2e5fc4dbaf05aad0ce5f857929b574459fa8cc26dfaa3d8a349cb08232337e",
+  "gantt_dependencies.png": "534ad7022f4750d6a304d188be2517a473a116b0a6977258cf22f60803ded9c0",
+  "gantt_multi.png": "13d2b2d8c32e80eec7f9ddcf00b64f11b14b48c81467f2cab685bf85c985a3af",
   "heatmap_basic.png": "dc62cf0f17fcaf2337b0d44f7c131c60b270901648dcc2df7ae35bc009bd71ba",
   "heatmap_rectangular.png": "03bd54922f3e51cbdc49af22436ca738a4d9def39b8e0de54a88d1ba40bd336f",
   "area_basic.png": "0f943bf76ae1a542854b09290fd0b83d6a2f60ee76e8502340d291cebb0a8dbb",
   "boxplot_basic.png": "73ce8d5f6e3195d73954c96388e46e42679747eb0d9665703e78a54670a8b662",
   "histogram_basic.png": "d3b1e2a02bed3f122d73a6b281bbf210cc110b560e2685277c94723561e17deb",
   "radar.png": "092a401413763ba11158a8421689692736c7dcab5b4d7107552c09feb8ad35b4",
-  "radar_multi.png": "6b4342aee02e89539c11f8ca038cffaaad511bf4f44cb08ae4519961d85df30b"
+  "radar_multi.png": "b1d8f34ef9b83a216c0587669070a801a6622a8fe392d0b9ecfc30590c38369c"
 }
