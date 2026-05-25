@@ -174,25 +174,24 @@ class ScatterChart(Chart):
         padding = 8
 
         # In the flipped coordinate system, high Y = top of chart
-        # Positions: [top-left, top-right, bottom-left, bottom-right]
-        inset = padding + font_size
-        positions = [
-            (padding, ph - inset, "start"),          # top-left
-            (pw - padding, ph - inset, "end"),       # top-right
-            (padding, inset, "start"),               # bottom-left
-            (pw - padding, inset, "end"),             # bottom-right
-        ]
+        # Corner-aligned: top labels hug top edge growing down,
+        # bottom labels hug bottom edge growing up
+        line_height = font_size + 2
 
-        for idx, (label_text, (x, y, anchor)) in enumerate(zip(labels, positions)):
+        for idx, label_text in enumerate(labels):
             if not label_text:
                 continue
             lines = str(label_text).split("\n")
+            is_left = idx % 2 == 0
             is_top = idx < 2
+            anchor = "start" if is_left else "end"
+            x = padding if is_left else pw - padding
+
             for line_idx, line in enumerate(lines):
                 if is_top:
-                    ty = y - line_idx * (font_size + 2)
+                    ty = ph - padding - line_idx * line_height
                 else:
-                    ty = y + line_idx * (font_size + 2)
+                    ty = padding + font_size + (len(lines) - 1 - line_idx) * line_height
                 g.add_child(
                     Text(
                         text=line,
