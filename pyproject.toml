@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "charted"
-version = "1.0.0"
+version = "1.0.1"
 description = "Charted is a zero dependency SVG chart generator that aims to provide a simple interface for generating beautiful and customisable graphs. This project is inspired by chart libraries like mermaid.js."
 authors = [{ name = "Andryo Marzuki", email = "andryo@mrzk.io" }]
 readme = "README.md"
@@ -23,6 +23,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["svg", "chart", "graph", "visualization", "zero-dependency"]
+dependencies = [
+    "build>=1.5.0",
+    "twine>=6.2.0",
+]
 
 [project.urls]
 homepage = "https://github.com/marzukia/charted"
