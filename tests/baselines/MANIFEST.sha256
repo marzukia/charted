@@ -13,8 +13,8 @@
   "line_multi.svg": "6db91c29ef62b173cae81ab01b0176a497fc7cfec60feb3656bee34d89f31a09",
   "pie.svg": "9e5a4da4273b20ece11facd8ba362df4ce9efa8ca43f7004866902a61981a701",
   "pie_doughnut.svg": "812258cb8969c9377ce7bd0f3e44b6aa66ef21afe7c790f611b4a49ba7f2ef45",
-  "scatter_basic.svg": "f884e49fc8af42b9d901f4ededbf71275e0d479beb4bb340947462be45664839",
-  "scatter_multi.svg": "6977c9092d2b72b067c4e666a6724a0ef6a48c19e50a2d775ab48c8b95743138",
+  "scatter_basic.svg": "b2d8c72cfb0c7b28dc6e69ad21b61f9601a8d444352cac6171c383283bbc1806",
+  "scatter_multi.svg": "306630872a5bd784c615f6f11b14c825a21c293dd94c6f312d103d5efe30a454",
   "gantt_basic.svg": "2a113e27062f3e75cddd8151c4458587c053f2bb1d144d44887ac2be445848f0",
   "gantt_dependencies.svg": "70b87ab491fa6078250b26080c7dad4d9f8265935ab345393a16e35b99124321",
   "gantt_multi.svg": "ad501133bbf4370e30421c3d66b713b0f961beed468854b4c748c738ee991afc",
@@ -24,5 +24,13 @@
   "boxplot_basic.svg": "0d0906b79eb4112a04346fb8cf3efba5dbd1988a9532a3ddbf535adaf1626168",
   "histogram_basic.svg": "e60792daa5985081d7b3872e72484b0708c4cffe68e9eebc8ddf00d1ccf07a70",
   "radar.svg": "c2d2ef6dde45e54c6a275e126d99f495f7f5dfda2ad4eab93299ec83f9467ff8",
-  "radar_multi.svg": "0b95b664e976a19d3fb75d82a2e36f544dfdc4335cf9579f92877dcdcdcf039b"
+  "radar_multi.svg": "0b95b664e976a19d3fb75d82a2e36f544dfdc4335cf9579f92877dcdcdcf039b",
+  "scatter_data_labels.svg": "326352718c035959a791ce41ee14a52ccbc056a20bdebc1bbb2ea4d97ab23ec7",
+  "scatter_quadrant_labels.svg": "9f0feb92caf43cab25e59c48c65c205ceecbc8c3f974397ad761791488616702",
+  "line_data_labels.svg": "39fd932b6e785994e20752cf40e2bbf099a2b2e91ba9b2ac9dd6b2b3584164db",
+  "bar_data_labels.svg": "c3f37d06f260ad37bfdfa136ae43967435dd92a88981e9abcde31e1fd05bd8a7",
+  "column_data_labels.svg": "d942a7f8162f11ca633b4cd9cafdd64e480b07c011a0f82b2835627ea1fc513c",
+  "scatter_axis_titles.svg": "3eed06064150878b83d9419b1acf56c7a53a8de5d53c1e106ed10dd8a54e66dc",
+  "scatter_reference_lines.svg": "b7afa4d94c115d2f7e537d2cde992978c12610035c228eaf12b46371de7d7f17",
+  "pie_percentages.svg": "24f351963266bd6402642512cfcd2a618b0e72021aecbe580e7fd511e188cbd8"
 }
