@@ -105,7 +105,8 @@ def create_legend_background(
         y=y,
         width=legend_width * (1 + padding),
         height=legend_height * (1 + padding),
-        fill="none",
+        fill=background_color,
+        fill_opacity=0.85,
         stroke="none",
     )
 
