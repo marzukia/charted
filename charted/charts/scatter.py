@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from charted.charts.chart import Chart
-from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
+from charted.constants import (
+    DEFAULT_CHART_HEIGHT,
+    DEFAULT_CHART_WIDTH,
+    QUADRANT_BOTTOM_MARGIN_FACTOR,
+    QUADRANT_LABEL_LINE_GAP,
+)
 from charted.html.element import Circle, G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.types import SeriesStyleConfig, Vector, Vector2D
@@ -176,9 +181,9 @@ class ScatterChart(Chart):
         # In the flipped coordinate system, high Y = top of chart
         # Corner-aligned: top labels hug top edge growing down,
         # bottom labels hug bottom edge growing up
-        line_height = font_size + 2
+        line_height = font_size + QUADRANT_LABEL_LINE_GAP
         top_margin = padding + font_size
-        bottom_margin = padding * 0.5
+        bottom_margin = padding * QUADRANT_BOTTOM_MARGIN_FACTOR
 
         for idx, label_text in enumerate(labels):
             if not label_text:
