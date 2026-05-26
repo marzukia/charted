@@ -46,9 +46,16 @@ class AreaChart(Chart):
         height: float = DEFAULT_CHART_HEIGHT,
         fill_opacity: float = 0.3,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        x_label: str | None = None,
+        y_label: str | None = None,
+        h_lines: list[float] | None = None,
+        v_lines: list[float] | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         self.fill_opacity = fill_opacity
         super().__init__(
@@ -58,10 +65,17 @@ class AreaChart(Chart):
             width=width,
             height=height,
             title=title,
+            subtitle=subtitle,
             theme=theme,
             series_names=series_names,
             series_styles=series_styles,
             chart_type="area",
+            x_label=x_label,
+            y_label=y_label,
+            h_lines=h_lines,
+            v_lines=v_lines,
+            reference_lines=reference_lines,
+            colors=colors,
         )
 
     @property
