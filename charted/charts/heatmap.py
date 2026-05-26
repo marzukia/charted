@@ -314,30 +314,6 @@ class HeatmapChart(Chart):
             )
         )
 
-        borders = [
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M0 {self.plot_height} h{self.plot_width}"],
-            ),
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M0 0 h{self.plot_width}"],
-            ),
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M0 0 v{self.plot_height}"],
-            ),
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M{self.plot_width} 0 v{self.plot_height}"],
-            ),
-        ]
-        result.add_children(*borders)
-
         return result
 
     @property
