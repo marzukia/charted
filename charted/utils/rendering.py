@@ -349,6 +349,7 @@ def create_zero_line_path(
     y_min: float,
     is_bar_chart: bool,
     is_xy_line: bool,
+    stroke_color: str = "black",
 ) -> Path | None:
     """Create zero line path for charts with negative values.
 
@@ -399,7 +400,7 @@ def create_zero_line_path(
                 translate(round_coordinate(left_padding), round_coordinate(top_padding))
             ],
             d=paths,
-            stroke="black",
+            stroke=stroke_color,
         )
     return None
 
