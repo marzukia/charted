@@ -294,11 +294,12 @@ class HeatmapChart(Chart):
             Text(
                 text=format(self._data_min, self.value_format),
                 x=bar_x + bar_width / 2,
-                y=bar_y + bar_height,
+                y=bar_y + bar_height + 4,
                 fill=label_color,
                 font_family=font_family,
                 font_size=label_font_size,
                 text_anchor="middle",
+                dominant_baseline="hanging",
             )
         )
         result.add_child(
@@ -314,29 +315,6 @@ class HeatmapChart(Chart):
             )
         )
 
-        borders = [
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M0 {self.plot_height} h{self.plot_width}"],
-            ),
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M0 0 h{self.plot_width}"],
-            ),
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M0 0 v{self.plot_height}"],
-            ),
-            Path(
-                stroke=grid_color,
-                stroke_dasharray="None",
-                d=[f"M{self.plot_width} 0 v{self.plot_height}"],
-            ),
-        ]
-        result.add_children(*borders)
 
         return result
 
