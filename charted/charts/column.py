@@ -139,18 +139,25 @@ class ColumnChart(Chart):
                     if style.get("fill"):
                         fill = style["fill"]
 
+                has_fill_override = fill != color
+                per_bar = len(self.y_values) == 1 and len(self.colors) > 1 and not has_fill_override
                 paths = []
                 for x_idx, y in enumerate(y_values_series):
                     x = self.x_offset + x_idx * (
                         self.x_width + self.column_gap * self.x_width
                     )
-                    # center bar within its slot, offset from group center
                     bar_x = x - series_offset + series_idx * bar_width
                     if y >= 0:
-                        paths.append(Path.get_path(bar_x, 0, bar_width, y))
+                        col_path = Path.get_path(bar_x, 0, bar_width, y)
                     else:
-                        paths.append(Path.get_path(bar_x, y, bar_width, -y))
-                g.add_child(Path(d=paths, fill=fill))
+                        col_path = Path.get_path(bar_x, y, bar_width, -y)
+                    if per_bar:
+                        col_fill = self.colors[x_idx % len(self.colors)]
+                        g.add_child(Path(d=[col_path], fill=col_fill))
+                    else:
+                        paths.append(col_path)
+                if not per_bar:
+                    g.add_child(Path(d=paths, fill=fill))
 
         # Render data labels above columns
         data_labels_g = self._render_data_labels()
