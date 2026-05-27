@@ -9,6 +9,7 @@ from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.colors import complementary_color, get_contrast_color
 from charted.utils.defaults import DEFAULT_COLORS
+from charted.utils.rendering import create_pie_legend
 from charted.utils.types import Labels, SeriesStyleConfig, Vector
 
 
@@ -118,6 +119,8 @@ class PieChart(Chart):
         """Generate color palette based on data length.
 
         Internal helper to generate colors before super().__init__() is called.
+        For dense data (>10 slices), uses evenly-spaced HSL hues for maximum
+        visual distinctness.
 
         Args:
             data: Data values - length determines number of colors needed.
@@ -127,16 +130,30 @@ class PieChart(Chart):
             return
 
         n = len(data)
-        # Use DEFAULT_COLORS as base and generate complementary colors
-        base_colors = list(DEFAULT_COLORS)
-        self._colors = []
-        for i in range(n):
-            color_idx = i % len(base_colors)
-            if i < len(base_colors):
-                self._colors.append(base_colors[color_idx])
-            else:
-                # Generate additional complementary colors
-                self._colors.append(complementary_color(base_colors[color_idx]))
+        if n <= 10:
+            # Use DEFAULT_COLORS as base and generate complementary colors
+            base_colors = list(DEFAULT_COLORS)
+            self._colors = []
+            for i in range(n):
+                color_idx = i % len(base_colors)
+                if i < len(base_colors):
+                    self._colors.append(base_colors[color_idx])
+                else:
+                    self._colors.append(complementary_color(base_colors[color_idx]))
+        else:
+            # For dense data, generate evenly-spaced HSL hues with varied saturation/value
+            import colorsys
+
+            self._colors = []
+            for i in range(n):
+                hue = (i * 0.618034) % 1.0  # golden ratio spacing for max distinctness
+                sat = 0.65 + (i % 3) * 0.1  # vary saturation slightly
+                val = 0.75 + (i % 2) * 0.1  # vary value slightly
+                r, g, b = colorsys.hsv_to_rgb(hue, min(sat, 0.9), min(val, 0.9))
+                # Convert to hex
+                self._colors.append(
+                    f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+                )
 
     @property
     def colors(self) -> list[str]:
@@ -225,6 +242,12 @@ class PieChart(Chart):
                 "Z",
             ]
 
+    def _label_fits_inside(
+        self, slice_pct: float, text_width_est: float, arc_length: float
+    ) -> bool:
+        """Check if a label fits inside its slice."""
+        return slice_pct >= 2.0 and text_width_est <= arc_length * 0.7
+
     @property
     def representation(self) -> G:
         """Render the pie chart."""
@@ -240,26 +263,90 @@ class PieChart(Chart):
         labels = self._pie_labels or [str(i) for i in range(len(data))]
 
         total = sum(data)
+        font_size = get_pie_label_font_size()
         current_angle = self.start_angle
 
-        # Render each slice
+        # --- First pass: compute slice geometry and classify labels ---
+        slices = []  # list of dicts with geometry for each slice
         for i, (value, label) in enumerate(zip(data, labels)):
             angle = (value / total) * 360
             start_angle = current_angle
             end_angle = current_angle + angle
+            mid_angle = (start_angle + end_angle) / 2
+            mid_rad = math.radians(mid_angle - 90)
+
+            # Determine label text
+            label_display = str(label)
+            if self.show_percentages:
+                pct = (value / total) * 100
+                label_display = f"{label_display} ({pct:.1f}%)"
+
+            text_width_est = len(label_display) * font_size * 0.55
+
+            # Inside label radius
+            if self.inner_radius > 0:
+                actual_inner = radius * self.inner_radius
+                inside_label_r = (actual_inner + radius) / 2
+            else:
+                inside_label_r = radius * 0.6
+
+            slice_angle_rad = math.radians(angle)
+            arc_length = inside_label_r * slice_angle_rad
+            slice_pct = (value / total) * 100
+
+            fits_inside = self._label_fits_inside(slice_pct, text_width_est, arc_length)
+
+            slices.append(
+                {
+                    "i": i,
+                    "value": value,
+                    "angle": angle,
+                    "start_angle": start_angle,
+                    "end_angle": end_angle,
+                    "mid_angle": mid_angle,
+                    "mid_rad": mid_rad,
+                    "label_display": label_display,
+                    "text_width_est": text_width_est,
+                    "fits_inside": fits_inside,
+                    "inside_label_r": inside_label_r,
+                    "slice_pct": slice_pct,
+                }
+            )
+            current_angle = end_angle
+
+        # --- Second pass: create dual-column legend for pie chart ---
+        # Use create_pie_legend() to split entries across left and right sides
+        legend = create_pie_legend(
+            series_names=labels,
+            colors=self.colors,
+            theme_config=self.theme,
+            chart_width=self.width,
+            chart_height=self.height,
+            pie_center_x=cx,
+            pie_center_y=cy,
+            pie_radius=radius,
+        )
+        if legend:
+            result.add_child(legend)
+
+        # --- Render slices ---
+        for s in slices:
+            i = s["i"]
+            value = s["value"]
+            angle = s["angle"]
+            start_angle = s["start_angle"]
+            end_angle = s["end_angle"]
 
             # Calculate explode offset
             explode_offset = self.explode[i] if i < len(self.explode) else 0
             transform = ""
             if explode_offset > 0:
-                # Angle to midpoint of slice
-                slice_angle = (start_angle + end_angle) / 2
-                slice_rad = math.radians(slice_angle - 90)
+                slice_rad = math.radians(s["mid_angle"] - 90)
                 offset_x = explode_offset * math.cos(slice_rad)
                 offset_y = explode_offset * math.sin(slice_rad)
                 transform = f"translate({offset_x}, {offset_y})"
 
-            # Get slice-specific style if available
+            # Get slice-specific style
             slice_color = self.colors[i % len(self.colors)]
             slice_opacity = 0.8
             if self.series_styles and i < len(self.series_styles):
@@ -269,7 +356,7 @@ class PieChart(Chart):
                 if style.get("fill_opacity"):
                     slice_opacity = style["fill_opacity"]
 
-            # Handle 100% single-slice edge case
+            # Render slice path
             if angle >= 359.9:
                 path_data = self._get_full_circle_path(cx, cy, radius)
                 slice_path = Path(
@@ -286,7 +373,6 @@ class PieChart(Chart):
                     opacity=slice_opacity,
                 )
 
-            # Wrap in group with transform if exploded
             if transform:
                 slice_g = G(transform=transform)
                 slice_g.add_child(slice_path)
@@ -294,42 +380,31 @@ class PieChart(Chart):
             else:
                 result.add_child(slice_path)
 
-            # Add label inside slice with color-aware text
-            label_angle = (start_angle + end_angle) / 2
-            label_rad = math.radians(label_angle - 90)
-
-            # Position label in the middle of the ring for donut, 60% for regular pie
-
-            if self.inner_radius > 0:
-                actual_inner_radius = radius * self.inner_radius
-                # Place label in the middle of the ring
-                label_radius = (actual_inner_radius + radius) / 2
-            else:
-                label_radius = radius * 0.6
-
-            label_x = cx + label_radius * math.cos(label_rad)
-            label_y = cy + label_radius * math.sin(label_rad)
-
-            # Use contrast-aware text color
+        # --- Render labels (only those that fit inside slices) ---
+        for s in slices:
+            i = s["i"]
+            mid_rad = s["mid_rad"]
+            mid_angle = s["mid_angle"]
+            label_display = s["label_display"]
+            text_width_est = s["text_width_est"]
+            slice_color = self.colors[i % len(self.colors)]
             text_color = get_contrast_color(slice_color)
 
-            label_display = str(label)
-            if self.show_percentages:
-                pct = (value / total) * 100
-                label_display = f"{label_display} ({pct:.1f}%)"
-
-            label_text = Text(
-                x=label_x,
-                y=label_y,
-                text=label_display,
-                fill=text_color,
-                font_size=get_pie_label_font_size(),
-                font_family=self.theme.title_font_family,
-                text_anchor="middle",
-                dominant_baseline="middle",
-            )
-            result.add_child(label_text)
-
-            current_angle = end_angle
+            if s["fits_inside"]:
+                # Label inside the slice
+                label_x = cx + s["inside_label_r"] * math.cos(mid_rad)
+                label_y = cy + s["inside_label_r"] * math.sin(mid_rad)
+                label_text = Text(
+                    x=label_x,
+                    y=label_y,
+                    text=label_display,
+                    fill=text_color,
+                    font_size=font_size,
+                    font_family=self.theme.title_font_family,
+                    text_anchor="middle",
+                    dominant_baseline="middle",
+                )
+                result.add_child(label_text)
+            # Labels that don't fit are handled by the legend above
 
         return result

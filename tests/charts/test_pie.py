@@ -175,3 +175,75 @@ class TestPieChartVisualRegression:
         total = sum(data)
         angles = [(v / total) * 360 for v in data]
         assert math.isclose(sum(angles), 360, rel_tol=1e-6)
+
+    def test_pie_chart_dense_data_dual_column_legend(self):
+        """Test pie chart with 12 slices generates dual-column legend.
+
+        This is the baseline test for dense pie charts (>10 slices) that use
+        the dual-column legend layout with golden ratio color spacing.
+        """
+        import os
+
+        # 12 categories for dense data test
+        data = [35, 28, 22, 18, 15, 12, 10, 8, 7, 6, 5, 4]
+        labels = [
+            "Electronics",
+            "Clothing",
+            "Food",
+            "Housing",
+            "Transport",
+            "Healthcare",
+            "Education",
+            "Entertainment",
+            "Travel",
+            "Savings",
+            "Insurance",
+            "Miscellaneous",
+        ]
+        chart = PieChart(data=data, labels=labels)
+        svg = chart.to_svg()
+
+        # Load baseline
+        baseline_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "baselines",
+            "pie_dense_12_slices.svg",
+        )
+        with open(baseline_path, "r") as f:
+            baseline_svg = f.read()
+
+        # Compare SVGs (normalize whitespace for comparison)
+        def normalize_svg(svg):
+            return " ".join(svg.split())
+
+        assert normalize_svg(svg) == normalize_svg(baseline_svg), (
+            "Generated SVG does not match baseline"
+        )
+
+    def test_pie_chart_very_dense_data(self):
+        """Test pie chart with 15+ slices for extreme dense data scenario."""
+        import os
+
+        data = list(range(15, 0, -1))  # [15, 14, 13, ..., 1]
+        labels = [f"Category {i}" for i in range(1, 16)]
+        chart = PieChart(data=data, labels=labels)
+        svg = chart.to_svg()
+
+        # Load baseline
+        baseline_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "baselines",
+            "pie_dense_15_slices.svg",
+        )
+        with open(baseline_path, "r") as f:
+            baseline_svg = f.read()
+
+        # Compare SVGs (normalize whitespace for comparison)
+        def normalize_svg(svg):
+            return " ".join(svg.split())
+
+        assert normalize_svg(svg) == normalize_svg(baseline_svg), (
+            "Generated SVG does not match baseline"
+        )

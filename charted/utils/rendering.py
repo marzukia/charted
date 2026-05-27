@@ -79,8 +79,13 @@ def generate_markdown_image(
 
 
 def create_legend_background(
-    x: float, y: float, legend_width: float, legend_height: float, padding: float,
-    background_color: str = "#ffffff", stroke_color: str = "#CCCCCC",
+    x: float,
+    y: float,
+    legend_width: float,
+    legend_height: float,
+    padding: float,
+    background_color: str = "#ffffff",
+    stroke_color: str = "#CCCCCC",
 ) -> Rect:
     """Create legend background rectangle.
 
@@ -236,6 +241,146 @@ def create_legend_entry(
     return g
 
 
+def create_pie_legend(
+    series_names: list[str],
+    colors: list[str],
+    theme_config: dict,
+    chart_width: float,
+    chart_height: float,
+    pie_center_x: float,
+    pie_center_y: float,
+    pie_radius: float,
+) -> G | None:
+    """Create legend for pie/doughnut charts, split across left and right sides.
+
+    Pie charts have significant vertical space on both sides of the circular chart.
+    This function splits legend entries between left and right columns to use this
+    space efficiently.
+
+    Args:
+        series_names: Names for each series.
+        colors: Colors for each series.
+        theme_config: Legend configuration from theme.
+        chart_width: Total chart width.
+        chart_height: Total chart height.
+        pie_center_x: X coordinate of pie center.
+        pie_center_y: Y coordinate of pie center.
+        pie_radius: Radius of the pie chart.
+
+    Returns:
+        G element containing the legend, or None if no legend should be shown.
+    """
+    if not theme_config or not series_names:
+        return None
+
+    # Handle both dict and Theme object
+    if isinstance(theme_config, Theme):
+        font_size = getattr(theme_config, "legend_font_size", 12)
+        font_family = getattr(theme_config, "legend_font_family", "Arial")
+        font_color = getattr(theme_config, "legend_font_color", "#444444")
+        background_color = getattr(theme_config, "background_color", "#ffffff")
+    else:
+        font_size = theme_config.get("font_size", 12)
+        font_family = theme_config.get("font_family", "Arial")
+        font_color = theme_config.get("font_color", "#444444")
+        background_color = theme_config.get("background_color", "#ffffff")
+
+    # Derive legend-specific colors from the background
+    legend_bg = _derive_legend_background(background_color)
+
+    # Calculate entry dimensions
+    legend_entries = [
+        calculate_text_dimensions(name, font_size=font_size) for name in series_names
+    ]
+    icon_height = max(e.height for e in legend_entries) if legend_entries else font_size
+    entry_height = icon_height + 4  # spacing between entries
+
+    # Calculate column width needed
+    max_label_width = max(e.width for e in legend_entries) if legend_entries else 0
+    col_width = icon_height + 2 + max_label_width + 10  # icon + gap + text + padding
+
+    # Split entries between left and right columns
+    n_entries = len(series_names)
+    left_count = (n_entries + 1) // 2  # ceil(n/2) for left column
+    right_count = n_entries // 2  # floor(n/2) for right column
+
+    # Calculate column heights
+    left_height = left_count * entry_height
+    right_height = right_count * entry_height
+
+    # Position columns to be vertically centered
+    left_bg_top = (chart_height - left_height) / 2 - 4
+    right_bg_top = (chart_height - right_height) / 2 - 4
+
+    # X positions: left column at x=10, right column mirrored from right edge
+    # Background width is col_width + 12 (including padding)
+    left_x = 10
+    right_x = chart_width - 10 - (col_width + 12)  # 10px margin from right edge
+
+    # Create legend container
+    legend = G()
+
+    # Add background rectangles (no border/stroke)
+    if left_count > 0:
+        left_bg = Rect(
+            x=left_x,
+            y=left_bg_top,
+            width=col_width + 12,
+            height=left_height + 8,
+            fill=legend_bg,
+            fill_opacity=0.85,
+            rx=3,
+        )
+        legend.add_child(left_bg)
+
+    if right_count > 0:
+        right_bg = Rect(
+            x=right_x,
+            y=right_bg_top,
+            width=col_width + 12,
+            height=right_height + 8,
+            fill=legend_bg,
+            fill_opacity=0.85,
+            rx=3,
+        )
+        legend.add_child(right_bg)
+
+    # Add entries to left column
+    for i in range(left_count):
+        text = legend_entries[i]
+        entry_y = left_bg_top + 4 + i * entry_height
+        entry = create_legend_entry(
+            rect_x=left_x + 6,
+            entry_top_y=entry_y,
+            text=text,
+            color=colors[i],
+            index=i,
+            font_family=font_family,
+            entry_height=entry_height,
+            font_color=font_color,
+        )
+        legend.add_child(entry)
+
+    # Add entries to right column
+    for i in range(right_count):
+        idx = left_count + i
+        text = legend_entries[idx]
+        entry_y = right_bg_top + 4 + i * entry_height
+        entry = create_legend_entry(
+            rect_x=right_x + 6,
+            entry_top_y=entry_y,
+            text=text,
+            color=colors[idx],
+            index=idx,
+            font_family=font_family,
+            entry_height=entry_height,
+            font_color=font_color,
+        )
+        legend.add_child(entry)
+
+    return legend
+
+
 def create_legend(
     series_names: list[str],
     colors: list[str],
@@ -313,7 +458,11 @@ def create_legend(
     # Add background (centered at y0)
     legend.add_child(
         create_legend_background(
-            x0, y0_center, legend_width, legend_height, legend_padding,
+            x0,
+            y0_center,
+            legend_width,
+            legend_height,
+            legend_padding,
             background_color=legend_bg,
             stroke_color=stroke_color,
         )
@@ -328,7 +477,13 @@ def create_legend(
         text = calculate_text_dimensions(name, font_size=font_size)
         entry_top = entry_start_y + i * icon_height
         entry = create_legend_entry(
-            x0, entry_top, text, color, i, font_family, icon_height,
+            x0,
+            entry_top,
+            text,
+            color,
+            i,
+            font_family,
+            icon_height,
             font_color=font_color,
         )
         legend.add_child(entry)
