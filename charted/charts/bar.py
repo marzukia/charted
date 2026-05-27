@@ -181,19 +181,23 @@ class BarChart(Chart):
                     if style.get("fill"):
                         fill = style["fill"]
 
+                has_fill_override = fill != color
+                per_bar = len(self.x_values) == 1 and len(self.colors) > 1 and not has_fill_override
                 paths = []
                 for bar_idx, x in enumerate(x_values_series):
                     slot_y = start_y + bar_idx * (slot_height + gap)
                     bar_y = slot_y + series_idx * series_thickness
                     if x >= zero_x:
-                        paths.append(
-                            Path.get_path(zero_x, bar_y, x - zero_x, series_thickness)
-                        )
+                        bar_path = Path.get_path(zero_x, bar_y, x - zero_x, series_thickness)
                     else:
-                        paths.append(
-                            Path.get_path(x, bar_y, zero_x - x, series_thickness)
-                        )
-                bars_g.add_child(Path(d=paths, fill=fill))
+                        bar_path = Path.get_path(x, bar_y, zero_x - x, series_thickness)
+                    if per_bar:
+                        bar_fill = self.colors[bar_idx % len(self.colors)]
+                        bars_g.add_child(Path(d=[bar_path], fill=bar_fill))
+                    else:
+                        paths.append(bar_path)
+                if not per_bar:
+                    bars_g.add_child(Path(d=paths, fill=fill))
 
         # Render data labels at end of bars
         if self._bar_data_labels:
