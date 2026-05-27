@@ -299,6 +299,7 @@ class HeatmapChart(Chart):
                 font_family=font_family,
                 font_size=label_font_size,
                 text_anchor="middle",
+                dominant_baseline="hanging",
             )
         )
         result.add_child(
