@@ -28,6 +28,7 @@ import pathlib
 import random
 import stat
 import sys
+from datetime import date
 from typing import Optional
 
 # Ensure the package root is on the path.
@@ -210,6 +211,22 @@ CHARTS = {
         data=[25, 25, 50],
         labels=["A", "B", "C"],
         show_percentages=True,
+    ),
+    # Log and time scales
+    "line_log_y": LineChart(
+        data=[1, 10, 100, 1000, 10000],
+        labels=["a", "b", "c", "d", "e"],
+        y_scale="log",
+    ),
+    "line_time_x": LineChart(
+        data=[10, 25, 18, 40],
+        x_data=[
+            date(2024, 1, 1),
+            date(2024, 4, 1),
+            date(2024, 8, 1),
+            date(2024, 12, 1),
+        ],
+        x_scale="time",
     ),
     # Bubble chart (scatter with a third size dimension)
     "bubble_basic": BubbleChart(

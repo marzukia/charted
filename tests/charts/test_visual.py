@@ -28,6 +28,7 @@ Only update baselines when visual changes are INTENTIONAL.
 ============================================================
 """
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -875,3 +876,66 @@ def test_polar_area_chart_basic_png():
         labels=["A", "B", "C", "D", "E"],
     )
     compare_png_baseline(chart, "polar_area_basic", tolerance=5)
+
+
+# ============================================================
+# Log / Time Scale Visual Regression Tests
+# ============================================================
+
+
+def test_line_log_y():
+    """Visual regression test for LineChart with a log y-scale (SVG structure)."""
+    chart = LineChart(
+        data=[1, 10, 100, 1000, 10000],
+        labels=["a", "b", "c", "d", "e"],
+        y_scale="log",
+    )
+    baseline_path = BASELINES_DIR / "line_log_y.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_line_log_y_png():
+    """Visual regression test for LineChart with a log y-scale (PNG pixel-perfect)."""
+    chart = LineChart(
+        data=[1, 10, 100, 1000, 10000],
+        labels=["a", "b", "c", "d", "e"],
+        y_scale="log",
+    )
+    compare_png_baseline(chart, "line_log_y", tolerance=5)
+
+
+def test_line_time_x():
+    """Visual regression test for LineChart with a time x-axis (SVG structure)."""
+
+    chart = LineChart(
+        data=[10, 25, 18, 40],
+        x_data=[
+            date(2024, 1, 1),
+            date(2024, 4, 1),
+            date(2024, 8, 1),
+            date(2024, 12, 1),
+        ],
+        x_scale="time",
+    )
+    baseline_path = BASELINES_DIR / "line_time_x.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_line_time_x_png():
+    """Visual regression test for LineChart with a time x-axis (PNG pixel-perfect)."""
+
+    chart = LineChart(
+        data=[10, 25, 18, 40],
+        x_data=[
+            date(2024, 1, 1),
+            date(2024, 4, 1),
+            date(2024, 8, 1),
+            date(2024, 12, 1),
+        ],
+        x_scale="time",
+    )
+    compare_png_baseline(chart, "line_time_x", tolerance=5)

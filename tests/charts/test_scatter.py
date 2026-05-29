@@ -51,3 +51,26 @@ class TestScatterChartSadPath:
         """Test that empty data raises ValueError."""
         with pytest.raises(Exception, match="No data was provided"):
             ScatterChart(x_data=[], y_data=[])
+
+
+class TestScatterChartScales:
+    """Tests for log and time scales on ScatterChart."""
+
+    def test_scatter_log_x_scale(self):
+        """x_scale='log' renders and tick labels are decade values."""
+        chart = ScatterChart(
+            x_data=[1, 10, 100, 1000],
+            y_data=[5, 8, 12, 15],
+            x_scale="log",
+        )
+        html = chart.html
+        assert "<circle" in html.lower()
+        assert ">10<" in html
+        assert ">100<" in html
+        assert ">1000<" in html
+        assert chart.to_config()["x_scale"] == "log"
+        assert chart.describe()["scales"]["x"] == "log"
+
+    def test_scatter_log_x_scale_rejects_nonpositive(self):
+        with pytest.raises(ValueError):
+            ScatterChart(x_data=[0, 10, 100], y_data=[1, 2, 3], x_scale="log").html

@@ -8,6 +8,7 @@ All output SVGs are written to docs/examples/.
 
 import math
 import os
+from datetime import date
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "examples")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -480,6 +481,43 @@ save(
         dependencies=[(0, 1), (0, 2), (2, 3), (3, 4)],
         show_today_line=True,
         x_position=4.5,
+    ).html,
+)
+
+# ---------------------------------------------------------------------------
+# Log and time scales
+# ---------------------------------------------------------------------------
+
+# Log y-scale: values spanning several orders of magnitude
+save(
+    "line_log_y.svg",
+    LineChart(
+        title="Requests per Second (log scale)",
+        data=[12, 140, 1300, 9800, 75000],
+        labels=["v1", "v2", "v3", "v4", "v5"],
+        y_scale="log",
+        width=700,
+        height=400,
+    ).html,
+)
+
+# Time x-axis: date-typed x_data with a time scale
+save(
+    "line_time_x.svg",
+    LineChart(
+        title="Active Users Over Time",
+        data=[120, 180, 210, 260, 240, 310],
+        x_data=[
+            date(2024, 1, 1),
+            date(2024, 3, 1),
+            date(2024, 5, 1),
+            date(2024, 7, 1),
+            date(2024, 9, 1),
+            date(2024, 11, 1),
+        ],
+        x_scale="time",
+        width=700,
+        height=400,
     ).html,
 )
 
