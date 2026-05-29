@@ -53,6 +53,7 @@ class BarChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        annotations: list | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
     ):
@@ -96,6 +97,7 @@ class BarChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            annotations=annotations,
             reference_lines=reference_lines,
             colors=colors,
         )
@@ -188,13 +190,19 @@ class BarChart(Chart):
                         fill = style["fill"]
 
                 has_fill_override = fill != color
-                per_bar = len(self.x_values) == 1 and len(self.colors) > 1 and not has_fill_override
+                per_bar = (
+                    len(self.x_values) == 1
+                    and len(self.colors) > 1
+                    and not has_fill_override
+                )
                 paths = []
                 for bar_idx, x in enumerate(x_values_series):
                     slot_y = start_y + bar_idx * (slot_height + gap)
                     bar_y = slot_y + series_idx * series_thickness
                     if x >= zero_x:
-                        bar_path = Path.get_path(zero_x, bar_y, x - zero_x, series_thickness)
+                        bar_path = Path.get_path(
+                            zero_x, bar_y, x - zero_x, series_thickness
+                        )
                     else:
                         bar_path = Path.get_path(x, bar_y, zero_x - x, series_thickness)
                     if per_bar:
