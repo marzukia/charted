@@ -762,18 +762,6 @@ def test_pie_percentages_png():
 
 
 # ============================================================
-# Bubble and Polar Area Chart Visual Regression Tests
-# ============================================================
-
-
-def test_bubble_chart_basic():
-    """Visual regression test for basic BubbleChart (SVG structure)."""
-    chart = BubbleChart(
-        x_data=[1, 2, 3, 4, 5],
-        y_data=[10, 25, 15, 30, 20],
-        sizes=[5, 30, 12, 45, 18],
-    )
-    baseline_path = BASELINES_DIR / "bubble_basic.svg"
 # Combo Chart Visual Regression Tests (mixed bar + line)
 # ============================================================
 
@@ -793,23 +781,6 @@ def test_combo_chart_basic():
     assert svgs_equal(chart.html, baseline_svg)
 
 
-def test_bubble_chart_basic_png():
-    """Visual regression test for basic BubbleChart (PNG pixel-perfect)."""
-    chart = BubbleChart(
-        x_data=[1, 2, 3, 4, 5],
-        y_data=[10, 25, 15, 30, 20],
-        sizes=[5, 30, 12, 45, 18],
-    )
-    compare_png_baseline(chart, "bubble_basic", tolerance=5)
-
-
-def test_polar_area_chart_basic():
-    """Visual regression test for basic PolarAreaChart (SVG structure)."""
-    chart = PolarAreaChart(
-        data=[10, 20, 30, 15, 25],
-        labels=["A", "B", "C", "D", "E"],
-    )
-    baseline_path = BASELINES_DIR / "polar_area_basic.svg"
 def test_combo_chart_basic_png():
     """Visual regression test for basic ComboChart (PNG pixel-perfect)."""
     chart = ComboChart(
@@ -842,13 +813,6 @@ def test_combo_chart_secondary_axis():
     assert svgs_equal(chart.html, baseline_svg)
 
 
-def test_polar_area_chart_basic_png():
-    """Visual regression test for basic PolarAreaChart (PNG pixel-perfect)."""
-    chart = PolarAreaChart(
-        data=[10, 20, 30, 15, 25],
-        labels=["A", "B", "C", "D", "E"],
-    )
-    compare_png_baseline(chart, "polar_area_basic", tolerance=5)
 def test_combo_chart_secondary_axis_png():
     """Visual regression test for ComboChart with secondary axis (PNG pixel-perfect)."""
     chart = ComboChart(
@@ -864,3 +828,50 @@ def test_combo_chart_secondary_axis_png():
         labels=["Jan", "Feb", "Mar"],
     )
     compare_png_baseline(chart, "combo_secondary_axis", tolerance=5)
+
+
+# ============================================================
+
+
+def test_bubble_chart_basic():
+    """Visual regression test for basic BubbleChart (SVG structure)."""
+    chart = BubbleChart(
+        x_data=[1, 2, 3, 4, 5],
+        y_data=[10, 25, 15, 30, 20],
+        sizes=[5, 30, 12, 45, 18],
+    )
+    baseline_path = BASELINES_DIR / "bubble_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_bubble_chart_basic_png():
+    """Visual regression test for basic BubbleChart (PNG pixel-perfect)."""
+    chart = BubbleChart(
+        x_data=[1, 2, 3, 4, 5],
+        y_data=[10, 25, 15, 30, 20],
+        sizes=[5, 30, 12, 45, 18],
+    )
+    compare_png_baseline(chart, "bubble_basic", tolerance=5)
+
+
+def test_polar_area_chart_basic():
+    """Visual regression test for basic PolarAreaChart (SVG structure)."""
+    chart = PolarAreaChart(
+        data=[10, 20, 30, 15, 25],
+        labels=["A", "B", "C", "D", "E"],
+    )
+    baseline_path = BASELINES_DIR / "polar_area_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_polar_area_chart_basic_png():
+    """Visual regression test for basic PolarAreaChart (PNG pixel-perfect)."""
+    chart = PolarAreaChart(
+        data=[10, 20, 30, 15, 25],
+        labels=["A", "B", "C", "D", "E"],
+    )
+    compare_png_baseline(chart, "polar_area_basic", tolerance=5)
