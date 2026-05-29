@@ -461,6 +461,31 @@ def test_heatmap_chart_rectangular_png():
     compare_png_baseline(chart, "heatmap_rectangular", tolerance=5)
 
 
+def test_heatmap_chart_continuous():
+    """Visual regression test for continuous color_scale HeatmapChart (SVG)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
+    )
+    baseline_path = BASELINES_DIR / "heatmap_continuous.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_heatmap_chart_continuous_png():
+    """Visual regression test for continuous color_scale HeatmapChart (PNG)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
+    )
+    compare_png_baseline(chart, "heatmap_continuous", tolerance=5)
+
+
 # ============================================================
 # New Chart Type Tests: Area, BoxPlot, Histogram
 # ============================================================
