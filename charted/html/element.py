@@ -1,3 +1,5 @@
+from xml.sax.saxutils import escape as _xml_escape
+
 Children = list["Element"]
 
 
@@ -66,7 +68,8 @@ class Element(object):
             str: A string containing the HTML markup for all child elements.
         """
         return "".join(
-            child.html if type(child) is not str else child for child in self.children
+            child.html if type(child) is not str else _xml_escape(child)
+            for child in self.children
         )
 
     def add_child(self, child: "Element") -> "Element":

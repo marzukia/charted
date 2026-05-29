@@ -171,12 +171,20 @@ class ColumnChart(Chart):
                         col_path = Path.get_path(bar_x, 0, bar_width, y)
                     else:
                         col_path = Path.get_path(bar_x, y, bar_width, -y)
+                    title = self._tooltip_title(series_idx, x_idx)
                     if per_bar:
                         col_fill = self.colors[x_idx % len(self.colors)]
-                        g.add_child(Path(d=[col_path], fill=col_fill))
+                        mark = Path(d=[col_path], fill=col_fill)
+                        if title is not None:
+                            mark.add_child(title)
+                        g.add_child(mark)
+                    elif title is not None:
+                        mark = Path(d=[col_path], fill=fill)
+                        mark.add_child(title)
+                        g.add_child(mark)
                     else:
                         paths.append(col_path)
-                if not per_bar:
+                if not per_bar and paths:
                     g.add_child(Path(d=paths, fill=fill))
 
         # Render data labels above columns

@@ -1114,10 +1114,21 @@ class Chart(Svg):
         if self.series_names and series_idx < len(self.series_names):
             series_name = self.series_names[series_idx]
 
+        multi_series = len(self.y_data) > 1
+
         if label is not None:
+            if multi_series:
+                prefix = (
+                    series_name
+                    if series_name is not None
+                    else f"Series {series_idx + 1}"
+                )
+                return f"{prefix} - {label}: {value}"
             return f"{label}: {value}"
         if series_name is not None:
             return f"{series_name}: {value}"
+        if multi_series:
+            return f"Series {series_idx + 1}: {value}"
         return str(value)
 
     def _tooltip_value(self, series_idx: int, point_idx: int):
