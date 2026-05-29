@@ -52,6 +52,65 @@ class TestComboRendering:
         # Rendering succeeds with shared coordinate system
         assert "<svg" in chart.svg
 
+    def test_combo_bar_center_equals_line_vertex(self):
+        """B1: each bar center x equals the matching line vertex x.
+
+        The line must render against the same column-band centers, not its own
+        unpadded i/(n-1)*plot_w positions (which drift off the bars/ticks and
+        overflow the plot edge on the last point).
+        """
+        chart = ComboChart(
+            series=[
+                {"data": [10, 20, 30], "type": "bar", "name": "Bars"},
+                {"data": [3, 6, 9], "type": "line", "name": "Line"},
+            ],
+            labels=["A", "B", "C"],
+        )
+        # Band centers the columns are drawn at: x_values + x_offset.
+        band_centers = [round(x + chart.x_offset, 1) for x in chart.x_values[0]]
+
+        # Pull the line path vertices out of the rendered SVG.
+        svg = chart.svg
+        line_d = re.search(r'<path d="(M[^"]*)" fill="none"', svg).group(1)
+        verts = [
+            round(float(m.split()[0]), 1)
+            for m in re.findall(r"[ML]([\d.]+ [\d.]+)", line_d)
+        ]
+        assert verts == band_centers, (
+            f"line vertices {verts} != bar band centers {band_centers}"
+        )
+        # And the last vertex must sit inside the plot, not at the right edge.
+        assert verts[-1] < chart.plot_width
+
+    def test_combo_line_color_matches_legend_swatch(self):
+        """B2: the rendered line stroke uses its per-series color, not palette[0].
+
+        A single line in a combo previously always rendered as palette[0] while
+        its legend swatch showed the correct per-series color.
+        """
+        chart = ComboChart(
+            series=[
+                {"data": [10, 20, 30], "type": "bar", "name": "Bars"},
+                {"data": [3, 6, 9], "type": "line", "name": "Line"},
+            ],
+            labels=["A", "B", "C"],
+        )
+        colors = chart.colors
+        # The line is series index 1, so its color is colors[1], not colors[0].
+        line_color = colors[1]
+        svg = chart.svg
+        # The <g> wrapping the line path carries the stroke color.
+        m = re.search(
+            r'<g fill="white" stroke="([^"]+)"[^>]*>'
+            r'<path d="M[^"]*" fill="none"/>',
+            svg,
+        )
+        assert m, "could not locate the rendered line group"
+        assert m.group(1) == line_color, (
+            f"line stroke {m.group(1)} != per-series color {line_color} "
+            f"(palette[0] is {colors[0]})"
+        )
+
 
 class TestComboSecondaryAxis:
     def test_combo_secondary_y_axis(self):
@@ -73,14 +132,24 @@ class TestComboSecondaryAxis:
         assert sec.axis_dimension.max_value >= 3000
         # Primary axis should not be inflated to the secondary's range
         assert chart.y_axis.axis_dimension.max_value < 1000
+        # Secondary axis must live in the normal element tree, so .html and
+        # .svg agree (the CLI and visual tests render .html).
+        assert chart.html == chart.svg
         svg = chart.svg
-        # Secondary tick labels rendered on the right side of the plot
+
+        # The actual secondary tick label TEXT is present...
+        sec_labels = [lbl.text for lbl in sec.labels if lbl.text]
+        assert sec_labels, "secondary axis should expose tick labels"
+        for text in sec_labels:
+            assert f">{text}<" in svg, f"secondary label {text!r} missing from SVG"
+
+        # ...and the secondary axis group is anchored at x ~= left_padding +
+        # plot_width (a small fixed gutter past the right plot edge).
         right_x = chart.left_padding + chart.plot_width
-        # The secondary axis group is anchored near the right edge
-        assert (
-            f'x="{right_x}"' in svg
-            or "secondary" in svg.lower()
-            or str(int(right_x)) in svg
+        group_xs = [float(m) for m in re.findall(r"translate\(x?=?([\d.]+)", svg)]
+        assert any(abs(x - right_x) <= 12 for x in group_xs), (
+            f"no secondary axis group near right edge x={right_x}; "
+            f"found translate x positions {group_xs}"
         )
 
     def test_combo_no_secondary_axis_by_default(self):
