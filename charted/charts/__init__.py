@@ -3,13 +3,16 @@
 from .area import AreaChart
 from .bar import BarChart
 from .box import BoxPlot
+from .bubble import BubbleChart
 from .chart import Chart
 from .column import ColumnChart
+from .combo import ComboChart
 from .gantt import GanttChart
 from .heatmap import HeatmapChart
 from .histogram import Histogram
 from .line import LineChart
 from .pie import PieChart
+from .polar_area import PolarAreaChart
 from .radar import RadarChart
 from .scatter import ScatterChart
 
@@ -17,13 +20,16 @@ __all__ = [
     "AreaChart",
     "BarChart",
     "BoxPlot",
+    "BubbleChart",
     "Chart",
     "ColumnChart",
+    "ComboChart",
     "GanttChart",
     "HeatmapChart",
     "Histogram",
     "LineChart",
     "PieChart",
+    "PolarAreaChart",
     "RadarChart",
     "ScatterChart",
 ]
@@ -38,12 +44,15 @@ def _CHART_CLASSES() -> dict:
         "AreaChart": AreaChart,
         "BarChart": BarChart,
         "BoxPlot": BoxPlot,
+        "BubbleChart": BubbleChart,
         "ColumnChart": ColumnChart,
+        "ComboChart": ComboChart,
         "GanttChart": GanttChart,
         "HeatmapChart": HeatmapChart,
         "Histogram": Histogram,
         "LineChart": LineChart,
         "PieChart": PieChart,
+        "PolarAreaChart": PolarAreaChart,
         "RadarChart": RadarChart,
         "ScatterChart": ScatterChart,
     }

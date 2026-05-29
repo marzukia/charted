@@ -121,6 +121,71 @@ def rgb_to_hex(rgb: tuple[int, int, int]) -> str:
     return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
 
+def interpolate_color(a: str, b: str, t: float) -> str:
+    """Linearly interpolate between two colors in RGB space.
+
+    Args:
+        a: Start color in hex or HSL format.
+        b: End color in hex or HSL format.
+        t: Position from 0.0 (a) to 1.0 (b). Values outside [0, 1] are clamped.
+            NaN maps to 0.0 (the start color).
+
+    Returns:
+        6-digit hex color string.
+    """
+    if t != t:  # NaN guard: max/min won't clamp NaN
+        t = 0.0
+    t = max(0.0, min(1.0, t))
+    r1, g1, b1 = _parse_color_to_rgb(a)
+    r2, g2, b2 = _parse_color_to_rgb(b)
+    return rgb_to_hex(
+        (
+            round(r1 + (r2 - r1) * t),
+            round(g1 + (g2 - g1) * t),
+            round(b1 + (b2 - b1) * t),
+        )
+    )
+
+
+def interpolate_palette(palette_or_list, t: float) -> str:
+    """Map t in [0, 1] to a color along a multi-stop gradient.
+
+    The palette stops are spread evenly across [0, 1]. The value is
+    interpolated within the segment it falls into.
+
+    Args:
+        palette_or_list: A named palette key (e.g. 'viridis') or a list of
+            hex color stops.
+        t: Position from 0.0 (first stop) to 1.0 (last stop). Clamped to range.
+
+    Returns:
+        6-digit hex color string.
+
+    Raises:
+        ValueError: If the palette resolves to an empty list of stops.
+    """
+    from charted.themes.core import resolve_palette
+
+    if isinstance(palette_or_list, str):
+        stops = resolve_palette(palette_or_list)
+    else:
+        stops = list(palette_or_list)
+
+    if not stops:
+        raise ValueError("Cannot interpolate an empty palette")
+    if len(stops) == 1:
+        return rgb_to_hex(_parse_color_to_rgb(stops[0]))
+
+    t = max(0.0, min(1.0, t))
+    n_segments = len(stops) - 1
+    scaled = t * n_segments
+    idx = int(scaled)
+    if idx >= n_segments:
+        idx = n_segments - 1
+    local_t = scaled - idx
+    return interpolate_color(stops[idx], stops[idx + 1], local_t)
+
+
 def complementary_color(hex_color: str) -> str:
     """Calculate the complementary color (opposite on color wheel).
 

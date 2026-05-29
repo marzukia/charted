@@ -189,6 +189,37 @@ class ColumnChartConfig(ChartConfig):
 
 
 @dataclasses.dataclass
+class ComboChartConfig(ChartConfig):
+    """Configuration for combo (mixed bar+line) charts.
+
+    Extends ChartConfig with combo-specific settings.
+
+    Attributes:
+        series: List of series dicts, each with keys ``data``, ``type``
+            ("bar"|"column"|"line"|"area"), optional ``axis``
+            ("primary"|"secondary"), and optional ``name``.
+        column_gap: Gap between bars/columns as ratio of width (default: 0.20)
+        labels: Category labels for the shared x-axis.
+
+    Example:
+        >>> config = ComboChartConfig(
+        ...     series=[
+        ...         {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+        ...         {"data": [3, 6, 9], "type": "line", "axis": "secondary"},
+        ...     ],
+        ...     labels=["Q1", "Q2", "Q3"],
+        ... )
+    """
+
+    # Combo-specific settings
+    series: list[dict] = dataclasses.field(default_factory=list)
+    column_gap: float = 0.20
+
+    # Labels
+    labels: Labels | None = None
+
+
+@dataclasses.dataclass
 class LineChartConfig(ChartConfig):
     """Configuration for line charts.
 
@@ -288,6 +319,67 @@ class ScatterChartConfig(ChartConfig):
 
 
 @dataclasses.dataclass
+class BubbleChartConfig(ChartConfig):
+    """Configuration for bubble charts.
+
+    Extends ChartConfig with bubble-specific settings. A bubble chart is a
+    scatter plot where each marker's radius encodes a third value.
+
+    Attributes:
+        min_radius: Smallest rendered marker radius in pixels (default: 4.0)
+        max_radius: Largest rendered marker radius in pixels (default: 24.0)
+        sizes: Third dimension; one non-negative value per point
+        x_data: Optional x-coordinates for each point
+
+    Example:
+        >>> config = BubbleChartConfig(
+        ...     min_radius=6.0,
+        ...     max_radius=30.0,
+        ...     sizes=[5, 30, 12],
+        ... )
+    """
+
+    def __post_init__(self):
+        """Validate bubble-specific settings."""
+        if self.min_radius < 0 or self.max_radius < 0:
+            raise ValueError("min_radius and max_radius cannot be negative")
+        if self.max_radius < self.min_radius:
+            raise ValueError("max_radius must be >= min_radius")
+        if self.sizes is not None and any(s < 0 for s in self.sizes):
+            raise ValueError("sizes cannot be negative")
+
+    # Bubble-specific settings
+    min_radius: float = 4.0
+    max_radius: float = 24.0
+
+    # Data
+    sizes: Vector | None = None
+    x_data: Vector | None = None
+
+
+@dataclasses.dataclass
+class PolarAreaChartConfig(ChartConfig):
+    """Configuration for polar area charts.
+
+    Extends ChartConfig with polar-area settings. A polar area chart is a pie
+    where every slice spans an equal angle and the slice radius encodes value.
+
+    Attributes:
+        start_angle: Starting angle in degrees, 0 = top, clockwise (default: 0.0)
+        labels: Optional labels for each slice
+
+    Example:
+        >>> config = PolarAreaChartConfig(start_angle=45, labels=['N', 'E', 'S'])
+    """
+
+    # Polar-area-specific settings
+    start_angle: float = 0.0
+
+    # Labels
+    labels: Labels | None = None
+
+
+@dataclasses.dataclass
 class RadarChartConfig(ChartConfig):
     """Configuration for radar/spider charts.
 
@@ -331,9 +423,12 @@ class RadarChartConfig(ChartConfig):
 ChartConfigType = (
     BarChartConfig
     | ColumnChartConfig
+    | ComboChartConfig
     | LineChartConfig
     | PieChartConfig
     | ScatterChartConfig
     | RadarChartConfig
+    | BubbleChartConfig
+    | PolarAreaChartConfig
     | ChartConfig
 )

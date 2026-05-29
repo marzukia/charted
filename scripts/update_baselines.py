@@ -38,12 +38,15 @@ sys.path.insert(0, str(ROOT))
 from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
+from charted.charts.bubble import BubbleChart
 from charted.charts.column import ColumnChart
+from charted.charts.combo import ComboChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
 from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
+from charted.charts.polar_area import PolarAreaChart
 from charted.charts.radar import RadarChart
 from charted.charts.scatter import ScatterChart
 
@@ -128,6 +131,12 @@ CHARTS = {
         data=[[1, 2, 3, 4], [5, 6, 7, 8]],
         x_labels=["A", "B", "C", "D"],
         y_labels=["X", "Y"],
+    ),
+    "heatmap_continuous": HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
     ),
     # Area chart
     "area_basic": AreaChart(
@@ -218,6 +227,37 @@ CHARTS = {
             date(2024, 12, 1),
         ],
         x_scale="time",
+    ),
+    # Bubble chart (scatter with a third size dimension)
+    "bubble_basic": BubbleChart(
+        x_data=[1, 2, 3, 4, 5],
+        y_data=[10, 25, 15, 30, 20],
+        sizes=[5, 30, 12, 45, 18],
+    ),
+    # Polar area chart (equal-angle slices, radius encodes value)
+    "polar_area_basic": PolarAreaChart(
+        data=[10, 20, 30, 15, 25],
+        labels=["A", "B", "C", "D", "E"],
+    ),
+    # Combo charts (mixed bar + line on shared axes)
+    "combo_basic": ComboChart(
+        series=[
+            {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+            {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+        ],
+        labels=["Q1", "Q2", "Q3"],
+    ),
+    "combo_secondary_axis": ComboChart(
+        series=[
+            {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+            {
+                "data": [2.5, 3.1, 2.8],
+                "type": "line",
+                "name": "Conversion %",
+                "axis": "secondary",
+            },
+        ],
+        labels=["Jan", "Feb", "Mar"],
     ),
 }
 
