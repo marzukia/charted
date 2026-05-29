@@ -68,7 +68,14 @@ class Histogram(Chart):
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
+        x_label: str | None = None,
+        y_label: str | None = None,
+        h_lines: list[float] | None = None,
+        v_lines: list[float] | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         n_bins = bins if bins is not None else _auto_bins(data)
         bin_counts, bin_labels = _compute_bins(data, n_bins)
@@ -82,8 +89,15 @@ class Histogram(Chart):
             width=width,
             height=height,
             title=title,
+            subtitle=subtitle,
             theme=theme,
             chart_type="histogram",
+            x_label=x_label,
+            y_label=y_label,
+            h_lines=h_lines,
+            v_lines=v_lines,
+            reference_lines=reference_lines,
+            colors=colors,
         )
 
     @property

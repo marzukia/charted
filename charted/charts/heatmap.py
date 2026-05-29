@@ -315,7 +315,6 @@ class HeatmapChart(Chart):
             )
         )
 
-
         return result
 
     @property

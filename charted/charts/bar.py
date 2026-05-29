@@ -43,6 +43,7 @@ class BarChart(Chart):
         height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
@@ -53,6 +54,8 @@ class BarChart(Chart):
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
         annotations: list | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         self._bar_data_labels = data_labels
         if bar_gap is None:
@@ -82,6 +85,7 @@ class BarChart(Chart):
             y_data=y_data,
             y_labels=labels,
             title=title,
+            subtitle=subtitle,
             zero_index=zero_index,
             theme=theme,
             series_names=series_names,
@@ -94,6 +98,8 @@ class BarChart(Chart):
             h_lines=h_lines,
             v_lines=v_lines,
             annotations=annotations,
+            reference_lines=reference_lines,
+            colors=colors,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.

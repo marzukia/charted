@@ -52,6 +52,7 @@ class ScatterChart(Chart):
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
@@ -62,6 +63,8 @@ class ScatterChart(Chart):
         v_lines: list[float] | None = None,
         annotations: list | None = None,
         quadrant_labels: list[str] | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         self._quadrant_labels = quadrant_labels
         super().__init__(
@@ -70,6 +73,7 @@ class ScatterChart(Chart):
             width=width,
             height=height,
             title=title,
+            subtitle=subtitle,
             theme=theme,
             series_names=series_names,
             chart_type="scatter",
@@ -80,6 +84,8 @@ class ScatterChart(Chart):
             h_lines=h_lines,
             v_lines=v_lines,
             annotations=annotations,
+            reference_lines=reference_lines,
+            colors=colors,
         )
 
     @property
