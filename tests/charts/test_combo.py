@@ -112,6 +112,83 @@ class TestComboRendering:
         )
 
 
+def _bar_right_edges(chart: ComboChart) -> list[float]:
+    """Right edge (x + width) of every bar rect, in the plot-group frame.
+
+    Bars live in the ``opacity="0.8"`` group carrying the base transform and
+    are drawn as ``M x y h w v ...`` rects. Returns the rightmost x of each.
+    """
+    svg = chart.svg
+    edges = []
+    # Each bar group: <g opacity="0.8" transform="...base..."><path d="..." .../>
+    for group in re.finditer(r'<g opacity="0\.8"[^>]*>(.*?)</g>', svg, flags=re.DOTALL):
+        body = group.group(1)
+        # Only the column groups carry a bare filled <path d="M..." fill=...>;
+        # the line group nests an inner <g fill="white" ...> instead.
+        if 'fill="white"' in body:
+            continue
+        for d in re.findall(r'<path d="(M[^"]*)"', body):
+            # d is one or more "M x y hW vH ..." rects joined by spaces.
+            for rect in re.finditer(r"M([\d.\-]+) [\d.\-]+ h([\d.\-]+)", d):
+                x = float(rect.group(1))
+                w = float(rect.group(2))
+                edges.append(x + w)
+    return edges
+
+
+class TestComboBarWidth:
+    """Bars must fit inside their category band without overflowing the plot."""
+
+    def test_basic_combo_bars_stay_within_plot(self):
+        chart = ComboChart(
+            series=[
+                {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+                {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+            ],
+            labels=["Q1", "Q2", "Q3"],
+        )
+        edges = _bar_right_edges(chart)
+        assert edges, "expected bar rects in the rendered SVG"
+        assert max(edges) <= chart.plot_width, (
+            f"bar overflows plot: max right {max(edges)} > {chart.plot_width}"
+        )
+
+    def test_secondary_axis_combo_bars_stay_within_plot(self):
+        chart = ComboChart(
+            series=[
+                {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+                {
+                    "data": [2.5, 3.1, 2.8],
+                    "type": "line",
+                    "name": "Conversion %",
+                    "axis": "secondary",
+                },
+            ],
+            labels=["Jan", "Feb", "Mar"],
+        )
+        edges = _bar_right_edges(chart)
+        assert edges, "expected bar rects in the rendered SVG"
+        assert max(edges) <= chart.plot_width, (
+            f"bar overflows plot: max right {max(edges)} > {chart.plot_width}"
+        )
+
+    def test_grouped_bars_split_band_side_by_side(self):
+        """Two bar series share one band: each is half-width, centered as a pair."""
+        chart = ComboChart(
+            series=[
+                {"data": [10, 20, 30], "type": "bar", "name": "A"},
+                {"data": [8, 16, 24], "type": "bar", "name": "B"},
+                {"data": [3, 6, 9], "type": "line", "name": "L"},
+            ],
+            labels=["Q1", "Q2", "Q3"],
+        )
+        edges = _bar_right_edges(chart)
+        assert edges, "expected bar rects in the rendered SVG"
+        assert max(edges) <= chart.plot_width
+        # 2 bar series x 3 categories = 6 rects.
+        assert len(edges) == 6
+
+
 class TestComboSecondaryAxis:
     def test_combo_secondary_y_axis(self):
         """A series on the secondary axis gets its own right-side tick labels."""

@@ -11,7 +11,7 @@ from charted.charts.axes import YAxis
 from charted.charts.chart import Chart
 from charted.charts.column import ColumnChart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import G, Text
+from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.line_renderer import LineRenderer
@@ -111,6 +111,59 @@ class _ColumnProxy(_SeriesProxy, ColumnChart):
         self.column_gap = getattr(parent, "column_gap", 0.2)
         self.y_stacked = False
         self.series_names = None
+
+    @property
+    def representation(self) -> G:
+        """Render bars centered inside each category band.
+
+        ColumnChart.representation steps by its own gap-aware ``x_width``, but
+        the proxy inherits the parent's gap-less band width (plot_width /
+        x_count) via _SeriesProxy, so reusing it overflowed the plot. Instead
+        position bars directly on the band centers that the line renderer uses
+        (``x_values[i] + x_offset``) and size the bar group to fit within the
+        band so the rightmost bar never crosses the plot edge.
+        """
+        g = G(opacity="0.8", transform=[*self.get_base_transform()])
+
+        y_values = self.y_values
+        num_series = len(y_values)
+        if num_series == 0:
+            return g
+
+        # Band spacing is the per-category step the line vertices use; for an
+        # ordinal axis this equals x_offset (x_axis.reproject(1)).
+        x_values = self.x_values[0]
+        if len(x_values) > 1:
+            band_spacing = (x_values[-1] - x_values[0]) / (len(x_values) - 1)
+        else:
+            band_spacing = self.x_offset or self.x_width
+
+        # Bar group fits inside the band: total group width leaves column_gap of
+        # the band as empty margin, split evenly on both sides.
+        group_width = band_spacing * (1 - self.column_gap)
+        bar_width = group_width / num_series if num_series else group_width
+
+        for series_idx, (y_values_series, color) in enumerate(
+            zip(y_values, self.colors)
+        ):
+            fill = color
+            if self.series_styles and series_idx < len(self.series_styles):
+                style = self.series_styles[series_idx] or {}
+                if style.get("fill"):
+                    fill = style["fill"]
+
+            paths = []
+            for x_idx, y in enumerate(y_values_series):
+                center = x_values[x_idx] + self.x_offset
+                group_left = center - group_width / 2
+                bar_x = group_left + series_idx * bar_width
+                if y >= 0:
+                    paths.append(Path.get_path(bar_x, 0, bar_width, y))
+                else:
+                    paths.append(Path.get_path(bar_x, y, bar_width, -y))
+            g.add_child(Path(d=paths, fill=fill))
+
+        return g
 
 
 class ComboChart(Chart):
