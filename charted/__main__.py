@@ -16,7 +16,7 @@ def main(args=None):
     # Create subcommand
     create_parser = subparsers.add_parser("create", help="Create a new chart")
     create_parser.add_argument(
-        "chart_type", choices=["bar", "column", "line", "pie", "radar", "scatter", "area", "boxplot", "histogram", "heatmap", "gantt"]
+        "chart_type", choices=["bar", "column", "line", "pie", "radar", "scatter", "area", "boxplot", "histogram", "heatmap", "gantt", "combo"]
     )
     create_parser.add_argument("output", help="Output SVG file path")
     create_parser.add_argument("--data", "-d", help="Data file (CSV or JSON)")
@@ -32,7 +32,7 @@ def main(args=None):
     batch_parser.add_argument(
         "--chart-type",
         "-t",
-        choices=["bar", "column", "line", "pie", "radar", "scatter", "area", "boxplot", "histogram", "heatmap", "gantt"],
+        choices=["bar", "column", "line", "pie", "radar", "scatter", "area", "boxplot", "histogram", "heatmap", "gantt", "combo"],
         help="Override chart type inferred from filename",
     )
     batch_parser.add_argument("--config", "-c", help="Config file path")

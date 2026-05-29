@@ -69,6 +69,7 @@ charted provides 6 chart types, all with consistent API:
    charts/column
    charts/bar
    charts/line
+   charts/combo
    charts/scatter
    charts/pie
    charts/radar

@@ -26,6 +26,7 @@ CHART_TYPE_MAP = {
     "histogram": "Histogram",
     "heatmap": "HeatmapChart",
     "gantt": "GanttChart",
+    "combo": "ComboChart",
 }
 
 CHART_DESCRIPTIONS = {
@@ -40,6 +41,7 @@ CHART_DESCRIPTIONS = {
     "histogram": "Frequency distribution of continuous data",
     "heatmap": "Color-coded matrix for 2D data",
     "gantt": "Timeline/schedule visualization",
+    "combo": "Mixed bar and line chart on shared axes with optional secondary y-axis",
 }
 
 
