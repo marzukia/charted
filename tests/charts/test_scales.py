@@ -1,6 +1,6 @@
 """Unit tests for the Scale abstraction (linear, log, time)."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -83,8 +83,41 @@ class TestTimeScale:
         assert len(ticks) >= 4
         # Every tick should fall on the 1st of a month (a clean boundary).
         for t in ticks:
-            dt = datetime.fromtimestamp(t)
+            dt = datetime.fromtimestamp(t, tz=timezone.utc)
             assert dt.day == 1
+
+    def test_time_scale_tick_pixels_are_tz_independent(self):
+        """Concrete tick pixel positions are pinned and TZ-independent.
+
+        These are absolute pixel values (not epoch-relative ratios), so they
+        can only pass if the epoch and tick math are done in UTC. A naive
+        local-time implementation shifts these by the host's UTC offset.
+        """
+        scale = TimeScale(date(2024, 1, 1), date(2024, 12, 31))
+        # 2024-01-01 is the domain min: pixel 0 regardless of TZ.
+        assert scale.reproject(date(2024, 1, 1), 366) == pytest.approx(0.0)
+        # 2024-12-31 is the domain max: full length.
+        assert scale.reproject(date(2024, 12, 31), 366) == pytest.approx(366.0)
+        # 2024-07-01 (day 182 of 365 in the span) lands at a fixed offset.
+        # span = 365 days, 2024-07-01 is 182 days in -> 182/365 * 366 = 182.5.
+        assert scale.reproject(date(2024, 7, 1), 366) == pytest.approx(182.5, abs=0.1)
+        # The first month-boundary tick (2024-02-01) sits at a fixed pixel.
+        # 31 days in -> 31/365 * 366 = 31.08.
+        feb1 = TimeScale._utc_epoch(2024, 2, 1)
+        assert scale.reproject(feb1, 366) == pytest.approx(31.08, abs=0.1)
+
+    def test_time_scale_aware_datetime_is_absolute(self):
+        """A tz-aware datetime maps by its absolute UTC instant."""
+        from datetime import timedelta
+
+        scale = TimeScale("2024-01-01T00:00:00+00:00", "2024-01-02T00:00:00+00:00")
+        # 12:00 UTC is the midpoint.
+        noon_utc = datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc)
+        assert scale.reproject(noon_utc, 100) == pytest.approx(50.0)
+        # The same instant expressed in +12:00 (midnight next day local) is
+        # still 12:00 UTC, so it maps to the same pixel.
+        same_instant = datetime(2024, 1, 2, 0, 0, tzinfo=timezone(timedelta(hours=12)))
+        assert scale.reproject(same_instant, 100) == pytest.approx(50.0)
 
     def test_time_scale_tick_labels_are_formatted_dates(self):
         scale = TimeScale(date(2024, 1, 1), date(2024, 12, 31))
@@ -92,3 +125,32 @@ class TestTimeScale:
         assert all(isinstance(label, str) for label in labels)
         # Labels should look like dates, not raw epoch seconds.
         assert any("2024" in label or "-" in label for label in labels)
+
+
+class TestBarColumnScaleRejection:
+    """log/time scales are unsupported on a bar/column value axis."""
+
+    def test_column_rejects_log_value_axis(self):
+        from charted.charts.column import ColumnChart
+
+        with pytest.raises(ValueError, match="not supported on the value axis"):
+            ColumnChart(data=[1, 10, 100], labels=["a", "b", "c"], y_scale="log")
+
+    def test_column_rejects_time_value_axis(self):
+        from charted.charts.column import ColumnChart
+
+        with pytest.raises(ValueError, match="not supported on the value axis"):
+            ColumnChart(data=[1, 10, 100], labels=["a", "b", "c"], y_scale="time")
+
+    def test_area_rejects_log_value_axis(self):
+        from charted.charts.area import AreaChart
+
+        with pytest.raises(ValueError, match="not supported on the value axis"):
+            AreaChart(data=[1, 10, 100], labels=["a", "b", "c"], y_scale="log")
+
+    def test_line_still_allows_log_value_axis(self):
+        """Line plots points, not filled bars, so log on y stays valid."""
+        from charted.charts.line import LineChart
+
+        chart = LineChart(data=[1, 10, 100], labels=["a", "b", "c"], y_scale="log")
+        assert "svg" in chart.html.lower()

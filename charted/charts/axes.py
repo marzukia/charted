@@ -349,7 +349,17 @@ class XAxis(Axis):
         if self.stacked and min_v < 0:
             dx = self.reproject(abs(min_v))
 
-        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in self.coordinates]
+        coordinates = list(self.coordinates)
+        # Non-linear scales (time/log) own their tick positions, which land on
+        # clean calendar/decade boundaries and rarely reach the right edge of
+        # the plot. Linear axes always draw a gridline at the max value (the
+        # right border), so add one here too when the last tick falls short.
+        if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
+            plot_width = self.parent.plot_width
+            if not coordinates or abs((coordinates[-1] + dx) - plot_width) > 0.5:
+                coordinates.append(plot_width - dx)
+
+        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in coordinates]
         return Path(
             **config,
             d=d,

@@ -13,8 +13,9 @@ Only the standard library is used, so no new runtime dependency is added.
 
 from __future__ import annotations
 
+import calendar
 import math
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 
 class Scale:
@@ -124,20 +125,32 @@ class LogScale(Scale):
 
 
 def _to_epoch(value) -> float:
-    """Normalise a date/datetime/ISO-string into epoch seconds."""
+    """Normalise a date/datetime/ISO-string into epoch seconds.
+
+    All conversion is timezone-independent. A timezone-aware ``datetime``
+    is converted to its absolute UTC epoch. A *naive* ``datetime``, a
+    ``date``, or a tz-less ISO string is interpreted as UTC (never local
+    time) so the same input always maps to the same epoch regardless of
+    the host's ``TZ``.
+    """
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
         return value.timestamp()
     if isinstance(value, date):
-        return datetime(value.year, value.month, value.day).timestamp()
+        return calendar.timegm((value.year, value.month, value.day, 0, 0, 0, 0, 0, 0))
     if isinstance(value, str):
         try:
-            return datetime.fromisoformat(value).timestamp()
+            parsed = datetime.fromisoformat(value)
         except ValueError as exc:
             raise ValueError(
                 f"Could not parse {value!r} as an ISO date/datetime."
             ) from exc
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.timestamp()
     raise ValueError(
         f"Unsupported time value {value!r} (type {type(value).__name__}); "
         f"expected date, datetime, ISO string, or epoch number."
@@ -174,6 +187,11 @@ class TimeScale(Scale):
         value_range = self.max_value - self.min_value
         return self.min_value + (pixel / length) * value_range
 
+    @staticmethod
+    def _utc_epoch(year: int, month: int = 1, day: int = 1) -> float:
+        """Epoch seconds for a UTC calendar boundary (TZ-independent)."""
+        return float(calendar.timegm((year, month, day, 0, 0, 0, 0, 0, 0)))
+
     def _span_days(self) -> float:
         return (self.max_value - self.min_value) / 86400.0
 
@@ -184,7 +202,7 @@ class TimeScale(Scale):
         fall back to year boundaries; sub-month spans fall back to evenly
         spaced ticks.
         """
-        start = datetime.fromtimestamp(self.min_value)
+        start = datetime.fromtimestamp(self.min_value, tz=timezone.utc)
         span_days = self._span_days()
 
         if span_days <= 31:
@@ -206,7 +224,7 @@ class TimeScale(Scale):
             if step_months == 3:
                 month = ((month - 1) // 3) * 3 + 1
             while True:
-                ts = datetime(year, month, 1).timestamp()
+                ts = self._utc_epoch(year, month, 1)
                 if ts > self.max_value:
                     break
                 if ts >= self.min_value:
@@ -223,11 +241,11 @@ class TimeScale(Scale):
         ticks = []
         year = (
             start.year
-            if datetime(start.year, 1, 1).timestamp() >= self.min_value
+            if self._utc_epoch(start.year, 1, 1) >= self.min_value
             else start.year + 1
         )
         while True:
-            ts = datetime(year, 1, 1).timestamp()
+            ts = self._utc_epoch(year, 1, 1)
             if ts > self.max_value:
                 break
             if ts >= self.min_value:
@@ -254,7 +272,7 @@ class TimeScale(Scale):
                 fmt = "%Y-%m"
             else:
                 fmt = "%Y-%m-%d"
-        return [datetime.fromtimestamp(t).strftime(fmt) for t in ticks]
+        return [datetime.fromtimestamp(t, tz=timezone.utc).strftime(fmt) for t in ticks]
 
 
 def make_scale(spec, min_value, max_value) -> Scale:

@@ -401,6 +401,13 @@ class Chart(Svg):
         self._x_scale = x_scale_inst
         self._y_scale = y_scale_inst
 
+        # Bar/column geometry fills from a zero baseline, which has no meaning
+        # on a log scale (no zero) or a time scale. Applying one to the value
+        # axis renders garbage (bars collapse to uniform height), so reject it
+        # up front. The value axis is Y for column/area/histogram and X for
+        # horizontal bar charts.
+        self._reject_unsupported_scales(chart_type, x_scale_inst, y_scale_inst)
+
         # Initialize axes
         self.x_axis = XAxis(
             parent=self,
@@ -567,6 +574,34 @@ class Chart(Svg):
     # =========================================================================
     # Scale Helpers
     # =========================================================================
+
+    # Chart types whose value axis fills from a zero baseline (bars/columns).
+    # log/time scales are unsupported on that axis.
+    _BAR_VALUE_AXIS = {
+        "column": "y",
+        "area": "y",
+        "histogram": "y",
+        "bar": "x",
+    }
+
+    @classmethod
+    def _reject_unsupported_scales(cls, chart_type, x_scale_inst, y_scale_inst) -> None:
+        """Raise ValueError for log/time scales on a bar/column value axis."""
+        value_axis = cls._BAR_VALUE_AXIS.get(chart_type)
+        if value_axis is None:
+            return
+        scale = x_scale_inst if value_axis == "x" else y_scale_inst
+        if scale is None:
+            return
+        name = getattr(scale, "name", "linear")
+        if name in ("log", "time"):
+            raise ValueError(
+                f"{name!r} scale is not supported on the value axis "
+                f"({value_axis}) of a {chart_type} chart. Bar/column geometry "
+                f"fills from a zero baseline, which a log or time scale has no "
+                f"meaning for. Use a linear value axis, or switch to a line or "
+                f"scatter chart, which plot points instead of filled bars."
+            )
 
     @staticmethod
     def _is_time_scale(spec: object | None) -> bool:
