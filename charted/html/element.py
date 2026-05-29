@@ -145,6 +145,21 @@ class Text(Element):
         self.add_child(text)
 
 
+class Title(Element):
+    """Native SVG ``<title>`` element.
+
+    When placed as the first child of a graphics element, browsers show its
+    text as a built-in hover tooltip and expose it as the element's
+    accessible name. Requires no JavaScript.
+    """
+
+    tag = "title"
+
+    def __init__(self, text: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.add_child(text)
+
+
 class Rect(Element):
     tag = "rect"
 

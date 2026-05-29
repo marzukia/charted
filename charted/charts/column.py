@@ -119,10 +119,20 @@ class ColumnChart(Chart):
                         fill = style["fill"]
 
                 paths = []
-                for x, y, y_offset in zip(x_values, y_values, y_offsets):
+                for point_idx, (x, y, y_offset) in enumerate(
+                    zip(x_values, y_values, y_offsets)
+                ):
                     x += self.x_offset
-                    paths.append(Path.get_path(x, y_offset, self.x_width, y))
-                g.add_child(Path(d=paths, fill=fill))
+                    d = Path.get_path(x, y_offset, self.x_width, y)
+                    title = self._tooltip_title(series_idx, point_idx)
+                    if title is not None:
+                        mark = Path(d=[d], fill=fill)
+                        mark.add_child(title)
+                        g.add_child(mark)
+                    else:
+                        paths.append(d)
+                if paths:
+                    g.add_child(Path(d=paths, fill=fill))
         else:
             # side-by-side mode
             num_series = len(self.y_values) if self.y_values else 1
@@ -140,7 +150,11 @@ class ColumnChart(Chart):
                         fill = style["fill"]
 
                 has_fill_override = fill != color
-                per_bar = len(self.y_values) == 1 and len(self.colors) > 1 and not has_fill_override
+                per_bar = (
+                    len(self.y_values) == 1
+                    and len(self.colors) > 1
+                    and not has_fill_override
+                )
                 paths = []
                 for x_idx, y in enumerate(y_values_series):
                     x = self.x_offset + x_idx * (

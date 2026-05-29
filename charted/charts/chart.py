@@ -80,16 +80,34 @@ class Chart(Svg):
         title_text = self._title.text if self._title else None
         return generate_markdown_image(self.svg, alt_text, title_text, width)
 
-    def to_html(self, style: str = "display: inline-block;") -> str:
+    def to_html(
+        self, style: str = "display: inline-block;", tooltips: bool = False
+    ) -> str:
         """Return standalone HTML with embedded SVG.
 
         Args:
             style: CSS style for the container div.
+            tooltips: If True, attach a native SVG ``<title>`` to each data
+                mark so browsers show a built-in hover tooltip (no
+                JavaScript). File output via ``to_svg()``/``save()`` is never
+                affected.
 
         Returns:
             HTML string with the SVG embedded in a div.
         """
-        return generate_html_wrapper(self.svg, style)
+        if not tooltips:
+            return generate_html_wrapper(self.svg, style)
+
+        # Regenerate the data-mark representation with <title> children, then
+        # restore the inert state so to_svg()/save() stay unchanged.
+        self._tooltips = True
+        try:
+            self._build_children()
+            svg = self.html
+        finally:
+            self._tooltips = False
+            self._build_children()
+        return generate_html_wrapper(svg, style)
 
     def _repr_html_(self) -> str:
         """Return HTML wrapper for the chart."""
@@ -450,6 +468,18 @@ class Chart(Svg):
         if not hasattr(self, "_colors"):
             self._colors = self.theme.colors
 
+        # Whether data marks should carry native <title> tooltips. Off for
+        # file output (to_svg/save); toggled on only by to_html(tooltips=True).
+        self._tooltips = False
+
+        self._build_children()
+
+    def _build_children(self) -> None:
+        """Assemble the chart's SVG child elements.
+
+        Called once during ``__init__`` and again whenever the tooltip flag
+        changes so the data-mark representation can be regenerated.
+        """
         # Build SVG children with plot clipping mask
         plot_clip = ClipPath(
             id="plot-clip",
@@ -494,6 +524,7 @@ class Chart(Svg):
         axis_labels = self._render_axis_labels()
         if axis_labels:
             children.extend(axis_labels)
+        self.children = []
         self.add_children(*children)
 
     # =========================================================================
@@ -739,9 +770,7 @@ class Chart(Svg):
             )
 
         stroke_color = (
-            self.theme.resolved_axis_border_color
-            if hasattr(self, "theme")
-            else "black"
+            self.theme.resolved_axis_border_color if hasattr(self, "theme") else "black"
         )
 
         return create_zero_line_path(
@@ -967,6 +996,51 @@ class Chart(Svg):
             )
 
         return elements
+
+    # =========================================================================
+    # Tooltips (opt-in, HTML-only native <title> hover labels)
+    # =========================================================================
+
+    def _tooltip_label(self, series_idx: int, point_idx: int) -> str:
+        """Build the tooltip text for one data point.
+
+        Format is ``"<label>: <value>"`` when a category label is available,
+        otherwise just the value. The series name is prefixed when there is
+        more than one series so multi-series marks stay distinguishable.
+        """
+        value = self._tooltip_value(series_idx, point_idx)
+        label = None
+        if self.x_labels and point_idx < len(self.x_labels):
+            lbl = self.x_labels[point_idx]
+            label = lbl.text if hasattr(lbl, "text") else str(lbl)
+
+        series_name = None
+        if self.series_names and series_idx < len(self.series_names):
+            series_name = self.series_names[series_idx]
+
+        if label is not None:
+            return f"{label}: {value}"
+        if series_name is not None:
+            return f"{series_name}: {value}"
+        return str(value)
+
+    def _tooltip_value(self, series_idx: int, point_idx: int):
+        """Return the raw data value for a point (overridable per chart)."""
+        data = self.y_data
+        if series_idx < len(data) and point_idx < len(data[series_idx]):
+            value = data[series_idx][point_idx]
+            if isinstance(value, float) and value.is_integer():
+                return int(value)
+            return value
+        return ""
+
+    def _tooltip_title(self, series_idx: int, point_idx: int):
+        """Return a ``Title`` element for a mark, or None when tooltips off."""
+        if not self._tooltips:
+            return None
+        from charted.html.element import Title
+
+        return Title(self._tooltip_label(series_idx, point_idx))
 
     @property
     def _data_label_x_offset(self) -> float:
