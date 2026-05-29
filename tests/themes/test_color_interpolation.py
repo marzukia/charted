@@ -1,5 +1,7 @@
 """Tests for continuous sequential/diverging color interpolation."""
 
+import math
+
 from charted.themes.core import NAMED_PALETTES, ColorScale, diverging_scale
 from charted.utils.colors import (
     _parse_color_to_rgb,
@@ -40,6 +42,10 @@ class TestInterpolatePalette:
         assert _close(interpolate_color("#000000", "#ffffff", 1.0), "#ffffff")
         assert _close(interpolate_color("#000000", "#ffffff", 0.5), "#7f7f7f", tol=2)
 
+    def test_interpolate_color_nan_maps_to_start(self):
+        """A NaN t deterministically maps to the start color."""
+        assert _close(interpolate_color("#000000", "#ffffff", float("nan")), "#000000")
+
 
 class TestDivergingScale:
     def test_diverging_scale_center(self):
@@ -79,3 +85,17 @@ class TestColorScale:
         scale = ColorScale("inferno", domain=(0.0, 1.0))
         for v in (0.0, 0.25, 0.5, 0.75, 1.0):
             _parse_color_to_rgb(scale(v))
+
+    def test_color_scale_nan_maps_to_first_stop(self):
+        """A NaN value normalizes to 0.0 (the first stop)."""
+        scale = ColorScale(["#000000", "#ffffff"], domain=(0.0, 10.0))
+        assert scale.normalize(float("nan")) == 0.0
+        assert _close(scale(float("nan")), "#000000")
+
+    def test_color_scale_reversed_domain_matches_ascending(self):
+        """A descending (hi, lo) domain maps identically to ascending (lo, lo)."""
+        asc = ColorScale(["#000000", "#ffffff"], domain=(0.0, 10.0))
+        desc = ColorScale(["#000000", "#ffffff"], domain=(10.0, 0.0))
+        for v in (-5.0, 0.0, 2.5, 5.0, 7.5, 10.0, 15.0):
+            assert math.isclose(asc.normalize(v), desc.normalize(v))
+            assert _close(asc(v), desc(v))

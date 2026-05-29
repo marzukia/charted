@@ -191,6 +191,11 @@ class HeatmapChart(Chart):
 
         A None argument keeps the two-color low/high behavior. A string or
         list is wrapped into a ColorScale spanning the data range.
+
+        Note: the heatmap always pins the color-scale domain to the data
+        range (min, max). When a ColorScale is passed in, only its palette
+        is reused; its own ``domain`` is discarded so cell colors stay
+        aligned with the displayed value range and legend bar.
         """
         if color_scale is None:
             return None

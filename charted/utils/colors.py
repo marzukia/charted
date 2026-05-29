@@ -128,10 +128,13 @@ def interpolate_color(a: str, b: str, t: float) -> str:
         a: Start color in hex or HSL format.
         b: End color in hex or HSL format.
         t: Position from 0.0 (a) to 1.0 (b). Values outside [0, 1] are clamped.
+            NaN maps to 0.0 (the start color).
 
     Returns:
         6-digit hex color string.
     """
+    if t != t:  # NaN guard: max/min won't clamp NaN
+        t = 0.0
     t = max(0.0, min(1.0, t))
     r1, g1, b1 = _parse_color_to_rgb(a)
     r2, g2, b2 = _parse_color_to_rgb(b)

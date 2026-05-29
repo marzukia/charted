@@ -94,8 +94,14 @@ class ColorScale:
     domain: tuple[float, float] = (0.0, 1.0)
 
     def normalize(self, value: float) -> float:
-        """Map a domain value to [0, 1], clamped."""
-        lo, hi = self.domain
+        """Map a domain value to [0, 1], clamped.
+
+        The domain is treated as unordered: a reversed (hi, lo) domain
+        produces the same mapping as (lo, hi). A NaN value maps to 0.0.
+        """
+        if value != value:  # NaN guard: max/min won't clamp NaN
+            return 0.0
+        lo, hi = sorted(self.domain)
         if hi == lo:
             return 0.0
         return max(0.0, min(1.0, (value - lo) / (hi - lo)))
