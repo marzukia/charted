@@ -5,8 +5,6 @@ against Chart.js and D3, written as a test-driven plan. It is a roadmap, not the
 implementation. Each feature lists the failing tests to write first (Red), the
 minimal code to make them pass (Green), and what "done" means (Acceptance).
 
-Source: the gap analysis at https://banky.cain.rocks/reports/charted-gap-analysis/.
-
 ## Scope and non-goals
 
 charted's niche is static, zero-dependency, publication-quality SVG/PNG from
