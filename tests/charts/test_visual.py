@@ -33,6 +33,11 @@ from pathlib import Path
 import pytest
 from lxml import etree
 
+from charted.charts.annotations import (
+    BoxAnnotation,
+    LabelAnnotation,
+    LineAnnotation,
+)
 from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
@@ -731,3 +736,34 @@ def test_pie_percentages_png():
         show_percentages=True,
     )
     compare_png_baseline(chart, "pie_percentages", tolerance=5)
+
+
+def test_scatter_annotations():
+    """Visual regression test for ScatterChart with annotations (SVG structure)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6, 8, 10],
+        y_data=[0, 8, 4, 16, 12, 20],
+        annotations=[
+            BoxAnnotation(x_range=(2, 6), y_range=(4, 16)),
+            LineAnnotation(start=(0, 0), end=(10, 20)),
+            LabelAnnotation(point=(4, 16), text="peak"),
+        ],
+    )
+    baseline_path = BASELINES_DIR / "scatter_annotations.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_scatter_annotations_png():
+    """Visual regression test for ScatterChart with annotations (PNG pixel-perfect)."""
+    chart = ScatterChart(
+        x_data=[0, 2, 4, 6, 8, 10],
+        y_data=[0, 8, 4, 16, 12, 20],
+        annotations=[
+            BoxAnnotation(x_range=(2, 6), y_range=(4, 16)),
+            LineAnnotation(start=(0, 0), end=(10, 20)),
+            LabelAnnotation(point=(4, 16), text="peak"),
+        ],
+    )
+    compare_png_baseline(chart, "scatter_annotations", tolerance=5)
