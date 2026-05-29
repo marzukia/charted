@@ -110,6 +110,32 @@ Combine scatter with line chart for trend visualization::
        series_styles=[{"marker_shape": "circle", "marker_size": 4.0}]
    )
 
+Log Scale
+---------
+
+Set ``x_scale="log"`` or ``y_scale="log"`` (or both) when an axis spans several orders of magnitude. All values on a log axis must be positive::
+
+   chart = ScatterChart(
+       x_data=[10, 100, 1000, 10000],
+       y_data=[1, 2, 3, 4],
+       x_scale="log",
+       title="Throughput vs Latency",
+   )
+
+Time Axis
+---------
+
+Plot date or datetime values on the x-axis with ``x_scale="time"``. ISO date strings work as well::
+
+   from datetime import date
+
+   chart = ScatterChart(
+       x_data=[date(2024, 1, 1), date(2024, 6, 1), date(2024, 12, 1)],
+       y_data=[3, 7, 5],
+       x_scale="time",
+       title="Events Over Time",
+   )
+
 Configuration Options
 ---------------------
 

@@ -98,3 +98,67 @@ class TestLineChartMarkerRendering:
         html = chart.html
         # Should NOT have markers by default anymore
         assert "<circle" not in html.lower()
+
+
+class TestLineChartScales:
+    """Tests for log and time scales on LineChart."""
+
+    def test_line_chart_log_y_scale(self):
+        """y_scale='log' renders and tick labels are decade values."""
+        chart = LineChart(
+            data=[1, 10, 100, 1000],
+            labels=["a", "b", "c", "d"],
+            y_scale="log",
+        )
+        html = chart.html
+        assert "svg" in html.lower()
+        # Decade tick labels should be present.
+        assert ">1<" in html or ">1.0<" in html
+        assert ">10<" in html
+        assert ">100<" in html
+        assert ">1000<" in html
+        # to_config round-trips the scale choice.
+        assert chart.to_config()["y_scale"] == "log"
+        # describe reports the scale type per axis.
+        assert chart.describe()["scales"]["y"] == "log"
+
+    def test_line_chart_log_y_scale_respects_theme(self):
+        from charted import Theme
+        from charted.utils.defaults import DEFAULT_FONT
+
+        theme = Theme(root_color="#123456")
+        chart = LineChart(
+            data=[1, 10, 100],
+            labels=["a", "b", "c"],
+            y_scale="log",
+            theme=theme,
+        )
+        html = chart.html
+        # Log-scale tick labels render with the theme's resolved label color
+        # and the standard axis font, same as linear axes.
+        assert theme.resolved_label_color.lower() in html.lower()
+        assert DEFAULT_FONT.lower() in html.lower()
+
+    def test_line_chart_log_y_scale_rejects_nonpositive(self):
+        with pytest.raises(ValueError):
+            LineChart(data=[0, 10, 100], labels=["a", "b", "c"], y_scale="log").html
+
+    def test_line_chart_time_x_axis(self):
+        """date x_data + x_scale='time' renders with formatted date labels."""
+        from datetime import date
+
+        chart = LineChart(
+            data=[10, 20, 30, 40],
+            x_data=[
+                date(2024, 1, 1),
+                date(2024, 4, 1),
+                date(2024, 8, 1),
+                date(2024, 12, 1),
+            ],
+            x_scale="time",
+        )
+        html = chart.html
+        assert "svg" in html.lower()
+        assert "2024" in html
+        assert chart.to_config()["x_scale"] == "time"
+        assert chart.describe()["scales"]["x"] == "time"

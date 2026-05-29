@@ -68,6 +68,10 @@ class ChartConfig:
     render_axes: bool = True
     zero_index: bool = True
 
+    # Axis scales: "linear" (default), "log", or "time", or a Scale instance
+    x_scale: object | None = None
+    y_scale: object | None = None
+
     def to_dict(self) -> dict:
         """Convert config to dictionary for serialization.
 
