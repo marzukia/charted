@@ -60,6 +60,7 @@ class ScatterChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        annotations: list | None = None,
         quadrant_labels: list[str] | None = None,
     ):
         self._quadrant_labels = quadrant_labels
@@ -78,6 +79,7 @@ class ScatterChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            annotations=annotations,
         )
 
     @property

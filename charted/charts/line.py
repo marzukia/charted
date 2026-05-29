@@ -65,6 +65,7 @@ class LineChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        annotations: list | None = None,
     ):
         self.markers = markers
         super().__init__(
@@ -84,6 +85,7 @@ class LineChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            annotations=annotations,
         )
 
     @property
@@ -136,10 +138,14 @@ class LineChart(Chart):
                         ty = y - label_offset
                     # Nudge label away from grid lines
                     grid_margin = font_size * 0.6
-                    if hasattr(self, 'y_axis'):
+                    if hasattr(self, "y_axis"):
                         for tick_y in self.y_axis.coordinates:
                             if abs(ty - tick_y) < grid_margin:
-                                ty = tick_y - grid_margin if ty > tick_y else tick_y + grid_margin
+                                ty = (
+                                    tick_y - grid_margin
+                                    if ty > tick_y
+                                    else tick_y + grid_margin
+                                )
                                 break
                     # Shift labels at left edge rightward to avoid axis clash
                     if x < font_size * 2:

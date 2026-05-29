@@ -16,6 +16,11 @@ from .charts import (
     RadarChart,
     ScatterChart,
 )
+from .charts.annotations import (
+    BoxAnnotation,
+    LabelAnnotation,
+    LineAnnotation,
+)
 from .data_loader import load_csv, load_data, load_json
 from .markdown import chart_to_data_url, chart_to_markdown, inline_svg
 from .themes import (
@@ -38,8 +43,11 @@ __all__ = [
     "auto",
     "auto_size",
     "BarChart",
+    "BoxAnnotation",
     "BoxPlot",
     "Chart",
+    "LabelAnnotation",
+    "LineAnnotation",
     "chart_to_data_url",
     "chart_to_markdown",
     "ColumnChart",

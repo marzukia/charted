@@ -10,8 +10,6 @@ from charted.constants import (
     AXIS_BORDER_WIDTH,
     DEFAULT_CHART_HEIGHT,
     DEFAULT_CHART_WIDTH,
-    REFERENCE_LINE_DASH,
-    REFERENCE_LINE_WIDTH,
 )
 from charted.html.element import ClipPath, Defs, G, Path, Rect, Svg, Text
 from charted.themes.core import Theme
@@ -193,6 +191,17 @@ class Chart(Svg):
                 dataclasses.asdict(s) if dataclasses.is_dataclass(s) else s
                 for s in self.series_styles
             ]
+        if self._h_lines:
+            cfg["h_lines"] = list(self._h_lines)
+        if self._v_lines:
+            cfg["v_lines"] = list(self._v_lines)
+        if self._annotations:
+            cfg["annotations"] = [
+                {"type": a.__class__.__name__, **dataclasses.asdict(a)}
+                if dataclasses.is_dataclass(a)
+                else a
+                for a in self._annotations
+            ]
         return cfg
 
     @classmethod
@@ -262,6 +271,7 @@ class Chart(Svg):
         data_labels: list[str] | list[list[str]] | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        annotations: list | None = None,
     ):
         super().__init__(
             width=width,
@@ -304,6 +314,7 @@ class Chart(Svg):
         self._data_labels = data_labels
         self._h_lines = h_lines
         self._v_lines = v_lines
+        self._annotations = list(annotations) if annotations else []
 
         # Set internal attributes directly (properties are read-only)
         self._width = width
@@ -739,9 +750,7 @@ class Chart(Svg):
             )
 
         stroke_color = (
-            self.theme.resolved_axis_border_color
-            if hasattr(self, "theme")
-            else "black"
+            self.theme.resolved_axis_border_color if hasattr(self, "theme") else "black"
         )
 
         return create_zero_line_path(
@@ -886,43 +895,39 @@ class Chart(Svg):
     # Reference Lines & Axis Labels
     # =========================================================================
 
+    def _collect_annotations(self) -> list:
+        """Build the full annotation list for this chart.
+
+        Legacy ``h_lines`` / ``v_lines`` are expressed as dashed
+        ``LineAnnotation`` objects so there is a single rendering path. They
+        come first (in their historical order) to keep output stable, followed
+        by any user-supplied annotations.
+        """
+        from charted.charts.annotations import LineAnnotation
+
+        annotations: list = []
+        if self._h_lines:
+            annotations.extend(LineAnnotation._h_line(v) for v in self._h_lines)
+        if self._v_lines:
+            annotations.extend(LineAnnotation._v_line(v) for v in self._v_lines)
+        annotations.extend(self._annotations)
+        return annotations
+
     def _render_reference_lines(self) -> G | None:
-        """Render horizontal and vertical reference lines in the plot area."""
-        if not self._h_lines and not self._v_lines:
+        """Render the annotation layer (reference lines, boxes, labels).
+
+        Annotations are positioned in data coordinates and reprojected through
+        the axes, drawn inside the plot-area group.
+        """
+        annotations = self._collect_annotations()
+        if not annotations:
             return None
 
         g = G(
             transform=f"translate({self.left_padding}, {self.top_padding})",
         )
-
-        ref_color = self.theme.resolved_reference_line_color
-
-        if self._h_lines:
-            for val in self._h_lines:
-                y = self.plot_height - self.y_axis.reproject(val)
-                g.add_child(
-                    Path(
-                        d=[f"M0 {y} h{self.plot_width}"],
-                        stroke=ref_color,
-                        stroke_width=REFERENCE_LINE_WIDTH,
-                        stroke_dasharray=REFERENCE_LINE_DASH,
-                        fill="none",
-                    )
-                )
-
-        if self._v_lines:
-            for val in self._v_lines:
-                x = self.x_axis.reproject(val)
-                g.add_child(
-                    Path(
-                        d=[f"M{x} 0 v{self.plot_height}"],
-                        stroke=ref_color,
-                        stroke_width=REFERENCE_LINE_WIDTH,
-                        stroke_dasharray=REFERENCE_LINE_DASH,
-                        fill="none",
-                    )
-                )
-
+        for annotation in annotations:
+            g.add_child(annotation.render(self))
         return g
 
     def _render_axis_labels(self) -> list:
