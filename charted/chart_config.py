@@ -196,6 +196,8 @@ class LineChartConfig(ChartConfig):
         marker_size: Size of markers in pixels (default: 4.0)
         area_fill: Whether to fill area under line (default: False)
         area_fill_opacity: Opacity of area fill (default: 0.3)
+        curve: Point-join interpolation - 'linear', 'step', 'cardinal',
+            or 'basis' (default: 'linear')
         x_data: Optional x-axis values
         labels: Optional x-axis labels
 
@@ -204,6 +206,7 @@ class LineChartConfig(ChartConfig):
         ...     marker_shape='square',
         ...     area_fill=True,
         ...     area_fill_opacity=0.2,
+        ...     curve='cardinal',
         ...     labels=['Jan', 'Feb', 'Mar']
         ... )
     """
@@ -214,6 +217,33 @@ class LineChartConfig(ChartConfig):
     marker_size: float = 4.0
     area_fill: bool = False
     area_fill_opacity: float = 0.3
+    curve: str = "linear"
+
+    # Data
+    x_data: Vector | None = None
+    labels: Labels | None = None
+
+
+@dataclasses.dataclass
+class AreaChartConfig(ChartConfig):
+    """Configuration for area charts.
+
+    Extends ChartConfig with area-specific settings.
+
+    Attributes:
+        fill_opacity: Opacity of the area fill (default: 0.3)
+        curve: Point-join interpolation - 'linear', 'step', 'cardinal',
+            or 'basis' (default: 'linear')
+        x_data: Optional x-axis values
+        labels: Optional x-axis labels
+
+    Example:
+        >>> config = AreaChartConfig(fill_opacity=0.2, curve='cardinal')
+    """
+
+    # Area-specific settings
+    fill_opacity: float = 0.3
+    curve: str = "linear"
 
     # Data
     x_data: Vector | None = None
@@ -328,6 +358,7 @@ ChartConfigType = (
     BarChartConfig
     | ColumnChartConfig
     | LineChartConfig
+    | AreaChartConfig
     | PieChartConfig
     | ScatterChartConfig
     | RadarChartConfig
