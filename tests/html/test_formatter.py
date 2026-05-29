@@ -1,5 +1,16 @@
-from charted.html.element import G, Path, Svg
+from charted.html.element import G, Path, Svg, Title
 from charted.html.formatter import format_html, indent_line
+
+
+def test_title_element_renders_text():
+    title = Title("Feb: 59")
+    assert title.html == "<title>Feb: 59</title>"
+
+
+def test_title_element_nests_inside_mark():
+    rect = Path()
+    rect.add_child(Title("Sales: 10"))
+    assert "<title>Sales: 10</title>" in rect.html
 
 
 def test_indent_line():
