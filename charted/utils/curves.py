@@ -37,6 +37,9 @@ def _fmt(value: float) -> str:
     decimal ("3.0"), which is what the existing renderer emits.
     """
     rounded = round(value, 1)
+    # Avoid emitting "-0.0" for values that round to zero.
+    if rounded == 0:
+        rounded = abs(rounded)
     return str(rounded)
 
 

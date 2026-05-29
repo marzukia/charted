@@ -271,11 +271,12 @@ class LineRenderer:
         Returns:
             The closed area-fill ``d`` string.
         """
-        last_x = round_coordinate(x_values[-1] + self.chart.x_offset)
         last_y = round_coordinate(y_values[-1] if y_values else 0)
         first_x = round_coordinate(x_values[0] + self.chart.x_offset)
 
-        return " ".join([line_d, f"L{last_x} {last_y}", f"L{first_x} {last_y}", "Z"])
+        # The line path already ends at the last curve point, so close the
+        # area straight from there across to the first x at the baseline.
+        return " ".join([line_d, f"L{first_x} {last_y}", "Z"])
 
     def _apply_stacking(self, y: float, y_offset: float) -> float:
         """Apply stacking offset to a y-value.

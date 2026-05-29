@@ -96,6 +96,11 @@ CHARTS = {
         labels=["A", "B", "C", "D", "E", "F"],
         curve="cardinal",
     ),
+    "area_curve_cardinal": AreaChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="cardinal",
+    ),
     # Pie charts
     "pie": PieChart(
         data=[45, 30, 15, 10], labels=["Electronics", "Clothing", "Food", "Other"]
