@@ -37,12 +37,14 @@ sys.path.insert(0, str(ROOT))
 from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
+from charted.charts.bubble import BubbleChart
 from charted.charts.column import ColumnChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
 from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
+from charted.charts.polar_area import PolarAreaChart
 from charted.charts.radar import RadarChart
 from charted.charts.scatter import ScatterChart
 
@@ -201,6 +203,17 @@ CHARTS = {
         data=[25, 25, 50],
         labels=["A", "B", "C"],
         show_percentages=True,
+    ),
+    # Bubble chart (scatter with a third size dimension)
+    "bubble_basic": BubbleChart(
+        x_data=[1, 2, 3, 4, 5],
+        y_data=[10, 25, 15, 30, 20],
+        sizes=[5, 30, 12, 45, 18],
+    ),
+    # Polar area chart (equal-angle slices, radius encodes value)
+    "polar_area_basic": PolarAreaChart(
+        data=[10, 20, 30, 15, 25],
+        labels=["A", "B", "C", "D", "E"],
     ),
 }
 
