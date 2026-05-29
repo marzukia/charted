@@ -115,16 +115,15 @@ class ScatterChart(Chart):
             for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
+                title = self._tooltip_title(series_idx, i)
                 # Render marker based on shape
                 if marker_shape == "square":
                     half = marker_size / 2
-                    series.add_child(
-                        Rect(
-                            x=x - half,
-                            y=y - half,
-                            width=marker_size,
-                            height=marker_size,
-                        )
+                    mark = Rect(
+                        x=x - half,
+                        y=y - half,
+                        width=marker_size,
+                        height=marker_size,
                     )
                 elif marker_shape == "diamond":
                     points_str = (
@@ -133,9 +132,15 @@ class ScatterChart(Chart):
                         f"{x},{y + marker_size} "
                         f"{x - marker_size},{y}"
                     )
-                    series.add_child(Path(d=f"M{points_str} Z", fill=fill))
+                    mark = Path(d=f"M{points_str} Z", fill=fill)
                 elif marker_shape != "none":  # circle
-                    series.add_child(Circle(cx=x, cy=y, r=marker_size))
+                    mark = Circle(cx=x, cy=y, r=marker_size)
+                else:
+                    mark = None
+                if mark is not None:
+                    if title is not None:
+                        mark.add_child(title)
+                    series.add_child(mark)
             g.add_children(series)
 
         # Data labels and quadrant labels rendered outside the clip group

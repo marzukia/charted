@@ -1,3 +1,5 @@
+from xml.sax.saxutils import escape as _xml_escape
+
 Children = list["Element"]
 
 
@@ -66,7 +68,8 @@ class Element(object):
             str: A string containing the HTML markup for all child elements.
         """
         return "".join(
-            child.html if type(child) is not str else child for child in self.children
+            child.html if type(child) is not str else _xml_escape(child)
+            for child in self.children
         )
 
     def add_child(self, child: "Element") -> "Element":
@@ -139,6 +142,21 @@ class Path(Element):
 
 class Text(Element):
     tag = "text"
+
+    def __init__(self, text: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.add_child(text)
+
+
+class Title(Element):
+    """Native SVG ``<title>`` element.
+
+    When placed as the first child of a graphics element, browsers show its
+    text as a built-in hover tooltip and expose it as the element's
+    accessible name. Requires no JavaScript.
+    """
+
+    tag = "title"
 
     def __init__(self, text: str = None, **kwargs):
         super().__init__(**kwargs)
