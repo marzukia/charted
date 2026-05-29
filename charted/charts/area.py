@@ -26,6 +26,8 @@ class AreaChart(Chart):
         theme: Optional theme configuration.
         series_names: Names for each series (shown in legend).
         series_styles: Per-series style overrides.
+        annotations: Optional list of annotation objects (LineAnnotation,
+            BoxAnnotation, LabelAnnotation) drawn in the plot area.
 
     Example:
         >>> chart = AreaChart(
@@ -54,6 +56,7 @@ class AreaChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        annotations: list | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
     ):
@@ -74,6 +77,7 @@ class AreaChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            annotations=annotations,
             reference_lines=reference_lines,
             colors=colors,
         )

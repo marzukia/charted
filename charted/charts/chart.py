@@ -197,12 +197,24 @@ class Chart(Svg):
             cfg["v_lines"] = list(self._v_lines)
         if self._annotations:
             cfg["annotations"] = [
-                {"type": a.__class__.__name__, **dataclasses.asdict(a)}
-                if dataclasses.is_dataclass(a)
-                else a
-                for a in self._annotations
+                self._serialize_annotation(a) for a in self._annotations
             ]
         return cfg
+
+    @staticmethod
+    def _serialize_annotation(a):
+        """Serialize one annotation to a JSON-friendly dict.
+
+        Tags the dict with its class name and strips private ``_ref_*`` fields
+        (used only for legacy reference-line markup) so they neither leak nor
+        break reconstruction in ``from_config``.
+        """
+        import dataclasses
+
+        if not dataclasses.is_dataclass(a):
+            return a
+        data = {k: v for k, v in dataclasses.asdict(a).items() if not k.startswith("_")}
+        return {"type": a.__class__.__name__, **data}
 
     @classmethod
     def from_config(cls, config: dict, **overrides) -> "Chart":
@@ -225,6 +237,11 @@ class Chart(Svg):
         merged = dict(config)
         merged.update(overrides)
 
+        # Reconstruct annotation objects from their serialized dict form.
+        # to_config() emits each annotation as {"type": <ClassName>, **asdict(a)}.
+        if "annotations" in merged:
+            merged["annotations"] = cls._rebuild_annotations(merged["annotations"])
+
         chart_type = merged.pop("chart_type", None)
         cls_map = _CHART_CLASSES()
         chart_cls = cls_map.get(chart_type, cls)
@@ -246,6 +263,59 @@ class Chart(Svg):
             filtered["y_data"] = merged["data"]
 
         return chart_cls(**filtered)
+
+    @staticmethod
+    def _rebuild_annotations(annotations: list) -> list:
+        """Reconstruct annotation objects from their serialized dict form.
+
+        ``to_config()`` serializes each annotation as
+        ``{"type": <ClassName>, **dataclasses.asdict(a)}``. This rebuilds the
+        concrete annotation object by dispatching on the ``"type"`` field.
+
+        Handles the round-trip quirks:
+        - Private ``_ref_*`` fields are stripped so they neither leak into a
+          public reconstruction nor break the dataclass constructor.
+        - JSON turns tuples into lists, so point/range fields are coerced back
+          to tuples.
+        """
+        from charted.charts.annotations import (
+            BoxAnnotation,
+            LabelAnnotation,
+            LineAnnotation,
+        )
+
+        type_map = {
+            "LineAnnotation": LineAnnotation,
+            "BoxAnnotation": BoxAnnotation,
+            "LabelAnnotation": LabelAnnotation,
+        }
+        # Fields that are (x, y) / (min, max) pairs and must be tuples.
+        tuple_fields = {"start", "end", "x_range", "y_range", "point"}
+
+        rebuilt: list = []
+        for a in annotations:
+            # Already an annotation object (not a serialized dict): keep as-is.
+            if not isinstance(a, dict):
+                rebuilt.append(a)
+                continue
+
+            data = dict(a)
+            type_name = data.pop("type", None)
+            ann_cls = type_map.get(type_name)
+            if ann_cls is None:
+                # Unknown type: leave the raw dict untouched rather than guess.
+                rebuilt.append(a)
+                continue
+
+            # Strip private fields so they don't leak or break reconstruction.
+            data = {k: v for k, v in data.items() if not k.startswith("_")}
+            # Coerce JSON lists back to tuples for coordinate pairs.
+            for key in tuple_fields:
+                if key in data and isinstance(data[key], list):
+                    data[key] = tuple(data[key])
+
+            rebuilt.append(ann_cls(**data))
+        return rebuilt
 
     # =========================================================================
     # Initialization
@@ -958,13 +1028,14 @@ class Chart(Svg):
     # Reference Lines & Axis Labels
     # =========================================================================
 
-    def _collect_annotations(self) -> list:
-        """Build the full annotation list for this chart.
+    def _collect_legacy_reference_lines(self) -> list:
+        """Build the legacy ``h_lines`` / ``v_lines`` reference-line layer.
 
-        Legacy ``h_lines`` / ``v_lines`` are expressed as dashed
-        ``LineAnnotation`` objects so there is a single rendering path. They
-        come first (in their historical order) to keep output stable, followed
-        by any user-supplied annotations.
+        These are expressed as dashed full-span ``LineAnnotation`` objects so
+        there is a single rendering path. They are kept separate from
+        user-supplied annotations because reference lines span the full plot
+        and are intentionally not clipped, and their markup must stay
+        byte-for-byte identical to historical output.
         """
         from charted.charts.annotations import LineAnnotation
 
@@ -973,26 +1044,49 @@ class Chart(Svg):
             annotations.extend(LineAnnotation._h_line(v) for v in self._h_lines)
         if self._v_lines:
             annotations.extend(LineAnnotation._v_line(v) for v in self._v_lines)
-        annotations.extend(self._annotations)
         return annotations
+
+    def _collect_annotations(self) -> list:
+        """Build the full annotation list for this chart.
+
+        Legacy reference lines (``h_lines`` / ``v_lines``) come first, in their
+        historical order, followed by any user-supplied annotations.
+        """
+        return self._collect_legacy_reference_lines() + list(self._annotations)
 
     def _render_reference_lines(self) -> G | None:
         """Render the annotation layer (reference lines, boxes, labels).
 
         Annotations are positioned in data coordinates and reprojected through
-        the axes, drawn inside the plot-area group.
+        the axes, drawn inside the plot-area group. Legacy full-span reference
+        lines are drawn directly in the group; user annotations are drawn in a
+        nested group clipped to the plot area so out-of-domain boxes/labels
+        cannot bleed over the axes or off-canvas.
         """
-        annotations = self._collect_annotations()
-        if not annotations:
+        legacy = self._collect_legacy_reference_lines()
+        user_annotations = list(self._annotations)
+        if (
+            not legacy
+            and not user_annotations
+            and not getattr(self, "_reference_line_labels", [])
+        ):
             return None
 
         g = G(
             transform=f"translate({self.left_padding}, {self.top_padding})",
         )
-        # Draw all annotations (legacy h/v lines, boxes, lines, labels) through
-        # the single annotation rendering path.
-        for annotation in annotations:
+        # Full-span legacy h/v reference lines are drawn directly (unclipped),
+        # preserving byte-for-byte historical output.
+        for annotation in legacy:
             g.add_child(annotation.render(self))
+
+        # User annotations (boxes, lines, labels) are clipped to the plot area
+        # using the same clip path as the scatter point group.
+        if user_annotations:
+            clipped = G(clip_path="url(#plot-clip)")
+            for annotation in user_annotations:
+                clipped.add_child(annotation.render(self))
+            g.add_child(clipped)
 
         # Render any reference-line labels supplied via the reference_lines API.
         # The lines themselves are already drawn above (as LineAnnotations); this
