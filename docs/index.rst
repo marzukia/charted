@@ -75,6 +75,12 @@ charted provides 6 chart types, all with consistent API:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Guides
+
+   interactivity
+
+.. toctree::
+   :maxdepth: 2
    :caption: API Reference
 
    api/charts
