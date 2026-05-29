@@ -46,6 +46,7 @@ class ColumnChart(Chart):
         height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         y_stacked: bool = True,
@@ -57,6 +58,8 @@ class ColumnChart(Chart):
         v_lines: list[float] | None = None,
         x_scale: object | None = None,
         y_scale: object | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         if column_gap is None:
             column_gap = get_column_gap()
@@ -69,6 +72,7 @@ class ColumnChart(Chart):
             y_data=data,
             x_labels=labels,
             title=title,
+            subtitle=subtitle,
             zero_index=zero_index,
             theme=theme,
             series_names=series_names,
@@ -81,6 +85,8 @@ class ColumnChart(Chart):
             v_lines=v_lines,
             x_scale=x_scale,
             y_scale=y_scale,
+            reference_lines=reference_lines,
+            colors=colors,
         )
 
     @property

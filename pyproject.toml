@@ -23,10 +23,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["svg", "chart", "graph", "visualization", "zero-dependency"]
-dependencies = [
-    "build>=1.5.0",
-    "twine>=6.2.0",
-]
+dependencies = []
 
 [project.urls]
 homepage = "https://github.com/marzukia/charted"
@@ -55,6 +52,9 @@ dev = [
     "mutmut>=2.0.0",
     # Performance benchmarks
     "pytest-benchmark>=4.0.0",
+    # Publishing
+    "build>=1.5.0",
+    "twine>=6.2.0",
 ]
 duckdb = ["duckdb>=0.9"]
 docs = [

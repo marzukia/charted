@@ -257,6 +257,7 @@ class Chart(Svg):
         series_names: list[str] | None = None,
         x_stacked: bool = False,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         chart_type: str | None = None,
         x_label: str | None = None,
@@ -266,6 +267,8 @@ class Chart(Svg):
         v_lines: list[float] | None = None,
         x_scale: object | None = None,
         y_scale: object | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         super().__init__(
             width=width,
@@ -318,8 +321,26 @@ class Chart(Svg):
         self._x_label = x_label
         self._y_label = y_label
         self._data_labels = data_labels
-        self._h_lines = h_lines
-        self._v_lines = v_lines
+        self._h_lines = h_lines or []
+        self._v_lines = v_lines or []
+
+        # Parse reference_lines convenience API into h_lines/v_lines + labels
+        self._reference_line_labels: list[dict] = []
+        if reference_lines:
+            for ref in reference_lines:
+                value = ref["value"]
+                axis = ref.get("axis", "y")
+                label = ref.get("label")
+                if axis == "x":
+                    self._v_lines.append(value)
+                else:
+                    self._h_lines.append(value)
+                self._reference_line_labels.append(
+                    {"value": value, "axis": axis, "label": label}
+                )
+        # Normalize empty lists to None for _render_reference_lines check
+        self._h_lines = self._h_lines or None
+        self._v_lines = self._v_lines or None
 
         # Set internal attributes directly (properties are read-only)
         self._width = width
@@ -327,6 +348,12 @@ class Chart(Svg):
 
         # Load and apply theme using ThemeManager
         self.theme = ThemeManager.load_theme(theme, chart_type)
+
+        # Apply color shorthand: override theme colors if provided
+        if colors:
+            from dataclasses import replace as dc_replace
+
+            self.theme = dc_replace(self.theme, colors=list(colors))
 
         # Set internal padding attributes directly (properties are read-only)
         self._h_padding = self.theme.h_padding
@@ -343,6 +370,16 @@ class Chart(Svg):
             )
         else:
             self._title = None
+
+        # Set subtitle
+        if subtitle:
+            self._subtitle = calculate_text_dimensions(
+                subtitle,
+                font=self.theme.title_font_family,
+                font_size=self.theme.title_font_size - 4,
+            )
+        else:
+            self._subtitle = None
 
         # Initialize LayoutEngine for layout calculations
         self.layout = LayoutEngine(
@@ -496,7 +533,7 @@ class Chart(Svg):
         defs = Defs()
         defs.add_child(plot_clip)
 
-        children = [self.container, self.title, defs]
+        children = [self.container, self.title, self.subtitle_element, defs]
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
@@ -701,6 +738,32 @@ class Chart(Svg):
             font_size=self.theme.title_font_size,
             x=self.width / 2,
             y=self.v_pad / 2,
+        )
+
+    @property
+    def subtitle_element(self) -> Text | None:
+        """Render subtitle as smaller text below the title."""
+        if not self._subtitle:
+            return None
+        subtitle_font_size = self.theme.title_font_size - 4
+        # Position below the title (or at top if no title)
+        if self._title:
+            y_pos = self.v_pad / 2 + self._title.height + subtitle_font_size
+        else:
+            y_pos = self.v_pad / 2 + subtitle_font_size
+        return Text(
+            transform=[
+                translate(
+                    x=-self._subtitle.width / 2,
+                    y=self._subtitle.height,
+                )
+            ],
+            text=self._subtitle.text,
+            fill=self.theme.title_color,
+            font_family=self.theme.title_font_family,
+            font_size=subtitle_font_size,
+            x=self.width / 2,
+            y=y_pos,
         )
 
     @property
@@ -977,6 +1040,13 @@ class Chart(Svg):
         )
 
         ref_color = self.theme.resolved_reference_line_color
+        label_font_size = max(8, self.theme.title_font_size - 4)
+        label_font_family = self.theme.title_font_family
+
+        # Build a lookup for reference line labels
+        ref_labels = {}
+        for entry in getattr(self, "_reference_line_labels", []):
+            ref_labels[(entry["axis"], entry["value"])] = entry.get("label")
 
         if self._h_lines:
             for val in self._h_lines:
@@ -990,6 +1060,19 @@ class Chart(Svg):
                         fill="none",
                     )
                 )
+                label = ref_labels.get(("y", val))
+                if label:
+                    g.add_child(
+                        Text(
+                            text=label,
+                            x=self.plot_width - 4,
+                            y=y - 4,
+                            fill=ref_color,
+                            font_size=label_font_size,
+                            font_family=label_font_family,
+                            text_anchor="end",
+                        )
+                    )
 
         if self._v_lines:
             for val in self._v_lines:
@@ -1003,6 +1086,19 @@ class Chart(Svg):
                         fill="none",
                     )
                 )
+                label = ref_labels.get(("x", val))
+                if label:
+                    g.add_child(
+                        Text(
+                            text=label,
+                            x=x + 4,
+                            y=label_font_size,
+                            fill=ref_color,
+                            font_size=label_font_size,
+                            font_family=label_font_family,
+                            text_anchor="start",
+                        )
+                    )
 
         return g
 

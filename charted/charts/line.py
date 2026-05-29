@@ -56,6 +56,7 @@ class LineChart(Chart):
         height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
@@ -67,6 +68,8 @@ class LineChart(Chart):
         v_lines: list[float] | None = None,
         x_scale: object | None = None,
         y_scale: object | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         self.markers = markers
         super().__init__(
@@ -76,6 +79,7 @@ class LineChart(Chart):
             width=width,
             height=height,
             title=title,
+            subtitle=subtitle,
             zero_index=zero_index,
             theme=theme,
             series_names=series_names,
@@ -88,6 +92,8 @@ class LineChart(Chart):
             v_lines=v_lines,
             x_scale=x_scale,
             y_scale=y_scale,
+            reference_lines=reference_lines,
+            colors=colors,
         )
 
     @property
