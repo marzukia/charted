@@ -4,6 +4,7 @@ from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Text
 from charted.themes.core import Theme
+from charted.utils.curves import VALID_CURVES
 from charted.utils.line_renderer import LineRenderer
 from charted.utils.series_style import SeriesStyleConfig
 from charted.utils.types import Labels, Vector, Vector2D
@@ -46,6 +47,7 @@ class LineChart(Chart):
 
     pad_x_labels: bool = False
     markers: bool = False
+    curve: str = "linear"
 
     def __init__(
         self,
@@ -66,12 +68,18 @@ class LineChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        curve: str = "linear",
         x_scale: object | None = None,
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
     ):
+        if curve not in VALID_CURVES:
+            raise ValueError(
+                f"Unknown curve {curve!r}. Valid options: {', '.join(VALID_CURVES)}"
+            )
         self.markers = markers
+        self.curve = curve
         super().__init__(
             y_data=data,
             x_data=x_data,

@@ -233,6 +233,75 @@ def test_line_chart_multi_series_png():
     compare_png_baseline(chart, "line_multi", tolerance=5)
 
 
+def test_line_chart_curve_step():
+    """Visual regression test for step-curve LineChart (SVG structure)."""
+    chart = LineChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="step",
+    )
+    baseline_path = BASELINES_DIR / "line_curve_step.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_line_chart_curve_step_png():
+    """Visual regression test for step-curve LineChart (PNG pixel-perfect)."""
+    chart = LineChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="step",
+    )
+    compare_png_baseline(chart, "line_curve_step", tolerance=5)
+
+
+def test_line_chart_curve_cardinal():
+    """Visual regression test for cardinal-curve LineChart (SVG structure)."""
+    chart = LineChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="cardinal",
+    )
+    baseline_path = BASELINES_DIR / "line_curve_cardinal.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_line_chart_curve_cardinal_png():
+    """Visual regression test for cardinal-curve LineChart (PNG pixel-perfect)."""
+    chart = LineChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="cardinal",
+    )
+    compare_png_baseline(chart, "line_curve_cardinal", tolerance=5)
+
+
+def test_area_chart_curve_cardinal():
+    """Visual regression test for cardinal-curve AreaChart (SVG structure)."""
+    chart = AreaChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="cardinal",
+    )
+    baseline_path = BASELINES_DIR / "area_curve_cardinal.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_area_chart_curve_cardinal_png():
+    """Visual regression test for cardinal-curve AreaChart (PNG pixel-perfect)."""
+    chart = AreaChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="cardinal",
+    )
+    compare_png_baseline(chart, "area_curve_cardinal", tolerance=5)
+
+
 def test_scatter_chart_multi_series():
     """Visual regression test for multi-series ScatterChart (SVG structure)."""
     chart = ScatterChart(
