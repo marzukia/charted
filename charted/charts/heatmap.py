@@ -294,11 +294,12 @@ class HeatmapChart(Chart):
             Text(
                 text=format(self._data_min, self.value_format),
                 x=bar_x + bar_width / 2,
-                y=bar_y + bar_height,
+                y=bar_y + bar_height + 4,
                 fill=label_color,
                 font_family=font_family,
                 font_size=label_font_size,
                 text_anchor="middle",
+                dominant_baseline="hanging",
             )
         )
         result.add_child(
