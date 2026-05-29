@@ -113,6 +113,47 @@ Cardinal interpolation draws a smooth spline through every point::
    chart.save("line_curve_cardinal.svg")
 
 .. image:: ../examples/line_curve_cardinal.svg
+Log Scale
+---------
+
+Use ``y_scale="log"`` when the data spans several orders of magnitude. Tick labels fall on powers of ten and all values must be positive::
+
+   chart = LineChart(
+       title="Requests per Second (log scale)",
+       data=[12, 140, 1300, 9800, 75000],
+       labels=["v1", "v2", "v3", "v4", "v5"],
+       y_scale="log",
+   )
+   chart.save("line_log_y.svg")
+
+.. image:: ../examples/line_log_y.svg
+   :width: 100%
+
+The same option works on the x-axis via ``x_scale="log"``.
+
+Time Axis
+---------
+
+Pass date or datetime values as ``x_data`` together with ``x_scale="time"`` to get a date-aware axis with formatted tick labels. ISO date strings are accepted too::
+
+   from datetime import date
+
+   chart = LineChart(
+       title="Active Users Over Time",
+       data=[120, 180, 210, 260, 240, 310],
+       x_data=[
+           date(2024, 1, 1),
+           date(2024, 3, 1),
+           date(2024, 5, 1),
+           date(2024, 7, 1),
+           date(2024, 9, 1),
+           date(2024, 11, 1),
+       ],
+       x_scale="time",
+   )
+   chart.save("line_time_x.svg")
+
+.. image:: ../examples/line_time_x.svg
    :width: 100%
 
 Configuration Options

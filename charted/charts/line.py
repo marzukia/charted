@@ -69,6 +69,8 @@ class LineChart(Chart):
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
         curve: str = "linear",
+        x_scale: object | None = None,
+        y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
     ):
@@ -96,6 +98,8 @@ class LineChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            x_scale=x_scale,
+            y_scale=y_scale,
             reference_lines=reference_lines,
             colors=colors,
         )

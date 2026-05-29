@@ -21,8 +21,9 @@
   "gantt_basic.png": "406d82e6f9c7570665770edb5cf514bdfcc8ba49464a9a5a9659313768b20ae5",
   "gantt_dependencies.png": "48f9bdd3fb6c10d7f8ea5c5cefafecaddc34b8ce7654ee2990ec2fa89634d773",
   "gantt_multi.png": "6e5435c6ba567497628a83698ba8760e1687de7d2bb16f49e022dd4cb8617cc7",
-  "heatmap_basic.png": "589138721dd9692bad03d6ebed335c85a089d744a00202b92f0aa66fe3f2dc77",
-  "heatmap_rectangular.png": "296c7dd151e9062d053324a78e36c73ab8be4ff15c3fb0305b0536c6d1dc0350",
+  "heatmap_basic.png": "ab76b6a2b07489805e4d0605c1822fff3bc67b434f2768f258813b66d84d56e2",
+  "heatmap_rectangular.png": "a68c3b54922a2ce4f9b27e9bd73307450c2bf89025d2a243244f5af7a81f445b",
+  "heatmap_continuous.png": "4ec23c865d5691c641ed51234bafdc1de365ff79b7b0ad875af593fb85f1927f",
   "area_basic.png": "0bc14b845eab46736b3149af2bef21a203d94602973e38243d389628d9725ee2",
   "boxplot_basic.png": "e9e80d2edf5b8c46ce5c1dbf436e7ea2656da951986a4b91102059b29a6cf522",
   "histogram_basic.png": "20c4dfbe8c62d78ab31676f923a54505c4faba78efd378913f5d5df65e170d47",
@@ -35,5 +36,11 @@
   "column_data_labels.png": "ca5223c17e6998fb71d1d303a855bf6463db7afda756ef9685f34d84217f34ef",
   "scatter_axis_titles.png": "cfd2b6b069a880a5e7f4b73512afaa2f3e23001544330235c852156430df2cc8",
   "scatter_reference_lines.png": "0592c57ba929cba2c94f953afe5511f06a7f72b019afc8c7cebfd464cd7c3531",
-  "pie_percentages.png": "d3f92a8d91b1e6b3ffad8c0dfaa236b7d206757e30c03a9ebab15125b222de13"
+  "pie_percentages.png": "d3f92a8d91b1e6b3ffad8c0dfaa236b7d206757e30c03a9ebab15125b222de13",
+  "line_log_y.png": "1104bfff019bf58b68f32e4863160e42c6c8bd9f0e81f39b9bda534ad6077685",
+  "line_time_x.png": "7637f20fbb0209bf5a162676edadee89bf31300d5bf13995076f1bf239c822eb",
+  "bubble_basic.png": "ed0dd670c6e0dabf3608b3bbd771b81c8aea21c041671eb5b70b2cfc0f6ce4f4",
+  "polar_area_basic.png": "6ea27d6b5b7accd373520be3fb74fc4c3e77844c423da012fdbe33190e75d0a6",
+  "combo_basic.png": "7341e18bff1466125d0cc137cf87ec26b03365b1b5c0615aaf11e7bb810bcc10",
+  "combo_secondary_axis.png": "4b7142b31c388d9960273b1f487b82c661e4735d135f66d6b75f70e517def9ac"
 }

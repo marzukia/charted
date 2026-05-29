@@ -74,18 +74,34 @@ class LineRenderer:
             transform=[*self.chart.get_base_transform()],
         )
 
-        # Compute x positions spanning the full plot area
-        # Labels sit at i/(n-1) * plot_w, from 0 to plot_w
-        n = self.chart.x_count
-        plot_w = self.chart.plot_width
-        if n > 1:
-            x_positions = [i / (n - 1) * plot_w for i in range(n)]
-        else:
-            x_positions = [plot_w / 2]
-        # Share the same x_positions for all series
-        x_positions_by_series = [x_positions] * len(self.chart.y_values or [])
+        num_series = len(self.chart.y_values or [])
 
-        colors = self._color_manager.ensure_palette_size(len(self.chart.y_values or []))
+        # X positions: use the chart's reprojected band centers so the line
+        # vertices land on the same category positions as columns/x-ticks.
+        # For an ordinal LineChart (pad_x_labels=False, x_offset=0) these are
+        # identical to the previous i/(n-1)*plot_w spacing; for ComboChart they
+        # honour the column-band label padding so bars and the line coincide.
+        chart_x_values = getattr(self.chart, "x_values", None)
+        if chart_x_values:
+            x_positions_by_series = [list(row) for row in chart_x_values]
+            # Match against y_values length in case the proxy exposes fewer rows.
+            while len(x_positions_by_series) < num_series:
+                x_positions_by_series.append(list(x_positions_by_series[0]))
+        else:
+            n = self.chart.x_count
+            plot_w = self.chart.plot_width
+            if n > 1:
+                x_positions = [i / (n - 1) * plot_w for i in range(n)]
+            else:
+                x_positions = [plot_w / 2]
+            x_positions_by_series = [x_positions] * num_series
+
+        # Honour the chart's resolved per-series colors (so the rendered line
+        # matches its legend swatch) rather than re-deriving by line position.
+        colors = getattr(self.chart, "colors", None)
+        if not colors:
+            colors = self._color_manager.ensure_palette_size(num_series)
+
         for series_idx, (y_values, y_offsets, x_values, color) in enumerate(
             zip(
                 self.chart.y_values,
@@ -154,7 +170,9 @@ class LineRenderer:
 
         # Build the line path according to the chart's curve setting.
         # "linear" reuses the exact M/L string the chart has always emitted.
-        line_d = curve_path(self.chart.curve, points)
+        # Charts that borrow the renderer without a curve setting (e.g. the
+        # combo chart's line proxy) default to linear.
+        line_d = curve_path(getattr(self.chart, "curve", "linear"), points)
 
         # Add line to series
         line = Path(d=line_d, fill="none")

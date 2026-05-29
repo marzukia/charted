@@ -28,6 +28,7 @@ Only update baselines when visual changes are INTENTIONAL.
 ============================================================
 """
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -36,12 +37,15 @@ from lxml import etree
 from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
+from charted.charts.bubble import BubbleChart
 from charted.charts.column import ColumnChart
+from charted.charts.combo import ComboChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
 from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
+from charted.charts.polar_area import PolarAreaChart
 from charted.charts.scatter import ScatterChart
 
 # ============================================================
@@ -530,6 +534,31 @@ def test_heatmap_chart_rectangular_png():
     compare_png_baseline(chart, "heatmap_rectangular", tolerance=5)
 
 
+def test_heatmap_chart_continuous():
+    """Visual regression test for continuous color_scale HeatmapChart (SVG)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
+    )
+    baseline_path = BASELINES_DIR / "heatmap_continuous.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_heatmap_chart_continuous_png():
+    """Visual regression test for continuous color_scale HeatmapChart (PNG)."""
+    chart = HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
+    )
+    compare_png_baseline(chart, "heatmap_continuous", tolerance=5)
+
+
 # ============================================================
 # New Chart Type Tests: Area, BoxPlot, Histogram
 # ============================================================
@@ -800,3 +829,182 @@ def test_pie_percentages_png():
         show_percentages=True,
     )
     compare_png_baseline(chart, "pie_percentages", tolerance=5)
+
+
+# ============================================================
+# Combo Chart Visual Regression Tests (mixed bar + line)
+# ============================================================
+
+
+def test_combo_chart_basic():
+    """Visual regression test for basic ComboChart (SVG structure)."""
+    chart = ComboChart(
+        series=[
+            {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+            {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+        ],
+        labels=["Q1", "Q2", "Q3"],
+    )
+    baseline_path = BASELINES_DIR / "combo_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_combo_chart_basic_png():
+    """Visual regression test for basic ComboChart (PNG pixel-perfect)."""
+    chart = ComboChart(
+        series=[
+            {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+            {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+        ],
+        labels=["Q1", "Q2", "Q3"],
+    )
+    compare_png_baseline(chart, "combo_basic", tolerance=5)
+
+
+def test_combo_chart_secondary_axis():
+    """Visual regression test for ComboChart with secondary axis (SVG structure)."""
+    chart = ComboChart(
+        series=[
+            {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+            {
+                "data": [2.5, 3.1, 2.8],
+                "type": "line",
+                "name": "Conversion %",
+                "axis": "secondary",
+            },
+        ],
+        labels=["Jan", "Feb", "Mar"],
+    )
+    baseline_path = BASELINES_DIR / "combo_secondary_axis.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_combo_chart_secondary_axis_png():
+    """Visual regression test for ComboChart with secondary axis (PNG pixel-perfect)."""
+    chart = ComboChart(
+        series=[
+            {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+            {
+                "data": [2.5, 3.1, 2.8],
+                "type": "line",
+                "name": "Conversion %",
+                "axis": "secondary",
+            },
+        ],
+        labels=["Jan", "Feb", "Mar"],
+    )
+    compare_png_baseline(chart, "combo_secondary_axis", tolerance=5)
+
+
+# ============================================================
+
+
+def test_bubble_chart_basic():
+    """Visual regression test for basic BubbleChart (SVG structure)."""
+    chart = BubbleChart(
+        x_data=[1, 2, 3, 4, 5],
+        y_data=[10, 25, 15, 30, 20],
+        sizes=[5, 30, 12, 45, 18],
+    )
+    baseline_path = BASELINES_DIR / "bubble_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_bubble_chart_basic_png():
+    """Visual regression test for basic BubbleChart (PNG pixel-perfect)."""
+    chart = BubbleChart(
+        x_data=[1, 2, 3, 4, 5],
+        y_data=[10, 25, 15, 30, 20],
+        sizes=[5, 30, 12, 45, 18],
+    )
+    compare_png_baseline(chart, "bubble_basic", tolerance=5)
+
+
+def test_polar_area_chart_basic():
+    """Visual regression test for basic PolarAreaChart (SVG structure)."""
+    chart = PolarAreaChart(
+        data=[10, 20, 30, 15, 25],
+        labels=["A", "B", "C", "D", "E"],
+    )
+    baseline_path = BASELINES_DIR / "polar_area_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_polar_area_chart_basic_png():
+    """Visual regression test for basic PolarAreaChart (PNG pixel-perfect)."""
+    chart = PolarAreaChart(
+        data=[10, 20, 30, 15, 25],
+        labels=["A", "B", "C", "D", "E"],
+    )
+    compare_png_baseline(chart, "polar_area_basic", tolerance=5)
+
+
+# ============================================================
+# Log / Time Scale Visual Regression Tests
+# ============================================================
+
+
+def test_line_log_y():
+    """Visual regression test for LineChart with a log y-scale (SVG structure)."""
+    chart = LineChart(
+        data=[1, 10, 100, 1000, 10000],
+        labels=["a", "b", "c", "d", "e"],
+        y_scale="log",
+    )
+    baseline_path = BASELINES_DIR / "line_log_y.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_line_log_y_png():
+    """Visual regression test for LineChart with a log y-scale (PNG pixel-perfect)."""
+    chart = LineChart(
+        data=[1, 10, 100, 1000, 10000],
+        labels=["a", "b", "c", "d", "e"],
+        y_scale="log",
+    )
+    compare_png_baseline(chart, "line_log_y", tolerance=5)
+
+
+def test_line_time_x():
+    """Visual regression test for LineChart with a time x-axis (SVG structure)."""
+
+    chart = LineChart(
+        data=[10, 25, 18, 40],
+        x_data=[
+            date(2024, 1, 1),
+            date(2024, 4, 1),
+            date(2024, 8, 1),
+            date(2024, 12, 1),
+        ],
+        x_scale="time",
+    )
+    baseline_path = BASELINES_DIR / "line_time_x.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_line_time_x_png():
+    """Visual regression test for LineChart with a time x-axis (PNG pixel-perfect)."""
+
+    chart = LineChart(
+        data=[10, 25, 18, 40],
+        x_data=[
+            date(2024, 1, 1),
+            date(2024, 4, 1),
+            date(2024, 8, 1),
+            date(2024, 12, 1),
+        ],
+        x_scale="time",
+    )
+    compare_png_baseline(chart, "line_time_x", tolerance=5)

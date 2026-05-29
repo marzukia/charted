@@ -7,10 +7,13 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from charted.utils.colors import (
+    _parse_color_to_rgb,
     calculate_contrast_ratio,
     complementary_color,
     get_contrast_color,
     hex_to_rgb,
+    interpolate_color,
+    interpolate_palette,
     is_valid_hex_color,
     rgb_to_hex,
 )
@@ -168,3 +171,37 @@ def test_contrast_ratio_rejects_invalid_input(fg, bg):
     if not is_valid_hex_color(fg) or not is_valid_hex_color(bg):
         with pytest.raises((ValueError, TypeError)):
             calculate_contrast_ratio(fg, bg)
+
+
+@given(a=hex6, b=hex6, t=st.floats(min_value=0.0, max_value=1.0))
+@settings(max_examples=200)
+def test_interpolate_color_returns_parseable_hex(a, b, t):
+    result = interpolate_color(a, b, t)
+    assert re.match(r"^#[A-Fa-f0-9]{6}$", result)
+    _parse_color_to_rgb(result)
+
+
+@given(t=st.floats(min_value=0.0, max_value=1.0))
+@settings(max_examples=150)
+def test_interpolate_palette_returns_parseable_hex(t):
+    for palette in ("viridis", "inferno", "ocean", ["#000000", "#ff0000", "#ffffff"]):
+        result = interpolate_palette(palette, t)
+        assert re.match(r"^#[A-Fa-f0-9]{6}$", result)
+        _parse_color_to_rgb(result)
+
+
+@given(
+    a=hex6,
+    b=hex6,
+    t=st.floats(allow_nan=False, allow_infinity=False, min_value=-100, max_value=100),
+)
+@settings(max_examples=150)
+def test_interpolate_color_channels_within_bounds(a, b, t):
+    """Interpolated channels never escape the endpoint range (clamped t)."""
+    result = interpolate_color(a, b, t)
+    ra, ga, ba = hex_to_rgb(a)
+    rb, gb, bb = hex_to_rgb(b)
+    rr, gr, br = hex_to_rgb(result)
+    assert min(ra, rb) <= rr <= max(ra, rb)
+    assert min(ga, gb) <= gr <= max(ga, gb)
+    assert min(ba, bb) <= br <= max(ba, bb)

@@ -28,6 +28,7 @@ import pathlib
 import random
 import stat
 import sys
+from datetime import date
 from typing import Optional
 
 # Ensure the package root is on the path.
@@ -37,12 +38,15 @@ sys.path.insert(0, str(ROOT))
 from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
+from charted.charts.bubble import BubbleChart
 from charted.charts.column import ColumnChart
+from charted.charts.combo import ComboChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
 from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
+from charted.charts.polar_area import PolarAreaChart
 from charted.charts.radar import RadarChart
 from charted.charts.scatter import ScatterChart
 
@@ -144,6 +148,12 @@ CHARTS = {
         x_labels=["A", "B", "C", "D"],
         y_labels=["X", "Y"],
     ),
+    "heatmap_continuous": HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
+    ),
     # Area chart
     "area_basic": AreaChart(
         data=[15, 30, 45, 70, 55, 80, 75, 90, 85, 95],
@@ -217,6 +227,53 @@ CHARTS = {
         data=[25, 25, 50],
         labels=["A", "B", "C"],
         show_percentages=True,
+    ),
+    # Log and time scales
+    "line_log_y": LineChart(
+        data=[1, 10, 100, 1000, 10000],
+        labels=["a", "b", "c", "d", "e"],
+        y_scale="log",
+    ),
+    "line_time_x": LineChart(
+        data=[10, 25, 18, 40],
+        x_data=[
+            date(2024, 1, 1),
+            date(2024, 4, 1),
+            date(2024, 8, 1),
+            date(2024, 12, 1),
+        ],
+        x_scale="time",
+    ),
+    # Bubble chart (scatter with a third size dimension)
+    "bubble_basic": BubbleChart(
+        x_data=[1, 2, 3, 4, 5],
+        y_data=[10, 25, 15, 30, 20],
+        sizes=[5, 30, 12, 45, 18],
+    ),
+    # Polar area chart (equal-angle slices, radius encodes value)
+    "polar_area_basic": PolarAreaChart(
+        data=[10, 20, 30, 15, 25],
+        labels=["A", "B", "C", "D", "E"],
+    ),
+    # Combo charts (mixed bar + line on shared axes)
+    "combo_basic": ComboChart(
+        series=[
+            {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+            {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+        ],
+        labels=["Q1", "Q2", "Q3"],
+    ),
+    "combo_secondary_axis": ComboChart(
+        series=[
+            {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+            {
+                "data": [2.5, 3.1, 2.8],
+                "type": "line",
+                "name": "Conversion %",
+                "axis": "secondary",
+            },
+        ],
+        labels=["Jan", "Feb", "Mar"],
     ),
 }
 
