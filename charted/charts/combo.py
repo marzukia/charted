@@ -292,16 +292,12 @@ class ComboChart(Chart):
             renderer = LineRenderer(proxy)
             g.add_child(renderer.render())
 
-        return g
+        # Secondary y-axis tick labels, rendered into the normal element tree so
+        # .html and .svg agree (the CLI and visual tests render .html).
+        if self.has_secondary_axis:
+            g.add_child(self._render_secondary_axis())
 
-    @property
-    def svg(self) -> str:
-        base = super().svg
-        # Inject the secondary axis tick labels on the right edge.
-        if not self.has_secondary_axis:
-            return base
-        labels_svg = self._render_secondary_axis().html
-        return base.replace("</svg>", f"{labels_svg}</svg>")
+        return g
 
     def _render_secondary_axis(self) -> G:
         """Render secondary y-axis tick labels anchored on the right side."""
