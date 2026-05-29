@@ -184,6 +184,8 @@ class Chart(Svg):
             "series_names": self.series_names,
             "x_stacked": self.x_stacked,
             "zero_index": self.zero_index,
+            "x_scale": self.x_scale,
+            "y_scale": self.y_scale,
         }
         if self.data_model:
             cfg["x_data"] = self.data_model.x_data
@@ -262,12 +264,26 @@ class Chart(Svg):
         data_labels: list[str] | list[list[str]] | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        x_scale: object | None = None,
+        y_scale: object | None = None,
     ):
         super().__init__(
             width=width,
             height=height,
             viewBox=f"0 0 {width} {height}",
         )
+
+        # Record the requested scale specs (string or Scale instance) for
+        # to_config()/describe(); default is linear so existing charts are
+        # unchanged.
+        self._x_scale_spec = x_scale
+        self._y_scale_spec = y_scale
+
+        # Time scales accept dates/datetimes/ISO strings. DataModel only
+        # handles numeric data, so convert time x_data to epoch seconds here
+        # while remembering the original domain for the scale.
+        if self._is_time_scale(x_scale) and x_data is not None:
+            x_data = self._normalize_time_data(x_data)
 
         # Validate and normalize data using DataModel
         if not x_data and not y_data:
@@ -341,6 +357,13 @@ class Chart(Svg):
             has_y_axis_label=bool(y_label),
         )
 
+        # Build scale instances from the data domain. None/linear leaves the
+        # axis on its default LinearScale path (behaviour unchanged).
+        x_scale_inst = self._build_scale(x_scale, self.x_data)
+        y_scale_inst = self._build_scale(y_scale, self.y_data)
+        self._x_scale = x_scale_inst
+        self._y_scale = y_scale_inst
+
         # Initialize axes
         self.x_axis = XAxis(
             parent=self,
@@ -354,6 +377,7 @@ class Chart(Svg):
             ),
             config=self.theme.resolved_grid_color,
             pad_labels=self.pad_x_labels,
+            scale=x_scale_inst,
         )
 
         self.y_axis = YAxis(
@@ -363,6 +387,7 @@ class Chart(Svg):
             stacked=self.y_stacked,
             zero_index=self.zero_index,
             config=self.theme.resolved_grid_color,
+            scale=y_scale_inst,
         )
 
         # Initialize internal offsets and values directly (properties are read-only)
@@ -440,8 +465,14 @@ class Chart(Svg):
                 row_offsets.append(current_offset)
             offsets.append(row_offsets)
 
-        # Transform offsets through y_axis
-        self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
+        # Transform offsets through y_axis. Stacking is undefined on log/time
+        # scales (no meaningful zero), so offsets collapse to zero pixels.
+        if self._y_scale is not None and self._y_scale.name != "linear":
+            self._y_offsets = [[0.0] * len(arr) for arr in offsets]
+        else:
+            self._y_offsets = [
+                [self.y_axis.reproject(y) for y in arr] for arr in offsets
+            ]
 
         # Initialize ColorManager for automatic color cycling
         self._color_manager = ColorManager(colors=self.theme.colors)
@@ -495,6 +526,57 @@ class Chart(Svg):
         if axis_labels:
             children.extend(axis_labels)
         self.add_children(*children)
+
+    # =========================================================================
+    # Scale Helpers
+    # =========================================================================
+
+    @staticmethod
+    def _is_time_scale(spec: object | None) -> bool:
+        from charted.charts.scales import TimeScale
+
+        return spec == "time" or isinstance(spec, TimeScale)
+
+    @staticmethod
+    def _normalize_time_data(x_data: Vector | Vector2D) -> Vector | Vector2D:
+        """Convert date/datetime/ISO-string x-data into epoch seconds."""
+        from charted.charts.scales import _to_epoch
+
+        def conv(seq):
+            return [_to_epoch(v) for v in seq]
+
+        if x_data and isinstance(x_data[0], list):
+            return [conv(row) for row in x_data]
+        return conv(x_data)
+
+    def _build_scale(self, spec: object | None, data: Vector2D):
+        """Construct a Scale instance for an axis from its data domain.
+
+        Returns None for the default linear case so the axis keeps its
+        original tick math untouched.
+        """
+        from charted.charts.scales import Scale, make_scale
+
+        if spec is None or spec == "linear":
+            return None
+        flat = [v for row in data for v in row] if data else []
+        if not flat:
+            domain_min, domain_max = 0.0, 1.0
+        else:
+            domain_min, domain_max = min(flat), max(flat)
+        if isinstance(spec, Scale):
+            return spec
+        return make_scale(spec, domain_min, domain_max)
+
+    @property
+    def x_scale(self) -> str:
+        """Name of the x-axis scale ('linear', 'log', or 'time')."""
+        return self._x_scale.name if self._x_scale is not None else "linear"
+
+    @property
+    def y_scale(self) -> str:
+        """Name of the y-axis scale ('linear', 'log', or 'time')."""
+        return self._y_scale.name if self._y_scale is not None else "linear"
 
     # =========================================================================
     # Data Properties (read-only, delegated to DataModel)
@@ -739,9 +821,7 @@ class Chart(Svg):
             )
 
         stroke_color = (
-            self.theme.resolved_axis_border_color
-            if hasattr(self, "theme")
-            else "black"
+            self.theme.resolved_axis_border_color if hasattr(self, "theme") else "black"
         )
 
         return create_zero_line_path(
@@ -880,6 +960,7 @@ class Chart(Svg):
             "theme": "default",
             "has_negative_values": has_negative,
             "stacked": stacked,
+            "scales": {"x": self.x_scale, "y": self.y_scale},
         }
 
     # =========================================================================

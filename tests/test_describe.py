@@ -1,6 +1,5 @@
 """Tests for Chart.describe() method (Issue #14)."""
 
-
 from charted.charts.bar import BarChart
 from charted.charts.column import ColumnChart
 from charted.charts.line import LineChart
@@ -33,6 +32,7 @@ class TestDescribeReturnStructure:
             "theme",
             "has_negative_values",
             "stacked",
+            "scales",
         }
         assert expected_keys == set(result.keys())
 

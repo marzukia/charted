@@ -22,6 +22,7 @@ class Axis(G):
         zero_index: bool = True,
         config: str | None = None,
         pad_labels: bool = True,
+        scale: object | None = None,
     ):
         if not data and not labels:
             raise Exception("Need labels or data.")
@@ -33,10 +34,35 @@ class Axis(G):
         self.stacked = stacked
         self.data = data
         self.parent = parent
-        self.values = (data, labels, zero_index)
-        self.labels = labels
+        # A None scale means the default LinearScale: existing behaviour is
+        # preserved byte-for-byte. Non-linear scales (log/time) own their tick
+        # positions and labels and override reproject/reverse.
+        self.scale = scale
+        if scale is not None and getattr(scale, "name", "linear") != "linear":
+            self._init_with_scale(data, labels, zero_index)
+        else:
+            self.values = (data, labels, zero_index)
+            self.labels = labels
         self.config = config
         self.add_children(self.grid_lines, self.axis_labels)
+
+    def _init_with_scale(self, data, labels, zero_index) -> None:
+        """Set tick values and labels from a non-linear scale."""
+        from charted.utils.types import AxisDimension
+
+        tick_values = self.scale.ticks()
+        self.axis_dimension = AxisDimension(
+            self.scale.min_value, self.scale.max_value, len(tick_values)
+        )
+        self._values = list(tick_values)
+        self._grid_line_values = list(tick_values)
+        # Scale-provided labels (e.g. formatted dates) take priority.
+        if hasattr(self.scale, "tick_labels"):
+            self._labels = [
+                calculate_text_dimensions(text) for text in self.scale.tick_labels()
+            ]
+        else:
+            self.labels = [str(v) for v in tick_values]
 
     @classmethod
     def _reproject(
@@ -193,6 +219,10 @@ class Axis(G):
 
     @property
     def zero(self) -> float:
+        # Zero has no meaning on a log scale (and may be outside a time
+        # domain), so anchor the zero line at the axis origin instead.
+        if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
+            return 0.0
         return self.reproject(0)
 
     @property
@@ -276,6 +306,8 @@ class Axis(G):
 
 class XAxis(Axis):
     def reproject(self, value: float) -> float:
+        if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
+            return self.scale.reproject(value, self.parent.plot_width)
         return self._reproject(
             value,
             self.axis_dimension.max_value,
@@ -285,6 +317,8 @@ class XAxis(Axis):
         )
 
     def reverse(self, value: float) -> float:
+        if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
+            return self.scale.reverse(value, self.parent.plot_width)
         return self._reverse(
             value,
             self.axis_dimension.max_value,
@@ -371,6 +405,8 @@ class XAxis(Axis):
 
 class YAxis(Axis):
     def reproject(self, value: float) -> float:
+        if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
+            return self.scale.reproject(value, self.parent.plot_height)
         return self._reproject(
             value,
             self.axis_dimension.max_value,
@@ -380,6 +416,8 @@ class YAxis(Axis):
         )
 
     def reverse(self, value: float) -> float:
+        if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
+            return self.scale.reverse(value, self.parent.plot_height)
         return self._reverse(
             value,
             self.axis_dimension.max_value,

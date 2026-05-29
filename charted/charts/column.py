@@ -55,6 +55,8 @@ class ColumnChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        x_scale: object | None = None,
+        y_scale: object | None = None,
     ):
         if column_gap is None:
             column_gap = get_column_gap()
@@ -77,6 +79,8 @@ class ColumnChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            x_scale=x_scale,
+            y_scale=y_scale,
         )
 
     @property
@@ -140,7 +144,11 @@ class ColumnChart(Chart):
                         fill = style["fill"]
 
                 has_fill_override = fill != color
-                per_bar = len(self.y_values) == 1 and len(self.colors) > 1 and not has_fill_override
+                per_bar = (
+                    len(self.y_values) == 1
+                    and len(self.colors) > 1
+                    and not has_fill_override
+                )
                 paths = []
                 for x_idx, y in enumerate(y_values_series):
                     x = self.x_offset + x_idx * (

@@ -49,6 +49,8 @@ class AreaChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        x_scale: object | None = None,
+        y_scale: object | None = None,
     ):
         self.fill_opacity = fill_opacity
         super().__init__(
@@ -62,6 +64,8 @@ class AreaChart(Chart):
             series_names=series_names,
             series_styles=series_styles,
             chart_type="area",
+            x_scale=x_scale,
+            y_scale=y_scale,
         )
 
     @property
