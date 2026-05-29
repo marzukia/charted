@@ -85,6 +85,17 @@ CHARTS = {
         labels=["a", "b", "c"],
         series_names=["Series 1", "Series 2"],
     ),
+    # Curve interpolation modes
+    "line_curve_step": LineChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="step",
+    ),
+    "line_curve_cardinal": LineChart(
+        data=[10, 40, 25, 55, 30, 60],
+        labels=["A", "B", "C", "D", "E", "F"],
+        curve="cardinal",
+    ),
     # Pie charts
     "pie": PieChart(
         data=[45, 30, 15, 10], labels=["Electronics", "Clothing", "Food", "Other"]

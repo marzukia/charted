@@ -150,10 +150,14 @@ class LineChart(Chart):
                         ty = y - label_offset
                     # Nudge label away from grid lines
                     grid_margin = font_size * 0.6
-                    if hasattr(self, 'y_axis'):
+                    if hasattr(self, "y_axis"):
                         for tick_y in self.y_axis.coordinates:
                             if abs(ty - tick_y) < grid_margin:
-                                ty = tick_y - grid_margin if ty > tick_y else tick_y + grid_margin
+                                ty = (
+                                    tick_y - grid_margin
+                                    if ty > tick_y
+                                    else tick_y + grid_margin
+                                )
                                 break
                     # Shift labels at left edge rightward to avoid axis clash
                     if x < font_size * 2:

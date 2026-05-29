@@ -50,6 +50,24 @@ Adjust fill opacity for better visibility of overlaid areas::
        fill_opacity=0.6,  # Default is 0.1; higher = more opaque
    )
 
+Curve interpolation
+-------------------
+
+Area charts accept the same ``curve`` option as line charts:
+``"linear"`` (default), ``"step"``, ``"basis"``, and ``"cardinal"``.
+Cardinal smooths the top edge of the fill into a spline::
+
+   chart = AreaChart(
+       title="Cardinal interpolation",
+       data=[10, 40, 25, 55, 30, 60],
+       labels=["A", "B", "C", "D", "E", "F"],
+       curve="cardinal",
+   )
+   chart.save("area_curve_cardinal.svg")
+
+.. image:: ../examples/area_curve_cardinal.svg
+   :width: 100%
+
 Custom Colors
 -------------
 
