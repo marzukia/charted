@@ -247,6 +247,18 @@ def auto(data, **kwargs) -> Any:
         kwargs.setdefault("width", w)
         kwargs.setdefault("height", h)
 
+    # Bubble detection: an explicit `sizes` kwarg, or 2D data shaped as three
+    # equal-length rows [x, y, sizes], signals a third numeric dimension that
+    # maps to marker radius -> BubbleChart.
+    if "sizes" in kwargs and kwargs["sizes"] is not None:
+        chart_cls = cls_map.get("BubbleChart")
+        if isinstance(data, list) and data and isinstance(data[0], list):
+            x, y = data[0], data[1]
+        else:
+            x = list(range(len(data)))
+            y = data
+        return chart_cls(x_data=x, y_data=y, **kwargs)
+
     # Detect shape
     if isinstance(data, list):
         if not data:

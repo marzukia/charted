@@ -64,6 +64,45 @@ Control the color scale range and display options::
        cell_gap=0.05,
    )
 
+Continuous color scale
+----------------------
+
+The default two-color ``low_color`` / ``high_color`` gradient interpolates
+between just two endpoints. For a multi-stop gradient, pass ``color_scale``.
+It accepts a named palette such as ``"viridis"``, a list of hex stops, or a
+:class:`~charted.themes.core.ColorScale`. Each cell is colored along the
+gradient by its value, and ``color_scale`` overrides ``low_color`` and
+``high_color``.
+
+.. image:: ../examples/heatmap_continuous.svg
+   :width: 100%
+
+::
+
+   from charted.charts import HeatmapChart
+
+   chart = HeatmapChart(
+       data=[
+           [1, 2, 3],
+           [4, 5, 6],
+           [7, 8, 9],
+       ],
+       x_labels=["A", "B", "C"],
+       y_labels=["Row 1", "Row 2", "Row 3"],
+       title="Continuous Color Scale",
+       color_scale="viridis",
+   )
+   chart.save("heatmap.svg")
+
+You can also pass an explicit list of hex stops or a ``ColorScale``::
+
+   from charted.themes.core import ColorScale
+
+   chart = HeatmapChart(
+       data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+       color_scale=ColorScale(palette=["#440154", "#21918c", "#fde725"]),
+   )
+
 API Reference
 -------------
 
@@ -81,6 +120,7 @@ API Reference
    - ``height`` — Chart px (default 600)
    - ``low_color`` — Color for minimum value (default "#1a6b8f")
    - ``high_color`` — Color for maximum value (default "#f7a55c")
+   - ``color_scale`` — Continuous multi-stop gradient: a named palette (e.g. "viridis"), a list of hex stops, or a ``ColorScale``. Overrides ``low_color``/``high_color`` (default None)
    - ``show_values`` — Display values in cells (default True)
    - ``value_format`` — Format string for cell values (default ".1f")
    - ``cell_gap`` — Gap between cells as fraction (default 0.04)

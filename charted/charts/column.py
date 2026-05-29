@@ -57,6 +57,8 @@ class ColumnChart(Chart):
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
         annotations: list | None = None,
+        x_scale: object | None = None,
+        y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
     ):
@@ -83,6 +85,8 @@ class ColumnChart(Chart):
             h_lines=h_lines,
             v_lines=v_lines,
             annotations=annotations,
+            x_scale=x_scale,
+            y_scale=y_scale,
             reference_lines=reference_lines,
             colors=colors,
         )
@@ -127,10 +131,20 @@ class ColumnChart(Chart):
                         fill = style["fill"]
 
                 paths = []
-                for x, y, y_offset in zip(x_values, y_values, y_offsets):
+                for point_idx, (x, y, y_offset) in enumerate(
+                    zip(x_values, y_values, y_offsets)
+                ):
                     x += self.x_offset
-                    paths.append(Path.get_path(x, y_offset, self.x_width, y))
-                g.add_child(Path(d=paths, fill=fill))
+                    d = Path.get_path(x, y_offset, self.x_width, y)
+                    title = self._tooltip_title(series_idx, point_idx)
+                    if title is not None:
+                        mark = Path(d=[d], fill=fill)
+                        mark.add_child(title)
+                        g.add_child(mark)
+                    else:
+                        paths.append(d)
+                if paths:
+                    g.add_child(Path(d=paths, fill=fill))
         else:
             # side-by-side mode
             num_series = len(self.y_values) if self.y_values else 1
@@ -163,12 +177,20 @@ class ColumnChart(Chart):
                         col_path = Path.get_path(bar_x, 0, bar_width, y)
                     else:
                         col_path = Path.get_path(bar_x, y, bar_width, -y)
+                    title = self._tooltip_title(series_idx, x_idx)
                     if per_bar:
                         col_fill = self.colors[x_idx % len(self.colors)]
-                        g.add_child(Path(d=[col_path], fill=col_fill))
+                        mark = Path(d=[col_path], fill=col_fill)
+                        if title is not None:
+                            mark.add_child(title)
+                        g.add_child(mark)
+                    elif title is not None:
+                        mark = Path(d=[col_path], fill=fill)
+                        mark.add_child(title)
+                        g.add_child(mark)
                     else:
                         paths.append(col_path)
-                if not per_bar:
+                if not per_bar and paths:
                     g.add_child(Path(d=paths, fill=fill))
 
         # Render data labels above columns

@@ -9,6 +9,7 @@ from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path
 from charted.themes.core import Theme
+from charted.utils.curves import VALID_CURVES, curve_path
 from charted.utils.series_style import SeriesStyleConfig
 from charted.utils.types import Labels, Vector, Vector2D
 
@@ -38,6 +39,7 @@ class AreaChart(Chart):
 
     fill_opacity: float = 0.3
     pad_x_labels: bool = False
+    curve: str = "linear"
 
     def __init__(
         self,
@@ -52,6 +54,9 @@ class AreaChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        curve: str = "linear",
+        x_scale: object | None = None,
+        y_scale: object | None = None,
         x_label: str | None = None,
         y_label: str | None = None,
         h_lines: list[float] | None = None,
@@ -60,7 +65,12 @@ class AreaChart(Chart):
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
     ):
+        if curve not in VALID_CURVES:
+            raise ValueError(
+                f"Unknown curve {curve!r}. Valid options: {', '.join(VALID_CURVES)}"
+            )
         self.fill_opacity = fill_opacity
+        self.curve = curve
         super().__init__(
             y_data=data,
             x_data=x_data,
@@ -73,6 +83,8 @@ class AreaChart(Chart):
             series_names=series_names,
             series_styles=series_styles,
             chart_type="area",
+            x_scale=x_scale,
+            y_scale=y_scale,
             x_label=x_label,
             y_label=y_label,
             h_lines=h_lines,
@@ -115,11 +127,24 @@ class AreaChart(Chart):
             if not points:
                 continue
 
-            d = [f"M{points[0][0]} {points[0][1]}"]
-            for px, py in points[1:]:
-                d.append(f"L{px} {py}")
-            d.append(f"L{points[-1][0]} {pad_y + plot_h}")
-            d.append(f"L{points[0][0]} {pad_y + plot_h}z")
+            if self.curve == "linear":
+                # Preserve the exact historical linear path output.
+                top = [f"M{points[0][0]} {points[0][1]}"]
+                for px, py in points[1:]:
+                    top.append(f"L{px} {py}")
+                top_d = " ".join(top)
+            else:
+                # Smooth/step the top boundary through the same points.
+                top_d = curve_path(self.curve, points)
+
+            baseline = pad_y + plot_h
+            d = " ".join(
+                [
+                    top_d,
+                    f"L{points[-1][0]} {baseline}",
+                    f"L{points[0][0]} {baseline}z",
+                ]
+            )
 
             g.add_child(
                 Path(
