@@ -76,17 +76,20 @@ class TestBubbleChartHappyPath:
         assert bubble_centers == scatter_centers
 
     def test_bubble_equal_sizes_use_midpoint(self):
-        """When every size is equal, radii are equal and in-bounds."""
+        """When every size is equal, radii equal the radius-range midpoint."""
+        min_radius, max_radius = 4, 20
         chart = BubbleChart(
             x_data=[0, 1, 2],
             y_data=[1, 2, 3],
             sizes=[5, 5, 5],
-            min_radius=4,
-            max_radius=20,
+            min_radius=min_radius,
+            max_radius=max_radius,
         )
         radii = _circle_radii(chart.html)
+        assert len(radii) == 3
         assert len(set(radii)) == 1
-        assert all(4 <= r <= 20 for r in radii)
+        expected_midpoint = (min_radius + max_radius) / 2
+        assert all(r == pytest.approx(expected_midpoint) for r in radii)
 
 
 class TestBubbleChartSadPath:
@@ -99,6 +102,30 @@ class TestBubbleChartSadPath:
         """sizes must match the number of points."""
         with pytest.raises(ValueError):
             BubbleChart(x_data=[0, 1, 2], y_data=[1, 2, 3], sizes=[1, 2])
+
+    def test_bubble_multi_series_size_mismatch_raises(self):
+        """sizes is validated against every series, not just the first."""
+        # First series matches sizes (len 3); second series is shorter (len 2).
+        with pytest.raises(ValueError, match="series 1"):
+            BubbleChart(
+                x_data=[[0, 1, 2], [0, 1]],
+                y_data=[[1, 2, 3], [4, 5]],
+                sizes=[1, 2, 3],
+            )
+
+    def test_bubble_multi_series_matching_sizes_ok(self):
+        """sizes apply per point index across all series when lengths match."""
+        chart = BubbleChart(
+            x_data=[[0, 1, 2], [0, 1, 2]],
+            y_data=[[1, 2, 3], [4, 5, 6]],
+            sizes=[1, 5, 3],
+        )
+        radii = _circle_radii(chart.html)
+        # Two series of three points each: six circles total.
+        assert len(radii) == 6
+        # sizes[i] drives point i in every series, so the per-index radius
+        # repeats across series.
+        assert radii[:3] == radii[3:]
 
 
 class TestBubbleChartAuto:

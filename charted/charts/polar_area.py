@@ -117,7 +117,13 @@ class PolarAreaChart(PieChart):
                 if style.get("fill_opacity"):
                     slice_opacity = style["fill_opacity"]
 
-            path_data = self._get_slice_path(cx, cy, radius, start_angle, end_angle)
+            # Full-circle edge case (N == 1): the slice spans the whole circle,
+            # so angle_span % 360 == 0 collapses _get_slice_path to a zero-area
+            # sliver. Use the full-circle path instead, matching PieChart.
+            if (end_angle - start_angle) >= 359.9:
+                path_data = self._get_full_circle_path(cx, cy, radius)
+            else:
+                path_data = self._get_slice_path(cx, cy, radius, start_angle, end_angle)
             result.add_child(Path(d=path_data, fill=slice_color, opacity=slice_opacity))
 
             # Label near the outer edge of the slice midpoint.

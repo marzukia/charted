@@ -52,6 +52,27 @@ class TestPolarAreaHappyPath:
         assert "<path" in html.lower()
         assert "svg" in html.lower()
 
+    def test_polar_area_single_slice_renders_full_circle(self):
+        """N == 1 spans the whole circle (0..360); the slice must render as a
+        full circle, not the zero-area sliver that ``_get_slice_path`` produces
+        when ``angle_span % 360 == 0``.
+        """
+        chart = PolarAreaChart(data=[42])
+        path_d = chart.representation.children[0].kwargs["d"]
+
+        # A full circle path is two semicircle arcs with the large-arc/sweep
+        # flags '1 1', as emitted by _get_full_circle_path. The degenerate
+        # slice path instead starts with a move-to-center then a line ("M cx
+        # cy L ...") and has no usable area.
+        assert path_d.count(" 1 1 ") == 2
+        assert " L " not in path_d  # not the center-anchored sliver
+
+        # The rendered radius must be the (single) slice radius, not zero.
+        radii = _arc_radii(chart.html)
+        assert radii
+        assert all(r > 0 for r in radii)
+        assert math.isclose(radii[0], chart.slice_radii()[0], abs_tol=1e-6)
+
 
 class TestPolarAreaSadPath:
     def test_polar_area_negative_value_raises(self):

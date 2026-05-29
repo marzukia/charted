@@ -18,11 +18,21 @@ class BubbleChart(ScatterChart):
     dimension (``sizes``) into a configurable ``[min_radius, max_radius]``
     range.
 
+    Sizes map linearly to the circle *radius*, not its area. Because a
+    circle's area grows with the square of its radius, large values look
+    more than proportionally bigger than their value warrants. This is
+    intentional; if you want perceived size to track value, pre-transform
+    your data with ``sqrt`` before passing it as ``sizes``.
+
+    For multi-series charts, ``sizes`` applies per point index across every
+    series (``sizes[i]`` sets the radius of point ``i`` in all series), and
+    its length is validated against the point count of the first series.
+
     Args:
         x_data: X-coordinates for each point.
         y_data: Y-coordinates for each point.
         sizes: Third dimension; one non-negative value per point. Mapped
-            linearly onto ``[min_radius, max_radius]``.
+            linearly onto ``[min_radius, max_radius]`` (radius, not area).
         min_radius: Smallest rendered marker radius in pixels.
         max_radius: Largest rendered marker radius in pixels.
         width, height: Chart dimensions in pixels.
@@ -69,14 +79,20 @@ class BubbleChart(ScatterChart):
         if max_radius < min_radius:
             raise ValueError("max_radius must be >= min_radius")
 
-        point_count = (
-            len(y_data[0]) if y_data and isinstance(y_data[0], list) else len(y_data)
-        )
-        if len(sizes) != point_count:
-            raise ValueError(
-                f"sizes length ({len(sizes)}) must match number of points "
-                f"({point_count})"
-            )
+        # sizes applies per point index across every series, so validate it
+        # against every series length, not just the first.
+        is_multi_series = bool(y_data) and isinstance(y_data[0], list)
+        if is_multi_series:
+            series_lengths = [len(series) for series in y_data]
+        else:
+            series_lengths = [len(y_data)]
+        for series_idx, point_count in enumerate(series_lengths):
+            if len(sizes) != point_count:
+                raise ValueError(
+                    f"sizes length ({len(sizes)}) must match number of points "
+                    f"in series {series_idx} ({point_count}); sizes apply per "
+                    f"point index across all series"
+                )
 
         self.sizes = list(sizes)
         self.min_radius = min_radius
