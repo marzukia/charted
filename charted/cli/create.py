@@ -9,6 +9,7 @@ from ..charts import (
     AreaChart,
     BarChart,
     BoxPlot,
+    BubbleChart,
     ColumnChart,
     ComboChart,
     GanttChart,
@@ -16,6 +17,7 @@ from ..charts import (
     Histogram,
     LineChart,
     PieChart,
+    PolarAreaChart,
     RadarChart,
     ScatterChart,
 )
@@ -24,6 +26,7 @@ CHART_TYPES = {
     "area": AreaChart,
     "bar": BarChart,
     "boxplot": BoxPlot,
+    "bubble": BubbleChart,
     "column": ColumnChart,
     "combo": ComboChart,
     "gantt": GanttChart,
@@ -31,6 +34,7 @@ CHART_TYPES = {
     "histogram": Histogram,
     "line": LineChart,
     "pie": PieChart,
+    "polar_area": PolarAreaChart,
     "radar": RadarChart,
     "scatter": ScatterChart,
 }
