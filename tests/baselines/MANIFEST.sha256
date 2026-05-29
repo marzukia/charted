@@ -34,6 +34,8 @@
   "scatter_axis_titles.svg": "46e2bee92b4ca30739842266e6a1d7793407c9fb5637f911e4258de6d5b35866",
   "scatter_reference_lines.svg": "a151a68bac780b9acddd22fc656cf1c960aade4fd0c82ac79ad0aafe98533520",
   "pie_percentages.svg": "24f351963266bd6402642512cfcd2a618b0e72021aecbe580e7fd511e188cbd8",
+  "bubble_basic.svg": "6017140dcb9e462181c5dea474b82e87119d47405c3533de4b98b76df3b5527e",
+  "polar_area_basic.svg": "d35968f0da5cfb6161c14476733baf00e7248721cee98b256a35617530a50352",
   "combo_basic.svg": "11c3c528550075603c6c10d329a0a413adb6dbc241083d5fd9fce2632ff7a8e7",
   "combo_secondary_axis.svg": "fbe740a861a7eddda2652aca0af6dd96fc4d77d0cbf7fbf50145188d20fca0d1"
 }

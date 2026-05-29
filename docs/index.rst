@@ -71,7 +71,9 @@ charted provides 6 chart types, all with consistent API:
    charts/line
    charts/combo
    charts/scatter
+   charts/bubble
    charts/pie
+   charts/polar_area
    charts/radar
 
 .. toctree::
