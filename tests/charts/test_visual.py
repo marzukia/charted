@@ -37,6 +37,7 @@ from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
 from charted.charts.column import ColumnChart
+from charted.charts.combo import ComboChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
 from charted.charts.histogram import Histogram
@@ -731,3 +732,72 @@ def test_pie_percentages_png():
         show_percentages=True,
     )
     compare_png_baseline(chart, "pie_percentages", tolerance=5)
+
+
+# ============================================================
+# Combo Chart Visual Regression Tests (mixed bar + line)
+# ============================================================
+
+
+def test_combo_chart_basic():
+    """Visual regression test for basic ComboChart (SVG structure)."""
+    chart = ComboChart(
+        series=[
+            {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+            {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+        ],
+        labels=["Q1", "Q2", "Q3"],
+    )
+    baseline_path = BASELINES_DIR / "combo_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_combo_chart_basic_png():
+    """Visual regression test for basic ComboChart (PNG pixel-perfect)."""
+    chart = ComboChart(
+        series=[
+            {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+            {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+        ],
+        labels=["Q1", "Q2", "Q3"],
+    )
+    compare_png_baseline(chart, "combo_basic", tolerance=5)
+
+
+def test_combo_chart_secondary_axis():
+    """Visual regression test for ComboChart with secondary axis (SVG structure)."""
+    chart = ComboChart(
+        series=[
+            {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+            {
+                "data": [2.5, 3.1, 2.8],
+                "type": "line",
+                "name": "Conversion %",
+                "axis": "secondary",
+            },
+        ],
+        labels=["Jan", "Feb", "Mar"],
+    )
+    baseline_path = BASELINES_DIR / "combo_secondary_axis.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
+
+
+def test_combo_chart_secondary_axis_png():
+    """Visual regression test for ComboChart with secondary axis (PNG pixel-perfect)."""
+    chart = ComboChart(
+        series=[
+            {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+            {
+                "data": [2.5, 3.1, 2.8],
+                "type": "line",
+                "name": "Conversion %",
+                "axis": "secondary",
+            },
+        ],
+        labels=["Jan", "Feb", "Mar"],
+    )
+    compare_png_baseline(chart, "combo_secondary_axis", tolerance=5)
