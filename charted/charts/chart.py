@@ -213,6 +213,9 @@ class Chart(Svg):
                 dataclasses.asdict(s) if dataclasses.is_dataclass(s) else s
                 for s in self.series_styles
             ]
+        # Line/area charts carry a curve-interpolation setting.
+        if hasattr(self, "curve"):
+            cfg["curve"] = self.curve
         return cfg
 
     @classmethod

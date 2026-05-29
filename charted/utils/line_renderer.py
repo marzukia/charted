@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from charted.html.element import Circle, G, Path, Rect
 from charted.utils.color_manager import ColorManager
+from charted.utils.curves import curve_path
 
 
 def round_coordinate(value: float, decimals: int = 1) -> float:
@@ -152,34 +153,36 @@ class LineRenderer:
         if stroke_opacity:
             series.attributes["stroke_opacity"] = stroke_opacity
 
-        # Build path and markers
-        path_parts = []
+        # Build markers (always on the ORIGINAL data points) and collect
+        # the boundary coordinates that the line path will be drawn through.
+        points = []
         markers = []
 
-        for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
+        for x, y, y_offset in zip(x_values, y_values, y_offsets):
             x += self.chart.x_offset
             y = self._apply_stacking(y, y_offset)
+            points.append((x, y))
 
-            # Build path with rounded coordinates
-            if i == 0:
-                path_parts.append(f"M{round_coordinate(x)} {round_coordinate(y)}")
-            else:
-                path_parts.append(f"L{round_coordinate(x)} {round_coordinate(y)}")
-
-            # Render marker if enabled
+            # Render marker if enabled (sits on the data point, not the curve)
             marker = self._get_marker(x, y, style, stroke, marker_shape, marker_size)
             if marker:
                 markers.append(marker)
 
+        # Build the line path according to the chart's curve setting.
+        # "linear" reuses the exact M/L string the chart has always emitted.
+        # Charts that borrow the renderer without a curve setting (e.g. the
+        # combo chart's line proxy) default to linear.
+        line_d = curve_path(getattr(self.chart, "curve", "linear"), points)
+
         # Add line to series
-        line = Path(d=path_parts, fill="none")
+        line = Path(d=line_d, fill="none")
         series.add_children(line, *markers)
 
-        # Add area fill if enabled
-        if area_fill and path_parts:
-            area_path = self._create_area_path(path_parts, x_values, y_values)
+        # Add area fill if enabled, closing off the same curved boundary.
+        if area_fill and points:
+            area_d = self._create_area_path(line_d, x_values, y_values)
             area = Path(
-                d=" ".join(area_path),
+                d=area_d,
                 fill=stroke,
                 fill_opacity=area_fill_opacity,
             )
@@ -268,32 +271,30 @@ class LineRenderer:
 
     def _create_area_path(
         self,
-        path_parts: list[str],
+        line_d: str,
         x_values: list[float],
         y_values: list[float],
-    ) -> list[str]:
-        """Create area fill path from line path.
+    ) -> str:
+        """Close a line path into a filled area.
+
+        Takes the already-built line path (linear or curved) and appends
+        the segments that drop down to the baseline and close the shape, so
+        the fill follows the exact same top boundary as the line.
 
         Args:
-            path_parts: Original line path parts
-            x_values: X-axis values
-            y_values: Y-axis values
+            line_d: The line's SVG path ``d`` string.
+            x_values: X-axis values.
+            y_values: Y-axis values.
 
         Returns:
-            Modified path parts for filled area
+            The closed area-fill ``d`` string.
         """
-        area_path = path_parts.copy()
-
-        # Close path to create filled area with rounded coordinates
-        last_x = round_coordinate(x_values[-1] + self.chart.x_offset)
         last_y = round_coordinate(y_values[-1] if y_values else 0)
         first_x = round_coordinate(x_values[0] + self.chart.x_offset)
 
-        area_path.append(f"L{last_x} {last_y}")
-        area_path.append(f"L{first_x} {last_y}")
-        area_path.append("Z")
-
-        return area_path
+        # The line path already ends at the last curve point, so close the
+        # area straight from there across to the first x at the baseline.
+        return " ".join([line_d, f"L{first_x} {last_y}", "Z"])
 
     def _apply_stacking(self, y: float, y_offset: float) -> float:
         """Apply stacking offset to a y-value.

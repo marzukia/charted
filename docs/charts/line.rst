@@ -82,6 +82,37 @@ Lines automatically handle negative values, crossing the zero baseline::
        height=400,
    )
 
+Curve interpolation
+-------------------
+
+By default lines connect points with straight segments (``curve="linear"``).
+Use the ``curve`` option to change how points are joined. Valid values are
+``"linear"``, ``"step"``, ``"basis"``, and ``"cardinal"``.
+
+Step interpolation holds each value until the next point, drawing a staircase::
+
+   chart = LineChart(
+       title="Step interpolation",
+       data=[10, 40, 25, 55, 30, 60],
+       labels=["A", "B", "C", "D", "E", "F"],
+       curve="step",
+   )
+   chart.save("line_curve_step.svg")
+
+.. image:: ../examples/line_curve_step.svg
+   :width: 100%
+
+Cardinal interpolation draws a smooth spline through every point::
+
+   chart = LineChart(
+       title="Cardinal interpolation",
+       data=[10, 40, 25, 55, 30, 60],
+       labels=["A", "B", "C", "D", "E", "F"],
+       curve="cardinal",
+   )
+   chart.save("line_curve_cardinal.svg")
+
+.. image:: ../examples/line_curve_cardinal.svg
 Log Scale
 ---------
 
