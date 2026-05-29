@@ -6,6 +6,7 @@ from .box import BoxPlot
 from .bubble import BubbleChart
 from .chart import Chart
 from .column import ColumnChart
+from .combo import ComboChart
 from .gantt import GanttChart
 from .heatmap import HeatmapChart
 from .histogram import Histogram
@@ -22,6 +23,7 @@ __all__ = [
     "BubbleChart",
     "Chart",
     "ColumnChart",
+    "ComboChart",
     "GanttChart",
     "HeatmapChart",
     "Histogram",
@@ -44,6 +46,7 @@ def _CHART_CLASSES() -> dict:
         "BoxPlot": BoxPlot,
         "BubbleChart": BubbleChart,
         "ColumnChart": ColumnChart,
+        "ComboChart": ComboChart,
         "GanttChart": GanttChart,
         "HeatmapChart": HeatmapChart,
         "Histogram": Histogram,

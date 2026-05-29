@@ -39,6 +39,7 @@ from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
 from charted.charts.bubble import BubbleChart
 from charted.charts.column import ColumnChart
+from charted.charts.combo import ComboChart
 from charted.charts.gantt import GanttChart
 from charted.charts.heatmap import HeatmapChart
 from charted.charts.histogram import Histogram
@@ -130,6 +131,12 @@ CHARTS = {
         x_labels=["A", "B", "C", "D"],
         y_labels=["X", "Y"],
     ),
+    "heatmap_continuous": HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
+    ),
     # Area chart
     "area_basic": AreaChart(
         data=[15, 30, 45, 70, 55, 80, 75, 90, 85, 95],
@@ -214,6 +221,26 @@ CHARTS = {
     "polar_area_basic": PolarAreaChart(
         data=[10, 20, 30, 15, 25],
         labels=["A", "B", "C", "D", "E"],
+    ),
+    # Combo charts (mixed bar + line on shared axes)
+    "combo_basic": ComboChart(
+        series=[
+            {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+            {"data": [3, 6, 9], "type": "line", "name": "Margin"},
+        ],
+        labels=["Q1", "Q2", "Q3"],
+    ),
+    "combo_secondary_axis": ComboChart(
+        series=[
+            {"data": [120, 180, 150], "type": "bar", "name": "Units"},
+            {
+                "data": [2.5, 3.1, 2.8],
+                "type": "line",
+                "name": "Conversion %",
+                "axis": "secondary",
+            },
+        ],
+        labels=["Jan", "Feb", "Mar"],
     ),
 }
 

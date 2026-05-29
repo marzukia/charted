@@ -18,8 +18,9 @@
   "gantt_basic.svg": "8cfb1167789c4296a985e40f5a62b63c9edfa900135d8793ac633fe0b9ce7850",
   "gantt_dependencies.svg": "b99bf49e189fed820d3b0a27c18e51e8d66ec23cd63aa6d3e2d7c3c8662e0f3f",
   "gantt_multi.svg": "bb6c37f3b73075be20db035f106b65a212b6af9523b22263d33608b2e968d4ce",
-  "heatmap_basic.svg": "e088c16de96b8645266e3ed36decb4a068bb0dde51112f4beb71de2e1552476e",
-  "heatmap_rectangular.svg": "40ea56be2f8b8af1114e35fadd2e01018ea4a6adecd5ea8f3500bbc3c27e2c61",
+  "heatmap_basic.svg": "f74109a3970014d6423d713f13eea1fc95ed1036c703c017335aa33709665fce",
+  "heatmap_rectangular.svg": "5bfab8bad3c6d60032b32e4889594784e8c588a74111a7ffc6eeb36886194f3b",
+  "heatmap_continuous.svg": "97c48edd95ff8dcd10add3ef28da22a265b03e8eb7dd85528c8dac37dc41c8f2",
   "area_basic.svg": "f3e3d2e971d4cf8cdb4b1bdc0434f120bd92de8c610a8b3ca6cc0b9859b9e494",
   "boxplot_basic.svg": "801a5e8070fc25a1b6fe30b736e7cd014136f381af62f31cbf84f58beb380c12",
   "histogram_basic.svg": "e66ae0d193f3f888a4db727426ec9a7c58b424066475f39e1540685a7aff0baf",
@@ -34,5 +35,7 @@
   "scatter_reference_lines.svg": "a151a68bac780b9acddd22fc656cf1c960aade4fd0c82ac79ad0aafe98533520",
   "pie_percentages.svg": "24f351963266bd6402642512cfcd2a618b0e72021aecbe580e7fd511e188cbd8",
   "bubble_basic.svg": "6017140dcb9e462181c5dea474b82e87119d47405c3533de4b98b76df3b5527e",
-  "polar_area_basic.svg": "d35968f0da5cfb6161c14476733baf00e7248721cee98b256a35617530a50352"
+  "polar_area_basic.svg": "d35968f0da5cfb6161c14476733baf00e7248721cee98b256a35617530a50352",
+  "combo_basic.svg": "11c3c528550075603c6c10d329a0a413adb6dbc241083d5fd9fce2632ff7a8e7",
+  "combo_secondary_axis.svg": "fbe740a861a7eddda2652aca0af6dd96fc4d77d0cbf7fbf50145188d20fca0d1"
 }

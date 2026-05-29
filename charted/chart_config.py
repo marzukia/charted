@@ -185,6 +185,37 @@ class ColumnChartConfig(ChartConfig):
 
 
 @dataclasses.dataclass
+class ComboChartConfig(ChartConfig):
+    """Configuration for combo (mixed bar+line) charts.
+
+    Extends ChartConfig with combo-specific settings.
+
+    Attributes:
+        series: List of series dicts, each with keys ``data``, ``type``
+            ("bar"|"column"|"line"|"area"), optional ``axis``
+            ("primary"|"secondary"), and optional ``name``.
+        column_gap: Gap between bars/columns as ratio of width (default: 0.20)
+        labels: Category labels for the shared x-axis.
+
+    Example:
+        >>> config = ComboChartConfig(
+        ...     series=[
+        ...         {"data": [10, 20, 30], "type": "bar", "name": "Revenue"},
+        ...         {"data": [3, 6, 9], "type": "line", "axis": "secondary"},
+        ...     ],
+        ...     labels=["Q1", "Q2", "Q3"],
+        ... )
+    """
+
+    # Combo-specific settings
+    series: list[dict] = dataclasses.field(default_factory=list)
+    column_gap: float = 0.20
+
+    # Labels
+    labels: Labels | None = None
+
+
+@dataclasses.dataclass
 class LineChartConfig(ChartConfig):
     """Configuration for line charts.
 
@@ -388,6 +419,7 @@ class RadarChartConfig(ChartConfig):
 ChartConfigType = (
     BarChartConfig
     | ColumnChartConfig
+    | ComboChartConfig
     | LineChartConfig
     | PieChartConfig
     | ScatterChartConfig

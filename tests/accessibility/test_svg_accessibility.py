@@ -11,8 +11,30 @@ import re
 
 import pytest
 
-from charted import BarChart, PieChart, Theme
+from charted import BarChart, ColumnChart, PieChart, Theme
 from charted.utils.colors import hex_to_rgb
+
+
+def test_tooltip_titles_are_accessible():
+    """A <title> child gives each data mark an accessible name in HTML output.
+
+    Per the SVG accessibility mapping, a <title> that is the first child of a
+    graphics element provides that element's accessible name. We assert the
+    title text is present and sits inside a mark element (path/rect/circle).
+    """
+    chart = ColumnChart(
+        data=[10, 59, 30], labels=["Jan", "Feb", "Mar"], series_names=["Sales"]
+    )
+    html = chart.to_html(tooltips=True)
+
+    assert "<title>Feb: 59</title>" in html
+
+    # The title must be nested inside a mark element, not floating loose.
+    match = re.search(r"<(path|rect|circle)\b[^>]*>\s*<title>Feb: 59</title>", html)
+    assert match is not None, "tooltip <title> should be the first child of a mark"
+
+    # File output stays inert: no titles leak into to_svg().
+    assert "<title>" not in chart.to_svg()
 
 
 def parse_svg_colors(svg_content: str) -> list[str]:

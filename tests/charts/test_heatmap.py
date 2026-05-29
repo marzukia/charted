@@ -159,6 +159,63 @@ class TestHeatmapChartInit:
         assert "2.35" in svg
 
 
+class TestHeatmapContinuousScale:
+    """Heatmap colored by a continuous (multi-stop) color scale."""
+
+    def test_heatmap_continuous_color(self):
+        """A continuous scale colors cells by value: min->first stop, max->last."""
+        from charted.themes.core import ColorScale
+        from charted.utils.colors import hex_to_rgb
+
+        chart = HeatmapChart(
+            data=[[0, 50, 100]],
+            color_scale=ColorScale(["#000000", "#00ff00", "#ffffff"]),
+        )
+        low = chart._value_to_color(0)
+        high = chart._value_to_color(100)
+        mid = chart._value_to_color(50)
+
+        assert hex_to_rgb(low) == (0, 0, 0)
+        assert hex_to_rgb(high) == (255, 255, 255)
+        # Mid stop is pure green.
+        r, g, b = hex_to_rgb(mid)
+        assert g >= 250 and r <= 5 and b <= 5
+
+    def test_continuous_scale_string_palette(self):
+        """color_scale accepts a named palette string."""
+        from charted.themes.core import NAMED_PALETTES
+        from charted.utils.colors import hex_to_rgb
+
+        chart = HeatmapChart(
+            data=[[1, 9]],
+            color_scale="viridis",
+        )
+        low = hex_to_rgb(chart._value_to_color(1))
+        high = hex_to_rgb(chart._value_to_color(9))
+        assert low == hex_to_rgb(NAMED_PALETTES["viridis"][0])
+        assert high == hex_to_rgb(NAMED_PALETTES["viridis"][-1])
+
+    def test_discrete_default_unchanged(self):
+        """Without color_scale, low/high two-color behavior is preserved."""
+        chart = HeatmapChart(
+            data=[[0, 100]],
+            low_color="#000000",
+            high_color="#ffffff",
+        )
+        assert chart._value_to_color(0) == "#000000"
+        assert chart._value_to_color(100) == "#ffffff"
+
+    def test_continuous_scale_renders(self):
+        from charted.themes.core import ColorScale
+
+        chart = HeatmapChart(
+            data=[[1, 2, 3], [4, 5, 6]],
+            color_scale=ColorScale("inferno"),
+        )
+        svg = chart.html
+        assert svg.startswith("<svg")
+
+
 class TestLerpColor:
     """Test the internal color interpolation."""
 
