@@ -10,7 +10,7 @@ from __future__ import annotations
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path, Text
-from charted.themes.core import Theme
+from charted.themes.core import ColorScale, Theme
 from charted.utils.types import Labels, SeriesStyleConfig
 
 
@@ -48,6 +48,10 @@ class HeatmapChart(Chart):
         series_styles: Per-series style overrides.
         low_color: Color for the lowest value in the data (default '#1a6b8f').
         high_color: Color for the highest value in the data (default '#f7a55c').
+        color_scale: Optional continuous color scale. Pass a ColorScale, a
+            named palette string (e.g. 'viridis'), or a list of hex stops to
+            color cells along a multi-stop gradient. Overrides low_color and
+            high_color. Defaults to None (two-color low/high behavior).
         show_values: If True, display the numeric value in each cell (default True).
         value_format: Format string for displayed values (default '.1f').
         cell_gap: Gap between cells as fraction of cell size (default 0.04).
@@ -78,6 +82,7 @@ class HeatmapChart(Chart):
         series_styles: list[SeriesStyleConfig] | None = None,
         low_color: str = "#5fab9e",
         high_color: str = "#f58b51",
+        color_scale: "ColorScale | str | list[str] | None" = None,
         show_values: bool = True,
         value_format: str = ".1f",
         cell_gap: float = 0.04,
@@ -130,6 +135,7 @@ class HeatmapChart(Chart):
         self._data_min = min(all_values)
         self._data_max = max(all_values)
         self._data_range = self._data_max - self._data_min
+        self.color_scale = self._resolve_color_scale(color_scale)
 
         x_data = [[float(i) for i in range(n_cols)] for _ in range(n_rows)]
         y_data = [[float(i) for i in range(n_rows)] for _ in range(n_cols)]
@@ -178,7 +184,24 @@ class HeatmapChart(Chart):
     def draw_cell_height(self) -> float:
         return self.cell_height - self.cell_gap_y
 
+    def _resolve_color_scale(
+        self, color_scale: "ColorScale | str | list[str] | None"
+    ) -> ColorScale | None:
+        """Normalize the color_scale argument into a ColorScale or None.
+
+        A None argument keeps the two-color low/high behavior. A string or
+        list is wrapped into a ColorScale spanning the data range.
+        """
+        if color_scale is None:
+            return None
+        domain = (self._data_min, self._data_max)
+        if isinstance(color_scale, ColorScale):
+            return ColorScale(palette=color_scale.palette, domain=domain)
+        return ColorScale(palette=color_scale, domain=domain)
+
     def _value_to_color(self, value: float) -> str:
+        if self.color_scale is not None:
+            return self.color_scale(value)
         if self._data_range == 0:
             return self.low_color
         t = (value - self._data_min) / self._data_range
@@ -276,7 +299,11 @@ class HeatmapChart(Chart):
 
         for i in range(n_stops):
             t = i / (n_stops - 1) if n_stops > 1 else 0
-            color = _lerp_color(self.low_color, self.high_color, t)
+            if self.color_scale is not None:
+                value = self._data_min + t * self._data_range
+                color = self._value_to_color(value)
+            else:
+                color = _lerp_color(self.low_color, self.high_color, t)
             stop_height = bar_height / n_stops
             result.add_child(
                 Path(
@@ -314,7 +341,6 @@ class HeatmapChart(Chart):
                 dominant_baseline="bottom",
             )
         )
-
 
         return result
 
