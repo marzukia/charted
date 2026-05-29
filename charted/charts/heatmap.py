@@ -300,6 +300,7 @@ class HeatmapChart(Chart):
         bar_y = 0
         bar_width = 20
         bar_height = self.plot_height
+        bar_label_gap = 6
         n_stops = 20
 
         for i in range(n_stops):
@@ -326,7 +327,7 @@ class HeatmapChart(Chart):
             Text(
                 text=format(self._data_min, self.value_format),
                 x=bar_x + bar_width / 2,
-                y=bar_y + bar_height + 4,
+                y=bar_y + bar_height + bar_label_gap,
                 fill=label_color,
                 font_family=font_family,
                 font_size=label_font_size,
@@ -338,7 +339,7 @@ class HeatmapChart(Chart):
             Text(
                 text=format(self._data_max, self.value_format),
                 x=bar_x + bar_width / 2,
-                y=bar_y,
+                y=bar_y - bar_label_gap,
                 fill=label_color,
                 font_family=font_family,
                 font_size=label_font_size,
