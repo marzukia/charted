@@ -110,6 +110,32 @@ Combine scatter with line chart for trend visualization::
        series_styles=[{"marker_shape": "circle", "marker_size": 4.0}]
    )
 
+Log Scale
+---------
+
+Set ``x_scale="log"`` or ``y_scale="log"`` (or both) when an axis spans several orders of magnitude. All values on a log axis must be positive::
+
+   chart = ScatterChart(
+       x_data=[10, 100, 1000, 10000],
+       y_data=[1, 2, 3, 4],
+       x_scale="log",
+       title="Throughput vs Latency",
+   )
+
+Time Axis
+---------
+
+Plot date or datetime values on the x-axis with ``x_scale="time"``. ISO date strings work as well::
+
+   from datetime import date
+
+   chart = ScatterChart(
+       x_data=[date(2024, 1, 1), date(2024, 6, 1), date(2024, 12, 1)],
+       y_data=[3, 7, 5],
+       x_scale="time",
+       title="Events Over Time",
+   )
+
 Configuration Options
 ---------------------
 
@@ -124,6 +150,50 @@ Custom colors per series::
            {"marker_shape": "square", "marker_size": 6.0, "color": "#3498DB"}
        ]
    )
+
+Annotations
+-----------
+
+Annotations let you draw extra marks on top of the plot, positioned in data
+coordinates and reprojected through the chart axes at render time. They work on
+any Cartesian chart (scatter, line, bar, column, area), not just scatter plots.
+
+Three primitives are available from ``charted.charts.annotations``:
+
+- ``BoxAnnotation`` shades a rectangular region given an ``x_range`` and
+  ``y_range``.
+- ``LineAnnotation`` draws a straight segment between a ``start`` and ``end``
+  point.
+- ``LabelAnnotation`` places a text label at a single ``point``.
+
+Pass them through the ``annotations`` argument::
+
+   from charted.charts import ScatterChart
+   from charted.charts.annotations import (
+       BoxAnnotation,
+       LineAnnotation,
+       LabelAnnotation,
+   )
+
+   chart = ScatterChart(
+       x_data=[0, 2, 4, 6, 8, 10],
+       y_data=[0, 8, 4, 16, 12, 20],
+       title="Scatter with Annotations",
+       annotations=[
+           BoxAnnotation(x_range=(2, 6), y_range=(4, 16)),
+           LineAnnotation(start=(0, 0), end=(10, 20)),
+           LabelAnnotation(point=(4, 16), text="peak"),
+       ],
+   )
+   chart.save("scatter_annotations.svg")
+
+.. image:: ../examples/scatter_annotations.svg
+   :width: 100%
+
+Each primitive accepts optional styling. ``BoxAnnotation`` takes ``color`` and
+``opacity``; ``LineAnnotation`` takes ``color``, ``width``, and ``dashed``;
+``LabelAnnotation`` takes ``color``, ``font_size``, and ``text_anchor``. When a
+color is omitted it falls back to the active theme.
 
 API Reference
 -------------

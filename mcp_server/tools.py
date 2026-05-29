@@ -19,13 +19,16 @@ CHART_TYPE_MAP = {
     "column": "ColumnChart",
     "line": "LineChart",
     "scatter": "ScatterChart",
+    "bubble": "BubbleChart",
     "pie": "PieChart",
+    "polar_area": "PolarAreaChart",
     "radar": "RadarChart",
     "area": "AreaChart",
     "box": "BoxPlot",
     "histogram": "Histogram",
     "heatmap": "HeatmapChart",
     "gantt": "GanttChart",
+    "combo": "ComboChart",
 }
 
 CHART_DESCRIPTIONS = {
@@ -33,13 +36,16 @@ CHART_DESCRIPTIONS = {
     "column": "Vertical bar chart",
     "line": "Line chart for trends over time",
     "scatter": "XY scatter plot for correlation",
+    "bubble": "Scatter plot where marker size encodes a third value",
     "pie": "Pie/donut chart for part-of-whole",
+    "polar_area": "Pie with equal-angle slices whose radius encodes value",
     "radar": "Spider/radar chart for multivariate comparison",
     "area": "Filled line chart for volume over time",
     "box": "Box-and-whisker plot for distributions",
     "histogram": "Frequency distribution of continuous data",
     "heatmap": "Color-coded matrix for 2D data",
     "gantt": "Timeline/schedule visualization",
+    "combo": "Mixed bar and line chart on shared axes with optional secondary y-axis",
 }
 
 
@@ -54,6 +60,7 @@ def handle_create_chart(
     theme: str | dict | None = None,
     output_format: str = "svg",
     save_path: str | None = None,
+    sizes: list[float] | None = None,
 ) -> str:
     """Create a chart and return it in the requested format.
 
@@ -87,6 +94,8 @@ def handle_create_chart(
         kwargs["labels"] = labels
     if series_names is not None:
         kwargs["series_names"] = series_names
+    if sizes is not None:
+        kwargs["sizes"] = sizes
     if theme is not None:
         if isinstance(theme, str):
             kwargs["theme"] = theme
@@ -177,7 +186,7 @@ def handle_list_themes() -> dict[str, Any]:
         "presets": presets,
         "palettes": palettes,
         "usage_hint": (
-            'Pass preset name as theme param, or use palette name in a '
+            "Pass preset name as theme param, or use palette name in a "
             'theme object: {"colors": "viridis", "background_color": "#1a1a2e"}'
         ),
     }
@@ -220,9 +229,7 @@ def handle_chart_from_csv(
     reader = csv.DictReader(io.StringIO(csv_data.strip()))
     fieldnames = reader.fieldnames
     if not fieldnames or len(fieldnames) < 2:
-        raise ValueError(
-            "CSV must have a header row with at least two columns."
-        )
+        raise ValueError("CSV must have a header row with at least two columns.")
 
     rows = list(reader)
     if not rows:

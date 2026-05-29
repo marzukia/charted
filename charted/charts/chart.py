@@ -10,8 +10,6 @@ from charted.constants import (
     AXIS_BORDER_WIDTH,
     DEFAULT_CHART_HEIGHT,
     DEFAULT_CHART_WIDTH,
-    REFERENCE_LINE_DASH,
-    REFERENCE_LINE_WIDTH,
 )
 from charted.html.element import ClipPath, Defs, G, Path, Rect, Svg, Text
 from charted.themes.core import Theme
@@ -80,16 +78,34 @@ class Chart(Svg):
         title_text = self._title.text if self._title else None
         return generate_markdown_image(self.svg, alt_text, title_text, width)
 
-    def to_html(self, style: str = "display: inline-block;") -> str:
+    def to_html(
+        self, style: str = "display: inline-block;", tooltips: bool = False
+    ) -> str:
         """Return standalone HTML with embedded SVG.
 
         Args:
             style: CSS style for the container div.
+            tooltips: If True, attach a native SVG ``<title>`` to each data
+                mark so browsers show a built-in hover tooltip (no
+                JavaScript). File output via ``to_svg()``/``save()`` is never
+                affected.
 
         Returns:
             HTML string with the SVG embedded in a div.
         """
-        return generate_html_wrapper(self.svg, style)
+        if not tooltips:
+            return generate_html_wrapper(self.svg, style)
+
+        # Regenerate the data-mark representation with <title> children, then
+        # restore the inert state so to_svg()/save() stay unchanged.
+        self._tooltips = True
+        try:
+            self._build_children()
+            svg = self.html
+        finally:
+            self._tooltips = False
+            self._build_children()
+        return generate_html_wrapper(svg, style)
 
     def _repr_html_(self) -> str:
         """Return HTML wrapper for the chart."""
@@ -184,6 +200,8 @@ class Chart(Svg):
             "series_names": self.series_names,
             "x_stacked": self.x_stacked,
             "zero_index": self.zero_index,
+            "x_scale": self.x_scale,
+            "y_scale": self.y_scale,
         }
         if self.data_model:
             cfg["x_data"] = self.data_model.x_data
@@ -193,7 +211,33 @@ class Chart(Svg):
                 dataclasses.asdict(s) if dataclasses.is_dataclass(s) else s
                 for s in self.series_styles
             ]
+        if self._h_lines:
+            cfg["h_lines"] = list(self._h_lines)
+        if self._v_lines:
+            cfg["v_lines"] = list(self._v_lines)
+        if self._annotations:
+            cfg["annotations"] = [
+                self._serialize_annotation(a) for a in self._annotations
+            ]
+        # Line/area charts carry a curve-interpolation setting.
+        if hasattr(self, "curve"):
+            cfg["curve"] = self.curve
         return cfg
+
+    @staticmethod
+    def _serialize_annotation(a):
+        """Serialize one annotation to a JSON-friendly dict.
+
+        Tags the dict with its class name and strips private ``_ref_*`` fields
+        (used only for legacy reference-line markup) so they neither leak nor
+        break reconstruction in ``from_config``.
+        """
+        import dataclasses
+
+        if not dataclasses.is_dataclass(a):
+            return a
+        data = {k: v for k, v in dataclasses.asdict(a).items() if not k.startswith("_")}
+        return {"type": a.__class__.__name__, **data}
 
     @classmethod
     def from_config(cls, config: dict, **overrides) -> "Chart":
@@ -215,6 +259,11 @@ class Chart(Svg):
 
         merged = dict(config)
         merged.update(overrides)
+
+        # Reconstruct annotation objects from their serialized dict form.
+        # to_config() emits each annotation as {"type": <ClassName>, **asdict(a)}.
+        if "annotations" in merged:
+            merged["annotations"] = cls._rebuild_annotations(merged["annotations"])
 
         chart_type = merged.pop("chart_type", None)
         cls_map = _CHART_CLASSES()
@@ -238,6 +287,59 @@ class Chart(Svg):
 
         return chart_cls(**filtered)
 
+    @staticmethod
+    def _rebuild_annotations(annotations: list) -> list:
+        """Reconstruct annotation objects from their serialized dict form.
+
+        ``to_config()`` serializes each annotation as
+        ``{"type": <ClassName>, **dataclasses.asdict(a)}``. This rebuilds the
+        concrete annotation object by dispatching on the ``"type"`` field.
+
+        Handles the round-trip quirks:
+        - Private ``_ref_*`` fields are stripped so they neither leak into a
+          public reconstruction nor break the dataclass constructor.
+        - JSON turns tuples into lists, so point/range fields are coerced back
+          to tuples.
+        """
+        from charted.charts.annotations import (
+            BoxAnnotation,
+            LabelAnnotation,
+            LineAnnotation,
+        )
+
+        type_map = {
+            "LineAnnotation": LineAnnotation,
+            "BoxAnnotation": BoxAnnotation,
+            "LabelAnnotation": LabelAnnotation,
+        }
+        # Fields that are (x, y) / (min, max) pairs and must be tuples.
+        tuple_fields = {"start", "end", "x_range", "y_range", "point"}
+
+        rebuilt: list = []
+        for a in annotations:
+            # Already an annotation object (not a serialized dict): keep as-is.
+            if not isinstance(a, dict):
+                rebuilt.append(a)
+                continue
+
+            data = dict(a)
+            type_name = data.pop("type", None)
+            ann_cls = type_map.get(type_name)
+            if ann_cls is None:
+                # Unknown type: leave the raw dict untouched rather than guess.
+                rebuilt.append(a)
+                continue
+
+            # Strip private fields so they don't leak or break reconstruction.
+            data = {k: v for k, v in data.items() if not k.startswith("_")}
+            # Coerce JSON lists back to tuples for coordinate pairs.
+            for key in tuple_fields:
+                if key in data and isinstance(data[key], list):
+                    data[key] = tuple(data[key])
+
+            rebuilt.append(ann_cls(**data))
+        return rebuilt
+
     # =========================================================================
     # Initialization
     # =========================================================================
@@ -255,6 +357,7 @@ class Chart(Svg):
         series_names: list[str] | None = None,
         x_stacked: bool = False,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         chart_type: str | None = None,
         x_label: str | None = None,
@@ -262,12 +365,29 @@ class Chart(Svg):
         data_labels: list[str] | list[list[str]] | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        annotations: list | None = None,
+        x_scale: object | None = None,
+        y_scale: object | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         super().__init__(
             width=width,
             height=height,
             viewBox=f"0 0 {width} {height}",
         )
+
+        # Record the requested scale specs (string or Scale instance) for
+        # to_config()/describe(); default is linear so existing charts are
+        # unchanged.
+        self._x_scale_spec = x_scale
+        self._y_scale_spec = y_scale
+
+        # Time scales accept dates/datetimes/ISO strings. DataModel only
+        # handles numeric data, so convert time x_data to epoch seconds here
+        # while remembering the original domain for the scale.
+        if self._is_time_scale(x_scale) and x_data is not None:
+            x_data = self._normalize_time_data(x_data)
 
         # Validate and normalize data using DataModel
         if not x_data and not y_data:
@@ -302,8 +422,27 @@ class Chart(Svg):
         self._x_label = x_label
         self._y_label = y_label
         self._data_labels = data_labels
-        self._h_lines = h_lines
-        self._v_lines = v_lines
+        self._annotations = list(annotations) if annotations else []
+        self._h_lines = h_lines or []
+        self._v_lines = v_lines or []
+
+        # Parse reference_lines convenience API into h_lines/v_lines + labels
+        self._reference_line_labels: list[dict] = []
+        if reference_lines:
+            for ref in reference_lines:
+                value = ref["value"]
+                axis = ref.get("axis", "y")
+                label = ref.get("label")
+                if axis == "x":
+                    self._v_lines.append(value)
+                else:
+                    self._h_lines.append(value)
+                self._reference_line_labels.append(
+                    {"value": value, "axis": axis, "label": label}
+                )
+        # Normalize empty lists to None for _render_reference_lines check
+        self._h_lines = self._h_lines or None
+        self._v_lines = self._v_lines or None
 
         # Set internal attributes directly (properties are read-only)
         self._width = width
@@ -311,6 +450,12 @@ class Chart(Svg):
 
         # Load and apply theme using ThemeManager
         self.theme = ThemeManager.load_theme(theme, chart_type)
+
+        # Apply color shorthand: override theme colors if provided
+        if colors:
+            from dataclasses import replace as dc_replace
+
+            self.theme = dc_replace(self.theme, colors=list(colors))
 
         # Set internal padding attributes directly (properties are read-only)
         self._h_padding = self.theme.h_padding
@@ -328,6 +473,16 @@ class Chart(Svg):
         else:
             self._title = None
 
+        # Set subtitle
+        if subtitle:
+            self._subtitle = calculate_text_dimensions(
+                subtitle,
+                font=self.theme.title_font_family,
+                font_size=self.theme.title_font_size - 4,
+            )
+        else:
+            self._subtitle = None
+
         # Initialize LayoutEngine for layout calculations
         self.layout = LayoutEngine(
             width=width,
@@ -340,6 +495,20 @@ class Chart(Svg):
             has_x_axis_label=bool(x_label),
             has_y_axis_label=bool(y_label),
         )
+
+        # Build scale instances from the data domain. None/linear leaves the
+        # axis on its default LinearScale path (behaviour unchanged).
+        x_scale_inst = self._build_scale(x_scale, self.x_data)
+        y_scale_inst = self._build_scale(y_scale, self.y_data)
+        self._x_scale = x_scale_inst
+        self._y_scale = y_scale_inst
+
+        # Bar/column geometry fills from a zero baseline, which has no meaning
+        # on a log scale (no zero) or a time scale. Applying one to the value
+        # axis renders garbage (bars collapse to uniform height), so reject it
+        # up front. The value axis is Y for column/area/histogram and X for
+        # horizontal bar charts.
+        self._reject_unsupported_scales(chart_type, x_scale_inst, y_scale_inst)
 
         # Initialize axes
         self.x_axis = XAxis(
@@ -354,6 +523,7 @@ class Chart(Svg):
             ),
             config=self.theme.resolved_grid_color,
             pad_labels=self.pad_x_labels,
+            scale=x_scale_inst,
         )
 
         self.y_axis = YAxis(
@@ -363,6 +533,7 @@ class Chart(Svg):
             stacked=self.y_stacked,
             zero_index=self.zero_index,
             config=self.theme.resolved_grid_color,
+            scale=y_scale_inst,
         )
 
         # Initialize internal offsets and values directly (properties are read-only)
@@ -440,8 +611,14 @@ class Chart(Svg):
                 row_offsets.append(current_offset)
             offsets.append(row_offsets)
 
-        # Transform offsets through y_axis
-        self._y_offsets = [[self.y_axis.reproject(y) for y in arr] for arr in offsets]
+        # Transform offsets through y_axis. Stacking is undefined on log/time
+        # scales (no meaningful zero), so offsets collapse to zero pixels.
+        if self._y_scale is not None and self._y_scale.name != "linear":
+            self._y_offsets = [[0.0] * len(arr) for arr in offsets]
+        else:
+            self._y_offsets = [
+                [self.y_axis.reproject(y) for y in arr] for arr in offsets
+            ]
 
         # Initialize ColorManager for automatic color cycling
         self._color_manager = ColorManager(colors=self.theme.colors)
@@ -450,6 +627,18 @@ class Chart(Svg):
         if not hasattr(self, "_colors"):
             self._colors = self.theme.colors
 
+        # Whether data marks should carry native <title> tooltips. Off for
+        # file output (to_svg/save); toggled on only by to_html(tooltips=True).
+        self._tooltips = False
+
+        self._build_children()
+
+    def _build_children(self) -> None:
+        """Assemble the chart's SVG child elements.
+
+        Called once during ``__init__`` and again whenever the tooltip flag
+        changes so the data-mark representation can be regenerated.
+        """
         # Build SVG children with plot clipping mask
         plot_clip = ClipPath(
             id="plot-clip",
@@ -465,7 +654,7 @@ class Chart(Svg):
         defs = Defs()
         defs.add_child(plot_clip)
 
-        children = [self.container, self.title, defs]
+        children = [self.container, self.title, self.subtitle_element, defs]
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
@@ -494,7 +683,87 @@ class Chart(Svg):
         axis_labels = self._render_axis_labels()
         if axis_labels:
             children.extend(axis_labels)
+        self.children = []
         self.add_children(*children)
+
+    # =========================================================================
+    # Scale Helpers
+    # =========================================================================
+
+    # Chart types whose value axis fills from a zero baseline (bars/columns).
+    # log/time scales are unsupported on that axis.
+    _BAR_VALUE_AXIS = {
+        "column": "y",
+        "area": "y",
+        "histogram": "y",
+        "bar": "x",
+    }
+
+    @classmethod
+    def _reject_unsupported_scales(cls, chart_type, x_scale_inst, y_scale_inst) -> None:
+        """Raise ValueError for log/time scales on a bar/column value axis."""
+        value_axis = cls._BAR_VALUE_AXIS.get(chart_type)
+        if value_axis is None:
+            return
+        scale = x_scale_inst if value_axis == "x" else y_scale_inst
+        if scale is None:
+            return
+        name = getattr(scale, "name", "linear")
+        if name in ("log", "time"):
+            raise ValueError(
+                f"{name!r} scale is not supported on the value axis "
+                f"({value_axis}) of a {chart_type} chart. Bar/column geometry "
+                f"fills from a zero baseline, which a log or time scale has no "
+                f"meaning for. Use a linear value axis, or switch to a line or "
+                f"scatter chart, which plot points instead of filled bars."
+            )
+
+    @staticmethod
+    def _is_time_scale(spec: object | None) -> bool:
+        from charted.charts.scales import TimeScale
+
+        return spec == "time" or isinstance(spec, TimeScale)
+
+    @staticmethod
+    def _normalize_time_data(x_data: Vector | Vector2D) -> Vector | Vector2D:
+        """Convert date/datetime/ISO-string x-data into epoch seconds."""
+        from charted.charts.scales import _to_epoch
+
+        def conv(seq):
+            return [_to_epoch(v) for v in seq]
+
+        if x_data and isinstance(x_data[0], list):
+            return [conv(row) for row in x_data]
+        return conv(x_data)
+
+    def _build_scale(self, spec: object | None, data: Vector2D):
+        """Construct a Scale instance for an axis from its data domain.
+
+        Returns None for the default linear case so the axis keeps its
+        original tick math untouched.
+        """
+        from charted.charts.scales import Scale, make_scale
+
+        if spec is None or spec == "linear":
+            return None
+        flat = [v for row in data for v in row] if data else []
+        if not flat:
+            domain_min, domain_max = 0.0, 1.0
+        else:
+            domain_min, domain_max = min(flat), max(flat)
+        if isinstance(spec, Scale):
+            return spec
+        return make_scale(spec, domain_min, domain_max)
+
+    @property
+    def x_scale(self) -> str:
+        """Name of the x-axis scale ('linear', 'log', or 'time')."""
+        return self._x_scale.name if self._x_scale is not None else "linear"
+
+    @property
+    def y_scale(self) -> str:
+        """Name of the y-axis scale ('linear', 'log', or 'time')."""
+        return self._y_scale.name if self._y_scale is not None else "linear"
 
     # =========================================================================
     # Data Properties (read-only, delegated to DataModel)
@@ -622,6 +891,32 @@ class Chart(Svg):
         )
 
     @property
+    def subtitle_element(self) -> Text | None:
+        """Render subtitle as smaller text below the title."""
+        if not self._subtitle:
+            return None
+        subtitle_font_size = self.theme.title_font_size - 4
+        # Position below the title (or at top if no title)
+        if self._title:
+            y_pos = self.v_pad / 2 + self._title.height + subtitle_font_size
+        else:
+            y_pos = self.v_pad / 2 + subtitle_font_size
+        return Text(
+            transform=[
+                translate(
+                    x=-self._subtitle.width / 2,
+                    y=self._subtitle.height,
+                )
+            ],
+            text=self._subtitle.text,
+            fill=self.theme.title_color,
+            font_family=self.theme.title_font_family,
+            font_size=subtitle_font_size,
+            x=self.width / 2,
+            y=y_pos,
+        )
+
+    @property
     def v_pad(self) -> float:
         return self.v_padding * self.height
 
@@ -739,9 +1034,7 @@ class Chart(Svg):
             )
 
         stroke_color = (
-            self.theme.resolved_axis_border_color
-            if hasattr(self, "theme")
-            else "black"
+            self.theme.resolved_axis_border_color if hasattr(self, "theme") else "black"
         )
 
         return create_zero_line_path(
@@ -880,48 +1173,114 @@ class Chart(Svg):
             "theme": "default",
             "has_negative_values": has_negative,
             "stacked": stacked,
+            "scales": {"x": self.x_scale, "y": self.y_scale},
         }
 
     # =========================================================================
     # Reference Lines & Axis Labels
     # =========================================================================
 
+    def _collect_legacy_reference_lines(self) -> list:
+        """Build the legacy ``h_lines`` / ``v_lines`` reference-line layer.
+
+        These are expressed as dashed full-span ``LineAnnotation`` objects so
+        there is a single rendering path. They are kept separate from
+        user-supplied annotations because reference lines span the full plot
+        and are intentionally not clipped, and their markup must stay
+        byte-for-byte identical to historical output.
+        """
+        from charted.charts.annotations import LineAnnotation
+
+        annotations: list = []
+        if self._h_lines:
+            annotations.extend(LineAnnotation._h_line(v) for v in self._h_lines)
+        if self._v_lines:
+            annotations.extend(LineAnnotation._v_line(v) for v in self._v_lines)
+        return annotations
+
+    def _collect_annotations(self) -> list:
+        """Build the full annotation list for this chart.
+
+        Legacy reference lines (``h_lines`` / ``v_lines``) come first, in their
+        historical order, followed by any user-supplied annotations.
+        """
+        return self._collect_legacy_reference_lines() + list(self._annotations)
+
     def _render_reference_lines(self) -> G | None:
-        """Render horizontal and vertical reference lines in the plot area."""
-        if not self._h_lines and not self._v_lines:
+        """Render the annotation layer (reference lines, boxes, labels).
+
+        Annotations are positioned in data coordinates and reprojected through
+        the axes, drawn inside the plot-area group. Legacy full-span reference
+        lines are drawn directly in the group; user annotations are drawn in a
+        nested group clipped to the plot area so out-of-domain boxes/labels
+        cannot bleed over the axes or off-canvas.
+        """
+        legacy = self._collect_legacy_reference_lines()
+        user_annotations = list(self._annotations)
+        if (
+            not legacy
+            and not user_annotations
+            and not getattr(self, "_reference_line_labels", [])
+        ):
             return None
 
         g = G(
             transform=f"translate({self.left_padding}, {self.top_padding})",
         )
+        # Full-span legacy h/v reference lines are drawn directly (unclipped),
+        # preserving byte-for-byte historical output.
+        for annotation in legacy:
+            g.add_child(annotation.render(self))
 
-        ref_color = self.theme.resolved_reference_line_color
+        # User annotations (boxes, lines, labels) are clipped to the plot area
+        # using the same clip path as the scatter point group.
+        if user_annotations:
+            clipped = G(clip_path="url(#plot-clip)")
+            for annotation in user_annotations:
+                clipped.add_child(annotation.render(self))
+            g.add_child(clipped)
 
-        if self._h_lines:
-            for val in self._h_lines:
-                y = self.plot_height - self.y_axis.reproject(val)
-                g.add_child(
-                    Path(
-                        d=[f"M0 {y} h{self.plot_width}"],
-                        stroke=ref_color,
-                        stroke_width=REFERENCE_LINE_WIDTH,
-                        stroke_dasharray=REFERENCE_LINE_DASH,
-                        fill="none",
+        # Render any reference-line labels supplied via the reference_lines API.
+        # The lines themselves are already drawn above (as LineAnnotations); this
+        # adds the text callouts next to them.
+        ref_labels = {}
+        for entry in getattr(self, "_reference_line_labels", []):
+            ref_labels[(entry["axis"], entry["value"])] = entry.get("label")
+
+        if ref_labels:
+            ref_color = self.theme.resolved_reference_line_color
+            label_font_size = max(8, self.theme.title_font_size - 4)
+            label_font_family = self.theme.title_font_family
+
+            for (axis, value), label in ref_labels.items():
+                if not label:
+                    continue
+                if axis == "y":
+                    y = self.plot_height - self.y_axis.reproject(value)
+                    g.add_child(
+                        Text(
+                            text=label,
+                            x=self.plot_width - 4,
+                            y=y - 4,
+                            fill=ref_color,
+                            font_size=label_font_size,
+                            font_family=label_font_family,
+                            text_anchor="end",
+                        )
                     )
-                )
-
-        if self._v_lines:
-            for val in self._v_lines:
-                x = self.x_axis.reproject(val)
-                g.add_child(
-                    Path(
-                        d=[f"M{x} 0 v{self.plot_height}"],
-                        stroke=ref_color,
-                        stroke_width=REFERENCE_LINE_WIDTH,
-                        stroke_dasharray=REFERENCE_LINE_DASH,
-                        fill="none",
+                else:
+                    x = self.x_axis.reproject(value)
+                    g.add_child(
+                        Text(
+                            text=label,
+                            x=x + 4,
+                            y=label_font_size,
+                            fill=ref_color,
+                            font_size=label_font_size,
+                            font_family=label_font_family,
+                            text_anchor="start",
+                        )
                     )
-                )
 
         return g
 
@@ -967,6 +1326,62 @@ class Chart(Svg):
             )
 
         return elements
+
+    # =========================================================================
+    # Tooltips (opt-in, HTML-only native <title> hover labels)
+    # =========================================================================
+
+    def _tooltip_label(self, series_idx: int, point_idx: int) -> str:
+        """Build the tooltip text for one data point.
+
+        Format is ``"<label>: <value>"`` when a category label is available,
+        otherwise just the value. The series name is prefixed when there is
+        more than one series so multi-series marks stay distinguishable.
+        """
+        value = self._tooltip_value(series_idx, point_idx)
+        label = None
+        if self.x_labels and point_idx < len(self.x_labels):
+            lbl = self.x_labels[point_idx]
+            label = lbl.text if hasattr(lbl, "text") else str(lbl)
+
+        series_name = None
+        if self.series_names and series_idx < len(self.series_names):
+            series_name = self.series_names[series_idx]
+
+        multi_series = len(self.y_data) > 1
+
+        if label is not None:
+            if multi_series:
+                prefix = (
+                    series_name
+                    if series_name is not None
+                    else f"Series {series_idx + 1}"
+                )
+                return f"{prefix} - {label}: {value}"
+            return f"{label}: {value}"
+        if series_name is not None:
+            return f"{series_name}: {value}"
+        if multi_series:
+            return f"Series {series_idx + 1}: {value}"
+        return str(value)
+
+    def _tooltip_value(self, series_idx: int, point_idx: int):
+        """Return the raw data value for a point (overridable per chart)."""
+        data = self.y_data
+        if series_idx < len(data) and point_idx < len(data[series_idx]):
+            value = data[series_idx][point_idx]
+            if isinstance(value, float) and value.is_integer():
+                return int(value)
+            return value
+        return ""
+
+    def _tooltip_title(self, series_idx: int, point_idx: int):
+        """Return a ``Title`` element for a mark, or None when tooltips off."""
+        if not self._tooltips:
+            return None
+        from charted.html.element import Title
+
+        return Title(self._tooltip_label(series_idx, point_idx))
 
     @property
     def _data_label_x_offset(self) -> float:

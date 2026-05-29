@@ -52,6 +52,7 @@ class ScatterChart(Chart):
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
+        subtitle: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
@@ -60,7 +61,12 @@ class ScatterChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        annotations: list | None = None,
         quadrant_labels: list[str] | None = None,
+        x_scale: object | None = None,
+        y_scale: object | None = None,
+        reference_lines: list[dict] | None = None,
+        colors: list[str] | None = None,
     ):
         self._quadrant_labels = quadrant_labels
         super().__init__(
@@ -69,6 +75,7 @@ class ScatterChart(Chart):
             width=width,
             height=height,
             title=title,
+            subtitle=subtitle,
             theme=theme,
             series_names=series_names,
             chart_type="scatter",
@@ -78,6 +85,11 @@ class ScatterChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            annotations=annotations,
+            x_scale=x_scale,
+            y_scale=y_scale,
+            reference_lines=reference_lines,
+            colors=colors,
         )
 
     @property
@@ -109,16 +121,15 @@ class ScatterChart(Chart):
             for i, (x, y, y_offset) in enumerate(zip(x_values, y_values, y_offsets)):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
+                title = self._tooltip_title(series_idx, i)
                 # Render marker based on shape
                 if marker_shape == "square":
                     half = marker_size / 2
-                    series.add_child(
-                        Rect(
-                            x=x - half,
-                            y=y - half,
-                            width=marker_size,
-                            height=marker_size,
-                        )
+                    mark = Rect(
+                        x=x - half,
+                        y=y - half,
+                        width=marker_size,
+                        height=marker_size,
                     )
                 elif marker_shape == "diamond":
                     points_str = (
@@ -127,9 +138,15 @@ class ScatterChart(Chart):
                         f"{x},{y + marker_size} "
                         f"{x - marker_size},{y}"
                     )
-                    series.add_child(Path(d=f"M{points_str} Z", fill=fill))
+                    mark = Path(d=f"M{points_str} Z", fill=fill)
                 elif marker_shape != "none":  # circle
-                    series.add_child(Circle(cx=x, cy=y, r=marker_size))
+                    mark = Circle(cx=x, cy=y, r=marker_size)
+                else:
+                    mark = None
+                if mark is not None:
+                    if title is not None:
+                        mark.add_child(title)
+                    series.add_child(mark)
             g.add_children(series)
 
         # Data labels and quadrant labels rendered outside the clip group
