@@ -113,7 +113,7 @@ def create_legend_background(
 
 def calculate_legend_dimensions(
     series_names: list[str], font_size: float, legend_padding: float
-) -> tuple[float, float, float, float]:
+) -> tuple[float, float, float, float, float]:
     """Calculate legend dimensions based on series names.
 
     Args:
@@ -122,16 +122,17 @@ def calculate_legend_dimensions(
         legend_padding: Padding value for legend.
 
     Returns:
-        Tuple of (legend_width, legend_height, icon_height, entry_count).
+        Tuple of (legend_width, legend_height, icon_height, entry_count, row_gap).
     """
     legend_entries = [
         calculate_text_dimensions(name, font_size=font_size) for name in series_names
     ]
     icon_height = max(entry.height for entry in legend_entries)
     legend_width = max(entry.width for entry in legend_entries) + icon_height + 2
-    legend_height = len(legend_entries) * (icon_height + 2)
+    row_gap = 4  # Vertical gap between legend entries
+    legend_height = len(legend_entries) * (icon_height + row_gap)
 
-    return legend_width, legend_height, icon_height, len(legend_entries)
+    return legend_width, legend_height, icon_height, len(legend_entries), row_gap
 
 
 def calculate_legend_position(
@@ -283,8 +284,8 @@ def create_legend(
     legend_bg = _derive_legend_background(background_color)
 
     # Calculate dimensions
-    legend_width, legend_height, icon_height, entry_count = calculate_legend_dimensions(
-        series_names, font_size, legend_padding
+    legend_width, legend_height, icon_height, entry_count, row_gap = (
+        calculate_legend_dimensions(series_names, font_size, legend_padding)
     )
 
     # Calculate position (y0 is center of legend)
@@ -320,13 +321,14 @@ def create_legend(
     )
 
     # Add entries (vertically centered in background)
-    total_entries_height = entry_count * icon_height
+    # Row gap only between entries, not after the last one
+    total_entries_height = entry_count * icon_height + (entry_count - 1) * row_gap
     vertical_padding = bg_bottom_actual - bg_top_actual - total_entries_height
     entry_start_y = bg_top_actual + (vertical_padding / 2)
 
     for i, (name, color) in enumerate(zip(series_names, colors)):
         text = calculate_text_dimensions(name, font_size=font_size)
-        entry_top = entry_start_y + i * icon_height
+        entry_top = entry_start_y + i * (icon_height + row_gap)
         entry = create_legend_entry(
             x0, entry_top, text, color, i, font_family, icon_height,
             font_color=font_color,
