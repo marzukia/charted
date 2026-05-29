@@ -128,9 +128,10 @@ def calculate_legend_dimensions(
     ]
     icon_height = max(entry.height for entry in legend_entries)
     legend_width = max(entry.width for entry in legend_entries) + icon_height + 2
-    legend_height = len(legend_entries) * (icon_height + 2)
+    row_gap = 4  # Vertical gap between legend entries
+    legend_height = len(legend_entries) * (icon_height + row_gap)
 
-    return legend_width, legend_height, icon_height, len(legend_entries)
+    return legend_width, legend_height, icon_height, len(legend_entries), row_gap
 
 
 def calculate_legend_position(
@@ -264,14 +265,14 @@ def create_legend(
     # Handle both dict and Theme object
     if isinstance(theme_config, Theme):
         font_size = getattr(theme_config, "legend_font_size", 12)
-        legend_padding = 0.5  # Default
+        legend_padding = getattr(theme_config, "legend_padding", 0.25)
         font_family = getattr(theme_config, "legend_font_family", "Arial")
         font_color = getattr(theme_config, "legend_font_color", "#444444")
         position = getattr(theme_config, "legend_position", "topright")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = theme_config.get("font_size", 12)
-        legend_padding = theme_config.get("legend_padding", 0.5)
+        legend_padding = theme_config.get("legend_padding", 0.25)
         font_family = theme_config.get("font_family", "Arial")
         font_color = theme_config.get("font_color", "#444444")
         position = theme_config.get("position", "topright")
@@ -282,8 +283,8 @@ def create_legend(
     legend_bg = _derive_legend_background(background_color)
 
     # Calculate dimensions
-    legend_width, legend_height, icon_height, entry_count = calculate_legend_dimensions(
-        series_names, font_size, legend_padding
+    legend_width, legend_height, icon_height, entry_count, row_gap = (
+        calculate_legend_dimensions(series_names, font_size, legend_padding)
     )
 
     # Calculate position (y0 is center of legend)
@@ -319,13 +320,14 @@ def create_legend(
     )
 
     # Add entries (vertically centered in background)
-    total_entries_height = entry_count * icon_height
+    # Row gap only between entries, not after the last one
+    total_entries_height = entry_count * icon_height + (entry_count - 1) * row_gap
     vertical_padding = bg_bottom_actual - bg_top_actual - total_entries_height
     entry_start_y = bg_top_actual + (vertical_padding / 2)
 
     for i, (name, color) in enumerate(zip(series_names, colors)):
         text = calculate_text_dimensions(name, font_size=font_size)
-        entry_top = entry_start_y + i * icon_height
+        entry_top = entry_start_y + i * (icon_height + row_gap)
         entry = create_legend_entry(
             x0, entry_top, text, color, i, font_family, icon_height,
             font_color=font_color,
