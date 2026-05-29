@@ -128,7 +128,10 @@ class RadarRenderer:
         end_x: float,
         end_y: float,
     ) -> None:
-        """Render a single axis label.
+        """Render a single axis label rotated to align with its axis.
+
+        Labels rotate to point outward from center along the axis direction,
+        preventing text overflow and overlap in multi-axis displays.
 
         Args:
             g: Parent G element
@@ -140,13 +143,15 @@ class RadarRenderer:
         label_radius = self._max_radius + self.chart.label_offset
         label_x, label_y = self._polar_to_cartesian(cx, cy, label_radius, angle)
 
-        # Adjust text anchor based on angle
-        if -90 <= angle <= 90:  # Right side: start anchor
+        # Rotate label to align with axis; flip for left side readability
+        if -90 <= angle <= 90:  # Right side: text reads outward
             text_anchor = "start"
             x_align = label_x + 5
-        else:  # Left side: end anchor
+            rotation = angle
+        else:  # Left side: text reads outward (flipped to stay upright)
             text_anchor = "end"
             x_align = label_x - 5
+            rotation = angle + 180
 
         label_text = Text(
             x=x_align,
@@ -156,6 +161,7 @@ class RadarRenderer:
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             text_anchor=text_anchor,
+            transform=[f"rotate({rotation}, {label_x}, {label_y})"],
         )
         g.add_child(label_text)
 
