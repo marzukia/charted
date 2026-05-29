@@ -86,6 +86,59 @@ def _parse_csv(path: Path) -> dict:
         return {"data": data_values, "labels": labels}
 
 
+def _build_combo_kwargs(data: dict) -> dict:
+    """Map loaded data into ComboChart's series-based keyword arguments.
+
+    Accepts either a dict that already carries a ``series`` list (passed
+    through untouched) or the generic ``{"data": ..., "labels": ...}`` shape
+    produced by the CSV/JSON loaders. Multi-column data becomes one series per
+    column; the first column renders as bars and the rest as lines.
+
+    Raises ValueError with a human-readable message for shapes that cannot
+    produce a valid combo chart (no data, or fewer than two series).
+    """
+    # Already in series form (e.g. a hand-written JSON config).
+    if "series" in data:
+        return data
+
+    raw = data.get("data")
+    labels = data.get("labels")
+
+    if not raw:
+        raise ValueError("no data provided for combo chart")
+
+    # Normalise to a list of series (list of lists).
+    if raw and not isinstance(raw[0], list):
+        columns = [raw]
+    else:
+        columns = list(raw)
+
+    # Drop non-numeric columns (e.g. a stray label column read as data).
+    numeric_columns = [
+        col for col in columns if all(isinstance(v, (int, float)) for v in col)
+    ]
+    if len(numeric_columns) < 2:
+        raise ValueError(
+            "combo charts require at least two numeric series, "
+            f"got {len(numeric_columns)}"
+        )
+
+    series = []
+    for i, col in enumerate(numeric_columns):
+        series.append(
+            {
+                "data": col,
+                "type": "column" if i == 0 else "line",
+                "name": f"Series {i + 1}",
+            }
+        )
+
+    kwargs = {"series": series}
+    if labels is not None:
+        kwargs["labels"] = labels
+    return kwargs
+
+
 def create_command(args: argparse.Namespace):
     """Create a new chart."""
     chart_type = args.chart_type
@@ -119,6 +172,21 @@ def create_command(args: argparse.Namespace):
                     "  Suggestion: Check that your CSV/JSON is properly formatted",
                     file=sys.stderr,
                 )
+            sys.exit(1)
+
+    # ComboChart uses a series-based API rather than data=/labels=, so map the
+    # loaded data into that shape (or fail with a clear message).
+    if chart_type == "combo":
+        try:
+            data = _build_combo_kwargs(data)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            print(
+                "  Suggestion: combo charts need at least two numeric series. "
+                "Provide a JSON file with a 'series' list, or a CSV/JSON with two "
+                "or more numeric data columns.",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     # Create chart
