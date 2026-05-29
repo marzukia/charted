@@ -801,6 +801,12 @@ class Chart(Svg):
                 self.plot_height * (-self.y_axis.axis_dimension.min_value) / y_range
             )
 
+        stroke_color = (
+            self.theme.resolved_axis_border_color
+            if hasattr(self, "theme")
+            else "black"
+        )
+
         return create_zero_line_path(
             x_axis_zero=x_axis_zero,
             y_axis_zero=y_axis_zero,
@@ -814,6 +820,7 @@ class Chart(Svg):
             y_min=self.y_axis.axis_dimension.min_value,
             is_bar_chart=is_bar_chart,
             is_xy_line=is_xy_line,
+            stroke_color=stroke_color,
         )
 
     @property

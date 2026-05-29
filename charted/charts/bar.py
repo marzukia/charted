@@ -187,22 +187,27 @@ class BarChart(Chart):
                     if style.get("fill"):
                         fill = style["fill"]
 
+                has_fill_override = fill != color
+                per_bar = len(self.x_values) == 1 and len(self.colors) > 1 and not has_fill_override
                 paths = []
                 for bar_idx, x in enumerate(x_values_series):
                     slot_y = start_y + bar_idx * (slot_height + gap)
                     bar_y = slot_y + series_idx * series_thickness
                     if x >= zero_x:
-                        paths.append(
-                            Path.get_path(zero_x, bar_y, x - zero_x, series_thickness)
-                        )
+                        bar_path = Path.get_path(zero_x, bar_y, x - zero_x, series_thickness)
                     else:
-                        paths.append(
-                            Path.get_path(x, bar_y, zero_x - x, series_thickness)
-                        )
-                bars_g.add_child(Path(d=paths, fill=fill))
+                        bar_path = Path.get_path(x, bar_y, zero_x - x, series_thickness)
+                    if per_bar:
+                        bar_fill = self.colors[bar_idx % len(self.colors)]
+                        bars_g.add_child(Path(d=[bar_path], fill=bar_fill))
+                    else:
+                        paths.append(bar_path)
+                if not per_bar:
+                    bars_g.add_child(Path(d=paths, fill=fill))
 
         # Render data labels at end of bars
         if self._bar_data_labels:
+            from charted.utils.colors import get_contrast_color
             from charted.utils.helpers import calculate_text_dimensions
 
             labels = self._bar_data_labels
@@ -212,6 +217,7 @@ class BarChart(Chart):
             font_size = max(8, self.theme.title_font_size - 4)
             font_family = self.theme.title_font_family
             font_color = self.theme.resolved_axis_title_color
+            single_series = len(self.x_values) == 1 and len(self.colors) > 1
 
             for series_idx, label_row in enumerate(labels):
                 if series_idx >= len(self.x_values):
@@ -224,6 +230,11 @@ class BarChart(Chart):
                     slot_y = start_y + bar_idx * (slot_height + gap)
                     bar_y = slot_y + series_idx * series_thickness
 
+                    if single_series:
+                        bar_color = self.colors[bar_idx % len(self.colors)]
+                    else:
+                        bar_color = self.colors[series_idx % len(self.colors)]
+
                     # Check if label would overflow the chart boundary
                     measured = calculate_text_dimensions(
                         str(label_text),
@@ -232,13 +243,12 @@ class BarChart(Chart):
                     )
                     label_right = x + 4 + measured.width
                     if label_right > self.plot_width:
-                        # Place label inside the bar, right-aligned
                         bars_g.add_child(
                             Text(
                                 text=str(label_text),
                                 x=x - 4,
                                 y=bar_y + series_thickness / 2 + font_size / 3,
-                                fill="#ffffff",
+                                fill=get_contrast_color(bar_color),
                                 font_size=font_size,
                                 font_family=font_family,
                                 text_anchor="end",
