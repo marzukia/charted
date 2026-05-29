@@ -34,6 +34,11 @@ from typing import Optional
 ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
+from charted.charts.annotations import (
+    BoxAnnotation,
+    LabelAnnotation,
+    LineAnnotation,
+)
 from charted.charts.area import AreaChart
 from charted.charts.bar import BarChart
 from charted.charts.box import BoxPlot
@@ -201,6 +206,16 @@ CHARTS = {
         data=[25, 25, 50],
         labels=["A", "B", "C"],
         show_percentages=True,
+    ),
+    # Annotations (box / line / label in data coordinates)
+    "scatter_annotations": ScatterChart(
+        x_data=[0, 2, 4, 6, 8, 10],
+        y_data=[0, 8, 4, 16, 12, 20],
+        annotations=[
+            BoxAnnotation(x_range=(2, 6), y_range=(4, 16)),
+            LineAnnotation(start=(0, 0), end=(10, 20)),
+            LabelAnnotation(point=(4, 16), text="peak"),
+        ],
     ),
 }
 
