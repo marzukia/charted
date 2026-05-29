@@ -128,6 +128,12 @@ CHARTS = {
         x_labels=["A", "B", "C", "D"],
         y_labels=["X", "Y"],
     ),
+    "heatmap_continuous": HeatmapChart(
+        data=[[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        x_labels=["A", "B", "C"],
+        y_labels=["X", "Y", "Z"],
+        color_scale="viridis",
+    ),
     # Area chart
     "area_basic": AreaChart(
         data=[15, 30, 45, 70, 55, 80, 75, 90, 85, 95],

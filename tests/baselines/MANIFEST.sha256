@@ -20,6 +20,7 @@
   "gantt_multi.svg": "bb6c37f3b73075be20db035f106b65a212b6af9523b22263d33608b2e968d4ce",
   "heatmap_basic.svg": "e088c16de96b8645266e3ed36decb4a068bb0dde51112f4beb71de2e1552476e",
   "heatmap_rectangular.svg": "40ea56be2f8b8af1114e35fadd2e01018ea4a6adecd5ea8f3500bbc3c27e2c61",
+  "heatmap_continuous.svg": "863b181cc9e8c20a28a49b5d9dff2a919e5bccd0ec968568013bea84b75d3781",
   "area_basic.svg": "f3e3d2e971d4cf8cdb4b1bdc0434f120bd92de8c610a8b3ca6cc0b9859b9e494",
   "boxplot_basic.svg": "801a5e8070fc25a1b6fe30b736e7cd014136f381af62f31cbf84f58beb380c12",
   "histogram_basic.svg": "e66ae0d193f3f888a4db727426ec9a7c58b424066475f39e1540685a7aff0baf",
