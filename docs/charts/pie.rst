@@ -16,7 +16,6 @@ Simple pie chart::
    chart = PieChart(
        data=[45, 30, 15, 10],
        labels=["Electronics", "Clothing", "Food", "Other"],
-       series_names=["Sales"],
        title="Revenue by Category"
    )
    chart.save("pie.svg")
@@ -30,11 +29,10 @@ Create a doughnut chart by setting inner_radius::
        title="Sales Distribution",
        data=[45, 30, 15, 10],
        labels=["Electronics", "Clothing", "Food", "Other"],
-       series_names=["Sales"],
-        width=500,
-        height=400,
-        inner_radius=0.5  # 50% of outer radius
-    )
+       width=500,
+       height=400,
+       inner_radius=0.5  # 50% of outer radius
+   )
 
 .. image:: ../examples/pie_doughnut.svg
    :width: 100%
@@ -78,7 +76,6 @@ Customize individual slices with colors, labels, and explosion::
    chart = PieChart(
        data=[300, 150, 100, 50],
        labels=["Product A", "Product B", "Product C", "Product D"],
-       series_names=["Sales"],
        title="Market Share",
        slice_styles={
            0: {
@@ -171,7 +168,6 @@ Complete pie customization::
    chart = PieChart(
        data=[300, 150, 100, 50],
        labels=["Product A", "Product B", "Product C", "Product D"],
-       series_names=["Sales"],
        title="Revenue Distribution",
        width=600,
        height=500,
@@ -195,9 +191,8 @@ API Reference
 
    - ``data`` — Single list of values (one slice per value)
    - ``labels`` — Slice labels
-   - ``series_names`` — Legend name for the data series
-    - ``inner_radius`` — Inner radius ratio for doughnut mode (0.3-0.7, default: 0; 0 = regular pie)
-    - ``slice_styles`` — Dictionary mapping slice index to style overrides
+   - ``inner_radius`` — Inner radius ratio for doughnut mode (0.3-0.7, default: 0; 0 = regular pie)
+   - ``slice_styles`` — Dictionary mapping slice index to style overrides
    - ``height`` — Chart height in pixels (default 600)
    - ``theme`` — Theme name string or theme dictionary
    - ``title`` — Chart title text
@@ -218,9 +213,8 @@ API Reference
       chart = PieChart(
           data=[300, 150, 100, 50],
           labels=["Product A", "Product B", "Product C", "Product D"],
-          series_names=["Sales"],
           title="Market Share",
-        inner_radius=0.5,
+          inner_radius=0.5,
           slice_styles={
               0: {"color": "#FF6B6B", "explode": 0.1},
               1: {"color": "#4ECDC4"},

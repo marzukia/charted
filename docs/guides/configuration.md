@@ -1,0 +1,98 @@
+# Configuration Guide
+
+Configure Charted globally or per-chart.
+
+## Configuration Methods
+
+Charted supports three configuration methods:
+
+1. **Environment variables**
+2. **TOML config files** (`.chartedrc.toml`)
+3. **Programmatic overrides**
+
+## TOML Configuration
+
+Create a `.chartedrc.toml` file in your project root:
+
+```toml
+# .chartedrc.toml
+
+[defaults]
+font = "Roboto"
+font_size = 12
+title_font_size = 16
+width = 600
+height = 400
+
+[bar]
+bar_gap = 0.2
+group_gap = 0.3
+
+[theme]
+colors = ["#FF6B6B", "#4ECDC4", "#45B7D1"]
+background_color = "#ffffff"
+```
+
+## Environment Variables
+
+```bash
+export CHARTED_FONT="Roboto"
+export CHARTED_FONT_SIZE="14"
+export CHARTED_WIDTH="800"
+export CHARTED_HEIGHT="600"
+```
+
+## Programmatic Configuration
+
+Override defaults in code:
+
+```python
+from charted import set_config, BarChart
+
+# Set global defaults
+set_config({
+    "font": "Inter",
+    "font_size": 14,
+    "width": 800,
+    "height": 600
+})
+
+# All subsequent charts use these defaults
+chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
+```
+
+## Chart-Specific Overrides
+
+Override defaults for individual charts:
+
+```python
+from charted import BarChart
+
+# Uses global defaults
+chart1 = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
+
+# Override for this chart only
+chart2 = BarChart(
+    data=[120, 180, 210],
+    labels=["Q1", "Q2", "Q3"],
+    font_family="Monoton",  # Override font
+    width=1000,             # Override width
+    height=800              # Override height
+)
+```
+
+## Available Options
+
+### General Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `font` | str | "Arial" | Font family |
+| `font_size` | int | 12 | Body text size (pt) |
+| `title_font_size` | int | 16 | Title size (pt) |
+| `width` | int | 600 | Chart width (px) |
+| `height` | int | 400 | Chart height (px) |
+
+### Chart-Specific Options
+
+See individual chart documentation for chart-specific options.
