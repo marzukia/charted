@@ -12,7 +12,7 @@ Basic Usage
 
 Single series area chart::
 
-   from charted.charts import AreaChat
+   from charted.charts import AreaChart
 
    chart = AreaChart(
        data=[120, -80, 150, -90, 170],
@@ -84,7 +84,7 @@ Override the default color palette::
 API Reference
 -------------
 
-.. autoclass:: charted.charts.area.AreaChat
+.. autoclass:: charted.charts.area.AreaChart
    :members:
    :undoc-members:
    :show-inheritance:

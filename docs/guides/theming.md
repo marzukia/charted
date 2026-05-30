@@ -87,4 +87,4 @@ chart = ColumnChart(
 )
 ```
 
-See the full [API Reference](api/themes) for complete theme documentation.
+See the full [API Reference](https://github.com/marzukia/charted/tree/main/charted) for complete theme documentation.
