@@ -42,9 +42,9 @@ python -m charted batch ./data ./output --config .chartedrc.toml
 
 ### CSV Format
 
-First column is labels, remaining columns are data series:
+**CSV Format:**
 
-```csv
+```text
 Quarter,Q1,Q2,Q3,Q4
 Sales,120,180,210,150
 Profit,80,120,140,100

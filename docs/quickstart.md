@@ -32,7 +32,7 @@ That's it! You now have a `sales.svg` file ready to use in presentations, websit
 Charted supports 14 chart types with a consistent API:
 
 ```python
-from charted import BarChart, ColumnChart, LineChart, ScatterChart, PieChart, RadarChart
+from charted import BarChart, ColumnChart, LineChart, PieChart, RadarChart
 
 # Bar chart (horizontal bars)
 BarChart(data=[120, 180, 210], labels=["A", "B", "C"]).save("bar.svg")
@@ -42,9 +42,6 @@ ColumnChart(data=[120, 180, 210], labels=["A", "B", "C"]).save("column.svg")
 
 # Line chart
 LineChart(data=[120, 180, 210], labels=["A", "B", "C"]).save("line.svg")
-
-# Scatter plot
-ScatterChart(data=[120, 180, 210], labels=["A", "B", "C"]).save("scatter.svg")
 
 # Pie chart
 PieChart(data=[120, 180, 210], labels=["A", "B", "C"]).save("pie.svg")
@@ -86,9 +83,9 @@ chart = BarChart(data=y, labels=x, title=labels[0])
 chart.save("sales.svg")
 ```
 
-**CSV format:**
+**CSV Format:**
 
-```csv
+```text
 Quarter,Revenue
 Q1,120
 Q2,180
@@ -129,7 +126,6 @@ chart = BarChart(
     labels=["Q1", "Q2", "Q3"],
     theme={
         "colors": ["#FF6B6B", "#4ECDC4", "#45B7D1"],
-        "background_color": "#1a1a2e"
     }
 )
 ```

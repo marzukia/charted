@@ -43,7 +43,7 @@ Why Charted?
    .. grid-item-card:: 📊 14 Chart Types
       :class-card: sd-shadow-sm
 
-      Bar, Column, Line, Scatter, Pie, Radar, Area, Bubble, Combo, Heatmap, Gantt, Histogram, Polar Area, Box Plot.
+      Bar, Column, Line, Scatter, Pie, Radar, Area, Bubble, Combo, HeatmapChart, Gantt, Histogram, Polar Area, Box Plot.
 
    .. grid-item-card:: 🎯 Simple API
       :class-card: sd-shadow-sm
@@ -189,7 +189,7 @@ Chart Types
          :width: 100%
          :alt: Radar Chart Example
 
-   .. grid-item-card:: `Heatmap <charts/heatmap.html>`_
+   .. grid-item-card:: `HeatmapChart <charts/heatmap.html>`_
       :link-type: doc
 
       Heat maps for correlation matrices and density plots.

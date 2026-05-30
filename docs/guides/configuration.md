@@ -4,11 +4,11 @@ Configure Charted globally or per-chart.
 
 ## Configuration Methods
 
-Charted supports three configuration methods:
+Charted supports configuration via:
 
-1. **Environment variables**
-2. **TOML config files** (`.chartedrc.toml`)
-3. **Programmatic overrides**
+1. **TOML config files** (`.chartedrc.toml`)
+2. **Environment variables**
+3. **Per-chart overrides**
 
 ## TOML Configuration
 
@@ -42,33 +42,14 @@ export CHARTED_WIDTH="800"
 export CHARTED_HEIGHT="600"
 ```
 
-## Programmatic Configuration
-
-Override defaults in code:
-
-```python
-from charted import set_config, BarChart
-
-# Set global defaults
-set_config({
-    "font": "Inter",
-    "font_size": 14,
-    "width": 800,
-    "height": 600
-})
-
-# All subsequent charts use these defaults
-chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
-```
-
-## Chart-Specific Overrides
+## Per-Chart Overrides
 
 Override defaults for individual charts:
 
 ```python
 from charted import BarChart
 
-# Uses global defaults
+# Uses global defaults from .chartedrc.toml
 chart1 = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"])
 
 # Override for this chart only
