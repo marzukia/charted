@@ -35,6 +35,21 @@
     height: auto;
 }
 
+/* Sidebar logo sizing */
+.sidebar-logo-container {
+    padding: 0.5rem 0;
+}
+
+.sidebar-logo-container img.sidebar-logo {
+    max-width: 140px !important;
+    height: auto !important;
+}
+
+/* Hide sidebar brand text - redundant with logo */
+.sidebar-brand-text {
+    display: none !important;
+}
+
 /* Code block improvements */
 .highlight {
     border-radius: 8px;
