@@ -4,6 +4,10 @@
 DEFAULT_CHART_WIDTH = 500
 DEFAULT_CHART_HEIGHT = 500
 
+# Pie chart specific (wider aspect ratio for dual-column legend)
+PIE_CHART_WIDTH = 700
+PIE_CHART_HEIGHT = 500
+
 # Typography
 DEFAULT_FONT_SIZE = 12
 DEFAULT_TITLE_FONT_SIZE = 16

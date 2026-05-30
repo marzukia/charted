@@ -5,6 +5,17 @@ All notable changes to Charted will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-05-30
+
+### Changed
+- Widen pie charts to 700×500 (1.4:1 aspect ratio)
+- Add dual-column legend for overflow labels
+
+### Added
+- `PIE_CHART_WIDTH`, `PIE_CHART_HEIGHT` constants
+- `create_pie_legend()` function for dual-column legend layout
+- `show_percentages` parameter to PieChart
+
 ## [1.0.4] - 2026-05-29
 
 ### Changed
