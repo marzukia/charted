@@ -1,0 +1,130 @@
+/* Charted Custom Styles */
+
+/* Hero section styling */
+.hero-section {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--color-foreground-secondary);
+    margin-bottom: 2rem;
+}
+
+/* Grid card enhancements */
+.sd-card {
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sd-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Logo styling */
+.logo-image {
+    max-width: 400px;
+    height: auto;
+}
+
+/* Code block improvements */
+.highlight {
+    border-radius: 8px;
+}
+
+.highlight pre {
+    padding: 1rem;
+}
+
+/* Admonition styling */
+.admonition {
+    border-radius: 8px;
+    border-left: 4px solid var(--color-brand-primary);
+}
+
+/* Table of contents styling */
+.toctree-wrapper ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.toctree-wrapper li {
+    margin-bottom: 0.5rem;
+}
+
+.toctree-wrapper a {
+    text-decoration: none;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.toctree-wrapper a:hover {
+    background-color: var(--color-background-hover);
+}
+
+/* Badge styling */
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 0.875em;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 6px;
+}
+
+.badge-primary {
+    background-color: var(--color-brand-primary);
+    color: white;
+}
+
+/* Feature grid improvements */
+.feature-grid {
+    margin: 2rem 0;
+}
+
+.feature-item {
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: var(--color-background-secondary);
+    margin-bottom: 1rem;
+}
+
+.feature-item h3 {
+    margin-top: 0;
+    color: var(--color-brand-primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .sd-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .sd-card {
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+}
