@@ -393,19 +393,25 @@ def test_column_chart_stacked_negative_values():
 
 def test_column_chart_empty_data():
     """Test ColumnChart with empty data raises an exception."""
-    with pytest.raises(Exception, match="No data was provided"):
+    from charted import NoDataError
+
+    with pytest.raises(NoDataError, match="No data"):
         ColumnChart(data=[], labels=[])
 
 
 def test_line_chart_empty_data():
     """Test LineChart with empty data raises an exception."""
-    with pytest.raises(Exception, match="No data was provided"):
+    from charted import NoDataError
+
+    with pytest.raises(NoDataError, match="No data"):
         LineChart(data=[], labels=[])
 
 
 def test_scatter_chart_empty_data():
     """Test ScatterChart with empty data raises an exception."""
-    with pytest.raises(Exception, match="No data was provided"):
+    from charted import NoDataError
+
+    with pytest.raises(NoDataError, match="No data"):
         ScatterChart(x_data=[], y_data=[])
 
 

@@ -19,12 +19,13 @@ class InvalidValue(ChartedError):
 
 
 class NoDataError(ChartedError):
-    def __init__(self):
-        super().__init__(
+    def __init__(self, msg: str | None = None):
+        default_msg = (
             "No data was provided to the chart element. "
             "Pass data via the 'data', 'x_data', or 'y_data' parameter. "
             "Example: chart = BarChart(data=[10, 20, 30])"
         )
+        super().__init__(msg if msg is not None else default_msg)
 
 
 class DataShapeError(ChartedError):
@@ -90,3 +91,21 @@ class UnknownChartTypeError(ChartedError):
             "ScatterChart, HeatmapChart, GanttChart, RadarChart. "
             "Use charted.auto(data) to auto-detect."
         )
+
+
+class InvalidDataError(ChartedError):
+    """Raised when chart data is invalid (wrong format, NaN values, etc.)."""
+
+    pass
+
+
+class ValidationError(ChartedError):
+    """Raised when validation fails (theme, data, etc.)."""
+
+    pass
+
+
+class RenderError(ChartedError):
+    """Raised when chart rendering fails."""
+
+    pass

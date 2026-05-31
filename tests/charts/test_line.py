@@ -55,7 +55,9 @@ class TestLineChartSadPath:
 
     def test_line_chart_empty_data(self):
         """Test that empty data raises ValueError."""
-        with pytest.raises(Exception, match="No data was provided"):
+        from charted import NoDataError
+
+        with pytest.raises(NoDataError, match="No data"):
             LineChart(data=[], labels=[])
 
 

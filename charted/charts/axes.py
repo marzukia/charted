@@ -3,13 +3,20 @@ import math
 from charted.constants import DEFAULT_PADDING
 from charted.html.element import G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
+from charted.utils.exceptions import InvalidDataError
 from charted.utils.helpers import (
     calculate_text_dimensions,
     common_denominators,
     round_to_clean_number,
 )
 from charted.utils.transform import rotate, translate
-from charted.utils.types import AxisDimension, MeasuredText, Vector, Vector2D
+from charted.utils.types import (
+    AxisDimension,
+    AxisValues,
+    MeasuredText,
+    Vector,
+    Vector2D,
+)
 
 
 class Axis(G):
@@ -25,7 +32,7 @@ class Axis(G):
         scale: object | None = None,
     ):
         if not data and not labels:
-            raise Exception("Need labels or data.")
+            raise InvalidDataError("Need labels or data.")
         elif not data and labels:
             if pad_labels:
                 labels = [" ", *labels, " "]
@@ -41,7 +48,8 @@ class Axis(G):
         if scale is not None and getattr(scale, "name", "linear") != "linear":
             self._init_with_scale(data, labels, zero_index)
         else:
-            self.values = (data, labels, zero_index)
+            # Use AxisValues dataclass instead of tuple
+            self.values = AxisValues(data=data, labels=labels, zero_index=zero_index)
             self.labels = labels
         self.config = config
         self.add_children(self.grid_lines, self.axis_labels)
@@ -242,21 +250,18 @@ class Axis(G):
         return self._values
 
     @values.setter
-    def values(
-        self,
-        kwargs: tuple[
-            Vector2D,
-            list[str] | None,
-            bool,
-        ],
-    ) -> None:
-        data, labels, zero_index = kwargs
+    def values(self, axis_values: AxisValues) -> None:
+        """Set axis values using AxisValues dataclass.
+
+        This replaces the tuple (data, labels, zero_index) which was prone to
+        ordering errors. Using AxisValues provides self-documenting field names.
+        """
         self.axis_dimension, self._values, self._grid_line_values = (
             self.calculate_axis_values(
-                data=data,
+                data=axis_values.data,
                 stacked=self.stacked,
-                labels=labels,
-                zero_index=zero_index,
+                labels=axis_values.labels,
+                zero_index=axis_values.zero_index,
             )
         )
         # Store grid line values separately (full range, not filtered)
