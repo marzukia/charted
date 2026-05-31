@@ -59,7 +59,9 @@ class TestColumnChartSadPath:
 
     def test_column_chart_empty_data(self):
         """Test that empty data raises ValueError."""
-        with pytest.raises(Exception, match="No data was provided"):
+        from charted import NoDataError
+
+        with pytest.raises(NoDataError, match="No data"):
             ColumnChart(data=[], labels=[])
 
     def test_column_chart_side_by_side(self):

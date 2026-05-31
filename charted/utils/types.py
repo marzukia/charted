@@ -1,4 +1,7 @@
+from dataclasses import dataclass
 from typing import NamedTuple, TypedDict
+
+# Re-export exceptions from exceptions.py for backward compatibility
 
 
 class SeriesStyleConfig(TypedDict, total=False):
@@ -42,3 +45,19 @@ class AxisDimension(NamedTuple):
     @property
     def value_range(self) -> float:
         return self.max_value - self.min_value
+
+
+@dataclass
+class AxisValues:
+    """Structured container for axis data to avoid connascence of position.
+
+    Replaces the tuple (data, labels, zero_index) that was prone to
+    ordering errors. Using a dataclass provides:
+    - Self-documenting field names
+    - Type safety via dataclass validation
+    - Easier refactoring and maintenance
+    """
+
+    data: Vector2D | None = None
+    labels: list[str] | None = None
+    zero_index: bool = True

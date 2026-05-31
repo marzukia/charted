@@ -26,12 +26,13 @@ class ThemeManager:
 
     @staticmethod
     def load_theme(
-        theme: "Theme | str | None", chart_type: str | None = None
+        theme: "Theme | str | dict | None", chart_type: str | None = None
     ) -> "Theme":
         """Load base theme and apply chart-type overrides.
 
         Args:
-            theme: Base theme to start with (Theme object, preset name string, or None).
+            theme: Base theme to start with (Theme object, preset name string,
+                   dict of properties, or None).
             chart_type: Chart type for applying overrides (e.g., 'bar', 'line').
 
         Returns:

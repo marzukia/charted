@@ -38,6 +38,14 @@ from .themes import (
 from .themes.core import NAMED_PALETTES, resolve_palette
 from .utils.colors import calculate_contrast_ratio, hex_to_rgb, rgb_to_hex
 from .utils.data_input import auto, auto_size, from_dataframe, from_dict
+from .utils.exceptions import (
+    ChartedError,
+    DataShapeError,
+    InvalidDataError,
+    NoDataError,
+    RenderError,
+    ValidationError,
+)
 from .utils.series_style import SeriesStyle
 
 __all__ = [
@@ -50,6 +58,8 @@ __all__ = [
     "BoxPlot",
     "BubbleChart",
     "Chart",
+    "ChartedError",
+    "DataShapeError",
     "LabelAnnotation",
     "LineAnnotation",
     "chart_to_data_url",
@@ -62,14 +72,17 @@ __all__ = [
     "HeatmapChart",
     "Histogram",
     "inline_svg",
+    "InvalidDataError",
     "LineChart",
     "load_csv",
     "load_data",
     "load_json",
     "NAMED_PALETTES",
+    "NoDataError",
     "PieChart",
     "PolarAreaChart",
     "RadarChart",
+    "RenderError",
     "resolve_palette",
     "ScatterChart",
     "SeriesStyle",
@@ -83,4 +96,5 @@ __all__ = [
     "hex_to_rgb",
     "rgb_to_hex",
     "calculate_contrast_ratio",
+    "ValidationError",
 ]

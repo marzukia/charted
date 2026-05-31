@@ -8,6 +8,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from charted.utils.data_model import DataModel
+from charted.utils.exceptions import InvalidDataError
 
 
 # Strategies for generating test data
@@ -118,7 +119,7 @@ class TestDataModelValidation:
     @settings(max_examples=50)
     def test_validate_rejects_nan_values(self, data):
         """NaN values should be rejected."""
-        with pytest.raises(ValueError, match="NaN"):
+        with pytest.raises(InvalidDataError, match="NaN"):
             DataModel.validate_data(data)
 
     @given(invalid_data_with_infinity())
@@ -133,12 +134,16 @@ class TestDataModelValidation:
     @settings(max_examples=50, suppress_health_check=[HealthCheck.large_base_example])
     def test_validate_rejects_mismatched_lengths(self, data):
         """Series with different lengths should be rejected."""
-        with pytest.raises(Exception, match="same length"):
+        from charted import InvalidDataError
+
+        with pytest.raises(InvalidDataError, match="same length"):
             DataModel.validate_data(data)
 
     def test_validate_rejects_empty_list(self):
         """Empty list should raise ValueError."""
-        with pytest.raises(Exception, match="No data"):
+        from charted import NoDataError
+
+        with pytest.raises(NoDataError, match="No data"):
             DataModel.validate_data([])
 
     @given(st.integers(1, 20))
@@ -258,8 +263,8 @@ class TestDataModelEdgeCases:
         assert result is None
 
     def test_rejects_non_numeric_values(self):
-        """Non-numeric values should raise ValueError."""
-        with pytest.raises(ValueError, match="Invalid data value"):
+        """Non-numeric values should raise InvalidDataError."""
+        with pytest.raises(InvalidDataError, match="Invalid data value"):
             DataModel.validate_data([1, 2, "three", 4])
 
     @given(
@@ -268,5 +273,5 @@ class TestDataModelEdgeCases:
     @settings(max_examples=30)
     def test_rejects_various_invalid_types(self, invalid_values):
         """Various non-numeric types should be rejected."""
-        with pytest.raises(ValueError, match="Invalid data value"):
+        with pytest.raises(InvalidDataError, match="Invalid data value"):
             DataModel.validate_data(invalid_values)

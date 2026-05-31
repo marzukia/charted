@@ -7,6 +7,7 @@ from urllib.parse import quote
 
 from charted.html.element import G, Path, Rect, Text
 from charted.themes.core import Theme
+from charted.utils.exceptions import ValidationError
 from charted.utils.helpers import calculate_text_dimensions
 from charted.utils.transform import translate
 from charted.utils.types import MeasuredText
@@ -191,7 +192,7 @@ def calculate_legend_position(
 
     result = positions.get(position)
     if not result:
-        raise Exception(f"Invalid legend position: {position}")
+        raise ValidationError(f"Invalid legend position: {position}")
 
     return result["x0"], result["y0"]
 

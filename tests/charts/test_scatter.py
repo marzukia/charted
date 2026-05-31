@@ -49,7 +49,9 @@ class TestScatterChartSadPath:
 
     def test_scatter_chart_empty_data(self):
         """Test that empty data raises ValueError."""
-        with pytest.raises(Exception, match="No data was provided"):
+        from charted import NoDataError
+
+        with pytest.raises(NoDataError, match="No data"):
             ScatterChart(x_data=[], y_data=[])
 
 

@@ -3,6 +3,7 @@
 Extracted from Chart class to reduce architectural debt and improve separation of concerns.
 """
 
+from charted.utils.exceptions import InvalidDataError, NoDataError
 from charted.utils.helpers import calculate_text_dimensions
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
@@ -55,10 +56,11 @@ class DataModel:
             Normalized 2D array (list of lists) or None
 
         Raises:
-            Exception: If data is empty or has mismatched lengths
+            NoDataError: If data is empty
+            InvalidDataError: If data has mismatched lengths or invalid values
         """
         if data is not None and len(data) == 0:
-            raise Exception("No data was provided.")
+            raise NoDataError("No data was provided.")
 
         if not data:
             return None
@@ -70,15 +72,17 @@ class DataModel:
         max_length = max([len(i) for i in data])
 
         if not all([len(i) == max_length for i in data]):
-            raise Exception("Not all vectors were same length")
+            raise InvalidDataError("Not all data vectors were the same length")
 
         # Validate values (no NaN)
         for series in data:
             for value in series:
                 if not isinstance(value, (int, float)):
-                    raise ValueError(f"Invalid data value: {value}")
+                    raise InvalidDataError(
+                        f"Invalid data value: {value!r} - expected numeric type"
+                    )
                 if isinstance(value, float) and (value != value):  # NaN check
-                    raise ValueError("NaN values are not allowed")
+                    raise InvalidDataError("NaN values are not allowed in chart data")
 
         return data  # type: ignore
 

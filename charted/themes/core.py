@@ -420,14 +420,18 @@ class Theme:
         new_values = {}
         overrides_dict = vars(overrides)
 
+        # Get the default Theme instance to compare against
+        default_theme = Theme()
+
         for key, override_value in overrides_dict.items():
             if key == "colors":
                 if override_value and len(override_value) > 0:
                     new_values[key] = override_value.copy()
             else:
-                class_default = getattr(Theme, key, None)
+                # Compare against the default theme's value, not the class default
+                default_value = getattr(default_theme, key)
 
-                if override_value == class_default:
+                if override_value == default_value:
                     continue
 
                 new_values[key] = override_value

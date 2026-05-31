@@ -358,7 +358,7 @@ class Chart(Svg):
         x_stacked: bool = False,
         title: str | None = None,
         subtitle: str | None = None,
-        theme: Theme | None = None,
+        theme: Theme | str | dict | None = None,
         chart_type: str | None = None,
         x_label: str | None = None,
         y_label: str | None = None,
