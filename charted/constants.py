@@ -38,3 +38,25 @@ REFERENCE_LINE_DASH = "6 3"
 # Quadrant label layout
 QUADRANT_LABEL_LINE_GAP = 2
 QUADRANT_BOTTOM_MARGIN_FACTOR = 0.5
+
+# Auto chart detection
+AUTO_PIE_MAX_ITEMS = 6  # Threshold for PieChart vs BarChart
+
+# Font sizing
+MIN_FONT_SIZE = 8
+FONT_SIZE_DELTA = 4  # title_font_size - 4 for labels
+
+# Legend layout
+LEGEND_ROW_GAP = 4
+LEGEND_ICON_GAP = 2
+LEGEND_PADDING = 0.15
+LEGEND_INSET = 4
+
+# Text positioning
+TEXT_OFFSET_FACTOR = 0.75  # y = height * 0.75 for text baseline
+LABEL_OFFSET = 4  # Space between data mark and label
+GRID_MARGIN_FACTOR = 0.6  # font_size * 0.6 for grid line avoidance
+
+# Theme defaults
+H_PADDING_DEFAULT = 0.05
+V_PADDING_DEFAULT = 0.05

@@ -1,4 +1,35 @@
+from dataclasses import dataclass
 from typing import NamedTuple, TypedDict
+
+
+class ChartedError(Exception):
+    """Base exception for all charted errors."""
+
+    pass
+
+
+class NoDataError(ChartedError):
+    """Raised when chart data is missing or empty."""
+
+    pass
+
+
+class InvalidDataError(ChartedError):
+    """Raised when chart data is invalid (wrong format, NaN values, etc.)."""
+
+    pass
+
+
+class ValidationError(ChartedError):
+    """Raised when validation fails (theme, data, etc.)."""
+
+    pass
+
+
+class RenderError(ChartedError):
+    """Raised when chart rendering fails."""
+
+    pass
 
 
 class SeriesStyleConfig(TypedDict, total=False):
@@ -42,3 +73,19 @@ class AxisDimension(NamedTuple):
     @property
     def value_range(self) -> float:
         return self.max_value - self.min_value
+
+
+@dataclass
+class AxisValues:
+    """Structured container for axis data to avoid connascence of position.
+
+    Replaces the tuple (data, labels, zero_index) that was prone to
+    ordering errors. Using a dataclass provides:
+    - Self-documenting field names
+    - Type safety via dataclass validation
+    - Easier refactoring and maintenance
+    """
+
+    data: Vector2D | None = None
+    labels: list[str] | None = None
+    zero_index: bool = True

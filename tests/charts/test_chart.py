@@ -61,8 +61,10 @@ class TestChartConstruction:
         """Data vectors of different lengths raise exception."""
         from charted.utils.data_model import DataModel
 
-        with pytest.raises(Exception, match="Not all vectors were same length"):
-            DataModel([[1, 2, 3], [4, 5]], None)
+        with pytest.raises(
+            Exception, match="Not all data vectors were the same length"
+        ):
+            DataModel.validate_data([[1, 2, 3], [4, 5]])
 
     def test_no_data_raises_nodataerror(self):
         """Chart with no x_data or y_data raises NoDataError."""

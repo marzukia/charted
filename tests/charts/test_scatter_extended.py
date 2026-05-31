@@ -133,7 +133,7 @@ class TestScatterChartMultiSeries:
 
     def test_multi_series_mismatched_lengths_raises(self):
         """Test that mismatched series lengths raise error."""
-        with pytest.raises(Exception, match="Not all vectors"):
+        with pytest.raises(Exception, match="Not all data vectors"):
             ScatterChart(
                 x_data=[[0, 1], [0, 1, 2]],
                 y_data=[[10, 20], [15, 25]],
