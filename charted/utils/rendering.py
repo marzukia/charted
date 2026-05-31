@@ -7,9 +7,10 @@ from urllib.parse import quote
 
 from charted.html.element import G, Path, Rect, Text
 from charted.themes.core import Theme
+from charted.utils.exceptions import ValidationError
 from charted.utils.helpers import calculate_text_dimensions
 from charted.utils.transform import translate
-from charted.utils.types import MeasuredText, ValidationError
+from charted.utils.types import MeasuredText
 
 
 def _adjust_color(hex_color: str, amount: int) -> str:

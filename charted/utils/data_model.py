@@ -3,15 +3,9 @@
 Extracted from Chart class to reduce architectural debt and improve separation of concerns.
 """
 
+from charted.utils.exceptions import InvalidDataError, NoDataError
 from charted.utils.helpers import calculate_text_dimensions
-from charted.utils.types import (
-    InvalidDataError,
-    Labels,
-    MeasuredText,
-    NoDataError,
-    Vector,
-    Vector2D,
-)
+from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
 
 class DataModel:

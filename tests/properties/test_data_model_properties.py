@@ -8,7 +8,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from charted.utils.data_model import DataModel
-from charted.utils.types import InvalidDataError
+from charted.utils.exceptions import InvalidDataError
 
 
 # Strategies for generating test data

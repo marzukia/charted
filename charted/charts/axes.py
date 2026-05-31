@@ -3,6 +3,7 @@ import math
 from charted.constants import DEFAULT_PADDING
 from charted.html.element import G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
+from charted.utils.exceptions import InvalidDataError
 from charted.utils.helpers import (
     calculate_text_dimensions,
     common_denominators,
@@ -12,7 +13,6 @@ from charted.utils.transform import rotate, translate
 from charted.utils.types import (
     AxisDimension,
     AxisValues,
-    InvalidDataError,
     MeasuredText,
     Vector,
     Vector2D,
