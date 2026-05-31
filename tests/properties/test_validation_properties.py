@@ -63,7 +63,9 @@ def test_validate_data_2d_preserves_structure(length):
 @settings(max_examples=20)
 def test_validate_data_empty_raises(data):
     """validate_data should raise for empty input."""
-    with pytest.raises(Exception, match="No data"):
+    from charted import NoDataError
+
+    with pytest.raises(NoDataError, match="No data"):
         validate_data([])
 
 
@@ -79,7 +81,9 @@ def test_validate_data_empty_raises(data):
 def test_validate_data_mismatched_lengths_raises(data1, data2):
     """validate_data should raise for mismatched series lengths."""
     if len(data1) != len(data2):
-        with pytest.raises(Exception, match="Data shape mismatch"):
+        from charted import DataShapeError
+
+        with pytest.raises(DataShapeError):
             validate_data([data1, data2])
 
 

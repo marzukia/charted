@@ -5,6 +5,7 @@ from charted.config import get_bar_gap
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
+from charted.utils.exceptions import NoDataError
 from charted.utils.series_style import SeriesStyleConfig
 from charted.utils.types import Labels, Vector, Vector2D
 
@@ -69,7 +70,7 @@ class BarChart(Chart):
             x_data = data
 
         if not x_data or not x_data[0]:
-            raise ValueError("No data was provided to the BarChart element.")
+            raise NoDataError("No data was provided to the BarChart element.")
 
         num_bars = len(x_data[0]) if x_data else 0
         num_series = len(x_data) if x_data else 0

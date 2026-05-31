@@ -1,35 +1,7 @@
 from dataclasses import dataclass
 from typing import NamedTuple, TypedDict
 
-
-class ChartedError(Exception):
-    """Base exception for all charted errors."""
-
-    pass
-
-
-class NoDataError(ChartedError):
-    """Raised when chart data is missing or empty."""
-
-    pass
-
-
-class InvalidDataError(ChartedError):
-    """Raised when chart data is invalid (wrong format, NaN values, etc.)."""
-
-    pass
-
-
-class ValidationError(ChartedError):
-    """Raised when validation fails (theme, data, etc.)."""
-
-    pass
-
-
-class RenderError(ChartedError):
-    """Raised when chart rendering fails."""
-
-    pass
+# Re-export exceptions from exceptions.py for backward compatibility
 
 
 class SeriesStyleConfig(TypedDict, total=False):

@@ -163,7 +163,9 @@ class TestCreateChart:
             )
 
     def test_empty_data(self):
-        with pytest.raises((ValueError, TypeError)):
+        from charted import NoDataError
+
+        with pytest.raises((ValueError, TypeError, NoDataError)):
             handle_create_chart(
                 chart_type="bar",
                 data=[],

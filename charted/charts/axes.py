@@ -12,6 +12,7 @@ from charted.utils.transform import rotate, translate
 from charted.utils.types import (
     AxisDimension,
     AxisValues,
+    InvalidDataError,
     MeasuredText,
     Vector,
     Vector2D,
@@ -31,7 +32,7 @@ class Axis(G):
         scale: object | None = None,
     ):
         if not data and not labels:
-            raise Exception("Need labels or data.")
+            raise InvalidDataError("Need labels or data.")
         elif not data and labels:
             if pad_labels:
                 labels = [" ", *labels, " "]

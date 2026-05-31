@@ -52,9 +52,10 @@ class TestChartConstruction:
 
     def test_validate_data_rejects_empty_data(self):
         """Empty data raises exception."""
+        from charted import NoDataError
         from charted.utils.data_model import DataModel
 
-        with pytest.raises(Exception, match="No data was provided"):
+        with pytest.raises(NoDataError):
             DataModel([], None)
 
     def test_validate_data_rejects_mismatched_lengths(self):

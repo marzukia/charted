@@ -9,7 +9,7 @@ from charted.html.element import G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.helpers import calculate_text_dimensions
 from charted.utils.transform import translate
-from charted.utils.types import MeasuredText
+from charted.utils.types import MeasuredText, ValidationError
 
 
 def _adjust_color(hex_color: str, amount: int) -> str:
@@ -191,7 +191,7 @@ def calculate_legend_position(
 
     result = positions.get(position)
     if not result:
-        raise Exception(f"Invalid legend position: {position}")
+        raise ValidationError(f"Invalid legend position: {position}")
 
     return result["x0"], result["y0"]
 

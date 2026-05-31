@@ -134,12 +134,16 @@ class TestDataModelValidation:
     @settings(max_examples=50, suppress_health_check=[HealthCheck.large_base_example])
     def test_validate_rejects_mismatched_lengths(self, data):
         """Series with different lengths should be rejected."""
-        with pytest.raises(Exception, match="same length"):
+        from charted import InvalidDataError
+
+        with pytest.raises(InvalidDataError, match="same length"):
             DataModel.validate_data(data)
 
     def test_validate_rejects_empty_list(self):
         """Empty list should raise ValueError."""
-        with pytest.raises(Exception, match="No data"):
+        from charted import NoDataError
+
+        with pytest.raises(NoDataError, match="No data"):
             DataModel.validate_data([])
 
     @given(st.integers(1, 20))
