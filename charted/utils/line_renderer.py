@@ -60,8 +60,10 @@ class LineRenderer:
         """
         self.chart = chart
 
-        # Initialize ColorManager for automatic color cycling
-        self._color_manager = ColorManager(colors=self.chart.theme.colors)
+        # Initialize ColorManager for automatic color cycling. Use the theme's
+        # contrast-floor-adjusted palette (identical to colors unless a floor
+        # is set, e.g. the high-contrast theme).
+        self._color_manager = ColorManager(colors=self.chart.theme.resolved_colors)
 
     def render(self) -> G:
         """Generate complete line chart SVG elements.
@@ -138,7 +140,7 @@ class LineRenderer:
 
         # Extract style properties
         stroke = style.get("stroke") or color
-        stroke_width = style.get("stroke_width") or 2
+        stroke_width = style.get("stroke_width") or self.chart.theme.resolved_series_stroke_width
         stroke_dasharray = style.get("stroke_dasharray")
         stroke_opacity = style.get("stroke_opacity")
         area_fill = style.get("area_fill", False)

@@ -424,17 +424,24 @@ class XAxis(Axis):
 
     @property
     def axis_labels(self) -> G:
-        labels = G(
-            font_size=DEFAULT_FONT_SIZE,
-            font_family=DEFAULT_FONT,
-            fill=self.parent.theme.resolved_label_color
-            if hasattr(self.parent, "theme")
-            else "#444444",
-            transform=translate(
+        theme = getattr(self.parent, "theme", None)
+        font_size = DEFAULT_FONT_SIZE
+        font_weight = None
+        if theme is not None:
+            font_size = theme.resolved_axis_label_font_size
+            font_weight = theme.axis_label_font_weight
+        group_kwargs = {
+            "font_size": font_size,
+            "font_family": DEFAULT_FONT,
+            "fill": theme.resolved_label_color if theme is not None else "#444444",
+            "transform": translate(
                 x=self.parent.left_padding,
                 y=self.parent.top_padding + DEFAULT_PADDING,
             ),
-        )
+        }
+        if font_weight:
+            group_kwargs["font_weight"] = font_weight
+        labels = G(**group_kwargs)
 
         rotation_angle = 0
         if self.parent.x_label_rotation:
@@ -549,17 +556,24 @@ class YAxis(Axis):
 
     @property
     def axis_labels(self) -> G:
-        labels = G(
-            font_size=DEFAULT_FONT_SIZE,
-            font_family=DEFAULT_FONT,
-            fill=self.parent.theme.resolved_label_color
-            if hasattr(self.parent, "theme")
-            else "#444444",
-            transform=translate(
+        theme = getattr(self.parent, "theme", None)
+        font_size = DEFAULT_FONT_SIZE
+        font_weight = None
+        if theme is not None:
+            font_size = theme.resolved_axis_label_font_size
+            font_weight = theme.axis_label_font_weight
+        group_kwargs = {
+            "font_size": font_size,
+            "font_family": DEFAULT_FONT,
+            "fill": theme.resolved_label_color if theme is not None else "#444444",
+            "transform": translate(
                 x=(self.parent.left_padding - 6),
                 y=self.parent.top_padding,
             ),
-        )
+        }
+        if font_weight:
+            group_kwargs["font_weight"] = font_weight
+        labels = G(**group_kwargs)
 
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:

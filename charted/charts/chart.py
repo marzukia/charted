@@ -684,12 +684,14 @@ class Chart(SeriesLegend, Svg):
                 [self.y_axis.reproject(y) for y in arr] for arr in offsets
             ]
 
-        # Initialize ColorManager for automatic color cycling
-        self._color_manager = ColorManager(colors=self.theme.colors)
+        # Initialize ColorManager for automatic color cycling. Use the theme's
+        # contrast-floor-adjusted palette so washed-out hues are darkened in
+        # the high-contrast theme; identical to theme.colors otherwise.
+        self._color_manager = ColorManager(colors=self.theme.resolved_colors)
 
         # Initialize colors (set internal variable directly since property is read-only)
         if not hasattr(self, "_colors"):
-            self._colors = self.theme.colors
+            self._colors = self.theme.resolved_colors
 
         # Whether data marks should carry native <title> tooltips. Off for
         # file output (to_svg/save); toggled on only by to_html(tooltips=True).

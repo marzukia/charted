@@ -293,6 +293,20 @@ class Theme:
     # labels historically borrowed, keeping existing renders unchanged. Set a
     # hex/HSL string to give data labels their own themed colour.
     data_label_color: Optional[str] = None
+    # Default stroke width for plotted series lines (line/area/combo). None
+    # keeps the historical 2px line stroke. The high-contrast preset raises
+    # this so lines read clearly for low-vision users.
+    series_stroke_width: Optional[float] = None
+    # Font size and weight for axis tick labels. None keeps the library
+    # default size (DEFAULT_FONT_SIZE) and an unweighted (normal) label. The
+    # high-contrast preset enlarges and bolds these for legibility.
+    axis_label_font_size: Optional[int] = None
+    axis_label_font_weight: Optional[str] = None
+    # Minimum WCAG contrast ratio enforced for foreground colours (the series
+    # palette) against the background. None disables enforcement, leaving
+    # palettes untouched. The high-contrast preset sets 3.0 so washed-out hues
+    # like yellow/cyan on white are darkened until they clear the floor.
+    contrast_floor: Optional[float] = None
 
     def __post_init__(self) -> None:
         """Validate color format after initialization."""
@@ -436,6 +450,53 @@ class Theme:
         return self.resolved_axis_title_color
 
     @property
+    def resolved_series_stroke_width(self) -> float:
+        """Series line stroke width: explicit override or the 2px default.
+
+        The default is returned as ``int`` 2 so unstyled lines serialize to
+        ``stroke-width="2"`` exactly as before (a float would emit ``2.0``).
+        """
+        if self.series_stroke_width is not None:
+            return self.series_stroke_width
+        return 2
+
+    @property
+    def resolved_axis_label_font_size(self) -> int:
+        """Axis tick label font size: override or the library default (12)."""
+        from charted.constants import AXIS_LABEL_FONT_SIZE
+
+        if self.axis_label_font_size is not None:
+            return self.axis_label_font_size
+        return AXIS_LABEL_FONT_SIZE
+
+    def enforce_contrast(self, foreground: str) -> str:
+        """Apply ``contrast_floor`` to a foreground colour against background.
+
+        Returns ``foreground`` unchanged when no floor is set; otherwise
+        darkens/lightens it until it meets the floor against
+        ``background_color``.
+        """
+        if self.contrast_floor is None:
+            return foreground
+        from charted.utils.colors import enforce_contrast_floor
+
+        return enforce_contrast_floor(
+            foreground, self.background_color, self.contrast_floor
+        )
+
+    @property
+    def resolved_colors(self) -> list[str]:
+        """Series palette with the contrast floor applied (if any).
+
+        When ``contrast_floor`` is None this is just ``colors``, keeping every
+        existing render byte-for-byte identical. Otherwise each palette colour
+        is darkened/lightened until it clears the floor against the background.
+        """
+        if self.contrast_floor is None:
+            return self.colors
+        return [self.enforce_contrast(c) for c in self.colors]
+
+    @property
     def resolved_quadrant_label_color(self) -> str:
         """Quadrant label color: root_color at 18% opacity."""
         from charted.utils.colors import derive_color
@@ -481,8 +542,21 @@ class Theme:
                 # common forms of colour vision deficiency.
                 colors=NAMED_PALETTES["okabe-ito"].copy(),
                 title_color="#000000",
+                title_font_size=18,
                 background_color="#FFFFFF",
                 grid_color="#000000",
+                grid_width=1.5,
+                # Heavier line strokes and larger markers so plotted series
+                # read clearly for low-vision users.
+                series_stroke_width=3.0,
+                marker_size=5.0,
+                reference_line_width=2.5,
+                # Larger, bolder axis tick labels.
+                axis_label_font_size=14,
+                axis_label_font_weight="bold",
+                # Darken washed-out palette hues (yellow/cyan/orange) until they
+                # clear 3:1 against the white background.
+                contrast_floor=3.0,
             ),
         }
         if name not in presets:

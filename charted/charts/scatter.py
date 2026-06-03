@@ -231,7 +231,12 @@ class ScatterChart(Chart):
         ):
             # Apply style overrides from series_styles
             fill = color
-            marker_size = 4  # default
+            # Default marker size is 4px. A theme that explicitly sets
+            # marker_size (e.g. high-contrast) raises it for legibility while
+            # the standard themes keep the historical 4px.
+            marker_size = 4
+            if self.theme._is_explicit("marker_size"):
+                marker_size = self.theme.marker_size
             # Default shape is a circle; with shape_cycle enabled, each series
             # picks a shape from the cycle (redundant shape + colour encoding).
             if self._shape_cycle:
