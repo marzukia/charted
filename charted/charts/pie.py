@@ -58,6 +58,7 @@ class PieChart(Chart):
         series_styles: list[SeriesStyleConfig] | None = None,
         show_percentages: bool = False,
         value_labels: bool | str | dict | None = None,
+        legend: str = "none",
     ):
         """Initialize pie chart.
 
@@ -122,7 +123,45 @@ class PieChart(Chart):
             zero_index=True,
             theme=theme,
             chart_type="pie",
+            legend=legend,
         )
+
+    def _has_legend_entries(self) -> bool:
+        """Pie labels its slices, so any data drives the shared legend."""
+        return bool(self._pie_data)
+
+    def _legend_entries(self) -> list[tuple[str, str, str]]:
+        """One square swatch per slice, coloured to match the slice."""
+        data = self._pie_data
+        if not data:
+            return []
+        labels = self._pie_labels or [str(i) for i in range(len(data))]
+        colors = self.colors
+        entries: list[tuple[str, str, str]] = []
+        for idx, label in enumerate(labels):
+            text = label.text if hasattr(label, "text") else str(label)
+            color = colors[idx % len(colors)] if colors else "#000000"
+            entries.append((text, color, self._LEGEND_DEFAULT_SHAPE))
+        return entries
+
+    def _legend_reserved_extent(self) -> float:
+        """Reserve a band sized to the slice labels (not ``series_names``)."""
+        from charted.utils.helpers import calculate_text_dimensions
+
+        entries = self._legend_entries()
+        if not entries:
+            return 0.0
+        font_size = self._legend_font_size()
+        swatch = font_size
+        gap = 6
+        pad = 8
+        if self._legend_placement == "right":
+            max_w = max(
+                calculate_text_dimensions(name, font_size=font_size).width
+                for name, _, _ in entries
+            )
+            return swatch + gap + max_w + pad * 2
+        return font_size + 6 + pad
 
     def _generate_colors_from_data(
         self, data: Vector, base: list[str] | None = None
@@ -340,17 +379,21 @@ class PieChart(Chart):
             )
             current_angle = end_angle
 
-        # --- Second pass: create dual-column legend for pie chart ---
-        # Use create_pie_legend() to split entries across left and right sides
-        legend = create_pie_legend(
-            series_names=labels,
-            colors=self.colors,
-            theme_config=self.theme,
-            chart_width=self.width,
-            chart_height=self.height,
-        )
-        if legend:
-            result.add_child(legend)
+        # --- Second pass: legend ---
+        # When the shared placement legend is active (legend='right'|'bottom'
+        # |'top'), the base class renders a single consistent box in a reserved
+        # band, so skip the legacy split legend here. With legend='none' (the
+        # default) keep the historical dual-column split legend unchanged.
+        if getattr(self, "_legend_placement", "none") == "none":
+            legend = create_pie_legend(
+                series_names=labels,
+                colors=self.colors,
+                theme_config=self.theme,
+                chart_width=self.width,
+                chart_height=self.height,
+            )
+            if legend:
+                result.add_child(legend)
 
         # --- Render slices ---
         for s in slices:

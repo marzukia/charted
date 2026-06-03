@@ -52,6 +52,7 @@ class PolarAreaChart(PieChart):
         start_angle: float = 0,
         series_styles: list[SeriesStyleConfig] | None = None,
         show_percentages: bool = False,
+        legend: str = "none",
     ):
         super().__init__(
             data=data,
@@ -65,6 +66,7 @@ class PolarAreaChart(PieChart):
             start_angle=start_angle,
             series_styles=series_styles,
             show_percentages=show_percentages,
+            legend=legend,
         )
 
     def _max_radius(self) -> float:

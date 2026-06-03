@@ -61,6 +61,7 @@ class BoxPlot(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         value_labels: bool | str | dict | None = None,
+        legend: str = "none",
     ):
         self._raw_data = data
         super().__init__(
@@ -73,6 +74,7 @@ class BoxPlot(Chart):
             series_names=series_names,
             chart_type="box",
             value_labels=value_labels,
+            legend=legend,
         )
 
     @property

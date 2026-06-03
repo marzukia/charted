@@ -208,6 +208,7 @@ class ComboChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
+        legend: str = "none",
     ):
         if not series or len(series) < 2:
             raise ValueError("ComboChart requires at least two series.")
@@ -266,6 +267,7 @@ class ComboChart(Chart):
             y_label=y_label,
             h_lines=h_lines,
             v_lines=v_lines,
+            legend=legend,
         )
 
         # Override series_names so legend lists ALL series in original order.

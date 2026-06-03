@@ -75,6 +75,7 @@ class LineChart(Chart):
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        legend: str = "none",
     ):
         if curve not in VALID_CURVES:
             raise ValueError(
@@ -106,6 +107,7 @@ class LineChart(Chart):
             y_scale=y_scale,
             reference_lines=reference_lines,
             colors=colors,
+            legend=legend,
         )
 
     @property

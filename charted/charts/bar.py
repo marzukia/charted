@@ -59,6 +59,7 @@ class BarChart(Chart):
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
         value_labels: bool | str | dict | None = None,
+        legend: str = "none",
     ):
         self._bar_data_labels = data_labels
         if bar_gap is None:
@@ -105,6 +106,7 @@ class BarChart(Chart):
             reference_lines=reference_lines,
             colors=colors,
             value_labels=value_labels,
+            legend=legend,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.

@@ -20,6 +20,7 @@ from charted.utils.rendering import (
     generate_html_wrapper,
     generate_markdown_image,
 )
+from charted.utils.series_legend import SeriesLegend
 from charted.utils.theme_manager import ThemeManager
 from charted.utils.transform import translate
 from charted.utils.types import (
@@ -31,7 +32,7 @@ from charted.utils.types import (
 )
 
 
-class Chart(Svg):
+class Chart(SeriesLegend, Svg):
     """Base class for all SVG chart types.
 
     Provides common functionality for chart rendering including
@@ -375,7 +376,12 @@ class Chart(Svg):
         y_range: tuple[float, float] | None = None,
         domain_padding: float | None = None,
         value_labels: bool | str | dict | None = None,
+        legend: str = "none",
     ):
+        # Placement for the shared series legend. ``'none'`` (the default)
+        # reserves no layout space and leaves any historical in-plot legend
+        # untouched, so existing renders are byte-for-byte preserved.
+        self._init_legend(legend)
         super().__init__(
             width=width,
             height=height,
@@ -668,22 +674,6 @@ class Chart(Svg):
         self._tooltips = False
 
         self._build_children()
-
-    def _legend_layout_position(self) -> str:
-        """Side reserved for an outside-the-plot legend (subclass hook).
-
-        Returns 'none' by default so the layout is unchanged. Subclasses
-        override to return 'right' | 'bottom' | 'top'.
-        """
-        return "none"
-
-    def _legend_layout_extent(self) -> float:
-        """Pixel band to reserve for an outside-the-plot legend (subclass hook).
-
-        Returns 0 by default. Called before the LayoutEngine is built, so it
-        may rely on the resolved theme but not on plot dimensions.
-        """
-        return 0.0
 
     def _build_children(self) -> None:
         """Assemble the chart's SVG child elements.
@@ -1188,9 +1178,14 @@ class Chart(Svg):
         """Subclass must implement this."""
         raise Exception("representation not implemented for instance of Chart.")
 
-    @property
-    def legend(self) -> G | None:
-        """Create legend element."""
+    def _default_legend(self) -> G | None:
+        """Create the historical in-plot legend element.
+
+        This is the pre-issue-#60 legend: an in-plot box positioned by the
+        theme's ``legend_position``. It is used as the fallback when the new
+        placement-aware legend is off (``legend='none'``), so charts that
+        previously rendered an in-plot legend keep doing so unchanged.
+        """
         from charted.utils.rendering import create_legend
 
         # Pass legend config as dict or Theme object
