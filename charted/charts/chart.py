@@ -358,6 +358,7 @@ class Chart(Svg):
         x_stacked: bool = False,
         title: str | None = None,
         subtitle: str | None = None,
+        subtitle_leading: float = 8.0,
         theme: Theme | str | dict | None = None,
         chart_type: str | None = None,
         x_label: str | None = None,
@@ -482,6 +483,10 @@ class Chart(Svg):
         else:
             self._title = None
 
+        # Extra vertical gap (leading) inserted between the title and the
+        # subtitle so the subtitle is not cramped directly under the title.
+        self._subtitle_leading = max(0.0, float(subtitle_leading))
+
         # Set subtitle
         if subtitle:
             self._subtitle = calculate_text_dimensions(
@@ -502,6 +507,7 @@ class Chart(Svg):
             y_labels=self.data_model.y_labels,
             title=self._title,
             subtitle=self._subtitle,
+            subtitle_leading=self._subtitle_leading,
             has_x_axis_label=bool(x_label),
             has_y_axis_label=bool(y_label),
         )
@@ -953,9 +959,16 @@ class Chart(Svg):
         if not self._subtitle:
             return None
         subtitle_font_size = self.theme.title_font_size - 4
-        # Position below the title (or at top if no title)
+        # Position below the title (or at top if no title). The configurable
+        # leading adds breathing room so the subtitle reads as secondary
+        # instead of sitting cramped against the title.
         if self._title:
-            y_pos = self.v_pad / 2 + self._title.height + subtitle_font_size
+            y_pos = (
+                self.v_pad / 2
+                + self._title.height
+                + subtitle_font_size
+                + self._subtitle_leading
+            )
         else:
             y_pos = self.v_pad / 2 + subtitle_font_size
         return Text(

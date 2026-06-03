@@ -37,6 +37,7 @@ class LayoutEngine:
         y_labels: list["MeasuredText"] | None = None,
         title: "MeasuredText | None" = None,
         subtitle: "MeasuredText | None" = None,
+        subtitle_leading: float = 0.0,
         has_x_axis_label: bool = False,
         has_y_axis_label: bool = False,
     ):
@@ -48,6 +49,7 @@ class LayoutEngine:
         self.y_labels = y_labels or []
         self.title = title
         self.subtitle = subtitle
+        self.subtitle_leading = max(0.0, float(subtitle_leading))
         self.has_x_axis_label = has_x_axis_label
         self.has_y_axis_label = has_y_axis_label
 
@@ -119,6 +121,10 @@ class LayoutEngine:
         # plot grid. The subtitle is rendered below the title.
         if self.subtitle:
             offset += self.subtitle.height * 1.5
+            # Reserve the configurable leading gap between title and subtitle
+            # so the extra spacing never pushes the subtitle into the plot.
+            if self.title:
+                offset += self.subtitle_leading
 
         return v_pad + offset
 
