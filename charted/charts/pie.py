@@ -96,9 +96,15 @@ class PieChart(Chart):
         self._pie_labels = labels
         self.series_styles = series_styles
 
-        # Initialize colors before super().__init__() - Chart.__init__ accesses self.colors
-        # We generate colors from data length to match the expected number of slices
-        self._generate_colors_from_data(data)
+        # Initialize colors before super().__init__() - Chart.__init__ accesses
+        # self.colors (and renders slices) during _build_children. Resolve the
+        # theme palette up front so presets (e.g. high-contrast) and custom
+        # palettes drive slice colours. The default theme palette equals
+        # DEFAULT_COLORS, so default renders are byte-for-byte unchanged.
+        from charted.utils.theme_manager import ThemeManager
+
+        resolved_theme = ThemeManager.load_theme(theme, "pie")
+        self._generate_colors_from_data(data, base=resolved_theme.colors)
 
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(len(data))]]
@@ -116,24 +122,31 @@ class PieChart(Chart):
             chart_type="pie",
         )
 
-    def _generate_colors_from_data(self, data: Vector) -> None:
+    def _generate_colors_from_data(
+        self, data: Vector, base: list[str] | None = None
+    ) -> None:
         """Generate color palette based on data length.
 
-        Internal helper to generate colors before super().__init__() is called.
-        For dense data (>10 slices), uses evenly-spaced HSL hues for maximum
-        visual distinctness.
+        Internal helper to generate colors. For dense data (>10 slices), uses
+        evenly-spaced HSL hues for maximum visual distinctness.
 
         Args:
             data: Data values - length determines number of colors needed.
+            base: Base palette to cycle through for <=10 slices. Defaults to
+                DEFAULT_COLORS (used during the pre-super() call when the theme
+                palette is not yet resolved).
         """
+        base_palette = list(base) if base else list(DEFAULT_COLORS)
+        if not base_palette:
+            base_palette = list(DEFAULT_COLORS)
         if not data:
-            self._colors = list(DEFAULT_COLORS)
+            self._colors = list(base_palette)
             return
 
         n = len(data)
         if n <= 10:
-            # Use DEFAULT_COLORS as base and generate complementary colors
-            base_colors = list(DEFAULT_COLORS)
+            # Cycle the base palette and generate complementary colors past it.
+            base_colors = base_palette
             self._colors = []
             for i in range(n):
                 color_idx = i % len(base_colors)

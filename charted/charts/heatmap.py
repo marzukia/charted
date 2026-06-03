@@ -46,8 +46,10 @@ class HeatmapChart(Chart):
         theme: Optional theme configuration.
         series_names: Names for each series (shown in legend).
         series_styles: Per-series style overrides.
-        low_color: Color for the lowest value in the data (default '#1a6b8f').
-        high_color: Color for the highest value in the data (default '#f7a55c').
+        low_color: Color for the lowest value in the data. Defaults to None,
+            which derives the low endpoint from the first theme palette colour.
+        high_color: Color for the highest value in the data. Defaults to None,
+            which derives the high endpoint from the last theme palette colour.
         color_scale: Optional continuous color scale. Pass a ColorScale, a
             named palette string (e.g. 'viridis'), or a list of hex stops to
             color cells along a multi-stop gradient. Overrides low_color and
@@ -80,8 +82,8 @@ class HeatmapChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
-        low_color: str = "#5fab9e",
-        high_color: str = "#f58b51",
+        low_color: str | None = None,
+        high_color: str | None = None,
         color_scale: "ColorScale | str | list[str] | None" = None,
         show_values: bool = True,
         value_format: str = ".1f",
@@ -107,8 +109,12 @@ class HeatmapChart(Chart):
         self._matrix = data
         self._n_rows = n_rows
         self._n_cols = n_cols
-        self.low_color = low_color
-        self.high_color = high_color
+        # Defer resolving low/high colours until after super().__init__ has
+        # loaded the theme. None means "derive the gradient endpoints from the
+        # theme palette" (so presets like high-contrast and custom palettes
+        # drive the heatmap); explicit hex strings are honoured as-is.
+        self._low_color_override = low_color
+        self._high_color_override = high_color
         self.show_values = show_values
         self.value_format = value_format
         self.cell_gap = cell_gap
@@ -136,6 +142,26 @@ class HeatmapChart(Chart):
         self._data_max = max(all_values)
         self._data_range = self._data_max - self._data_min
         self.color_scale = self._resolve_color_scale(color_scale)
+
+        # Resolve the theme palette up front (super().__init__ triggers
+        # _build_children, which renders cells before super returns) so the
+        # gradient endpoints can derive from the theme when the caller did not
+        # override them. The default theme palette equals the historical
+        # low/high defaults' source, keeping default renders unchanged.
+        from charted.utils.theme_manager import ThemeManager
+
+        resolved_theme = ThemeManager.load_theme(theme, "heatmap")
+        palette = list(resolved_theme.colors) if resolved_theme.colors else []
+        # low = first palette colour, high = second. With the default palette
+        # (#5fab9e, #f58b51, ...) this reproduces the historical low/high
+        # defaults exactly, so default renders are byte-for-byte unchanged,
+        # while presets like high-contrast pick up their own two endpoints.
+        self.low_color = self._low_color_override or (
+            palette[0] if palette else "#5fab9e"
+        )
+        self.high_color = self._high_color_override or (
+            palette[1] if len(palette) > 1 else "#f58b51"
+        )
 
         x_data = [[float(i) for i in range(n_cols)] for _ in range(n_rows)]
         y_data = [[float(i) for i in range(n_rows)] for _ in range(n_cols)]
