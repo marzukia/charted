@@ -370,12 +370,21 @@ class Chart(Svg):
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        x_range: tuple[float, float] | None = None,
+        y_range: tuple[float, float] | None = None,
+        domain_padding: float | None = None,
     ):
         super().__init__(
             width=width,
             height=height,
             viewBox=f"0 0 {width} {height}",
         )
+
+        # Optional fixed scale domains / data-domain padding. All default to
+        # None, which preserves the historical auto-fit-from-data behaviour.
+        self._x_range = tuple(x_range) if x_range is not None else None
+        self._y_range = tuple(y_range) if y_range is not None else None
+        self._domain_padding = domain_padding
 
         # Record the requested scale specs (string or Scale instance) for
         # to_config()/describe(); default is linear so existing charts are
@@ -511,10 +520,16 @@ class Chart(Svg):
         # horizontal bar charts.
         self._reject_unsupported_scales(chart_type, x_scale_inst, y_scale_inst)
 
+        # Apply fixed-domain (x_range/y_range) or fractional domain_padding by
+        # anchoring the data the axes derive their min/max from. None leaves the
+        # axis data untouched, so the auto-fit domain is unchanged.
+        x_axis_data = self._anchor_axis_data(self.x_data, self._x_range)
+        y_axis_data = self._anchor_axis_data(self.y_data, self._y_range)
+
         # Initialize axes
         self.x_axis = XAxis(
             parent=self,
-            data=self.x_data,
+            data=x_axis_data,
             labels=x_labels,
             stacked=self.x_stacked,
             zero_index=(
@@ -529,7 +544,7 @@ class Chart(Svg):
 
         self.y_axis = YAxis(
             parent=self,
-            data=self.y_data,
+            data=y_axis_data,
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
@@ -736,6 +751,47 @@ class Chart(Svg):
         if x_data and isinstance(x_data[0], list):
             return [conv(row) for row in x_data]
         return conv(x_data)
+
+    def _anchor_axis_data(
+        self, data: Vector2D, fixed_range: tuple[float, float] | None
+    ) -> Vector2D:
+        """Return axis data anchored to a fixed range or padded domain.
+
+        The linear axes derive their domain (min/max) from the flattened data
+        they are given. To let callers control the visible span without adding
+        invisible data points, this appends synthetic anchor values so the
+        derived domain reaches the requested bounds:
+
+        - ``fixed_range`` (``x_range``/``y_range``): anchor to its exact
+          (min, max), replacing the data-derived domain.
+        - ``domain_padding``: a fractional pad applied to the data-derived
+          (min, max) on each side, e.g. ``0.1`` adds 10% of the data span as
+          headroom above and below.
+
+        When neither is set the original data is returned unchanged, so the
+        historical auto-fit domain is byte-for-byte preserved.
+        """
+        if fixed_range is None and self._domain_padding is None:
+            return data
+        if not data or not any(row for row in data):
+            return data
+
+        if fixed_range is not None:
+            lo, hi = min(fixed_range), max(fixed_range)
+        else:
+            flat = [v for row in data for v in row]
+            d_min, d_max = min(flat), max(flat)
+            span = d_max - d_min
+            # A zero span (single distinct value) has no fraction to pad; leave
+            # the data alone so the axis keeps its own degenerate-domain logic.
+            if span == 0:
+                return data
+            pad = span * self._domain_padding
+            lo, hi = d_min - pad, d_max + pad
+
+        # Append the bounds as an extra series so min()/max() over the flattened
+        # data reach lo/hi without altering the plotted points themselves.
+        return [*[list(row) for row in data], [lo, hi]]
 
     def _build_scale(self, spec: object | None, data: Vector2D):
         """Construct a Scale instance for an axis from its data domain.

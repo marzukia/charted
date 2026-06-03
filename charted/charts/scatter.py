@@ -32,6 +32,13 @@ class ScatterChart(Chart):
         theme: Optional theme configuration
         series_names: Names for each series (shown in legend)
         series_styles: Per-series style overrides (marker_shape, marker_size)
+        x_range: Optional (min, max) to fix the x-axis domain instead of
+            deriving it from the data, removing the need for invisible anchor
+            points to control the visible range.
+        y_range: Optional (min, max) to fix the y-axis domain.
+        domain_padding: Optional fraction (e.g. 0.1) padding the data-derived
+            domain by that amount on each side. Ignored on an axis with an
+            explicit range. Defaults to None (no padding).
 
     Example:
         >>> from charted import ScatterChart
@@ -69,6 +76,9 @@ class ScatterChart(Chart):
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        x_range: tuple[float, float] | None = None,
+        y_range: tuple[float, float] | None = None,
+        domain_padding: float | None = None,
     ):
         self._quadrant_labels = quadrant_labels
         super().__init__(
@@ -92,6 +102,9 @@ class ScatterChart(Chart):
             y_scale=y_scale,
             reference_lines=reference_lines,
             colors=colors,
+            x_range=x_range,
+            y_range=y_range,
+            domain_padding=domain_padding,
         )
 
     @property
