@@ -78,6 +78,7 @@ class Histogram(Chart):
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
         value_labels: bool | str | dict | None = None,
+        domain_padding: float | None = None,
     ):
         n_bins = bins if bins is not None else _auto_bins(data)
         bin_counts, bin_labels = _compute_bins(data, n_bins)
@@ -102,6 +103,7 @@ class Histogram(Chart):
             reference_lines=reference_lines,
             colors=colors,
             value_labels=value_labels,
+            domain_padding=domain_padding,
         )
 
     @property

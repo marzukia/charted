@@ -65,6 +65,7 @@ class BarChart(Chart):
         value_labels: bool | str | dict | None = None,
         legend: str = "none",
         category_label_max_width: float | None = None,
+        domain_padding: float | None = None,
     ):
         self._bar_data_labels = data_labels
         if bar_gap is None:
@@ -113,6 +114,7 @@ class BarChart(Chart):
             value_labels=value_labels,
             legend=legend,
             category_label_max_width=category_label_max_width,
+            domain_padding=domain_padding,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.

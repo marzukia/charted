@@ -65,6 +65,7 @@ class AreaChart(Chart):
         annotations: list | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        domain_padding: float | None = None,
     ):
         if curve not in VALID_CURVES:
             raise ValueError(
@@ -94,6 +95,7 @@ class AreaChart(Chart):
             annotations=annotations,
             reference_lines=reference_lines,
             colors=colors,
+            domain_padding=domain_padding,
         )
 
     @property

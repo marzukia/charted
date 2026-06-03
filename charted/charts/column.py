@@ -64,6 +64,7 @@ class ColumnChart(Chart):
         colors: list[str] | None = None,
         value_labels: bool | str | dict | None = None,
         legend: str = "none",
+        domain_padding: float | None = None,
     ):
         if column_gap is None:
             column_gap = get_column_gap()
@@ -95,6 +96,7 @@ class ColumnChart(Chart):
             colors=colors,
             value_labels=value_labels,
             legend=legend,
+            domain_padding=domain_padding,
         )
 
     @property

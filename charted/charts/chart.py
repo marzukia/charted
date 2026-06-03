@@ -555,8 +555,19 @@ class Chart(SeriesLegend, Svg):
         # Apply fixed-domain (x_range/y_range) or fractional domain_padding by
         # anchoring the data the axes derive their min/max from. None leaves the
         # axis data untouched, so the auto-fit domain is unchanged.
-        x_axis_data = self._anchor_axis_data(self.x_data, self._x_range)
-        y_axis_data = self._anchor_axis_data(self.y_data, self._y_range)
+        value_axis = self._BAR_VALUE_AXIS.get(chart_type)
+        x_axis_data = self._anchor_axis_data(
+            self.x_data,
+            self._x_range,
+            zero_baseline=(value_axis == "x"),
+            stacked=(value_axis == "x" and self.x_stacked),
+        )
+        y_axis_data = self._anchor_axis_data(
+            self.y_data,
+            self._y_range,
+            zero_baseline=(value_axis == "y"),
+            stacked=(value_axis == "y" and self.y_stacked),
+        )
 
         # Build the gridline config. When the theme requests no extra weight,
         # dash pattern, or minor lines, fall back to the plain colour string so
@@ -821,7 +832,11 @@ class Chart(SeriesLegend, Svg):
         return conv(x_data)
 
     def _anchor_axis_data(
-        self, data: Vector2D, fixed_range: tuple[float, float] | None
+        self,
+        data: Vector2D,
+        fixed_range: tuple[float, float] | None,
+        zero_baseline: bool = False,
+        stacked: bool = False,
     ) -> Vector2D:
         """Return axis data anchored to a fixed range or padded domain.
 
@@ -836,26 +851,74 @@ class Chart(SeriesLegend, Svg):
           (min, max) on each side, e.g. ``0.1`` adds 10% of the data span as
           headroom above and below.
 
-        When neither is set the original data is returned unchanged, so the
-        historical auto-fit domain is byte-for-byte preserved.
+        ``zero_baseline`` marks a value axis whose geometry fills from zero
+        (bar/column/area/histogram). For these, padding the side that holds the
+        baseline would push the baseline off zero and distort every bar, so the
+        pad is only applied away from zero: above the tallest positive value,
+        below the lowest negative value, or both when the data straddles zero.
+        The zero baseline itself never moves.
+
+        When neither range nor padding is set the original data is returned
+        unchanged, so the historical auto-fit domain is byte-for-byte preserved.
         """
         if fixed_range is None and self._domain_padding is None:
             return data
         if not data or not any(row for row in data):
             return data
 
-        if fixed_range is not None:
-            lo, hi = min(fixed_range), max(fixed_range)
+        # Determine the data-derived extent the axis will see. A stacked value
+        # axis aggregates per category (sum of positive series for the top, sum
+        # of negative series for the bottom), so the extent must be measured the
+        # same way or the headroom is computed against the wrong magnitude.
+        count = len(data[0])
+        if stacked:
+            tops = [0.0] * count
+            bottoms = [0.0] * count
+            for row in data:
+                for i in range(min(count, len(row))):
+                    v = row[i]
+                    if v < 0:
+                        bottoms[i] += v
+                    else:
+                        tops[i] += v
+            d_min, d_max = min(bottoms), max(tops)
         else:
             flat = [v for row in data for v in row]
             d_min, d_max = min(flat), max(flat)
+
+        if fixed_range is not None:
+            lo, hi = min(fixed_range), max(fixed_range)
+        else:
             span = d_max - d_min
             # A zero span (single distinct value) has no fraction to pad; leave
             # the data alone so the axis keeps its own degenerate-domain logic.
             if span == 0:
                 return data
             pad = span * self._domain_padding
-            lo, hi = d_min - pad, d_max + pad
+            if zero_baseline:
+                # Keep the zero baseline pinned: only add headroom on the side
+                # away from zero. Positive-only data pads the top, negative-only
+                # pads the bottom, straddling data pads both.
+                lo = d_min - pad if d_min < 0 else d_min
+                hi = d_max + pad if d_max > 0 else d_max
+            else:
+                lo, hi = d_min - pad, d_max + pad
+
+        if stacked:
+            # The axis sums each category, so a short [lo, hi] anchor row would
+            # both crash the per-category loop and be summed into a column. Add
+            # full-width anchor rows whose top/bottom extremes already account
+            # for the existing stacked totals, so the aggregated max reaches hi
+            # and min reaches lo without inflating any real category.
+            top_row = [0.0] * count
+            bot_row = [0.0] * count
+            top_i = max(range(count), key=lambda i: tops[i])
+            bot_i = min(range(count), key=lambda i: bottoms[i])
+            if hi > tops[top_i]:
+                top_row[top_i] = hi - tops[top_i]
+            if lo < bottoms[bot_i]:
+                bot_row[bot_i] = lo - bottoms[bot_i]
+            return [*[list(row) for row in data], top_row, bot_row]
 
         # Append the bounds as an extra series so min()/max() over the flattened
         # data reach lo/hi without altering the plotted points themselves.
