@@ -129,7 +129,12 @@ class BoxPlot(Chart):
                 )
             )
 
-            # Box (Q1 to Q3)
+            # Box (Q1 to Q3). In a theme with a configured shape outline
+            # (high-contrast), the body gets the contrasting outline instead of
+            # its own colour so adjacent boxes stay separable without hue.
+            outline = self._filled_outline_attrs()
+            box_stroke = outline.get("stroke", color)
+            box_stroke_width = outline.get("stroke_width", 1.5)
             g.add_child(
                 Rect(
                     x=cx - box_w / 2,
@@ -138,8 +143,8 @@ class BoxPlot(Chart):
                     height=y_q3 - y_q1,
                     fill=color,
                     fill_opacity=0.3,
-                    stroke=color,
-                    stroke_width=1.5,
+                    stroke=box_stroke,
+                    stroke_width=box_stroke_width,
                 )
             )
             # Median line

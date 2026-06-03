@@ -161,3 +161,43 @@ class TestBubbleChartConfig:
         assert rebuilt.sizes == [1, 2, 3]
         assert rebuilt.min_radius == 5
         assert rebuilt.max_radius == 25
+
+
+class TestBubbleSizeLegendAndHue:
+    """Issue #66: size-scale legend and optional hue dimension."""
+
+    def test_size_legend_off_by_default(self):
+        html = BubbleChart(x_data=[1, 2, 3], y_data=[1, 2, 3], sizes=[5, 10, 20]).html
+        assert "size_legend" not in html
+
+    def test_size_legend_renders_title_and_reference_bubbles(self):
+        html = BubbleChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            sizes=[5, 12, 40],
+            size_legend=True,
+            size_legend_title="Population",
+        ).html
+        assert "Population" in html
+        # the max size value should appear as a reference label in the legend
+        assert "40" in html
+
+    def test_hue_adds_gradient_and_varies_fill(self):
+        html = BubbleChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            sizes=[5, 12, 40],
+            size_legend=True,
+            hue=[0, 5, 10],
+            hue_title="Year",
+        ).html
+        assert "Year" in html
+        fills = set(re.findall(r'<circle[^>]*\bfill="([^"]+)"', html))
+        # hue interpolation should produce more than one distinct fill colour
+        assert len(fills) > 1
+
+    def test_invalid_size_legend_value_raises(self):
+        with pytest.raises(ValueError):
+            BubbleChart(
+                x_data=[1, 2], y_data=[1, 2], sizes=[5, 10], size_legend="left"
+            )

@@ -65,6 +65,7 @@ class BarChart(Chart):
         value_labels: bool | str | dict | None = None,
         legend: str = "none",
         category_label_max_width: float | None = None,
+        category_patterns: list[str] | bool | None = None,
         domain_padding: float | None = None,
     ):
         self._bar_data_labels = data_labels
@@ -114,6 +115,7 @@ class BarChart(Chart):
             value_labels=value_labels,
             legend=legend,
             category_label_max_width=category_label_max_width,
+            category_patterns=category_patterns,
             domain_padding=domain_padding,
         )
 
@@ -168,6 +170,7 @@ class BarChart(Chart):
             transform=f"translate({self.left_padding + dx}, {self.top_padding})",
         )
 
+        outline = self._filled_outline_attrs()
         if self.x_stacked:
             # Mirror ColumnChart: iterate series, accumulate offsets along the
             # value axis (x here, y in ColumnChart). x_offsets is pre-computed
@@ -195,7 +198,10 @@ class BarChart(Chart):
                     left_x = min(x_offset_val, x_offset_val + x)
                     width = abs(x)
                     paths.append(Path.get_path(left_x, slot_y, width, series_thickness))
-                bars_g.add_child(Path(d=paths, fill=fill))
+                draw_fill = (
+                    self._category_fill(series_idx, fill) if fill == color else fill
+                )
+                bars_g.add_child(Path(d=paths, fill=draw_fill, **outline))
         else:
             zero_x = self.x_axis.zero
             for series_idx, (x_values_series, color) in enumerate(
@@ -225,12 +231,17 @@ class BarChart(Chart):
                     else:
                         bar_path = Path.get_path(x, bar_y, zero_x - x, series_thickness)
                     if per_bar:
-                        bar_fill = self.colors[bar_idx % len(self.colors)]
-                        bars_g.add_child(Path(d=[bar_path], fill=bar_fill))
+                        bar_fill = self._category_fill(
+                            bar_idx, self.colors[bar_idx % len(self.colors)]
+                        )
+                        bars_g.add_child(Path(d=[bar_path], fill=bar_fill, **outline))
                     else:
                         paths.append(bar_path)
                 if not per_bar:
-                    bars_g.add_child(Path(d=paths, fill=fill))
+                    series_fill = (
+                        self._category_fill(series_idx, fill) if fill == color else fill
+                    )
+                    bars_g.add_child(Path(d=paths, fill=series_fill, **outline))
 
         # Render data labels at end of bars. Explicit data_labels take
         # precedence; otherwise fall back to synthesized value labels.

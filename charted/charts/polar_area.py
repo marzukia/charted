@@ -62,6 +62,7 @@ class PolarAreaChart(PieChart):
         legend: str = "none",
         show_radial_labels: bool = True,
         radial_levels: int = DEFAULT_RADIAL_LEVELS,
+        category_patterns: list[str] | bool | None = None,
     ):
         self.show_radial_labels = show_radial_labels
         self.radial_levels = radial_levels
@@ -78,6 +79,7 @@ class PolarAreaChart(PieChart):
             series_styles=series_styles,
             show_percentages=show_percentages,
             legend=legend,
+            category_patterns=category_patterns,
         )
 
     def _max_radius(self) -> float:
@@ -124,7 +126,8 @@ class PolarAreaChart(PieChart):
             start_angle, end_angle = angles[i]
             radius = radii[i]
 
-            slice_color = self.colors[i % len(self.colors)]
+            base_color = self.colors[i % len(self.colors)]
+            slice_color = base_color
             slice_opacity = 0.8
             if self.series_styles and i < len(self.series_styles):
                 style = self.series_styles[i] or {}
@@ -133,6 +136,13 @@ class PolarAreaChart(PieChart):
                 if style.get("fill_opacity"):
                     slice_opacity = style["fill_opacity"]
 
+            draw_fill = (
+                self._category_fill(i, slice_color)
+                if slice_color == base_color
+                else slice_color
+            )
+            outline = self._filled_outline_attrs()
+
             # Full-circle edge case (N == 1): the slice spans the whole circle,
             # so angle_span % 360 == 0 collapses _get_slice_path to a zero-area
             # sliver. Use the full-circle path instead, matching PieChart.
@@ -140,7 +150,9 @@ class PolarAreaChart(PieChart):
                 path_data = self._get_full_circle_path(cx, cy, radius)
             else:
                 path_data = self._get_slice_path(cx, cy, radius, start_angle, end_angle)
-            result.add_child(Path(d=path_data, fill=slice_color, opacity=slice_opacity))
+            result.add_child(
+                Path(d=path_data, fill=draw_fill, opacity=slice_opacity, **outline)
+            )
 
             # Label near the outer edge of the slice midpoint.
             label_angle = (start_angle + end_angle) / 2

@@ -49,6 +49,26 @@ class LineChart(Chart):
     markers: bool = False
     curve: str = "linear"
 
+    # Built-in dash patterns cycled for redundant (dash + colour) encoding when
+    # ``dash_cycle=True``. A solid line leads so the first series is unchanged.
+    DEFAULT_DASH_CYCLE = ["none", "6,4", "2,3", "8,3,2,3", "1,3"]
+
+    @staticmethod
+    def _resolve_dash_cycle(spec: list[str] | bool | None) -> list[str] | None:
+        """Normalise the ``dash_cycle`` argument to a list of dashes or None.
+
+        ``None`` / ``False`` disable dash cycling (every series is solid). ``True``
+        selects the built-in cycle. A non-empty list is used verbatim. The token
+        ``"none"`` means a solid line for that slot.
+        """
+        if spec is None or spec is False:
+            return None
+        if spec is True:
+            return list(LineChart.DEFAULT_DASH_CYCLE)
+        if isinstance(spec, list) and spec:
+            return list(spec)
+        return None
+
     def __init__(
         self,
         data: Vector | Vector2D,
@@ -76,6 +96,7 @@ class LineChart(Chart):
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
         legend: str = "none",
+        dash_cycle: list[str] | bool | None = None,
     ):
         if curve not in VALID_CURVES:
             raise ValueError(
@@ -83,6 +104,10 @@ class LineChart(Chart):
             )
         self.markers = markers
         self.curve = curve
+        # Redundant dash encoding so series differ by line pattern as well as
+        # colour. None (default) keeps every line solid, preserving existing
+        # renders. A per-series stroke_dasharray in series_styles always wins.
+        self._dash_cycle = self._resolve_dash_cycle(dash_cycle)
         super().__init__(
             y_data=data,
             x_data=x_data,
@@ -114,6 +139,21 @@ class LineChart(Chart):
     def x_offset(self) -> float:
         """Line charts use direct x positions, no label-padding offset."""
         return 0.0
+
+    def _series_dasharray(self, series_idx: int) -> str | None:
+        """Dash pattern for a series from the cycle, or None for solid.
+
+        Only consulted by the renderer when the series has no explicit
+        ``stroke_dasharray`` of its own. Returns None when dash cycling is off
+        or the cycle slot is the solid (``"none"``) token.
+        """
+        cycle = getattr(self, "_dash_cycle", None)
+        if not cycle:
+            return None
+        dash = cycle[series_idx % len(cycle)]
+        if not dash or dash == "none":
+            return None
+        return dash
 
     @property
     def representation(self) -> G:

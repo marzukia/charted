@@ -378,6 +378,7 @@ class Chart(SeriesLegend, Svg):
         value_labels: bool | str | dict | None = None,
         legend: str = "none",
         category_label_max_width: float | None = None,
+        category_patterns: list[str] | bool | None = None,
     ):
         # Maximum pixel width a category (y-axis) label may occupy before it is
         # wrapped onto multiple lines. ``None`` (the default) keeps the
@@ -393,6 +394,14 @@ class Chart(SeriesLegend, Svg):
         # reserves no layout space and leaves any historical in-plot legend
         # untouched, so existing renders are byte-for-byte preserved.
         self._init_legend(legend)
+        # Optional per-category hatch/pattern fills. ``None``/``False`` (the
+        # default) keeps flat colour fills so existing renders are unchanged.
+        # ``True`` selects the built-in cycle; a list cycles custom patterns.
+        # Patterns add a redundant texture channel on top of colour so
+        # categories stay distinguishable without relying on hue.
+        from charted.utils.patterns import resolve_pattern_cycle
+
+        self._category_patterns = resolve_pattern_cycle(category_patterns)
         super().__init__(
             width=width,
             height=height,
@@ -750,6 +759,8 @@ class Chart(SeriesLegend, Svg):
         )
         defs = Defs()
         defs.add_child(plot_clip)
+        for pattern in self._pattern_defs():
+            defs.add_child(pattern)
 
         children = [self.container, self.title, self.subtitle_element, defs]
         if self.render_axes:
@@ -782,6 +793,66 @@ class Chart(SeriesLegend, Svg):
             children.extend(axis_labels)
         self.children = []
         self.add_children(*children)
+
+    # =========================================================================
+    # Colourblind-safe redundancy: contrasting outlines + pattern fills
+    # =========================================================================
+
+    def _pattern_color_count(self) -> int:
+        """Number of distinct category colours that may need a pattern tile."""
+        colors = getattr(self, "colors", None) or []
+        return len(colors)
+
+    def _pattern_defs(self) -> list:
+        """Build one ``<pattern>`` def per (category, pattern) the chart uses.
+
+        Returns an empty list unless ``category_patterns`` was enabled, so the
+        default ``<defs>`` block is byte-for-byte unchanged. One pattern is
+        emitted per colour index, drawn in that index's fill colour, so a hatch
+        keeps the underlying category colour while adding a texture channel.
+        """
+        cycle = getattr(self, "_category_patterns", None)
+        if not cycle:
+            return []
+        from charted.utils.patterns import build_pattern
+
+        colors = getattr(self, "colors", None) or []
+        defs: list = []
+        for idx, color in enumerate(colors):
+            name = cycle[idx % len(cycle)]
+            defs.append(build_pattern(self._pattern_id(idx), name, color))
+        return defs
+
+    def _pattern_id(self, index: int) -> str:
+        """Stable id for the pattern tile of category ``index``."""
+        return f"chart-pattern-{id(self) & 0xFFFFFF:x}-{index}"
+
+    def _category_fill(self, index: int, color: str) -> str:
+        """Return the fill for category ``index``: a pattern url or the colour.
+
+        With patterns disabled (the default) this returns ``color`` unchanged,
+        preserving existing renders. With patterns enabled it returns a
+        ``url(#...)`` reference to the matching pattern tile.
+        """
+        if not getattr(self, "_category_patterns", None):
+            return color
+        return f"url(#{self._pattern_id(index)})"
+
+    def _filled_outline_attrs(self) -> dict:
+        """Stroke attributes to apply to a filled shape, or ``{}`` when off.
+
+        Reads the theme's ``filled_shape_outline``; when no outline colour is
+        configured (the default and the light/dark presets) this returns an
+        empty dict so filled shapes stay unstroked exactly as before. The
+        high-contrast preset returns a 1px black outline.
+        """
+        theme = getattr(self, "theme", None)
+        if theme is None:
+            return {}
+        stroke, width = theme.filled_shape_outline
+        if stroke is None:
+            return {}
+        return {"stroke": stroke, "stroke_width": width}
 
     # =========================================================================
     # Scale Helpers

@@ -293,6 +293,14 @@ class Theme:
     # labels historically borrowed, keeping existing renders unchanged. Set a
     # hex/HSL string to give data labels their own themed colour.
     data_label_color: Optional[str] = None
+    # Mandatory contrasting outline drawn around filled shapes (bars, columns,
+    # stacked segments, pie/polar wedges, bubbles, box bodies). None (the
+    # default) draws no outline, keeping existing renders byte-for-byte
+    # identical. Set a hex/HSL string (the high-contrast preset uses black) to
+    # separate adjacent same-ish fills without relying on colour alone.
+    shape_outline_color: Optional[str] = None
+    # Stroke width for the filled-shape outline. None falls back to 1px.
+    shape_outline_width: Optional[float] = None
     # Default stroke width for plotted series lines (line/area/combo). None
     # keeps the historical 2px line stroke. The high-contrast preset raises
     # this so lines read clearly for low-vision users.
@@ -335,6 +343,12 @@ class Theme:
         ):
             raise ValueError(
                 f"Invalid color for data_label_color: {self.data_label_color!r}"
+            )
+        if self.shape_outline_color is not None and not _is_valid_hex_color(
+            self.shape_outline_color
+        ):
+            raise ValueError(
+                f"Invalid color for shape_outline_color: {self.shape_outline_color!r}"
             )
 
         # Validate legend contrast against background
@@ -450,6 +464,20 @@ class Theme:
         return self.resolved_axis_title_color
 
     @property
+    def filled_shape_outline(self) -> tuple[Optional[str], float]:
+        """Outline (stroke, width) for filled shapes, or (None, 1.0) when off.
+
+        Returns the configured ``shape_outline_color`` (or None when unset) and
+        the stroke width, defaulting to 1px. Charts call this and only emit a
+        stroke when the colour is not None, so the default theme leaves filled
+        shapes unstroked exactly as before.
+        """
+        width = (
+            self.shape_outline_width if self.shape_outline_width is not None else 1.0
+        )
+        return self.shape_outline_color, width
+
+    @property
     def resolved_series_stroke_width(self) -> float:
         """Series line stroke width: explicit override or the 2px default.
 
@@ -546,6 +574,10 @@ class Theme:
                 background_color="#FFFFFF",
                 grid_color="#000000",
                 grid_width=1.5,
+                # Every filled shape gets a 1px black outline so adjacent
+                # wedges/bars/bubbles stay separable without relying on hue.
+                shape_outline_color="#000000",
+                shape_outline_width=1.0,
                 # Heavier line strokes and larger markers so plotted series
                 # read clearly for low-vision users.
                 series_stroke_width=3.0,

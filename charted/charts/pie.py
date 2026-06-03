@@ -59,6 +59,7 @@ class PieChart(Chart):
         show_percentages: bool = False,
         value_labels: bool | str | dict | None = None,
         legend: str = "none",
+        category_patterns: list[str] | bool | None = None,
     ):
         """Initialize pie chart.
 
@@ -124,6 +125,7 @@ class PieChart(Chart):
             theme=theme,
             chart_type="pie",
             legend=legend,
+            category_patterns=category_patterns,
         )
 
     def _has_legend_entries(self) -> bool:
@@ -413,7 +415,8 @@ class PieChart(Chart):
                 transform = f"translate({offset_x}, {offset_y})"
 
             # Get slice-specific style
-            slice_color = self.colors[i % len(self.colors)]
+            base_color = self.colors[i % len(self.colors)]
+            slice_color = base_color
             slice_opacity = 0.8
             if self.series_styles and i < len(self.series_styles):
                 style = self.series_styles[i] or {}
@@ -422,21 +425,32 @@ class PieChart(Chart):
                 if style.get("fill_opacity"):
                     slice_opacity = style["fill_opacity"]
 
+            # Pattern fill (only when the colour wasn't overridden) and the
+            # high-contrast wedge outline. Both are no-ops by default.
+            draw_fill = (
+                self._category_fill(i, slice_color)
+                if slice_color == base_color
+                else slice_color
+            )
+            outline = self._filled_outline_attrs()
+
             # Render slice path
             if angle >= 359.9:
                 path_data = self._get_full_circle_path(cx, cy, radius)
                 slice_path = Path(
                     d=path_data,
-                    fill=slice_color,
+                    fill=draw_fill,
                     fill_rule="evenodd" if self.inner_radius > 0 else "nonzero",
                     opacity=slice_opacity,
+                    **outline,
                 )
             else:
                 path_data = self._get_slice_path(cx, cy, radius, start_angle, end_angle)
                 slice_path = Path(
                     d=path_data,
-                    fill=slice_color,
+                    fill=draw_fill,
                     opacity=slice_opacity,
+                    **outline,
                 )
 
             if transform:
