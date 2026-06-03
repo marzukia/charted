@@ -33,6 +33,8 @@ class RadarChart(Chart):
         grid_levels: Number of concentric grid circles (default 5)
         show_axis_labels: Whether to display axis labels (default True)
         label_offset: Distance from grid edge for labels (default 20)
+        show_radial_labels: Whether to label radial rings with their numeric
+            scale value (default True)
 
     Example:
         >>> from charted import RadarChart
@@ -68,6 +70,7 @@ class RadarChart(Chart):
         grid_levels: int = 5,
         show_axis_labels: bool = True,
         label_offset: float = 20,
+        show_radial_labels: bool = True,
     ):
         """Initialize radar chart.
 
@@ -121,6 +124,7 @@ class RadarChart(Chart):
         self.grid_levels = grid_levels
         self.show_axis_labels = show_axis_labels
         self.label_offset = label_offset
+        self.show_radial_labels = show_radial_labels
 
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(axis_count)] for _ in data]

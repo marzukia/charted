@@ -58,7 +58,12 @@ class TestPolarAreaHappyPath:
         when ``angle_span % 360 == 0``.
         """
         chart = PolarAreaChart(data=[42])
-        path_d = chart.representation.children[0].kwargs["d"]
+        # Radial scale rings render first; grab the first slice path element.
+        path_d = next(
+            child.kwargs["d"]
+            for child in chart.representation.children
+            if "d" in child.kwargs
+        )
 
         # A full circle path is two semicircle arcs with the large-arc/sweep
         # flags '1 1', as emitted by _get_full_circle_path. The degenerate
@@ -98,3 +103,40 @@ class TestPolarAreaConfig:
         rebuilt = Chart.from_config(cfg)
         assert isinstance(rebuilt, PolarAreaChart)
         assert rebuilt._pie_data == [10, 20, 30]
+
+
+class TestPolarAreaRadialGrid:
+    """Radial scale rings and numeric ring labels (issue #62)."""
+
+    def test_radial_rings_rendered(self):
+        """radial_levels concentric circles are drawn behind the slices."""
+        chart = PolarAreaChart(data=[10, 20, 30, 15], radial_levels=5)
+        html = chart.html
+        # Each ring is a <circle ... fill="none" ...>; count those.
+        ring_count = html.count('fill="none"')
+        assert ring_count == 5
+
+    def test_radial_labels_present_by_default(self):
+        """The outer ring value (max datum) appears as a numeric label."""
+        chart = PolarAreaChart(data=[10, 20, 30, 15], radial_levels=5)
+        html = chart.html
+        assert ">30<" in html  # max value at outer ring
+        assert ">6<" in html  # 30 * 1/5 at inner ring
+
+    def test_radial_labels_can_be_disabled(self):
+        """show_radial_labels=False keeps rings but drops their labels."""
+        chart = PolarAreaChart(
+            data=[10, 20, 30, 15], radial_levels=5, show_radial_labels=False
+        )
+        html = chart.html
+        assert html.count('fill="none"') == 5
+        assert ">30<" not in html
+
+    def test_rings_use_theme_grid_color(self):
+        """Rings adopt the theme's resolved grid colour (dark preset)."""
+        from charted.themes.core import Theme
+
+        theme = Theme.from_preset("dark")
+        chart = PolarAreaChart(data=[10, 20, 30], theme=theme)
+        html = chart.html
+        assert theme.resolved_grid_color.lower() in html.lower()

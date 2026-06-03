@@ -206,3 +206,42 @@ class TestRadarChartSadPath:
                 labels=["A", "B", "C", "D"],  # 4 labels
                 axis_count=3,  # But axis_count=3
             )
+
+
+class TestRadarRadialLabels:
+    """Radial scale rings and numeric ring labels (issue #62)."""
+
+    def test_radial_labels_present_by_default(self):
+        """The outer ring value (max datum) is rendered as a numeric label."""
+        chart = RadarChart(
+            data=[20, 35, 30, 45, 25],
+            labels=["Speed", "Power", "Endurance", "Defense", "Skill"],
+            grid_levels=5,
+        )
+        html = chart.html
+        # Outer ring labels the max value (45); inner rings label fractions.
+        assert ">45<" in html
+        assert ">9<" in html  # 45 * 1/5
+
+    def test_radial_labels_can_be_disabled(self):
+        """show_radial_labels=False suppresses all ring labels."""
+        chart = RadarChart(
+            data=[20, 35, 30, 45, 25],
+            labels=["Speed", "Power", "Endurance", "Defense", "Skill"],
+            show_radial_labels=False,
+        )
+        html = chart.html
+        assert ">45<" not in html
+
+    def test_rings_use_theme_grid_color(self):
+        """Rings adopt the theme's resolved grid colour (dark preset)."""
+        from charted.themes.core import Theme
+
+        theme = Theme.from_preset("dark")
+        chart = RadarChart(
+            data=[20, 35, 30],
+            labels=["A", "B", "C"],
+            theme=theme,
+        )
+        html = chart.html
+        assert theme.resolved_grid_color.lower() in html.lower()

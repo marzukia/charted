@@ -60,20 +60,34 @@ class RadarRenderer:
 
         return g
 
+    def _ring_color(self) -> str:
+        """Theme-aware colour for radial rings and their numeric labels.
+
+        Prefers the theme's resolved grid colour (which respects light/dark/
+        high-contrast presets and custom overrides) and falls back to the raw
+        ``grid_color`` attribute, then a light grey, when no theme is present.
+        """
+        theme = self.chart.theme
+        resolved = getattr(theme, "resolved_grid_color", None)
+        if resolved:
+            return resolved
+        return getattr(theme, "grid_color", "#e0e0e0")
+
     def _render_grid(self, g: G, cx: float, cy: float) -> None:
-        """Render concentric grid circles.
+        """Render concentric grid circles and numeric ring labels.
 
         Args:
             g: Parent G element
             cx: Center x coordinate
             cy: Center y coordinate
         """
-        grid_color = (
-            self.chart.theme.grid_color
-            if hasattr(self.chart.theme, "grid_color")
-            else "#e0e0e0"
-        )
-        grid_width = getattr(self.chart.theme, "grid_width", 1)
+        grid_color = self._ring_color()
+        grid_width = getattr(self.chart.theme, "grid_width", None) or 1
+
+        # Value at the outermost ring, used to label each ring level.
+        max_value = max(max(abs(v) for v in s) for s in self.chart._series_data)
+        if max_value == 0:
+            max_value = 1
 
         for level in range(self.chart.grid_levels):
             radius = self._get_grid_radius(level)
@@ -87,6 +101,41 @@ class RadarRenderer:
             )
             g.add_child(circle)
 
+            if getattr(self.chart, "show_radial_labels", False):
+                ring_value = max_value * (level + 1) / self.chart.grid_levels
+                self._render_ring_label(g, cx, cy, radius, ring_value, grid_color)
+
+    def _render_ring_label(
+        self,
+        g: G,
+        cx: float,
+        cy: float,
+        radius: float,
+        value: float,
+        color: str,
+    ) -> None:
+        """Render a numeric label for one radial ring.
+
+        The label sits just inside the ring along the vertical (12 o'clock)
+        spoke so it reads upright and stays clear of the data polygons.
+        """
+        from charted.utils.value_format import format_value
+
+        text = format_value(value)
+        label_x = cx + 3
+        label_y = cy - radius + DEFAULT_FONT_SIZE * 0.5
+        g.add_child(
+            Text(
+                x=label_x,
+                y=label_y,
+                text=text,
+                fill=color,
+                font_size=DEFAULT_FONT_SIZE * 0.8,
+                font_family=DEFAULT_FONT,
+                text_anchor="start",
+            )
+        )
+
     def _render_axes(self, g: G, cx: float, cy: float) -> None:
         """Render axis spokes and labels.
 
@@ -95,12 +144,8 @@ class RadarRenderer:
             cx: Center x coordinate
             cy: Center y coordinate
         """
-        grid_color = (
-            self.chart.theme.grid_color
-            if hasattr(self.chart.theme, "grid_color")
-            else "#e0e0e0"
-        )
-        grid_width = getattr(self.chart.theme, "grid_width", 1)
+        grid_color = self._ring_color()
+        grid_width = getattr(self.chart.theme, "grid_width", None) or 1
 
         for i, label in enumerate(self.chart._radar_labels):
             angle = self._get_angle(i)

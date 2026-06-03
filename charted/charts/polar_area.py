@@ -5,14 +5,18 @@ import math
 from charted.charts.pie import PieChart
 from charted.config import get_pie_label_font_size
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import G, Path, Text
+from charted.html.element import Circle, G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.colors import get_contrast_color
 from charted.utils.types import Labels, SeriesStyleConfig, Vector
+from charted.utils.value_format import format_value
 
 # Smallest slice (lowest value) still gets this fraction of the max radius
 # so a zero-ish value remains visible as a sliver.
 MIN_RADIUS_FRACTION = 0.15
+
+# Default number of concentric scale rings drawn behind polar-area slices.
+DEFAULT_RADIAL_LEVELS = 5
 
 
 class PolarAreaChart(PieChart):
@@ -31,6 +35,9 @@ class PolarAreaChart(PieChart):
         theme: Optional theme configuration.
         start_angle: Starting angle in degrees (0 = top, clockwise).
         series_styles: Optional per-slice styling overrides.
+        show_radial_labels: Draw numeric labels on the radial scale rings
+            (default True).
+        radial_levels: Number of concentric scale rings to draw (default 5).
 
     Example:
         >>> from charted import PolarAreaChart
@@ -53,7 +60,11 @@ class PolarAreaChart(PieChart):
         series_styles: list[SeriesStyleConfig] | None = None,
         show_percentages: bool = False,
         legend: str = "none",
+        show_radial_labels: bool = True,
+        radial_levels: int = DEFAULT_RADIAL_LEVELS,
     ):
+        self.show_radial_labels = show_radial_labels
+        self.radial_levels = radial_levels
         super().__init__(
             data=data,
             labels=labels,
@@ -106,6 +117,9 @@ class PolarAreaChart(PieChart):
         angles = self.slice_angles()
         radii = self.slice_radii()
 
+        # Radial scale rings sit behind the slices so values can be read off.
+        self._render_radial_grid(result, cx, cy, data)
+
         for i, (value, label) in enumerate(zip(data, labels)):
             start_angle, end_angle = angles[i]
             radius = radii[i]
@@ -155,6 +169,61 @@ class PolarAreaChart(PieChart):
             )
 
         return result
+
+    def _ring_color(self) -> str:
+        """Theme-aware colour for radial rings and their numeric labels."""
+        theme = self.theme
+        resolved = getattr(theme, "resolved_grid_color", None)
+        if resolved:
+            return resolved
+        return getattr(theme, "grid_color", "#cccccc")
+
+    def _render_radial_grid(
+        self, result: G, cx: float, cy: float, data: list[float]
+    ) -> None:
+        """Draw concentric scale rings with numeric labels behind the slices.
+
+        Rings are evenly spaced from the centre to the outer radius. Each ring
+        is labelled with the data value that maps to that radius on a linear
+        ``0..max`` scale, giving the otherwise scale-less polar slices a
+        readable magnitude reference.
+        """
+        levels = self.radial_levels
+        if levels <= 0:
+            return
+
+        outer = self._max_radius()
+        max_val = max(data) if data else 0
+        ring_color = self._ring_color()
+        grid_width = getattr(self.theme, "grid_width", None) or 1
+
+        for level in range(1, levels + 1):
+            radius = outer * level / levels
+            result.add_child(
+                Circle(
+                    cx=cx,
+                    cy=cy,
+                    r=radius,
+                    fill="none",
+                    stroke=ring_color,
+                    stroke_width=grid_width,
+                )
+            )
+
+            if self.show_radial_labels:
+                ring_value = max_val * level / levels
+                font_size = get_pie_label_font_size() * 0.8
+                result.add_child(
+                    Text(
+                        x=cx + 3,
+                        y=cy - radius + font_size * 0.6,
+                        text=format_value(ring_value),
+                        fill=ring_color,
+                        font_size=font_size,
+                        font_family=self.theme.title_font_family,
+                        text_anchor="start",
+                    )
+                )
 
     def to_config(self) -> dict:
         cfg = super().to_config()
