@@ -28,6 +28,10 @@ class BarChart(Chart):
         series_names: Names for each series (shown in legend)
         series_styles: Per-series style overrides
         x_stacked: If True, stack bars horizontally instead of side-by-side
+        category_label_max_width: Max pixel width for a category label before it
+            wraps onto multiple lines. None (default) keeps the full label on a
+            single line and grows the left gutter to fit it. Set this to wrap
+            long names (no truncation) and keep the plot area wide.
 
     Example:
         >>> from charted import BarChart
@@ -60,6 +64,7 @@ class BarChart(Chart):
         colors: list[str] | None = None,
         value_labels: bool | str | dict | None = None,
         legend: str = "none",
+        category_label_max_width: float | None = None,
     ):
         self._bar_data_labels = data_labels
         if bar_gap is None:
@@ -107,6 +112,7 @@ class BarChart(Chart):
             colors=colors,
             value_labels=value_labels,
             legend=legend,
+            category_label_max_width=category_label_max_width,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.

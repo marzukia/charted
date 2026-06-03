@@ -574,17 +574,24 @@ class YAxis(Axis):
             y_positions = self.coordinates
 
         for y, label in zip(y_positions, self.labels):
+            lines = getattr(label, "lines", None)
             if bar_height is not None:
-                text = Text(
-                    x=0,
-                    y=y,
-                    text=label.text,
-                    dominant_baseline="central",
-                    transform=translate(
-                        x=-label.width,
-                        y=0,
-                    ),
-                )
+                if lines:
+                    labels.add_child(
+                        self._wrapped_label(lines, y, label.height)
+                    )
+                else:
+                    text = Text(
+                        x=0,
+                        y=y,
+                        text=label.text,
+                        dominant_baseline="central",
+                        transform=translate(
+                            x=-label.width,
+                            y=0,
+                        ),
+                    )
+                    labels.add_child(text)
             else:
                 text = Text(
                     x=0,
@@ -595,5 +602,35 @@ class YAxis(Axis):
                         y=label.height / 4,
                     ),
                 )
-            labels.add_child(text)
+                labels.add_child(text)
         return labels
+
+    @staticmethod
+    def _wrapped_label(lines: list[str], y: float, total_height: float) -> Text:
+        """Build a right-aligned multi-line label centred on ``y``.
+
+        Each line becomes a ``<tspan>`` (anchored at the gutter's right edge
+        via ``text-anchor="end"``) with its own ``dy`` so the stacked block of
+        ``len(lines)`` lines is vertically centred on the bar's midpoint ``y``.
+        """
+        from charted.html.element import TSpan
+
+        n = len(lines)
+        line_height = total_height / n if n else total_height
+        # Baseline of the first line so the block centres on y. Each subsequent
+        # line steps down by one line height.
+        first_dy = -(line_height * (n - 1)) / 2 + line_height / 4
+        text = Text(
+            x=0,
+            y=y,
+            text_anchor="end",
+        )
+        for i, line in enumerate(lines):
+            text.add_child(
+                TSpan(
+                    text=line,
+                    x=0,
+                    dy=first_dy if i == 0 else line_height,
+                )
+            )
+        return text

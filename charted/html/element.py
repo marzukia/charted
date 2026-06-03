@@ -148,6 +148,16 @@ class Text(Element):
         self.add_child(text)
 
 
+class TSpan(Element):
+    """SVG ``<tspan>`` for a single line within a multi-line ``<text>``."""
+
+    tag = "tspan"
+
+    def __init__(self, text: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.add_child(text)
+
+
 class Title(Element):
     """Native SVG ``<title>`` element.
 

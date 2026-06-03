@@ -377,7 +377,18 @@ class Chart(SeriesLegend, Svg):
         domain_padding: float | None = None,
         value_labels: bool | str | dict | None = None,
         legend: str = "none",
+        category_label_max_width: float | None = None,
     ):
+        # Maximum pixel width a category (y-axis) label may occupy before it is
+        # wrapped onto multiple lines. ``None`` (the default) keeps the
+        # historical single-line behaviour where the left padding grows to fit
+        # the longest label. Set this to cap the label gutter and wrap instead
+        # of letting long category names eat the plot area.
+        self._category_label_max_width = (
+            float(category_label_max_width)
+            if category_label_max_width is not None
+            else None
+        )
         # Placement for the shared series legend. ``'none'`` (the default)
         # reserves no layout space and leaves any historical in-plot legend
         # untouched, so existing renders are byte-for-byte preserved.
@@ -673,7 +684,38 @@ class Chart(SeriesLegend, Svg):
         # file output (to_svg/save); toggled on only by to_html(tooltips=True).
         self._tooltips = False
 
+        # Wrap long category (y-axis) labels onto multiple lines so the label
+        # gutter stays bounded instead of consuming the plot. No-op unless
+        # category_label_max_width was set and a label actually overflows.
+        self._apply_category_label_wrapping()
+
         self._build_children()
+
+    def _apply_category_label_wrapping(self) -> None:
+        """Wrap y-axis category labels to ``category_label_max_width``.
+
+        Replaces the measured y-axis labels (used for left-padding) and the
+        y-axis' own render labels with wrapped MeasuredText so the full text is
+        shown across multiple lines instead of truncated or allowed to expand
+        the gutter without bound. Does nothing when no cap is set, there are no
+        y-axis labels, or nothing overflows.
+        """
+        cap = self._category_label_max_width
+        if cap is None or not self.data_model.y_labels:
+            return
+
+        from charted.utils.helpers import wrap_text_to_width
+
+        wrapped = [
+            wrap_text_to_width(label.text, cap) for label in self.data_model.y_labels
+        ]
+        if not any(w.lines for w in wrapped):
+            return
+
+        self.data_model._y_labels = wrapped
+        self.layout.y_labels = wrapped
+        if getattr(self, "y_axis", None) is not None:
+            self.y_axis._labels = wrapped
 
     def _build_children(self) -> None:
         """Assemble the chart's SVG child elements.

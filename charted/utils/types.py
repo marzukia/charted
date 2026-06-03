@@ -43,6 +43,10 @@ class MeasuredText(NamedTuple):
     text: str
     width: float
     height: float
+    # Optional wrapped lines. When a label is wrapped to fit a width budget,
+    # this holds the individual line strings (the renderer emits one tspan per
+    # line). ``None`` means the label is a single line and renders as before.
+    lines: list[str] | None = None
 
 
 class Coordinate(NamedTuple):
