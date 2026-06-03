@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Optional
 
+from charted.constants import REFERENCE_LINE_WIDTH
+
 
 def _is_valid_hex_color(color: str) -> bool:
     """Validate color format (hex, HSL, or HSLA).
@@ -249,6 +251,11 @@ class Theme:
     v_padding: float = 0.05
     marker_size: float = 3.0
     arrow_color: str = "#555555"
+    # Stroke width for reference lines (incl. the zero crosshair). These draw
+    # on top of the grid as their own layer; a width above the grid line width
+    # keeps them reading as the most prominent line. None falls back to the
+    # library default (REFERENCE_LINE_WIDTH).
+    reference_line_width: Optional[float] = None
 
     def __post_init__(self) -> None:
         """Validate color format after initialization."""
@@ -319,6 +326,13 @@ class Theme:
             OPACITY_TIERS["reference_line_color"],
             self.background_color,
         )
+
+    @property
+    def resolved_reference_line_width(self) -> float:
+        """Reference-line stroke width: explicit override or library default."""
+        if self.reference_line_width is not None:
+            return self.reference_line_width
+        return REFERENCE_LINE_WIDTH
 
     @property
     def resolved_axis_title_color(self) -> str:
