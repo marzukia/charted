@@ -2,16 +2,25 @@
 
 Displays tasks as horizontal bars along a timeline, where each bar's
 position and length represent the task's start and duration. Supports
-optional dependency arrows between tasks.
+a real date/time x-axis (start/end may be dates, datetimes or ISO
+strings), optional dependency arrows between tasks, and optional
+task-duration labels.
 """
 
 from __future__ import annotations
 
+from datetime import date, datetime
+
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import G, Path
+from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.types import Labels, SeriesStyleConfig
+
+
+def _is_time_value(value) -> bool:
+    """True if a start/end value should be plotted on a date/time axis."""
+    return isinstance(value, (date, datetime, str))
 
 
 class GanttChart(Chart):
@@ -35,12 +44,25 @@ class GanttChart(Chart):
         bar_height_ratio: Bar height as fraction of row height (default 0.6).
         show_today_line: If True, draw a dashed vertical line at a given
             x_position value (requires x_position to be set).
+        x_position: Value (number or date) for the today/marker line.
+        show_durations: If True, label each bar with its duration (default
+            False). For numeric data the label is ``end - start``; for date
+            data it is the number of whole days. A ``duration_formatter`` can
+            override the rendered text.
+        duration_formatter: Optional ``callable(start, end) -> str`` used to
+            format each duration label.
+
+    Dates: ``start``/``end`` may be ``date``, ``datetime`` or ISO-8601
+    strings as well as plain numbers. When any value is date-like the x-axis
+    automatically switches to a calendar-aware time scale; otherwise the
+    historical integer axis is used unchanged.
 
     Example:
         >>> from charted import GanttChart
         >>> chart = GanttChart(
-        ...     data=[(1, 3), (2, 5), (4, 6)],
-        ...     labels=["Design", "Development", "Testing"],
+        ...     data=[("2024-01-01", "2024-02-15"), ("2024-02-01", "2024-04-01")],
+        ...     labels=["Design", "Development"],
+        ...     show_durations=True,
         ... )
         >>> chart.save('project.svg')
     """
@@ -58,7 +80,9 @@ class GanttChart(Chart):
         dependencies: list[tuple[int, int]] | None = None,
         bar_height_ratio: float = 0.6,
         show_today_line: bool = False,
-        x_position: float | None = None,
+        x_position=None,
+        show_durations: bool = False,
+        duration_formatter=None,
     ):
         if not data:
             raise ValueError("No data was provided to the GanttChart element.")
@@ -85,9 +109,19 @@ class GanttChart(Chart):
         self.bar_height_ratio = bar_height_ratio
         self.show_today_line = show_today_line
         self._x_position = x_position
+        self.show_durations = show_durations
+        self._duration_formatter = duration_formatter
 
         all_starts = [s for series in flat_data for (s, e) in series]
         all_ends = [e for series in flat_data for (s, e) in series]
+
+        # Detect a date/time axis: if any start or end is date-like, the whole
+        # x-axis switches to a calendar-aware time scale. Pure-numeric data
+        # keeps the original linear integer axis byte-for-byte.
+        self._is_time = any(
+            _is_time_value(v) for v in (*all_starts, *all_ends)
+        ) or _is_time_value(x_position)
+
         self._global_min = min(all_starts)
         self._global_max = max(all_ends)
 
@@ -123,6 +157,7 @@ class GanttChart(Chart):
             chart_type="gantt",
             series_styles=series_styles,
             series_names=series_names,
+            x_scale="time" if self._is_time else None,
         )
 
     @property
@@ -156,6 +191,11 @@ class GanttChart(Chart):
         )
 
         bars_g = G(opacity="0.8")
+        duration_g = G(
+            font_family="Arial",
+            font_size=11,
+            fill=self.theme.resolved_label_color,
+        )
         series_offset_y = 0
 
         for series_idx in range(self._num_series):
@@ -177,13 +217,39 @@ class GanttChart(Chart):
                 x_end = self.x_axis.reproject(end)
                 width = abs(x_end - x_start)
                 paths.append(Path.get_path(x_start, y, width, self.bar_height))
+
+                if self.show_durations:
+                    label = self._duration_label(start, end)
+                    if label:
+                        duration_g.add_child(
+                            Text(
+                                x=max(x_start, x_end) + 4,
+                                y=y + self.bar_height / 2,
+                                text=label,
+                                dominant_baseline="central",
+                            )
+                        )
             bars_g.add_child(Path(d=paths, fill=fill))
             series_offset_y += self._tasks_per_series[series_idx]
 
         result.add_children(bars_g)
+        if self.show_durations:
+            result.add_children(duration_g)
 
         if self.dependencies:
-            arrow_g = G(stroke=self.theme.arrow_color, fill="none")
+            arrow_color = self._arrow_color()
+            # Dependency arrows read as deliberate connectors, distinct from the
+            # solid data bars: a dashed, lighter-weight orthogonal route ending
+            # in a filled arrowhead pointing into the dependent task.
+            line_g = G(
+                stroke=arrow_color,
+                fill="none",
+                stroke_width=1.4,
+                stroke_dasharray="5,3",
+                stroke_linejoin="round",
+            )
+            head_g = G(stroke="none", fill=arrow_color)
+            head = 5.0  # arrowhead half-length in px
             for from_task, to_task in self.dependencies:
                 if from_task >= self._total_tasks or to_task >= self._total_tasks:
                     continue
@@ -197,15 +263,28 @@ class GanttChart(Chart):
                 from_x = self.x_axis.reproject(from_end)
                 to_x = self.x_axis.reproject(to_start)
 
-                # Quadratic bezier connecting from-end to to-start
-                mid_x = (from_x + to_x) / 2
+                # Orthogonal elbow: out the end of the predecessor, across to
+                # the successor's row, then into its start. A small stub keeps
+                # the line clear of the bar edges and gives the arrowhead room.
+                stub = 8.0
+                elbow_x = max(from_x + stub, to_x - stub)
+                tip_x = to_x - 1.0  # stop just shy so the head touches the bar
                 d = (
-                    f"M{from_x},{from_y} "
-                    f"Q{mid_x},{from_y} {mid_x},{to_y} "
-                    f"Q{to_x},{to_y} {to_x},{to_y}"
+                    f"M{from_x:.2f},{from_y:.2f} "
+                    f"H{elbow_x:.2f} "
+                    f"V{to_y:.2f} "
+                    f"H{tip_x - head:.2f}"
                 )
-                arrow_g.add_child(Path(d=[d]))
-            result.add_children(arrow_g)
+                line_g.add_child(Path(d=[d]))
+
+                # Filled triangular arrowhead pointing right into the to-task.
+                head_d = (
+                    f"M{tip_x:.2f},{to_y:.2f} "
+                    f"L{tip_x - head:.2f},{to_y - head * 0.6:.2f} "
+                    f"L{tip_x - head:.2f},{to_y + head * 0.6:.2f} Z"
+                )
+                head_g.add_child(Path(d=[head_d]))
+            result.add_children(line_g, head_g)
 
         if self.show_today_line and self._x_position is not None:
             x_pos = self.x_axis.reproject(self._x_position)
@@ -264,3 +343,44 @@ class GanttChart(Chart):
                 return series[flat_idx - offset][1]
             offset += len(series)
         return 0.0
+
+    def _arrow_color(self) -> str:
+        """Theme arrow colour, nudged to meet a minimum contrast ratio.
+
+        Dependency arrows must stay legible against the plot background. The
+        themed ``arrow_color`` is used as-is when it clears WCAG ~3:1 against
+        the background; otherwise it falls back to a guaranteed black/white so
+        the connectors never wash out (notably on the dark preset).
+        """
+        from charted.utils.colors import (
+            calculate_contrast_ratio,
+            get_contrast_color,
+        )
+
+        color = self.theme.arrow_color
+        background = self.theme.background_color
+        try:
+            ratio = calculate_contrast_ratio(color, background)
+        except Exception:
+            return color
+        if ratio >= 3.0:
+            return color
+        return get_contrast_color(background)
+
+    def _duration_label(self, start, end) -> str:
+        """Render a task's duration as text.
+
+        A caller-supplied ``duration_formatter`` wins. Otherwise date tasks are
+        labelled in whole days (``"45d"``) and numeric tasks show the raw span.
+        """
+        if self._duration_formatter is not None:
+            return str(self._duration_formatter(start, end))
+        if self._is_time:
+            from charted.charts.scales import _to_epoch
+
+            days = (_to_epoch(end) - _to_epoch(start)) / 86400.0
+            return f"{round(days)}d"
+        span = end - start
+        if isinstance(span, float) and span.is_integer():
+            span = int(span)
+        return str(span)
