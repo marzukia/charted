@@ -82,9 +82,35 @@ class PolarAreaChart(PieChart):
             category_patterns=category_patterns,
         )
 
+    def _plot_rect(self) -> tuple[float, float, float, float]:
+        """Plot rectangle (x, y, w, h) inside the padding.
+
+        Uses the layout engine so the circle is centred in the area below the
+        title (top_padding includes the title) instead of the full canvas,
+        which otherwise leaves the rings sitting top-heavy under the title.
+        """
+        layout = self.layout
+        return (
+            layout.left_padding,
+            layout.top_padding,
+            layout.plot_width,
+            layout.plot_height,
+        )
+
+    def _center(self) -> tuple[float, float]:
+        """Centre of the rings and slice fan.
+
+        Horizontally centred on the canvas (a polar chart has no side-axis
+        labels to offset for), vertically centred in the plot rect so it sits
+        below the title rather than top-heavy on the full canvas.
+        """
+        _, y, _, h = self._plot_rect()
+        return self.width / 2, y + h / 2
+
     def _max_radius(self) -> float:
         """Outer radius the largest-valued slice reaches."""
-        return min(self.width, self.height) / 2 * 0.8
+        _, _, w, h = self._plot_rect()
+        return min(w, h) / 2 * 0.8
 
     def slice_angles(self) -> list[tuple[float, float]]:
         """Return (start, end) angle in degrees for each equal-width slice."""
@@ -109,8 +135,7 @@ class PolarAreaChart(PieChart):
     def representation(self) -> G:
         result = G()
 
-        cx = self.width / 2
-        cy = self.height / 2
+        cx, cy = self._center()
 
         data = self._pie_data
         labels = self._pie_labels or [str(i) for i in range(len(data))]
