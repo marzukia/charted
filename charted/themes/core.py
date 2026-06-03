@@ -54,6 +54,19 @@ NAMED_PALETTES = {
     "sunset": ["#ff6b6b", "#ffa94d", "#ffd43b", "#69db69", "#4dabf7"],
     "forest": ["#2d6a4f", "#40916c", "#52b788", "#95d5b2", "#d8f3dc"],
     "inferno": ["#000004", "#1c1044", "#7e307a", "#e5612f", "#fca50a"],
+    # Okabe-Ito colourblind-safe qualitative palette. Eight hues chosen to
+    # stay distinguishable under the common forms of colour vision deficiency
+    # (protanopia, deuteranopia, tritanopia).
+    "okabe-ito": [
+        "#e69f00",
+        "#56b4e9",
+        "#009e73",
+        "#f0e442",
+        "#0072b2",
+        "#d55e00",
+        "#cc79a7",
+        "#000000",
+    ],
 }
 
 
@@ -440,7 +453,9 @@ class Theme:
                 arrow_color="#d1d5db",
             ),
             "high-contrast": cls(
-                colors=["#000000", "#FFFF00", "#00FFFF", "#FF00FF", "#00FF00"],
+                # Okabe-Ito colourblind-safe palette: distinguishable under the
+                # common forms of colour vision deficiency.
+                colors=NAMED_PALETTES["okabe-ito"].copy(),
                 title_color="#000000",
                 background_color="#FFFFFF",
                 grid_color="#000000",

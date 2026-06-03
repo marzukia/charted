@@ -30,7 +30,8 @@ class TestThemePreset:
         assert theme.title_color == "#000000"
         assert theme.grid_color == "#000000"
         assert theme.background_color == "#FFFFFF"
-        assert len(theme.colors) == 5
+        # High-contrast now uses the Okabe-Ito colourblind-safe palette.
+        assert len(theme.colors) == 8
 
     def test_unknown_preset_raises(self):
         """Unknown preset raises ValueError."""

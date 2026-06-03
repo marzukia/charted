@@ -46,6 +46,13 @@ class ScatterChart(Chart):
         quadrant_label_backplate: When True, draws a semi-opaque rounded
             background plate behind each quadrant label for contrast. Defaults
             to False.
+        shape_cycle: Redundant shape encoding for multi-series scatters so
+            series differ by marker SHAPE as well as colour. Defaults to None
+            (every series uses circles, preserving existing behaviour). Pass
+            True to enable the built-in cycle
+            (circle, square, triangle, diamond, star), or a custom list of
+            shape names to cycle through. A per-series ``marker_shape`` in
+            ``series_styles`` always wins over the cycle.
 
     Example:
         >>> from charted import ScatterChart
@@ -60,6 +67,27 @@ class ScatterChart(Chart):
         ...     series_styles=[{'marker_shape': 'circle'}, {'marker_shape': 'square'}]
         ... )
     """
+
+    # Default marker shapes cycled for redundant (shape + colour) encoding
+    # when ``shape_cycle=True`` and no per-series shape is given.
+    DEFAULT_SHAPE_CYCLE = ["circle", "square", "triangle", "diamond", "star"]
+
+    @staticmethod
+    def _resolve_shape_cycle(
+        shape_cycle: list[str] | bool | None,
+    ) -> list[str] | None:
+        """Normalise the ``shape_cycle`` argument to a list of shapes or None.
+
+        None/False disable cycling (every series uses circles). True selects
+        the built-in cycle. A non-empty list is used verbatim.
+        """
+        if shape_cycle is None or shape_cycle is False:
+            return None
+        if shape_cycle is True:
+            return list(ScatterChart.DEFAULT_SHAPE_CYCLE)
+        if isinstance(shape_cycle, list) and shape_cycle:
+            return list(shape_cycle)
+        return None
 
     def __init__(
         self,
@@ -82,6 +110,7 @@ class ScatterChart(Chart):
         quadrant_labels: list[str] | None = None,
         quadrant_label_inset: float = 12.0,
         quadrant_label_backplate: bool = False,
+        shape_cycle: list[str] | bool | None = None,
         x_scale: object | None = None,
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
@@ -93,6 +122,7 @@ class ScatterChart(Chart):
         self._quadrant_labels = quadrant_labels
         self._quadrant_label_inset = quadrant_label_inset
         self._quadrant_label_backplate = quadrant_label_backplate
+        self._shape_cycle = self._resolve_shape_cycle(shape_cycle)
         super().__init__(
             y_data=y_data,
             x_data=x_data,
@@ -133,7 +163,12 @@ class ScatterChart(Chart):
             # Apply style overrides from series_styles
             fill = color
             marker_size = 4  # default
-            marker_shape = "circle"  # default
+            # Default shape is a circle; with shape_cycle enabled, each series
+            # picks a shape from the cycle (redundant shape + colour encoding).
+            if self._shape_cycle:
+                marker_shape = self._shape_cycle[series_idx % len(self._shape_cycle)]
+            else:
+                marker_shape = "circle"
             if self.series_styles and series_idx < len(self.series_styles):
                 style = self.series_styles[series_idx] or {}
                 if style.get("fill"):
