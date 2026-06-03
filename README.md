@@ -436,16 +436,44 @@ python -m charted create bar output.svg --data sales.csv
 # From JSON
 python -m charted create column chart.svg -d data.json
 
+# Set the title and dimensions
+python -m charted create bar output.svg --data sales.csv \
+    --title "Q3 Sales" --width 900 --height 400
+
 # Batch from directory
 python -m charted batch input_data/ output_svg/
 ```
 
-**CSV format:**
+`--title`, `--width`, and `--height` override the same values in a `--config`
+file when you pass both.
+
+**CSV format (default):**
+
+The first column is the x-axis labels. Every other column is a data series.
+
 ```csv
 Quarter,Revenue,Expenses
 Q1,120,80
 Q2,180,95
 Q3,210,110
+```
+
+**Wide CSV (`--transpose`):**
+
+If your CSV is laid out sideways, with one series per row and the x values
+across the header, pass `--transpose`. The corner cell is ignored, the rest of
+the header row becomes the x-axis labels, and each following row is a series
+named by its first cell. Without `--transpose` this layout would plot with the
+axes swapped, so the flag is explicit rather than guessed.
+
+```csv
+Series,Q1,Q2,Q3
+Revenue,120,180,210
+Expenses,80,95,110
+```
+
+```sh
+python -m charted create column out.svg --data wide.csv --transpose
 ```
 
 **JSON format:**

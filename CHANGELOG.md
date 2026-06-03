@@ -5,6 +5,16 @@ All notable changes to Charted will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `charted create` now accepts `--title`, `--width`, and `--height`. These set
+  the chart title and dimensions from the command line and override the matching
+  values in a `--config` file.
+- `charted create --transpose` reads a wide / series-per-row CSV, where each data
+  row is a series and the header row supplies the x-axis labels. The default
+  layout (first column as x labels, each other column as a series) is unchanged.
+
 ## [1.0.5] - 2026-05-30
 
 ### Changed
