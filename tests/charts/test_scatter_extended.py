@@ -317,3 +317,85 @@ class TestScatterChartLegend:
         )
         assert chart.layout.legend_position == "none"
         assert chart.layout.legend_extent == 0.0
+
+
+class TestDataLabelCollisionAvoidance:
+    """Data-label collision avoidance + leader lines (avoid_label_collisions)."""
+
+    def test_default_off_is_unchanged(self):
+        """Default keeps the original fixed-offset placement byte-for-byte."""
+        kwargs = dict(
+            x_data=[0, 1, 2],
+            y_data=[1, 2, 3],
+            data_labels=["a", "b", "c"],
+        )
+        baseline = ScatterChart(**kwargs).html
+        explicit_off = ScatterChart(avoid_label_collisions=False, **kwargs).html
+        assert baseline == explicit_off
+
+    def test_enabling_changes_output_and_keeps_labels(self):
+        """Turning it on alters placement but still emits every label."""
+        kwargs = dict(
+            x_data=[0, 0.01, 0.02, 0.0],
+            y_data=[0, 0.01, 0.0, 0.02],
+            data_labels=["Alpha", "Bravo", "Charlie", "Delta"],
+        )
+        off = ScatterChart(**kwargs).html
+        on = ScatterChart(avoid_label_collisions=True, **kwargs).html
+        assert off != on
+        for label in ("Alpha", "Bravo", "Charlie", "Delta"):
+            assert label in on
+
+    def test_clustered_points_draw_leader_lines(self):
+        """A tight cluster displaces labels enough to draw leader paths."""
+        chart = ScatterChart(
+            x_data=[0, 0.01, 0.02, 0.0],
+            y_data=[0, 0.01, 0.0, 0.02],
+            data_labels=["Alpha", "Bravo", "Charlie", "Delta"],
+            avoid_label_collisions=True,
+        )
+        html = chart.html.lower()
+        assert "<path" in html
+        assert 'stroke-width="1"' in html
+
+    def test_deoverlap_reduces_pairwise_overlap(self):
+        """The greedy pass strictly reduces total label box overlap."""
+
+        def total_overlap(boxes):
+            total = 0.0
+            for i, a in enumerate(boxes):
+                for b in boxes[i + 1 :]:
+                    ox = (a["w"] + b["w"]) / 2 - abs(a["cx"] - b["cx"])
+                    oy = (a["h"] + b["h"]) / 2 - abs(a["cy"] - b["cy"])
+                    if ox > 0 and oy > 0:
+                        total += ox * oy
+            return total
+
+        # Five labels stacked on the same spot: maximal initial overlap.
+        boxes = [
+            {
+                "text": str(k),
+                "px": 0.0,
+                "py": 0.0,
+                "cx": 0.0,
+                "cy": 0.0,
+                "w": 20.0,
+                "h": 10.0,
+                "marker": 4.0,
+            }
+            for k in range(5)
+        ]
+        before = total_overlap(boxes)
+        ScatterChart._deoverlap_labels(boxes)
+        after = total_overlap(boxes)
+        assert before > 0
+        assert after < before
+
+    def test_no_labels_returns_none(self):
+        """With no data labels the override produces no label group."""
+        chart = ScatterChart(
+            x_data=[0, 1, 2],
+            y_data=[1, 2, 3],
+            avoid_label_collisions=True,
+        )
+        assert chart._render_data_labels() is None

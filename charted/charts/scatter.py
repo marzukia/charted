@@ -59,6 +59,13 @@ class ScatterChart(Chart):
             When shown, layout space is reserved on that side so the legend
             never overlaps the plot. Requires ``series_names``; with no names
             there is nothing to label and the layout is left unchanged.
+        avoid_label_collisions: When True, run a collision-avoidance pass over
+            the data labels so they overlap each other (and their markers) as
+            little as possible, drawing a thin leader line back to a point
+            whenever its label is pushed noticeably away. Defaults to False,
+            which keeps the original fixed-offset label placement so existing
+            renders are unchanged. See ``_render_data_labels`` for the
+            algorithm and its limitations.
 
     Example:
         >>> from charted import ScatterChart
@@ -125,7 +132,9 @@ class ScatterChart(Chart):
         x_range: tuple[float, float] | None = None,
         y_range: tuple[float, float] | None = None,
         domain_padding: float | None = None,
+        avoid_label_collisions: bool = False,
     ):
+        self._avoid_label_collisions = avoid_label_collisions
         self._quadrant_labels = quadrant_labels
         self._quadrant_label_inset = quadrant_label_inset
         self._quadrant_label_backplate = quadrant_label_backplate
@@ -472,6 +481,182 @@ class ScatterChart(Chart):
                 f"{cx + radius * math.cos(a):.3f},{cy + radius * math.sin(a):.3f}"
             )
         return " ".join(out)
+
+    def _render_data_labels(self) -> G | None:
+        """Render scatter data labels, optionally de-overlapping them.
+
+        With ``avoid_label_collisions=False`` (the default) this defers to the
+        base-class placement so existing renders are byte-for-byte unchanged.
+
+        With it enabled, every label starts at a fixed offset above-right of its
+        marker, then a greedy iterative pass nudges labels apart whenever their
+        axis-aligned bounding boxes overlap another label or a marker. When a
+        label ends up displaced far enough from its point a thin leader line is
+        drawn back to the marker so the association stays readable.
+
+        Limitations: the de-overlap is a local greedy relaxation, not a global
+        optimiser, so dense clusters can still leave some residual overlap and
+        the result depends on point order. Label widths are estimated from the
+        font metrics helper (no real text shaping), labels are not clamped to
+        the plot rectangle, and rotated/multi-line labels are not handled.
+        Markers are approximated by their square bounding box.
+        """
+        if not getattr(self, "_avoid_label_collisions", False):
+            return super()._render_data_labels()
+        if not self._data_labels:
+            return None
+
+        labels = self._data_labels
+        if labels and not isinstance(labels[0], list):
+            labels = [labels]
+
+        from charted.utils.helpers import calculate_text_dimensions
+
+        font_size = max(8, self.theme.title_font_size - 4)
+        font_family = self.theme.title_font_family
+        font_color = self.theme.resolved_axis_title_color
+        line_color = self.theme.resolved_reference_line_color
+
+        # Gather placed labels and their anchor markers in plot coordinates.
+        placed: list[dict] = []
+        for series_idx, label_row in enumerate(labels):
+            if series_idx >= len(self.y_values):
+                break
+            y_vals = self.y_values[series_idx]
+            y_offs = self.y_offsets[series_idx]
+            x_vals = self.x_values[series_idx]
+            marker_size = 4.0
+            if self.series_styles and series_idx < len(self.series_styles):
+                style = self.series_styles[series_idx] or {}
+                if style.get("marker_size"):
+                    marker_size = float(style["marker_size"])
+            for i, label_text in enumerate(label_row):
+                if i >= len(x_vals) or not label_text:
+                    continue
+                px = x_vals[i] + self.x_offset
+                py = self._apply_stacking(y_vals[i], y_offs[i])
+                text = str(label_text)
+                tw = calculate_text_dimensions(text, font_size=font_size).width
+                th = font_size
+                # Initial offset: up and to the right of the marker.
+                off = marker_size + th * 0.5
+                cx = px + off + tw / 2
+                cy = py + off + th / 2
+                placed.append(
+                    {
+                        "text": text,
+                        "px": px,
+                        "py": py,
+                        "cx": cx,
+                        "cy": cy,
+                        "w": tw,
+                        "h": th,
+                        "marker": marker_size,
+                    }
+                )
+
+        if not placed:
+            return None
+
+        self._deoverlap_labels(placed)
+
+        g = G()
+        # Leader lines first so labels render on top.
+        threshold = font_size * 1.6
+        for lab in placed:
+            dx = lab["cx"] - lab["px"]
+            dy = lab["cy"] - lab["py"]
+            if (dx * dx + dy * dy) ** 0.5 > threshold:
+                g.add_child(
+                    Path(
+                        d=f"M{lab['px']:.2f},{lab['py']:.2f} "
+                        f"L{lab['cx']:.2f},{lab['cy']:.2f}",
+                        stroke=line_color,
+                        stroke_width=1,
+                        fill="none",
+                    )
+                )
+        for lab in placed:
+            tx = lab["cx"]
+            ty = lab["cy"]
+            g.add_child(
+                Text(
+                    text=lab["text"],
+                    x=tx,
+                    y=ty,
+                    fill=font_color,
+                    font_size=font_size,
+                    font_family=font_family,
+                    text_anchor="middle",
+                    transform=f"translate({tx},{ty}) scale(1,-1) translate({-tx},{-ty})",
+                )
+            )
+        return g
+
+    @staticmethod
+    def _deoverlap_labels(placed: list[dict], iterations: int = 60) -> None:
+        """Greedily push overlapping label boxes apart, in place.
+
+        Each iteration walks every label pair plus every label/marker pair and,
+        for any overlapping axis-aligned boxes, shifts the label along the axis
+        of least penetration. A small spring pulls each label back toward its
+        own marker so labels do not drift indefinitely. This is a local
+        heuristic with no global guarantee (see ``_render_data_labels``).
+        """
+
+        def overlap(a_cx, a_cy, a_w, a_h, b_cx, b_cy, b_w, b_h, pad=2.0):
+            ox = (a_w + b_w) / 2 + pad - abs(a_cx - b_cx)
+            oy = (a_h + b_h) / 2 + pad - abs(a_cy - b_cy)
+            if ox > 0 and oy > 0:
+                return ox, oy
+            return None
+
+        for _ in range(iterations):
+            moved = False
+            for i, a in enumerate(placed):
+                # Label vs every other label.
+                for b in placed[i + 1 :]:
+                    res = overlap(
+                        a["cx"], a["cy"], a["w"], a["h"],
+                        b["cx"], b["cy"], b["w"], b["h"],
+                    )
+                    if res is None:
+                        continue
+                    ox, oy = res
+                    moved = True
+                    if ox < oy:
+                        shift = ox / 2 + 0.1
+                        sign = 1 if a["cx"] >= b["cx"] else -1
+                        a["cx"] += sign * shift
+                        b["cx"] -= sign * shift
+                    else:
+                        shift = oy / 2 + 0.1
+                        sign = 1 if a["cy"] >= b["cy"] else -1
+                        a["cy"] += sign * shift
+                        b["cy"] -= sign * shift
+                # Label vs markers (approximated by their bounding box).
+                for b in placed:
+                    m = b["marker"] * 2
+                    res = overlap(
+                        a["cx"], a["cy"], a["w"], a["h"],
+                        b["px"], b["py"], m, m,
+                    )
+                    if res is None:
+                        continue
+                    ox, oy = res
+                    moved = True
+                    if ox < oy:
+                        sign = 1 if a["cx"] >= b["px"] else -1
+                        a["cx"] += sign * (ox + 0.1)
+                    else:
+                        sign = 1 if a["cy"] >= b["py"] else -1
+                        a["cy"] += sign * (oy + 0.1)
+            # Weak spring back toward the marker keeps labels from wandering.
+            for a in placed:
+                a["cx"] += (a["px"] - a["cx"]) * 0.01
+                a["cy"] += (a["py"] - a["cy"]) * 0.01
+            if not moved:
+                break
 
     def _render_quadrant_labels(self) -> G | None:
         """Render text labels in each quadrant of the scatter plot.
