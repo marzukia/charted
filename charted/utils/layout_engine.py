@@ -36,6 +36,7 @@ class LayoutEngine:
         x_labels: list["MeasuredText"] | None = None,
         y_labels: list["MeasuredText"] | None = None,
         title: "MeasuredText | None" = None,
+        subtitle: "MeasuredText | None" = None,
         has_x_axis_label: bool = False,
         has_y_axis_label: bool = False,
     ):
@@ -46,6 +47,7 @@ class LayoutEngine:
         self.x_labels = x_labels or []
         self.y_labels = y_labels or []
         self.title = title
+        self.subtitle = subtitle
         self.has_x_axis_label = has_x_axis_label
         self.has_y_axis_label = has_y_axis_label
 
@@ -112,6 +114,11 @@ class LayoutEngine:
 
         if self.title:
             offset += self.title.height * 1.5
+
+        # Reserve room for the subtitle plus a gap so it never overlaps the
+        # plot grid. The subtitle is rendered below the title.
+        if self.subtitle:
+            offset += self.subtitle.height * 1.5
 
         return v_pad + offset
 

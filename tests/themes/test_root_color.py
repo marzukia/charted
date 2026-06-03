@@ -74,7 +74,7 @@ class TestResolvedColors:
 
     def test_resolved_reference_line_color_default(self):
         t = Theme()
-        assert t.resolved_reference_line_color == derive_color("#000000", 0.50, "#FFFFFF")
+        assert t.resolved_reference_line_color == derive_color("#000000", 0.75, "#FFFFFF")
 
     def test_resolved_axis_title_color_default(self):
         """Default title_color (#444444) should resolve to root at 80%."""
@@ -91,7 +91,7 @@ class TestResolvedColors:
 
     def test_resolved_quadrant_label_color_default(self):
         t = Theme()
-        assert t.resolved_quadrant_label_color == derive_color("#000000", 0.18, "#FFFFFF")
+        assert t.resolved_quadrant_label_color == derive_color("#000000", 0.40, "#FFFFFF")
 
 
 # =========================================================================

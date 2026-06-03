@@ -190,10 +190,14 @@ class ColorPalette:
 OPACITY_TIERS = {
     "grid_color": 0.20,
     "axis_border_color": 0.60,
-    "reference_line_color": 0.50,
+    # Reference lines (incl. the zero crosshair) must read above the grid in
+    # every theme, so they sit well clear of the 0.20 grid tier.
+    "reference_line_color": 0.75,
     "axis_title_color": 0.80,
     "label_color": 1.0,
-    "quadrant_label_color": 0.18,
+    # Quadrant labels are a watermark, but 0.18 was illegible on the dark
+    # background; 0.40 stays subtle on light while remaining readable on dark.
+    "quadrant_label_color": 0.40,
 }
 
 

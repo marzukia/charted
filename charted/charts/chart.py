@@ -492,6 +492,7 @@ class Chart(Svg):
             x_labels=self.data_model.x_labels,
             y_labels=self.data_model.y_labels,
             title=self._title,
+            subtitle=self._subtitle,
             has_x_axis_label=bool(x_label),
             has_y_axis_label=bool(y_label),
         )
