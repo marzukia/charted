@@ -123,3 +123,67 @@ class TestScatterChartAxisRange:
         )
         # Plotted point count is unaffected by the synthetic anchor.
         assert len(padded.y_values[0]) == 3
+
+
+class TestScatterQuadrantLabelPlacement:
+    """Tests for quadrant label inset and optional backplate."""
+
+    LABELS = ["TL", "TR", "BL", "BR"]
+
+    def test_inset_defaults_move_labels_off_the_edge(self):
+        """The default inset pushes labels in from the flush corner."""
+        flush = ScatterChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            quadrant_labels=self.LABELS,
+            quadrant_label_inset=0,
+        )
+        inset = ScatterChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            quadrant_labels=self.LABELS,
+        )
+        # Default inset is a positive pad, so the rendered SVG differs from
+        # the zero-inset (old flush) rendering.
+        assert inset.html != flush.html
+
+    def test_inset_is_backward_compatible_when_zero(self):
+        """Passing inset=0 reproduces the original flush-corner placement."""
+        explicit_zero = ScatterChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            quadrant_labels=self.LABELS,
+            quadrant_label_inset=0,
+        )
+        # The first top-left label hugs x=8 (the original base pad) at inset 0.
+        assert 'x="8.0"' in explicit_zero.html
+
+    def test_backplate_off_by_default(self):
+        """No backing <rect> is added unless requested."""
+        chart = ScatterChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            quadrant_labels=self.LABELS,
+        )
+        without = chart.html.count("<rect")
+        with_plate = ScatterChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            quadrant_labels=self.LABELS,
+            quadrant_label_backplate=True,
+        ).html.count("<rect")
+        # One backplate rect per non-empty label.
+        assert with_plate == without + 4
+
+    def test_backplate_uses_background_color(self):
+        """The backplate fills with the theme background for contrast."""
+        chart = ScatterChart(
+            x_data=[1, 2, 3],
+            y_data=[1, 2, 3],
+            quadrant_labels=self.LABELS,
+            quadrant_label_backplate=True,
+        )
+        bg = chart.theme.background_color
+        assert f'fill="{bg}"' in chart.html
+        # Rounded corners and partial opacity are present on the plate.
+        assert "rx=" in chart.html

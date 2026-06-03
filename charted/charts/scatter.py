@@ -39,6 +39,13 @@ class ScatterChart(Chart):
         domain_padding: Optional fraction (e.g. 0.1) padding the data-derived
             domain by that amount on each side. Ignored on an axis with an
             explicit range. Defaults to None (no padding).
+        quadrant_label_inset: Extra padding (px) used to inset the four
+            quadrant labels from the plot corners so they clear the axis tick
+            numbers instead of sitting flush. Defaults to 12.0; pass 0 to
+            restore the original flush-corner placement.
+        quadrant_label_backplate: When True, draws a semi-opaque rounded
+            background plate behind each quadrant label for contrast. Defaults
+            to False.
 
     Example:
         >>> from charted import ScatterChart
@@ -73,6 +80,8 @@ class ScatterChart(Chart):
         v_lines: list[float] | None = None,
         annotations: list | None = None,
         quadrant_labels: list[str] | None = None,
+        quadrant_label_inset: float = 12.0,
+        quadrant_label_backplate: bool = False,
         x_scale: object | None = None,
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
@@ -82,6 +91,8 @@ class ScatterChart(Chart):
         domain_padding: float | None = None,
     ):
         self._quadrant_labels = quadrant_labels
+        self._quadrant_label_inset = quadrant_label_inset
+        self._quadrant_label_backplate = quadrant_label_backplate
         super().__init__(
             y_data=y_data,
             x_data=x_data,
@@ -240,7 +251,11 @@ class ScatterChart(Chart):
         font_color = self.theme.resolved_quadrant_label_color
         pw = self.plot_width
         ph = self.plot_height
-        padding = 8
+        # Inset the labels away from the plot edge so they clear the axis
+        # tick numbers instead of sitting flush in the corner. The inset is
+        # added on top of the base corner pad.
+        inset = max(0.0, float(self._quadrant_label_inset))
+        padding = 8 + inset
 
         # In the flipped coordinate system, high Y = top of chart
         # Corner-aligned: top labels hug top edge growing down,
@@ -257,6 +272,21 @@ class ScatterChart(Chart):
             is_top = idx < 2
             anchor = "start" if is_left else "end"
             x = padding if is_left else pw - padding
+
+            if self._quadrant_label_backplate:
+                backplate = self._quadrant_backplate(
+                    lines,
+                    x,
+                    anchor,
+                    is_top,
+                    font_size,
+                    line_height,
+                    top_margin,
+                    bottom_margin,
+                    ph,
+                )
+                if backplate is not None:
+                    g.add_child(backplate)
 
             for line_idx, line in enumerate(lines):
                 if is_top:
@@ -282,3 +312,56 @@ class ScatterChart(Chart):
                 )
 
         return g
+
+    def _quadrant_backplate(
+        self,
+        lines: list[str],
+        x: float,
+        anchor: str,
+        is_top: bool,
+        font_size: float,
+        line_height: float,
+        top_margin: float,
+        bottom_margin: float,
+        ph: float,
+    ) -> Rect | None:
+        """Build a semi-opaque rounded plate sized to a quadrant label block.
+
+        Drawn in the flipped plot coordinate system (high Y = top), so the
+        plate is emitted before the text and renders behind it.
+        """
+        if not lines:
+            return None
+        pad_x = font_size * 0.5
+        pad_y = font_size * 0.35
+        # Width estimate is intentionally font-metric-free to stay stable
+        # across environments (matches the pie chart's estimator).
+        text_w = max((len(line) for line in lines), default=0) * font_size * 0.55
+        if text_w <= 0:
+            return None
+        block_h = font_size + (len(lines) - 1) * line_height
+
+        rect_w = text_w + pad_x * 2
+        rect_h = block_h + pad_y * 2
+
+        if anchor == "start":
+            rect_x = x - pad_x
+        else:
+            rect_x = x - text_w - pad_x
+
+        if is_top:
+            top_baseline = ph - top_margin
+            rect_y = top_baseline - font_size - pad_y
+        else:
+            top_baseline = bottom_margin + font_size + (len(lines) - 1) * line_height
+            rect_y = top_baseline - font_size - pad_y
+
+        return Rect(
+            x=round(rect_x, 2),
+            y=round(rect_y, 2),
+            width=round(rect_w, 2),
+            height=round(rect_h, 2),
+            rx=round(font_size * 0.35, 2),
+            fill=self.theme.background_color,
+            opacity=0.7,
+        )
