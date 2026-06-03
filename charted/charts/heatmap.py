@@ -58,6 +58,13 @@ class HeatmapChart(Chart):
         value_format: Format string for displayed values (default '.1f').
         cell_gap: Gap between cells as fraction of cell size (default 0.04).
         label_font_size: Font size for row/column labels (default 11).
+        cell_border_width: Stroke width of the thin border around each cell,
+            in pixels (default 0.25).
+        colorbar_ticks: Number of evenly spaced tick labels on the colorbar,
+            including the min and max endpoints (default 5, minimum 2).
+        colorbar_title: Optional title rendered vertically beside the colorbar,
+            e.g. a unit or measure name. Defaults to None (no title).
+        colorbar_width: Width of the gradient strip in pixels (default 16).
 
     Example:
         >>> from charted import HeatmapChart
@@ -89,6 +96,10 @@ class HeatmapChart(Chart):
         value_format: str = ".1f",
         cell_gap: float = 0.04,
         label_font_size: int = 11,
+        cell_border_width: float = 0.25,
+        colorbar_ticks: int = 5,
+        colorbar_title: str | None = None,
+        colorbar_width: float = 16,
     ):
         if not data or not isinstance(data, list) or len(data) == 0:
             raise ValueError("Data must be a non-empty 2D list")
@@ -119,6 +130,10 @@ class HeatmapChart(Chart):
         self.value_format = value_format
         self.cell_gap = cell_gap
         self._label_font_size = label_font_size
+        self.cell_border_width = max(0.0, float(cell_border_width))
+        self.colorbar_ticks = max(2, int(colorbar_ticks))
+        self.colorbar_title = colorbar_title
+        self.colorbar_width = max(1.0, float(colorbar_width))
 
         if x_labels is None:
             x_labels = [str(i + 1) for i in range(n_cols)]
@@ -185,6 +200,45 @@ class HeatmapChart(Chart):
         self.children.clear()
         children = [self.container, self.title, self.representation, self.legend]
         self.add_children(*children)
+
+    # Colorbar geometry. The gap between the plot and the gradient strip,
+    # the gap between the strip and its tick marks, and the tick mark length.
+    _COLORBAR_GAP = 14
+    _COLORBAR_TICK_GAP = 5
+    _COLORBAR_TICK_LEN = 4
+
+    def _colorbar_label_width(self) -> float:
+        """Estimate the pixel width of the widest colorbar tick label.
+
+        Used to reserve enough right padding so the colorbar, its tick
+        labels and (optional) title stay inside the SVG bounds.
+        """
+        labels = [
+            format(
+                self._data_min + (self._data_max - self._data_min) * (i / (self.colorbar_ticks - 1)),
+                self.value_format,
+            )
+            for i in range(self.colorbar_ticks)
+        ]
+        longest = max((len(s) for s in labels), default=1)
+        # ~0.6em per character at the label font size.
+        return longest * self._label_font_size * 0.6
+
+    def _legend_layout_position(self) -> str:
+        # Always reserve a right-hand band for the colorbar.
+        return "right"
+
+    def _legend_layout_extent(self) -> float:
+        band = (
+            self._COLORBAR_GAP
+            + self.colorbar_width
+            + self._COLORBAR_TICK_GAP
+            + self._COLORBAR_TICK_LEN
+            + self._colorbar_label_width()
+        )
+        if self.colorbar_title:
+            band += self._label_font_size + 6
+        return band
 
     @property
     def cell_width(self) -> float:
@@ -260,7 +314,7 @@ class HeatmapChart(Chart):
                 cell = Path(
                     fill=fill,
                     stroke=grid_color,
-                    stroke_width=0.5,
+                    stroke_width=self.cell_border_width,
                     d=Path.get_path(
                         x,
                         y,
@@ -322,59 +376,114 @@ class HeatmapChart(Chart):
                 )
             )
 
-        bar_x = self.plot_width + 10
-        bar_y = 0
-        bar_width = 20
-        bar_height = self.plot_height
-        bar_label_gap = 6
-        n_stops = 20
+        self._add_colorbar(result, label_color, font_family)
 
+        return result
+
+    def _colorbar_color_at(self, t: float) -> str:
+        """Colour at fraction ``t`` (0 = data min, 1 = data max)."""
+        if self.color_scale is not None:
+            return self._value_to_color(self._data_min + t * self._data_range)
+        return _lerp_color(self.low_color, self.high_color, t)
+
+    def _add_colorbar(self, result: G, label_color: str, font_family: str) -> None:
+        """Render a gradient colorbar with tick marks, labels and a title.
+
+        Drawn in the right-hand band reserved by ``_legend_layout_extent``.
+        The strip runs from the data max at the top to the data min at the
+        bottom. ``colorbar_ticks`` evenly spaced labels (including both
+        endpoints) annotate the scale, each with a short tick mark.
+        """
+        bar_x = self.plot_width + self._COLORBAR_GAP
+        bar_y = 0
+        bar_width = self.colorbar_width
+        bar_height = self.plot_height
+        font_size = self._label_font_size
+
+        # Gradient strip: many thin bands so the transition reads as smooth.
+        n_stops = 64
+        stop_height = bar_height / n_stops
         for i in range(n_stops):
-            t = i / (n_stops - 1) if n_stops > 1 else 0
-            if self.color_scale is not None:
-                value = self._data_min + t * self._data_range
-                color = self._value_to_color(value)
-            else:
-                color = _lerp_color(self.low_color, self.high_color, t)
-            stop_height = bar_height / n_stops
+            # i = 0 is the top band -> data max; i = n_stops-1 -> data min.
+            t = 1.0 - (i / (n_stops - 1) if n_stops > 1 else 0)
             result.add_child(
                 Path(
-                    fill=color,
+                    fill=self._colorbar_color_at(t),
                     d=Path.get_path(
                         bar_x,
                         bar_y + i * stop_height,
                         bar_width,
+                        # Overlap by 1px to avoid hairline seams between bands.
                         stop_height + 1,
                     ),
                 )
             )
 
+        # Outline around the strip for a crisp edge.
         result.add_child(
-            Text(
-                text=format(self._data_min, self.value_format),
-                x=bar_x + bar_width / 2,
-                y=bar_y + bar_height + bar_label_gap,
-                fill=label_color,
-                font_family=font_family,
-                font_size=label_font_size,
-                text_anchor="middle",
-                dominant_baseline="hanging",
-            )
-        )
-        result.add_child(
-            Text(
-                text=format(self._data_max, self.value_format),
-                x=bar_x + bar_width / 2,
-                y=bar_y - bar_label_gap,
-                fill=label_color,
-                font_family=font_family,
-                font_size=label_font_size,
-                text_anchor="middle",
-                dominant_baseline="bottom",
+            Path(
+                fill="none",
+                stroke=label_color,
+                stroke_width=0.75,
+                d=Path.get_path(bar_x, bar_y, bar_width, bar_height),
             )
         )
 
-        return result
+        # Tick marks + labels.
+        tick_x_end = bar_x + bar_width
+        for i in range(self.colorbar_ticks):
+            frac = i / (self.colorbar_ticks - 1)
+            value = self._data_min + frac * self._data_range
+            # frac = 0 is data min -> bottom of the strip.
+            ty = bar_y + bar_height * (1.0 - frac)
+            result.add_child(
+                Path(
+                    stroke=label_color,
+                    stroke_width=0.75,
+                    d=" ".join(
+                        [
+                            f"M{tick_x_end} {ty}",
+                            f"h{self._COLORBAR_TICK_LEN}",
+                        ]
+                    ),
+                )
+            )
+            result.add_child(
+                Text(
+                    text=format(value, self.value_format),
+                    x=tick_x_end + self._COLORBAR_TICK_LEN + self._COLORBAR_TICK_GAP,
+                    y=ty,
+                    fill=label_color,
+                    font_family=font_family,
+                    font_size=font_size,
+                    text_anchor="start",
+                    dominant_baseline="central",
+                )
+            )
+
+        # Optional vertical title to the right of the tick labels.
+        if self.colorbar_title:
+            title_x = (
+                tick_x_end
+                + self._COLORBAR_TICK_LEN
+                + self._COLORBAR_TICK_GAP
+                + self._colorbar_label_width()
+                + font_size
+            )
+            title_y = bar_y + bar_height / 2
+            result.add_child(
+                Text(
+                    text=self.colorbar_title,
+                    x=title_x,
+                    y=title_y,
+                    fill=label_color,
+                    font_family=font_family,
+                    font_size=font_size,
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                    transform=f"rotate(-90 {title_x} {title_y})",
+                )
+            )
 
     @property
     def legend(self) -> None:
