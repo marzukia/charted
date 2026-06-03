@@ -62,6 +62,7 @@ class ColumnChart(Chart):
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        value_labels: bool | str | dict | None = None,
     ):
         if column_gap is None:
             column_gap = get_column_gap()
@@ -91,6 +92,7 @@ class ColumnChart(Chart):
             y_scale=y_scale,
             reference_lines=reference_lines,
             colors=colors,
+            value_labels=value_labels,
         )
 
     @property

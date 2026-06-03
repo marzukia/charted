@@ -374,6 +374,7 @@ class Chart(Svg):
         x_range: tuple[float, float] | None = None,
         y_range: tuple[float, float] | None = None,
         domain_padding: float | None = None,
+        value_labels: bool | str | dict | None = None,
     ):
         super().__init__(
             width=width,
@@ -432,6 +433,7 @@ class Chart(Svg):
         self._x_label = x_label
         self._y_label = y_label
         self._data_labels = data_labels
+        self._value_label_config = self._normalize_value_labels(value_labels)
         self._annotations = list(annotations) if annotations else []
         self._h_lines = h_lines or []
         self._v_lines = v_lines or []
@@ -1511,6 +1513,62 @@ class Chart(Svg):
 
         return Title(self._tooltip_label(series_idx, point_idx))
 
+    # =========================================================================
+    # Value labels (opt-in, formatted on-element data annotations)
+    # =========================================================================
+
+    @staticmethod
+    def _normalize_value_labels(spec: bool | str | dict | None) -> dict | None:
+        """Coerce the ``value_labels`` argument into a config dict or None.
+
+        Accepted forms:
+        - ``None`` / ``False``: feature off (returns None).
+        - ``True``: on with the default ``"number"`` format.
+        - a format string (``"number"`` / ``"percent"`` / ``"currency"``).
+        - a dict, e.g. ``{"format": "currency", "decimals": 2, "prefix": "US"}``.
+          A ``"format"`` key chooses the format; all other keys are passed
+          straight through to ``format_value`` as keyword options.
+        """
+        if spec is None or spec is False:
+            return None
+        if spec is True:
+            return {"format": "number"}
+        if isinstance(spec, str):
+            return {"format": spec}
+        if isinstance(spec, dict):
+            cfg = dict(spec)
+            cfg.setdefault("format", "number")
+            return cfg
+        raise TypeError(
+            "value_labels must be None, a bool, a format string, or a dict; "
+            f"got {type(spec).__name__}"
+        )
+
+    def _value_label_data(self) -> Vector2D:
+        """Return the raw per-series values that value labels annotate.
+
+        Defaults to ``y_data``. Charts whose value axis is X (horizontal bars)
+        or whose data lives elsewhere (pie) override this.
+        """
+        return self.y_data
+
+    def _build_value_labels(self) -> list[list[str]] | None:
+        """Synthesize formatted label strings from the chart's raw values.
+
+        Returns a 2D list mirroring the value-data shape, or None when value
+        labels are disabled. Used by ``_render_data_labels`` as the label source
+        when no explicit ``data_labels`` were supplied.
+        """
+        cfg = self._value_label_config
+        if not cfg:
+            return None
+        from charted.utils.value_format import format_value
+
+        opts = {k: v for k, v in cfg.items() if k != "format"}
+        fmt = cfg["format"]
+        data = self._value_label_data()
+        return [[format_value(v, fmt, **opts) for v in row] for row in data]
+
     @property
     def _data_label_x_offset(self) -> float:
         return 0
@@ -1524,13 +1582,22 @@ class Chart(Svg):
 
         Returns a G element with text labels positioned at each data point.
         Subclasses call this from their representation property.
-        """
-        if not self._data_labels:
-            return None
 
+        When no explicit ``data_labels`` are supplied but ``value_labels`` is
+        enabled, the labels are synthesized from the raw data with the requested
+        number/percent/currency formatting, and any label whose box would
+        collide with an already-placed one is hidden.
+        """
         from charted.utils.colors import get_contrast_color
 
         labels = self._data_labels
+        auto_hide = False
+        if not labels:
+            labels = self._build_value_labels()
+            auto_hide = labels is not None
+        if not labels:
+            return None
+
         # Normalize to 2D list
         if labels and not isinstance(labels[0], list):
             labels = [labels]
@@ -1539,6 +1606,12 @@ class Chart(Svg):
         font_size = max(8, self.theme.title_font_size - 4)
         font_family = self.theme.title_font_family
         font_color = self.theme.resolved_data_label_color
+
+        # Track placed label boxes (in plot coordinates) so value labels can be
+        # auto-hidden when they would collide with an already-placed label.
+        placed_boxes: list[tuple[float, float, float, float]] = []
+
+        from charted.utils.helpers import calculate_text_dimensions
 
         for series_idx, label_row in enumerate(labels):
             if series_idx >= len(self.y_values):
@@ -1590,6 +1663,23 @@ class Chart(Svg):
                     anchor = "end"
                 elif x < self.plot_width * 0.15:
                     anchor = "start"
+                # Auto-hide synthesized value labels that would overlap an
+                # already-placed one. Explicit data_labels are left untouched so
+                # historical renders stay byte-for-byte identical.
+                if auto_hide:
+                    tw = calculate_text_dimensions(
+                        str(label_text), font=font_family, font_size=font_size
+                    ).width
+                    box = (x - tw / 2, ty - font_size / 2, x + tw / 2, ty + font_size / 2)
+                    if any(
+                        box[0] < pb[2]
+                        and box[2] > pb[0]
+                        and box[1] < pb[3]
+                        and box[3] > pb[1]
+                        for pb in placed_boxes
+                    ):
+                        continue
+                    placed_boxes.append(box)
                 g.add_child(
                     Text(
                         text=str(label_text),

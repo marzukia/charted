@@ -58,6 +58,7 @@ class BarChart(Chart):
         annotations: list | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        value_labels: bool | str | dict | None = None,
     ):
         self._bar_data_labels = data_labels
         if bar_gap is None:
@@ -103,6 +104,7 @@ class BarChart(Chart):
             annotations=annotations,
             reference_lines=reference_lines,
             colors=colors,
+            value_labels=value_labels,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.
@@ -117,6 +119,10 @@ class BarChart(Chart):
         if self.x_axis and self.x_axis.config:
             self.x_axis.children[0] = self.x_axis.grid_lines
             self.x_axis.children[1] = self.x_axis.axis_labels
+
+    def _value_label_data(self) -> Vector2D:
+        """Bar values live on the x-axis, not y."""
+        return self.x_data
 
     @property
     def y_height(self) -> float:
@@ -216,12 +222,14 @@ class BarChart(Chart):
                 if not per_bar:
                     bars_g.add_child(Path(d=paths, fill=fill))
 
-        # Render data labels at end of bars
-        if self._bar_data_labels:
+        # Render data labels at end of bars. Explicit data_labels take
+        # precedence; otherwise fall back to synthesized value labels.
+        bar_labels = self._bar_data_labels or self._build_value_labels()
+        if bar_labels:
             from charted.utils.colors import get_contrast_color
             from charted.utils.helpers import calculate_text_dimensions
 
-            labels = self._bar_data_labels
+            labels = bar_labels
             if labels and not isinstance(labels[0], list):
                 labels = [labels]
 

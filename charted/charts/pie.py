@@ -57,6 +57,7 @@ class PieChart(Chart):
         start_angle: float = 0,
         series_styles: list[SeriesStyleConfig] | None = None,
         show_percentages: bool = False,
+        value_labels: bool | str | dict | None = None,
     ):
         """Initialize pie chart.
 
@@ -92,6 +93,7 @@ class PieChart(Chart):
         self.explode = explode if isinstance(explode, list) else [explode] * len(data)
         self.start_angle = start_angle
         self.show_percentages = show_percentages
+        self._pie_value_labels = Chart._normalize_value_labels(value_labels)
         self._pie_data = list(data)  # Store original data for rendering
         self._pie_labels = labels
         self.series_styles = series_styles
@@ -294,6 +296,16 @@ class PieChart(Chart):
             if self.show_percentages:
                 pct = (value / total) * 100
                 label_display = f"{label_display} ({pct:.1f}%)"
+            elif self._pie_value_labels:
+                from charted.utils.value_format import format_value
+
+                cfg = self._pie_value_labels
+                opts = {k: v for k, v in cfg.items() if k != "format"}
+                fmt = cfg["format"]
+                # For percent format, label the slice's share of the whole.
+                raw = (value / total) if fmt == "percent" else value
+                formatted = format_value(raw, fmt, **opts)
+                label_display = f"{label_display} ({formatted})"
 
             text_width_est = len(label_display) * font_size * 0.55
 

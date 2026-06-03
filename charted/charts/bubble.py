@@ -69,6 +69,7 @@ class BubbleChart(ScatterChart):
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
         quadrant_labels: list[str] | None = None,
+        value_labels: bool | str | dict | None = None,
     ):
         if sizes is None:
             raise ValueError("sizes is required for a bubble chart")
@@ -113,6 +114,7 @@ class BubbleChart(ScatterChart):
             h_lines=h_lines,
             v_lines=v_lines,
             quadrant_labels=quadrant_labels,
+            value_labels=value_labels,
         )
 
     def _scaled_radii(self) -> list[float]:

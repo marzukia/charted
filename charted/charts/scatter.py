@@ -148,6 +148,7 @@ class ScatterChart(Chart):
         y_range: tuple[float, float] | None = None,
         domain_padding: float | None = None,
         avoid_label_collisions: bool = False,
+        value_labels: bool | str | dict | None = None,
     ):
         self._avoid_label_collisions = avoid_label_collisions
         self._point_styles = point_styles
@@ -186,6 +187,7 @@ class ScatterChart(Chart):
             x_range=x_range,
             y_range=y_range,
             domain_padding=domain_padding,
+            value_labels=value_labels,
         )
 
     # =====================================================================
