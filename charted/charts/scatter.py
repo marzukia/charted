@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from charted.charts.chart import Chart
 from charted.constants import (
     DEFAULT_CHART_HEIGHT,
@@ -122,27 +124,7 @@ class ScatterChart(Chart):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
                 title = self._tooltip_title(series_idx, i)
-                # Render marker based on shape
-                if marker_shape == "square":
-                    half = marker_size / 2
-                    mark = Rect(
-                        x=x - half,
-                        y=y - half,
-                        width=marker_size,
-                        height=marker_size,
-                    )
-                elif marker_shape == "diamond":
-                    points_str = (
-                        f"{x},{y - marker_size} "
-                        f"{x + marker_size},{y} "
-                        f"{x},{y + marker_size} "
-                        f"{x - marker_size},{y}"
-                    )
-                    mark = Path(d=f"M{points_str} Z", fill=fill)
-                elif marker_shape != "none":  # circle
-                    mark = Circle(cx=x, cy=y, r=marker_size)
-                else:
-                    mark = None
+                mark = self._marker_element(marker_shape, x, y, marker_size, fill)
                 if mark is not None:
                     if title is not None:
                         mark.add_child(title)
@@ -171,6 +153,58 @@ class ScatterChart(Chart):
             wrapper.add_child(unclipped_q)
 
         return wrapper
+
+    def _marker_element(self, shape: str, x: float, y: float, size: float, fill: str):
+        """Build a marker element centred at (x, y).
+
+        ``size`` is the radius / half-extent, so every shape shares the same
+        bounding box for a given size (a square, circle, diamond, triangle and
+        star with the same ``size`` all fit the same 2*size box). Returns None
+        for shape ``"none"``.
+        """
+        if shape == "none":
+            return None
+        if shape == "square":
+            return Rect(x=x - size, y=y - size, width=size * 2, height=size * 2)
+        if shape == "diamond":
+            pts = f"{x},{y - size} {x + size},{y} {x},{y + size} {x - size},{y}"
+            return Path(d=f"M{pts} Z", fill=fill)
+        if shape == "triangle":
+            pts = self._polygon_points(x, y, size, sides=3)
+            return Path(d=f"M{pts} Z", fill=fill)
+        if shape == "star":
+            pts = self._star_points(x, y, size)
+            return Path(d=f"M{pts} Z", fill=fill)
+        # default: circle
+        return Circle(cx=x, cy=y, r=size)
+
+    # The plot group is rendered with a net vertical flip (see
+    # LayoutEngine.get_base_transform), so a vertex placed at the bottom in
+    # local space appears at the top on screen. The +90 start angle therefore
+    # makes the apex/first tip point UP for the viewer.
+    @staticmethod
+    def _polygon_points(cx: float, cy: float, r: float, sides: int) -> str:
+        """Vertices of a regular polygon, apex pointing up on screen."""
+        out = []
+        for k in range(sides):
+            a = math.radians(90 + k * 360 / sides)
+            out.append(f"{cx + r * math.cos(a):.3f},{cy + r * math.sin(a):.3f}")
+        return " ".join(out)
+
+    @staticmethod
+    def _star_points(
+        cx: float, cy: float, r: float, points: int = 5, inner_ratio: float = 0.4
+    ) -> str:
+        """Vertices of a star with ``points`` tips, first tip up on screen."""
+        inner = r * inner_ratio
+        out = []
+        for k in range(points * 2):
+            radius = r if k % 2 == 0 else inner
+            a = math.radians(90 + k * 180 / points)
+            out.append(
+                f"{cx + radius * math.cos(a):.3f},{cy + radius * math.sin(a):.3f}"
+            )
+        return " ".join(out)
 
     def _render_quadrant_labels(self) -> G | None:
         """Render text labels in each quadrant of the scatter plot.
