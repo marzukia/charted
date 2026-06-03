@@ -532,6 +532,11 @@ class Chart(Svg):
         x_axis_data = self._anchor_axis_data(self.x_data, self._x_range)
         y_axis_data = self._anchor_axis_data(self.y_data, self._y_range)
 
+        # Build the gridline config. When the theme requests no extra weight,
+        # dash pattern, or minor lines, fall back to the plain colour string so
+        # existing single-weight renders are unchanged byte-for-byte.
+        grid_config = self._build_grid_config()
+
         # Initialize axes
         self.x_axis = XAxis(
             parent=self,
@@ -543,7 +548,7 @@ class Chart(Svg):
                 if (x_data is not None and x_labels is not None)
                 else self.zero_index
             ),
-            config=self.theme.resolved_grid_color,
+            config=grid_config,
             pad_labels=self.pad_x_labels,
             scale=x_scale_inst,
         )
@@ -554,7 +559,7 @@ class Chart(Svg):
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
-            config=self.theme.resolved_grid_color,
+            config=grid_config,
             scale=y_scale_inst,
         )
 
@@ -798,6 +803,36 @@ class Chart(Svg):
         # Append the bounds as an extra series so min()/max() over the flattened
         # data reach lo/hi without altering the plotted points themselves.
         return [*[list(row) for row in data], [lo, hi]]
+
+    def _build_grid_config(self):
+        """Assemble the gridline config passed to each axis.
+
+        Returns the plain grid colour string when the theme requests no
+        gridline-hierarchy features, keeping existing renders unchanged. When a
+        dash pattern, an explicit major width, or minor subdivisions are set,
+        returns a dict carrying the major-line attributes plus the minor-grid
+        parameters (consumed by the axis grid_lines renderer).
+        """
+        theme = self.theme
+        color = theme.resolved_grid_color
+        width = theme.resolved_grid_width
+        dasharray = theme.grid_dasharray
+        divisions = theme.minor_grid_divisions
+
+        if width is None and dasharray is None and divisions <= 0:
+            return color
+
+        config = {
+            "stroke": color,
+            "stroke_dasharray": dasharray if dasharray is not None else "None",
+        }
+        if width is not None:
+            config["stroke_width"] = width
+        if divisions > 0:
+            config["minor_divisions"] = divisions
+            config["minor_stroke"] = theme.resolved_minor_grid_color
+            config["minor_stroke_width"] = theme.resolved_minor_grid_width
+        return config
 
     def _build_scale(self, spec: object | None, data: Vector2D):
         """Construct a Scale instance for an axis from its data domain.

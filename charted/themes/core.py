@@ -191,6 +191,9 @@ class ColorPalette:
 # theme field is at its class default value.
 OPACITY_TIERS = {
     "grid_color": 0.20,
+    # Minor gridlines sit below the major grid so the structure recedes and
+    # data plus the zero axis dominate.
+    "minor_grid_color": 0.10,
     "axis_border_color": 0.60,
     # Reference lines (incl. the zero crosshair) must read above the grid in
     # every theme, so they sit well clear of the 0.20 grid tier.
@@ -239,6 +242,20 @@ class Theme:
     grid_color: str = "#CCCCCC"
     grid_dasharray: Optional[str] = None
     grid_visible: bool = True
+    # Gridline hierarchy / weight control. Defaults reproduce the historical
+    # single-weight grid (no minor lines, SVG-default stroke width).
+    # grid_width: stroke width for major gridlines. None emits no stroke-width
+    #   attribute, leaving the SVG default of 1.
+    # minor_grid_divisions: number of subdivisions drawn between adjacent major
+    #   gridlines. 0 disables minor gridlines entirely (current behaviour).
+    # minor_grid_color: colour for minor gridlines. None derives a lighter tier
+    #   from root_color so the minor grid recedes below the major grid.
+    # minor_grid_width: stroke width for minor gridlines. None falls back to
+    #   half the resolved major width.
+    grid_width: Optional[float] = None
+    minor_grid_divisions: int = 0
+    minor_grid_color: Optional[str] = None
+    minor_grid_width: Optional[float] = None
     legend_position: str = "topright"
     legend_font_size: int = 11
     legend_font_family: str = "Arial"
@@ -306,6 +323,33 @@ class Theme:
         return derive_color(
             self.root_color, OPACITY_TIERS["grid_color"], self.background_color
         )
+
+    @property
+    def resolved_grid_width(self) -> Optional[float]:
+        """Major gridline stroke width, or None for the SVG default."""
+        return self.grid_width
+
+    @property
+    def resolved_minor_grid_color(self) -> str:
+        """Minor gridline colour: explicit override or root_color at 10%."""
+        if self.minor_grid_color is not None:
+            return self.minor_grid_color
+        from charted.utils.colors import derive_color
+
+        return derive_color(
+            self.root_color,
+            OPACITY_TIERS["minor_grid_color"],
+            self.background_color,
+        )
+
+    @property
+    def resolved_minor_grid_width(self) -> float:
+        """Minor gridline stroke width: explicit override or half the major."""
+        if self.minor_grid_width is not None:
+            return self.minor_grid_width
+        major = self.resolved_grid_width
+        base = major if major is not None else 1.0
+        return base / 2.0
 
     @property
     def resolved_axis_border_color(self) -> str:

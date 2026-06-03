@@ -237,6 +237,42 @@ class Axis(G):
     def grid_lines(self) -> Path:
         raise Exception("grid_lines not implemented for instance of Axis.")
 
+    @staticmethod
+    def _split_grid_config(config) -> tuple[dict, dict]:
+        """Split a grid config into (major_attrs, minor_params).
+
+        A string config becomes the historical single-weight attrs with no
+        minor grid. A dict config has its minor_* keys peeled off and returned
+        separately so the remaining keys can be splatted onto the major Path.
+        """
+        if isinstance(config, str):
+            return {"stroke": config, "stroke_dasharray": "None"}, {}
+        major = dict(config)
+        minor = {
+            "divisions": major.pop("minor_divisions", 0),
+            "stroke": major.pop("minor_stroke", None),
+            "stroke_width": major.pop("minor_stroke_width", None),
+            "stroke_dasharray": major.pop("minor_stroke_dasharray", "None"),
+        }
+        return major, minor
+
+    @staticmethod
+    def _minor_positions(coordinates: list[float], divisions: int) -> list[float]:
+        """Interpolate minor-line positions between adjacent major coordinates.
+
+        ``divisions`` is the number of equal subdivisions between two majors, so
+        ``divisions - 1`` minor lines fall strictly between each pair.
+        """
+        if divisions <= 1 or len(coordinates) < 2:
+            return []
+        ordered = sorted(coordinates)
+        minors: list[float] = []
+        for a, b in zip(ordered, ordered[1:]):
+            step = (b - a) / divisions
+            for k in range(1, divisions):
+                minors.append(a + step * k)
+        return minors
+
     @property
     def axis_labels(self) -> G:
         raise Exception("axis_labels not implemented for instance of Axis.")
@@ -340,10 +376,9 @@ class XAxis(Axis):
         if not self.config:
             return None
 
-        # Convert string config (grid_color) to dict for backward compatibility
-        config = self.config
-        if isinstance(config, str):
-            config = {"stroke": config, "stroke_dasharray": "None"}
+        # Split the config into major-line attrs and minor-grid params. A plain
+        # string config yields the historical single-weight grid.
+        major, minor = self._split_grid_config(self.config)
 
         # In stacked mode with negative values, the reproject formula is
         # relative to zero (value/range), so tick coordinates need to be
@@ -364,15 +399,28 @@ class XAxis(Axis):
             if not coordinates or abs((coordinates[-1] + dx) - plot_width) > 0.5:
                 coordinates.append(plot_width - dx)
 
-        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in coordinates]
-        return Path(
-            **config,
-            d=d,
-            transform=translate(
-                x=self.parent.left_padding,
-                y=self.parent.top_padding,
-            ),
+        transform = translate(
+            x=self.parent.left_padding,
+            y=self.parent.top_padding,
         )
+
+        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in coordinates]
+        major_path = Path(**major, d=d, transform=transform)
+
+        minor_coords = self._minor_positions(coordinates, minor.get("divisions", 0))
+        if not minor_coords:
+            return major_path
+
+        minor_attrs = {
+            "stroke": minor["stroke"] or major.get("stroke"),
+            "stroke_dasharray": minor["stroke_dasharray"],
+        }
+        if minor["stroke_width"] is not None:
+            minor_attrs["stroke_width"] = minor["stroke_width"]
+        minor_d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in minor_coords]
+        minor_path = Path(**minor_attrs, d=minor_d, transform=transform)
+        # Minor lines first so the heavier major lines render on top.
+        return G().add_children(minor_path, major_path)
 
     @property
     def axis_labels(self) -> G:
@@ -471,20 +519,33 @@ class YAxis(Axis):
         if not self.config:
             return None
 
-        # Convert string config (grid_color) to dict for backward compatibility
-        config = self.config
-        if isinstance(config, str):
-            config = {"stroke": config, "stroke_dasharray": "None"}
+        # Split the config into major-line attrs and minor-grid params. A plain
+        # string config yields the historical single-weight grid.
+        major, minor = self._split_grid_config(self.config)
 
-        d = [f"M{0} {y} h{self.parent.plot_width}" for y in self.coordinates]
-        return Path(
-            **config,
-            d=d,
-            transform=translate(
-                x=self.parent.left_padding,
-                y=self.parent.top_padding,
-            ),
+        transform = translate(
+            x=self.parent.left_padding,
+            y=self.parent.top_padding,
         )
+
+        coordinates = list(self.coordinates)
+        d = [f"M{0} {y} h{self.parent.plot_width}" for y in coordinates]
+        major_path = Path(**major, d=d, transform=transform)
+
+        minor_coords = self._minor_positions(coordinates, minor.get("divisions", 0))
+        if not minor_coords:
+            return major_path
+
+        minor_attrs = {
+            "stroke": minor["stroke"] or major.get("stroke"),
+            "stroke_dasharray": minor["stroke_dasharray"],
+        }
+        if minor["stroke_width"] is not None:
+            minor_attrs["stroke_width"] = minor["stroke_width"]
+        minor_d = [f"M{0} {y} h{self.parent.plot_width}" for y in minor_coords]
+        minor_path = Path(**minor_attrs, d=minor_d, transform=transform)
+        # Minor lines first so the heavier major lines render on top.
+        return G().add_children(minor_path, major_path)
 
     @property
     def axis_labels(self) -> G:
