@@ -53,6 +53,12 @@ class ScatterChart(Chart):
             (circle, square, triangle, diamond, star), or a custom list of
             shape names to cycle through. A per-series ``marker_shape`` in
             ``series_styles`` always wins over the cycle.
+        legend: Placement for a series legend that maps each ``series_names``
+            entry to its marker shape and colour swatch. One of ``'none'``
+            (default, no legend), ``'right'``, ``'bottom'``, or ``'top'``.
+            When shown, layout space is reserved on that side so the legend
+            never overlaps the plot. Requires ``series_names``; with no names
+            there is nothing to label and the layout is left unchanged.
 
     Example:
         >>> from charted import ScatterChart
@@ -111,6 +117,7 @@ class ScatterChart(Chart):
         quadrant_label_inset: float = 12.0,
         quadrant_label_backplate: bool = False,
         shape_cycle: list[str] | bool | None = None,
+        legend: str = "none",
         x_scale: object | None = None,
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
@@ -123,6 +130,12 @@ class ScatterChart(Chart):
         self._quadrant_label_inset = quadrant_label_inset
         self._quadrant_label_backplate = quadrant_label_backplate
         self._shape_cycle = self._resolve_shape_cycle(shape_cycle)
+        if legend not in ("none", "right", "bottom", "top"):
+            raise ValueError(
+                f"Invalid legend placement {legend!r}. "
+                "Expected one of 'none', 'right', 'bottom', 'top'."
+            )
+        self._legend_placement = legend
         super().__init__(
             y_data=y_data,
             x_data=x_data,
@@ -148,6 +161,199 @@ class ScatterChart(Chart):
             x_range=x_range,
             y_range=y_range,
             domain_padding=domain_padding,
+        )
+
+    # =====================================================================
+    # Legend (shape + colour mapping, reserved placement)
+    # =====================================================================
+
+    def _legend_layout_position(self) -> str:
+        """Reserve the chosen side for the scatter legend (LayoutEngine hook)."""
+        placement = getattr(self, "_legend_placement", "none")
+        if placement != "none" and self.series_names:
+            return placement
+        return "none"
+
+    def _legend_layout_extent(self) -> float:
+        """Pixel band to reserve for the scatter legend (LayoutEngine hook)."""
+        if self._legend_layout_position() == "none":
+            return 0.0
+        return self._legend_reserved_extent()
+
+    def _legend_entries(self) -> list[tuple[str, str, str]]:
+        """Build (name, colour, shape) tuples for each plotted series.
+
+        Returns an empty list when there are no series names to label, which
+        is what keeps the legend off by default for unnamed scatters.
+        """
+        names = self.series_names
+        if not names:
+            return []
+        entries: list[tuple[str, str, str]] = []
+        for idx, name in enumerate(names):
+            if idx >= len(self.y_values):
+                break
+            color = self.colors[idx] if idx < len(self.colors) else "#000000"
+            shape = self._series_shape(idx)
+            entries.append((str(name), color, shape))
+        return entries
+
+    def _series_shape(self, series_idx: int) -> str:
+        """Resolve the marker shape for a series (mirrors ``representation``)."""
+        if self._shape_cycle:
+            shape = self._shape_cycle[series_idx % len(self._shape_cycle)]
+        else:
+            shape = "circle"
+        if self.series_styles and series_idx < len(self.series_styles):
+            style = self.series_styles[series_idx] or {}
+            if style.get("marker_shape"):
+                shape = style["marker_shape"]
+        return shape
+
+    def _legend_font_size(self) -> float:
+        return self.theme.legend_font_size
+
+    def _legend_reserved_extent(self) -> float:
+        """Pixel band to reserve for the legend on its placement side.
+
+        Depends only on the series names and theme font size, so it is safe to
+        call from the LayoutEngine hook before colours/values are computed.
+        """
+        from charted.utils.helpers import calculate_text_dimensions
+
+        names = self.series_names
+        if not names:
+            return 0.0
+        font_size = self._legend_font_size()
+        row_h = font_size + 6
+        swatch = font_size
+        gap = 6
+        pad = 8
+        if self._legend_placement == "right":
+            max_w = 0.0
+            for name in names:
+                w = calculate_text_dimensions(str(name), font_size=font_size).width
+                max_w = max(max_w, w)
+            return swatch + gap + max_w + pad * 2
+        # top / bottom: a single text row plus padding
+        return row_h + pad
+
+    @property
+    def legend(self):
+        """Render the scatter legend with per-series shape + colour swatches.
+
+        When ``legend='none'`` (the default), defers to the base class legend
+        so existing behaviour is unchanged. Otherwise draws an entry per series
+        in the band reserved by the LayoutEngine for the chosen side.
+        """
+        if self._legend_placement == "none":
+            return super().legend
+
+        entries = self._legend_entries()
+        if not entries:
+            return None
+
+        font_size = self._legend_font_size()
+        font_family = self.theme.legend_font_family
+        font_color = self.theme.legend_font_color
+        swatch = font_size
+        gap = 6
+        pad = 8
+        row_h = font_size + 6
+
+        lp = self.left_padding
+        tp = self.top_padding
+        pw = self.plot_width
+        ph = self.plot_height
+
+        g = G()
+
+        if self._legend_placement == "right":
+            x = lp + pw + pad
+            total_h = len(entries) * row_h
+            y = tp + (ph - total_h) / 2
+            for name, color, shape in entries:
+                cy = y + row_h / 2
+                cx = x + swatch / 2
+                self._legend_add_entry(
+                    g,
+                    name,
+                    color,
+                    shape,
+                    cx,
+                    cy,
+                    x + swatch + gap,
+                    font_size,
+                    font_family,
+                    font_color,
+                )
+                y += row_h
+            return g
+
+        # top / bottom: lay entries out in a horizontal row, centred on the plot
+        widths = []
+        from charted.utils.helpers import calculate_text_dimensions
+
+        for name, _, _ in entries:
+            tw = calculate_text_dimensions(name, font_size=font_size).width
+            widths.append(swatch + gap + tw)
+        item_gap = 16
+        total_w = sum(widths) + item_gap * (len(entries) - 1)
+        x = lp + (pw - total_w) / 2
+        if self._legend_placement == "top":
+            cy = tp - row_h / 2 - 2
+        else:
+            cy = tp + ph + row_h / 2 + 6
+        for (name, color, shape), w in zip(entries, widths):
+            cx = x + swatch / 2
+            self._legend_add_entry(
+                g,
+                name,
+                color,
+                shape,
+                cx,
+                cy,
+                x + swatch + gap,
+                font_size,
+                font_family,
+                font_color,
+                text_baseline=cy + font_size * 0.35,
+            )
+            x += w + item_gap
+        return g
+
+    def _legend_add_entry(
+        self,
+        g,
+        name,
+        color,
+        shape,
+        cx,
+        cy,
+        text_x,
+        font_size,
+        font_family,
+        font_color,
+        text_baseline=None,
+    ) -> None:
+        """Add one legend swatch (marker shape) + label to the group ``g``."""
+        mark = self._marker_element(shape, cx, cy, font_size / 2, color)
+        if mark is not None:
+            # Swatches live outside the flipped plot group (which supplies the
+            # fill in ``representation``), so set the fill on the swatch itself.
+            mark.kwargs["fill"] = color
+            g.add_child(mark)
+        baseline = text_baseline if text_baseline is not None else cy + font_size * 0.35
+        g.add_child(
+            Text(
+                text=name,
+                x=text_x,
+                y=baseline,
+                fill=font_color,
+                font_size=font_size,
+                font_family=font_family,
+                text_anchor="start",
+            )
         )
 
     @property

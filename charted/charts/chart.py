@@ -497,6 +497,11 @@ class Chart(Svg):
         else:
             self._subtitle = None
 
+        # Subclasses (e.g. ScatterChart) may reserve a band outside the plot
+        # for a legend. The defaults leave the layout unchanged.
+        legend_layout_position = self._legend_layout_position()
+        legend_layout_extent = self._legend_layout_extent()
+
         # Initialize LayoutEngine for layout calculations
         self.layout = LayoutEngine(
             width=width,
@@ -510,6 +515,8 @@ class Chart(Svg):
             subtitle_leading=self._subtitle_leading,
             has_x_axis_label=bool(x_label),
             has_y_axis_label=bool(y_label),
+            legend_position=legend_layout_position,
+            legend_extent=legend_layout_extent,
         )
 
         # Build scale instances from the data domain. None/linear leaves the
@@ -659,6 +666,22 @@ class Chart(Svg):
         self._tooltips = False
 
         self._build_children()
+
+    def _legend_layout_position(self) -> str:
+        """Side reserved for an outside-the-plot legend (subclass hook).
+
+        Returns 'none' by default so the layout is unchanged. Subclasses
+        override to return 'right' | 'bottom' | 'top'.
+        """
+        return "none"
+
+    def _legend_layout_extent(self) -> float:
+        """Pixel band to reserve for an outside-the-plot legend (subclass hook).
+
+        Returns 0 by default. Called before the LayoutEngine is built, so it
+        may rely on the resolved theme but not on plot dimensions.
+        """
+        return 0.0
 
     def _build_children(self) -> None:
         """Assemble the chart's SVG child elements.

@@ -40,6 +40,8 @@ class LayoutEngine:
         subtitle_leading: float = 0.0,
         has_x_axis_label: bool = False,
         has_y_axis_label: bool = False,
+        legend_position: str = "none",
+        legend_extent: float = 0.0,
     ):
         self.width = width
         self.height = height
@@ -52,6 +54,12 @@ class LayoutEngine:
         self.subtitle_leading = max(0.0, float(subtitle_leading))
         self.has_x_axis_label = has_x_axis_label
         self.has_y_axis_label = has_y_axis_label
+        # Outside-the-plot legend placement. ``legend_position`` is one of
+        # 'right' | 'bottom' | 'top' | 'none' and ``legend_extent`` is the
+        # pixel band reserved on that side. 'none'/zero extent leaves all
+        # padding untouched, so existing layouts are byte-for-byte preserved.
+        self.legend_position = legend_position or "none"
+        self.legend_extent = max(0.0, float(legend_extent))
 
     @property
     def plot_width(self) -> float:
@@ -96,13 +104,24 @@ class LayoutEngine:
         return h_pad + max_width
 
     @property
+    def _legend_band(self) -> float:
+        """Pixel band reserved for an outside-the-plot legend, or 0."""
+        if self.legend_position in ("right", "bottom", "top"):
+            return self.legend_extent
+        return 0.0
+
+    @property
     def right_padding(self) -> float:
         """Calculate right padding.
 
         Returns:
-            Right padding in pixels (base horizontal padding).
+            Right padding in pixels (base horizontal padding plus any
+            right-placed legend band).
         """
-        return self.h_padding * self.width
+        pad = self.h_padding * self.width
+        if self.legend_position == "right":
+            pad += self._legend_band
+        return pad
 
     @property
     def top_padding(self) -> float:
@@ -126,6 +145,10 @@ class LayoutEngine:
             if self.title:
                 offset += self.subtitle_leading
 
+        # Reserve a band above the plot for a top-placed legend.
+        if self.legend_position == "top":
+            offset += self._legend_band
+
         return v_pad + offset
 
     @property
@@ -136,6 +159,10 @@ class LayoutEngine:
             Total bottom padding in pixels (base padding + rotated label space if any).
         """
         base = self.v_padding * self.height
+
+        # Reserve a band below the plot for a bottom-placed legend.
+        if self.legend_position == "bottom":
+            base += self._legend_band
 
         # Extra space for x-axis title label (rendered below tick labels)
         if self.has_x_axis_label:
