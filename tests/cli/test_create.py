@@ -10,6 +10,28 @@ import pytest
 from charted.cli.create import _parse_csv, create_command, load_data
 
 
+def _ns(**kwargs):
+    """Build an argparse.Namespace with CLI defaults filled in.
+
+    Tests only need to set the fields they care about; everything else
+    falls back to the same defaults argparse would supply.
+    """
+    import argparse
+
+    defaults = {
+        "chart_type": "bar",
+        "output": None,
+        "data": None,
+        "config": None,
+        "title": None,
+        "width": None,
+        "height": None,
+        "transpose": False,
+    }
+    defaults.update(kwargs)
+    return argparse.Namespace(**defaults)
+
+
 class TestLoadData:
     """Test load_data function for CSV and JSON files."""
 
@@ -459,3 +481,141 @@ class TestCLIIntegration:
                 create_command(args)
 
                 assert output_file.exists()
+
+
+class TestTitleAndDimensions:
+    """Test --title, --width, --height CLI options."""
+
+    def test_title_sets_chart_title(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_file = Path(tmpdir) / "out.svg"
+            data_file = Path(tmpdir) / "data.json"
+            data_file.write_text(json.dumps({"labels": ["A", "B"], "data": [10, 20]}))
+
+            create_command(
+                _ns(output=str(output_file), data=str(data_file), title="My Report")
+            )
+
+            content = output_file.read_text()
+            assert "My Report" in content
+
+    def test_width_and_height_change_dimensions(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_file = Path(tmpdir) / "out.svg"
+            data_file = Path(tmpdir) / "data.json"
+            data_file.write_text(json.dumps({"labels": ["A", "B"], "data": [10, 20]}))
+
+            create_command(
+                _ns(
+                    output=str(output_file),
+                    data=str(data_file),
+                    width=900,
+                    height=400,
+                )
+            )
+
+            content = output_file.read_text()
+            assert 'width="900"' in content
+            assert 'height="400"' in content
+            assert 'viewBox="0 0 900 400"' in content
+
+    def test_cli_title_overrides_config(self):
+        """A --title flag takes precedence over a title in the config file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_file = Path(tmpdir) / "out.svg"
+            data_file = Path(tmpdir) / "data.json"
+            data_file.write_text(json.dumps({"labels": ["A", "B"], "data": [10, 20]}))
+            config_file = Path(tmpdir) / "cfg.json"
+            config_file.write_text(json.dumps({"title": "From Config", "width": 600}))
+
+            create_command(
+                _ns(
+                    output=str(output_file),
+                    data=str(data_file),
+                    config=str(config_file),
+                    title="From CLI",
+                )
+            )
+
+            content = output_file.read_text()
+            assert "From CLI" in content
+            assert "From Config" not in content
+
+    def test_config_title_used_when_no_cli_flag(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_file = Path(tmpdir) / "out.svg"
+            data_file = Path(tmpdir) / "data.json"
+            data_file.write_text(json.dumps({"labels": ["A", "B"], "data": [10, 20]}))
+            config_file = Path(tmpdir) / "cfg.json"
+            config_file.write_text(json.dumps({"title": "From Config"}))
+
+            create_command(
+                _ns(
+                    output=str(output_file),
+                    data=str(data_file),
+                    config=str(config_file),
+                )
+            )
+
+            assert "From Config" in output_file.read_text()
+
+
+class TestCSVOrientation:
+    """Test CSV orientation handling and the --transpose flag."""
+
+    def test_default_orientation_series_per_column(self):
+        """Default: first column is x labels, each other column is a series."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data_file = Path(tmpdir) / "data.csv"
+            data_file.write_text("Quarter,Revenue\nQ1,120\nQ2,180\nQ3,210")
+
+            result = load_data(str(data_file))
+            assert result["labels"] == ["Q1", "Q2", "Q3"]
+            assert result["data"] == [120.0, 180.0, 210.0]
+
+    def test_transpose_series_per_row(self):
+        """With transpose=True, each data row is a series and the header row
+        (minus the corner cell) supplies the x labels."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data_file = Path(tmpdir) / "data.csv"
+            # Wide layout: series live on rows, x values across the header.
+            data_file.write_text(
+                "Series,Q1,Q2,Q3\nRevenue,120,180,210\nExpenses,80,95,110"
+            )
+
+            result = load_data(str(data_file), transpose=True)
+            assert result["labels"] == ["Q1", "Q2", "Q3"]
+            assert result["data"] == [[120.0, 180.0, 210.0], [80.0, 95.0, 110.0]]
+            assert result["series_names"] == ["Revenue", "Expenses"]
+
+    def test_transpose_single_series_per_row(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data_file = Path(tmpdir) / "data.csv"
+            data_file.write_text("Series,Q1,Q2,Q3\nRevenue,120,180,210")
+
+            result = load_data(str(data_file), transpose=True)
+            assert result["labels"] == ["Q1", "Q2", "Q3"]
+            assert result["data"] == [120.0, 180.0, 210.0]
+            assert result["series_names"] == ["Revenue"]
+
+    def test_transpose_via_create_command(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_file = Path(tmpdir) / "out.svg"
+            data_file = Path(tmpdir) / "data.csv"
+            data_file.write_text(
+                "Series,Q1,Q2,Q3\nRevenue,120,180,210\nExpenses,80,95,110"
+            )
+
+            create_command(
+                _ns(
+                    chart_type="column",
+                    output=str(output_file),
+                    data=str(data_file),
+                    transpose=True,
+                )
+            )
+
+            content = output_file.read_text()
+            assert "Q1" in content
+            assert "Q2" in content
+            assert "<svg" in content

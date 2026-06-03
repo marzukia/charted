@@ -242,6 +242,11 @@ Chart type short names: `bar`, `column`, `line`, `scatter`, `pie`, `radar`, `are
 python -m charted create bar output.svg --data sales.csv
 python -m charted create column chart.svg -d data.json
 
+# Set title/dimensions (override a --config file); --transpose reads a
+# wide / series-per-row CSV instead of the default series-per-column layout
+python -m charted create bar out.svg -d sales.csv --title "Q3" --width 900
+python -m charted create column out.svg -d wide.csv --transpose
+
 # Batch: convert all files in a directory
 python -m charted batch input_dir/ output_dir/
 python -m charted batch input_dir/ output_dir/ --chart-type line

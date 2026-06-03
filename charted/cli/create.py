@@ -40,8 +40,17 @@ CHART_TYPES = {
 }
 
 
-def load_data(data_path: str) -> dict:
-    """Load data from CSV or JSON file."""
+def load_data(data_path: str, transpose: bool = False) -> dict:
+    """Load data from CSV or JSON file.
+
+    Args:
+        data_path: Path to a .csv or .json file.
+        transpose: Only applies to CSV. When False (default) the first column
+            holds the x-axis labels and every other column is a data series.
+            When True the layout is read sideways: each data row becomes a
+            series and the header row (minus the corner cell) supplies the
+            x-axis labels.
+    """
     path = Path(data_path)
 
     if not path.exists():
@@ -53,14 +62,33 @@ def load_data(data_path: str) -> dict:
         with open(path) as f:
             return json.load(f)
     elif suffix == ".csv":
-        return _parse_csv(path)
+        return _parse_csv(path, transpose=transpose)
     else:
         raise ValueError(f"Unsupported file format: {suffix}. Use .csv or .json")
 
 
-def _parse_csv(path: Path) -> dict:
-    """Parse CSV file into data dict."""
+def _to_number(value: str):
+    """Convert a CSV cell to a float, leaving non-numeric text untouched."""
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def _parse_csv(path: Path, transpose: bool = False) -> dict:
+    """Parse a CSV file into a chart-compatible data dict.
+
+    Default layout (``transpose=False``): the first column is the x-axis
+    labels and each remaining column is a data series.
+
+    Wide layout (``transpose=True``): the first row is the header, where the
+    corner cell is ignored and the rest are the x-axis labels. Each subsequent
+    row is one series, named by its first cell.
+    """
     import csv
+
+    if transpose:
+        return _parse_csv_transposed(path)
 
     with open(path) as f:
         reader = csv.DictReader(f)
@@ -74,13 +102,8 @@ def _parse_csv(path: Path) -> dict:
     labels = [row[fieldnames[0]] for row in rows]
     data_values = []
 
-    for i, field in enumerate(fieldnames[1:], 1):
-        column_data = []
-        for row in rows:
-            try:
-                column_data.append(float(row[field]))
-            except ValueError:
-                column_data.append(row[field])
+    for field in fieldnames[1:]:
+        column_data = [_to_number(row[field]) for row in rows]
         data_values.append(column_data)
 
     # Return in chart-compatible format
@@ -88,6 +111,36 @@ def _parse_csv(path: Path) -> dict:
         return {"data": data_values[0], "labels": labels}
     else:
         return {"data": data_values, "labels": labels}
+
+
+def _parse_csv_transposed(path: Path) -> dict:
+    """Parse a wide / series-per-row CSV (see _parse_csv for the layout)."""
+    import csv
+
+    with open(path) as f:
+        rows = list(csv.reader(f))
+
+    # Drop blank trailing rows that csv.reader can leave behind.
+    rows = [row for row in rows if row]
+
+    if not rows:
+        return {"data": []}
+
+    header = rows[0]
+    labels = header[1:]
+    series_names = []
+    data_values = []
+
+    for row in rows[1:]:
+        series_names.append(row[0])
+        data_values.append([_to_number(cell) for cell in row[1:]])
+
+    result: dict = {"labels": labels, "series_names": series_names}
+    if len(data_values) == 1:
+        result["data"] = data_values[0]
+    else:
+        result["data"] = data_values
+    return result
 
 
 def _build_combo_kwargs(data: dict) -> dict:
@@ -158,7 +211,7 @@ def create_command(args: argparse.Namespace):
     data = {}
     if args.data:
         try:
-            data = load_data(args.data)
+            data = load_data(args.data, transpose=getattr(args, "transpose", False))
         except (FileNotFoundError, ValueError) as e:
             error_msg = str(e)
             if "not found" in error_msg:
@@ -192,6 +245,40 @@ def create_command(args: argparse.Namespace):
                 file=sys.stderr,
             )
             sys.exit(1)
+
+    # Merge in a config file, then let explicit CLI flags win over it. Config
+    # values seed the chart kwargs; --title / --width / --height override the
+    # matching config entry when supplied (and override loaded data too).
+    if getattr(args, "config", None):
+        try:
+            with open(args.config) as f:
+                config = json.load(f)
+        except FileNotFoundError:
+            print(f"Error: Config file not found: {args.config}", file=sys.stderr)
+            print(
+                "  Suggestion: Check the file path and ensure it exists",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Error reading config file: {e}", file=sys.stderr)
+            print(
+                "  Suggestion: Check that the config file is valid JSON",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        # config file is the base layer, data file overrides it.
+        merged = dict(config)
+        merged.update(data)
+        data = merged
+
+    # CLI flags take precedence over both the config file and the data file.
+    if getattr(args, "title", None) is not None:
+        data["title"] = args.title
+    if getattr(args, "width", None) is not None:
+        data["width"] = args.width
+    if getattr(args, "height", None) is not None:
+        data["height"] = args.height
 
     # Create chart
     try:
