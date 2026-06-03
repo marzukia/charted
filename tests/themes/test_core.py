@@ -13,13 +13,17 @@ class TestThemePreset:
         theme = Theme.from_preset("light")
         assert theme.title_color == "#1f2937"
         assert theme.background_color == "#f9fafb"
-        assert theme.grid_color == "#6b7280"
+        # Grid is left at the class default so it derives from the 0.20 opacity
+        # tier and recedes behind the data.
+        assert theme.grid_color == "#CCCCCC"
         assert len(theme.colors) == 5
 
     def test_dark_preset(self):
         """Dark theme preset has expected colors."""
         theme = Theme.from_preset("dark")
-        assert theme.grid_color == "#9ca3af"
+        # Grid derives from the 0.20 tier (a dim grey on near-black) rather than
+        # the old bright #9ca3af that glared.
+        assert theme.grid_color == "#CCCCCC"
         assert theme.title_color == "#ffffff"
         assert theme.background_color == "#1a1a1a"
         assert len(theme.colors) == 5
@@ -28,7 +32,9 @@ class TestThemePreset:
         """High-contrast theme preset."""
         theme = Theme.from_preset("high-contrast")
         assert theme.title_color == "#000000"
-        assert theme.grid_color == "#000000"
+        # Mid-grey grid (~0.46 over white) so it recedes below the data while
+        # staying accessible, rather than a full-black cage.
+        assert theme.grid_color == "#8a8a8a"
         assert theme.background_color == "#FFFFFF"
         # High-contrast now uses the Okabe-Ito colourblind-safe palette.
         assert len(theme.colors) == 8

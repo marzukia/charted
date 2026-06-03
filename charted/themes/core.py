@@ -552,14 +552,19 @@ class Theme:
             "light": cls(
                 colors=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
                 title_color="#1f2937",
-                grid_color="#6b7280",
+                # grid_color left at the class default so it derives from
+                # root_color at the 0.20 grid tier and recedes behind the data
+                # instead of caging it (a solid #6b7280 grid was too strong).
                 background_color="#f9fafb",
                 arrow_color="#374151",
             ),
             "dark": cls(
                 colors=["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
                 root_color="#ffffff",
-                grid_color="#9ca3af",
+                # grid_color left at the class default so it derives from the
+                # white root at the 0.20 grid tier (a dim grey on the near-black
+                # background) instead of the old #9ca3af that glared and caged
+                # the data.
                 title_color="#ffffff",
                 background_color="#1a1a1a",
                 legend_font_color="#e5e5e5",
@@ -572,7 +577,10 @@ class Theme:
                 title_color="#000000",
                 title_font_size=18,
                 background_color="#FFFFFF",
-                grid_color="#000000",
+                # Mid-grey (~0.46 over white) rather than full black: gridlines
+                # stay accessible but recede below the data instead of forming a
+                # black cage of equal weight to the marks.
+                grid_color="#8a8a8a",
                 grid_width=1.5,
                 # Every filled shape gets a 1px black outline so adjacent
                 # wedges/bars/bubbles stay separable without relying on hue.

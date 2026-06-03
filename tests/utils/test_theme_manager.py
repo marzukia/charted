@@ -162,7 +162,7 @@ class TestThemeManagerEdgeCases:
 
         assert theme.background_color == "#FFFFFF"
         assert theme.title_color == "#000000"
-        assert theme.grid_color == "#000000"
+        assert theme.grid_color == "#8a8a8a"
 
     def test_load_theme_dict_with_nested_keys_ignored(self):
         """Test that nested dict keys are handled correctly."""
