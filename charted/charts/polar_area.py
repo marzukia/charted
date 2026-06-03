@@ -11,10 +11,6 @@ from charted.utils.colors import get_contrast_color
 from charted.utils.types import Labels, SeriesStyleConfig, Vector
 from charted.utils.value_format import format_value
 
-# Smallest slice (lowest value) still gets this fraction of the max radius
-# so a zero-ish value remains visible as a sliver.
-MIN_RADIUS_FRACTION = 0.15
-
 # Default number of concentric scale rings drawn behind polar-area slices.
 DEFAULT_RADIAL_LEVELS = 5
 
@@ -121,15 +117,49 @@ class PolarAreaChart(PieChart):
             for i in range(n)
         ]
 
-    def slice_radii(self) -> list[float]:
-        """Return the rendered radius for each slice, scaled by value."""
+    @staticmethod
+    def _nice_step(rough: float, round_to_nearest: bool) -> float:
+        """Round a rough step to a 1/2/5 x 10^n 'nice' value (Heckbert)."""
+        if rough <= 0:
+            return 1.0
+        exp = math.floor(math.log10(rough))
+        frac = rough / 10**exp
+        if round_to_nearest:
+            nice = 1 if frac < 1.5 else 2 if frac < 3 else 5 if frac < 7 else 10
+        else:
+            nice = 1 if frac <= 1 else 2 if frac <= 2 else 5 if frac <= 5 else 10
+        return nice * 10**exp
+
+    def _radial_scale(self) -> tuple[float, list[float]]:
+        """Return (axis_max, tick_values) snapped to round numbers.
+
+        The outer ring sits on a 'nice' maximum at or above the data max, and
+        the tick values are round multiples of a nice step, so slice tips land
+        on the labelled rings instead of arbitrary fractions of the data max.
+        """
         data = self._pie_data
-        max_val = max(data)
+        vmax = max(data) if data else 0
+        if vmax <= 0:
+            return 1.0, []
+        target = max(2, self.radial_levels)
+        step = self._nice_step(vmax / target, True)
+        axis_max = math.ceil(vmax / step) * step
+        count = int(round(axis_max / step))
+        ticks = [round(step * i, 10) for i in range(1, count + 1)]
+        return axis_max, ticks
+
+    def slice_radii(self) -> list[float]:
+        """Return the rendered radius for each slice, scaled by value.
+
+        Linear from the centre to the nice axis maximum, so a slice of value v
+        reaches exactly the ring labelled v.
+        """
+        data = self._pie_data
         outer = self._max_radius()
-        if max_val == 0:
+        axis_max, _ = self._radial_scale()
+        if axis_max <= 0:
             return [outer for _ in data]
-        floor = outer * MIN_RADIUS_FRACTION
-        return [floor + (v / max_val) * (outer - floor) for v in data]
+        return [(v / axis_max) * outer for v in data]
 
     @property
     def representation(self) -> G:
@@ -225,17 +255,21 @@ class PolarAreaChart(PieChart):
         ``0..max`` scale, giving the otherwise scale-less polar slices a
         readable magnitude reference.
         """
-        levels = self.radial_levels
-        if levels <= 0:
+        if self.radial_levels <= 0:
             return
 
         outer = self._max_radius()
-        max_val = max(data) if data else 0
+        axis_max, ticks = self._radial_scale()
+        if not ticks or axis_max <= 0:
+            return
         ring_color = self._ring_color()
         grid_width = getattr(self.theme, "grid_width", None) or 1
+        font_size = get_pie_label_font_size() * 0.8
+        # Gap (px) between a ring line and its numeric label so they don't touch.
+        label_gap = 3
 
-        for level in range(1, levels + 1):
-            radius = outer * level / levels
+        for tick in ticks:
+            radius = (tick / axis_max) * outer
             result.add_child(
                 Circle(
                     cx=cx,
@@ -248,13 +282,13 @@ class PolarAreaChart(PieChart):
             )
 
             if self.show_radial_labels:
-                ring_value = max_val * level / levels
-                font_size = get_pie_label_font_size() * 0.8
+                # Sit the label just OUTSIDE the ring at 12 o'clock with a gap,
+                # so it clears the ring line instead of overprinting it.
                 result.add_child(
                     Text(
                         x=cx + 3,
-                        y=cy - radius + font_size * 0.6,
-                        text=format_value(ring_value),
+                        y=cy - radius - label_gap,
+                        text=format_value(tick),
                         fill=ring_color,
                         font_size=font_size,
                         font_family=self.theme.title_font_family,

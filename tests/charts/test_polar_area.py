@@ -109,19 +109,21 @@ class TestPolarAreaRadialGrid:
     """Radial scale rings and numeric ring labels (issue #62)."""
 
     def test_radial_rings_rendered(self):
-        """radial_levels concentric circles are drawn behind the slices."""
+        """Concentric rings are drawn behind the slices, one per nice tick."""
         chart = PolarAreaChart(data=[10, 20, 30, 15], radial_levels=5)
         html = chart.html
         # Each ring is a <circle ... fill="none" ...>; count those.
         ring_count = html.count('fill="none"')
-        assert ring_count == 5
+        # Ring values snap to round numbers, so the count is the nice-tick count.
+        assert ring_count == len(chart._radial_scale()[1])
 
     def test_radial_labels_present_by_default(self):
-        """The outer ring value (max datum) appears as a numeric label."""
+        """Ring labels are round numbers, with the outer ring at the nice max."""
         chart = PolarAreaChart(data=[10, 20, 30, 15], radial_levels=5)
         html = chart.html
-        assert ">30<" in html  # max value at outer ring
-        assert ">6<" in html  # 30 * 1/5 at inner ring
+        # data max 30 snaps to ticks 5, 10, 15, 20, 25, 30.
+        assert ">30<" in html  # nice max at the outer ring
+        assert ">5<" in html  # round inner tick (not 30 * 1/5 == 6)
 
     def test_radial_labels_can_be_disabled(self):
         """show_radial_labels=False keeps rings but drops their labels."""
@@ -129,7 +131,7 @@ class TestPolarAreaRadialGrid:
             data=[10, 20, 30, 15], radial_levels=5, show_radial_labels=False
         )
         html = chart.html
-        assert html.count('fill="none"') == 5
+        assert html.count('fill="none"') == len(chart._radial_scale()[1])
         assert ">30<" not in html
 
     def test_rings_use_theme_grid_color(self):
