@@ -216,6 +216,9 @@ OPACITY_TIERS = {
     # Quadrant labels are a watermark, but 0.18 was illegible on the dark
     # background; 0.40 stays subtle on light while remaining readable on dark.
     "quadrant_label_color": 0.40,
+    # Data labels sit on data points and should read clearly. 0.80 matches the
+    # historical axis-title tier the labels previously borrowed.
+    "data_label_color": 0.80,
 }
 
 
@@ -286,6 +289,10 @@ class Theme:
     # keeps them reading as the most prominent line. None falls back to the
     # library default (REFERENCE_LINE_WIDTH).
     reference_line_width: Optional[float] = None
+    # Colour for data-point labels. None defers to the axis-title tier the
+    # labels historically borrowed, keeping existing renders unchanged. Set a
+    # hex/HSL string to give data labels their own themed colour.
+    data_label_color: Optional[str] = None
 
     def __post_init__(self) -> None:
         """Validate color format after initialization."""
@@ -309,6 +316,12 @@ class Theme:
             )
         if not _is_valid_hex_color(self.arrow_color):
             raise ValueError(f"Invalid color for arrow_color: {self.arrow_color!r}")
+        if self.data_label_color is not None and not _is_valid_hex_color(
+            self.data_label_color
+        ):
+            raise ValueError(
+                f"Invalid color for data_label_color: {self.data_label_color!r}"
+            )
 
         # Validate legend contrast against background
         from charted.utils.colors import calculate_contrast_ratio
@@ -410,6 +423,17 @@ class Theme:
         return derive_color(
             self.root_color, OPACITY_TIERS["label_color"], self.background_color
         )
+
+    @property
+    def resolved_data_label_color(self) -> str:
+        """Data-label colour: explicit override or the axis-title tier.
+
+        Defaulting to ``resolved_axis_title_color`` keeps existing data-label
+        renders byte-for-byte identical when ``data_label_color`` is unset.
+        """
+        if self.data_label_color is not None:
+            return self.data_label_color
+        return self.resolved_axis_title_color
 
     @property
     def resolved_quadrant_label_color(self) -> str:

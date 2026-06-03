@@ -20,6 +20,19 @@ class SeriesStyleConfig(TypedDict, total=False):
     show_markers: bool | None
 
 
+class PointStyleConfig(TypedDict, total=False):
+    """Per-point marker styling overrides for scatter charts.
+
+    Every field is optional; any omitted field falls back to the per-series
+    style (``series_styles``)/shape-cycle resolution and finally the defaults.
+    """
+
+    marker_shape: str | None  # "circle" | "square" | "diamond" | "triangle" | "star" | "none"
+    marker_size: float | None
+    fill: str | None
+    opacity: float | None
+
+
 Labels = list[str]
 
 Vector = list[float]

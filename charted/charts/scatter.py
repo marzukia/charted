@@ -11,7 +11,12 @@ from charted.constants import (
 )
 from charted.html.element import Circle, G, Path, Rect, Text
 from charted.themes.core import Theme
-from charted.utils.types import SeriesStyleConfig, Vector, Vector2D
+from charted.utils.types import (
+    PointStyleConfig,
+    SeriesStyleConfig,
+    Vector,
+    Vector2D,
+)
 
 
 class ScatterChart(Chart):
@@ -32,6 +37,15 @@ class ScatterChart(Chart):
         theme: Optional theme configuration
         series_names: Names for each series (shown in legend)
         series_styles: Per-series style overrides (marker_shape, marker_size)
+        point_styles: Per-POINT marker overrides, a list of per-series rows
+            mirroring the data shape. Each entry is a ``PointStyleConfig``
+            (``marker_shape``, ``marker_size``, ``fill``, ``opacity``) or
+            ``None``. Any present field wins over the series-level/shape-cycle
+            resolution; omitted fields fall through. Defaults to None, leaving
+            every point styled by its series (existing behaviour). Data-label
+            colour now comes from the theme's ``data_label_color`` token
+            (override via ``Theme(data_label_color=...)``); the default token
+            reproduces the previous axis-title colour.
         x_range: Optional (min, max) to fix the x-axis domain instead of
             deriving it from the data, removing the need for invisible anchor
             points to control the visible range.
@@ -114,6 +128,7 @@ class ScatterChart(Chart):
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
+        point_styles: list[list[PointStyleConfig | None]] | None = None,
         data_labels: list[str] | list[list[str]] | None = None,
         x_label: str | None = None,
         y_label: str | None = None,
@@ -135,6 +150,7 @@ class ScatterChart(Chart):
         avoid_label_collisions: bool = False,
     ):
         self._avoid_label_collisions = avoid_label_collisions
+        self._point_styles = point_styles
         self._quadrant_labels = quadrant_labels
         self._quadrant_label_inset = quadrant_label_inset
         self._quadrant_label_backplate = quadrant_label_backplate
@@ -400,8 +416,32 @@ class ScatterChart(Chart):
                 x += x_offset
                 y = self._apply_stacking(y, y_offset)
                 title = self._tooltip_title(series_idx, i)
-                mark = self._marker_element(marker_shape, x, y, marker_size, fill)
+                # Per-point overrides (point_styles) win over the series-level
+                # shape/size/fill resolved above. Each field is independent, so
+                # an omitted field keeps the series value.
+                p_shape = marker_shape
+                p_size = marker_size
+                p_fill = fill
+                p_opacity = None
+                pstyle = self._point_style(series_idx, i)
+                if pstyle:
+                    if pstyle.get("marker_shape"):
+                        p_shape = pstyle["marker_shape"]
+                    if pstyle.get("marker_size"):
+                        p_size = pstyle["marker_size"]
+                    if pstyle.get("fill"):
+                        p_fill = pstyle["fill"]
+                    if pstyle.get("opacity") is not None:
+                        p_opacity = pstyle["opacity"]
+                mark = self._marker_element(p_shape, x, y, p_size, p_fill)
                 if mark is not None:
+                    # Only set fill on the marker when it differs from the
+                    # series group fill, so unstyled points stay byte-identical
+                    # (they inherit fill from the enclosing group).
+                    if p_fill != fill:
+                        mark.kwargs["fill"] = p_fill
+                    if p_opacity is not None:
+                        mark.kwargs["opacity"] = p_opacity
                     if title is not None:
                         mark.add_child(title)
                     series.add_child(mark)
@@ -429,6 +469,20 @@ class ScatterChart(Chart):
             wrapper.add_child(unclipped_q)
 
         return wrapper
+
+    def _point_style(self, series_idx: int, point_idx: int):
+        """Return the ``PointStyleConfig`` for one point, or None.
+
+        ``point_styles`` is a list of per-series rows mirroring the data shape;
+        any missing series, point, or ``None`` entry yields no override.
+        """
+        styles = self._point_styles
+        if not styles or series_idx >= len(styles):
+            return None
+        row = styles[series_idx]
+        if not row or point_idx >= len(row):
+            return None
+        return row[point_idx] or None
 
     def _marker_element(self, shape: str, x: float, y: float, size: float, fill: str):
         """Build a marker element centred at (x, y).
@@ -514,7 +568,7 @@ class ScatterChart(Chart):
 
         font_size = max(8, self.theme.title_font_size - 4)
         font_family = self.theme.title_font_family
-        font_color = self.theme.resolved_axis_title_color
+        font_color = self.theme.resolved_data_label_color
         line_color = self.theme.resolved_reference_line_color
 
         # Gather placed labels and their anchor markers in plot coordinates.
