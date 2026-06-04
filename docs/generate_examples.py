@@ -649,7 +649,10 @@ save(
         labels=["Q1", "Q2", "Q3", "Q4"],
         series_names=["Organic", "Paid", "Referral"],
         x_stacked=True,
-        value_labels="percent",
+        # Data is already in percent units (40 == 40%), so disable the
+        # default percent_scale (which assumes fractional data and would
+        # render "4000%"). The bare "percent" shorthand is a foot-gun here.
+        value_labels={"format": "percent", "percent_scale": False},
         legend="bottom",
         width=720,
         height=460,

@@ -267,13 +267,37 @@ class BarChart(Chart):
                     if bar_idx >= len(x_vals) or not label_text:
                         continue
                     x = x_vals[bar_idx]
-                    slot_y = start_y + bar_idx * (slot_height + gap)
-                    bar_y = slot_y + series_idx * series_thickness
 
                     if single_series:
                         bar_color = self.colors[bar_idx % len(self.colors)]
                     else:
                         bar_color = self.colors[series_idx % len(self.colors)]
+
+                    if self.x_stacked:
+                        # In stacked mode every series shares the bar's full
+                        # vertical slot, so the label's y-center is the slot
+                        # center (independent of series_idx). Center the label
+                        # horizontally inside its own segment, which runs from
+                        # the cumulative offset to offset+value.
+                        slot_y = start_y + bar_idx * (slot_height + gap)
+                        x_offset_val = self.x_offsets[series_idx][bar_idx]
+                        seg_left = min(x_offset_val, x_offset_val + x)
+                        seg_width = abs(x)
+                        bars_g.add_child(
+                            Text(
+                                text=str(label_text),
+                                x=seg_left + seg_width / 2,
+                                y=slot_y + slot_height / 2 + font_size / 3,
+                                fill=get_contrast_color(bar_color),
+                                font_size=font_size,
+                                font_family=font_family,
+                                text_anchor="middle",
+                            )
+                        )
+                        continue
+
+                    slot_y = start_y + bar_idx * (slot_height + gap)
+                    bar_y = slot_y + series_idx * series_thickness
 
                     # Check if label would overflow the chart boundary
                     measured = calculate_text_dimensions(

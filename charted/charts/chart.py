@@ -1716,6 +1716,15 @@ class Chart(SeriesLegend, Svg):
         - a dict, e.g. ``{"format": "currency", "decimals": 2, "prefix": "US"}``.
           A ``"format"`` key chooses the format; all other keys are passed
           straight through to ``format_value`` as keyword options.
+
+        Foot-gun: the ``"percent"`` shorthand (and the dict form without an
+        explicit ``percent_scale``) defaults to ``percent_scale=True``, which
+        multiplies the raw value by 100 (``0.4`` -> ``"40%"``). That default
+        suits fractional data. If your data is *already* expressed in percent
+        units (``40`` meaning 40%), pass the dict form
+        ``{"format": "percent", "percent_scale": False}`` so the value renders
+        as ``"40%"`` rather than ``"4000%"``. The library cannot infer the
+        scale of arbitrary numbers, so the caller must say which one applies.
         """
         if spec is None or spec is False:
             return None
