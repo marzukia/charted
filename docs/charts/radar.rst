@@ -125,18 +125,18 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — Single list of values or list of lists for multi-series
-   - ``labels`` — Labels for each axis (one per data point in series)
-   - ``series_names`` — Names for each data series (shown in legend)
-   - ``radius`` — Chart radius as ratio of min(width, height) (default 0.45)
-   - ``grid_levels`` — Number of concentric grid circles (default 5)
-   - ``show_axis_labels`` — Whether to display axis labels (default True)
-   - ``label_offset`` — Distance from grid edge for labels (default 20)
-   - ``width`` — Chart width in pixels (default 500)
-   - ``height`` — Chart height in pixels (default 500)
-   - ``theme`` — Theme name string or theme dictionary
-   - ``title`` — Chart title text
-   - ``subtitle`` — Optional subtitle text
+   - ``data``: Single list of values or list of lists for multi-series
+   - ``labels``: Labels for each axis (one per data point in series)
+   - ``series_names``: Names for each data series (shown in legend)
+   - ``radius``: Chart radius as ratio of min(width, height) (default 0.45)
+   - ``grid_levels``: Number of concentric grid circles (default 5)
+   - ``show_axis_labels``: Whether to display axis labels (default True)
+   - ``label_offset``: Distance from grid edge for labels (default 20)
+   - ``width``: Chart width in pixels (default 500)
+   - ``height``: Chart height in pixels (default 500)
+   - ``theme``: Theme name string or theme dictionary
+   - ``title``: Chart title text
+   - ``subtitle``: Optional subtitle text
 
    **Example:**
 

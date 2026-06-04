@@ -205,15 +205,15 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — List of [x, y] pairs, or list of lists for multi-series
-   - ``x_data`` — Alternative: explicit x values (optional)
-   - ``y_data`` — Alternative: explicit y values (optional)
-   - ``labels`` — Series names (shown in legend)
-   - ``width`` — Chart width in pixels (default 800)
-   - ``height`` — Chart height in pixels (default 600)
-   - ``theme`` — Theme name string or theme dictionary
-   - ``title`` — Chart title text
-   - ``subtitle`` — Optional subtitle text
+   - ``data``: List of [x, y] pairs, or list of lists for multi-series
+   - ``x_data``: Alternative: explicit x values (optional)
+   - ``y_data``: Alternative: explicit y values (optional)
+   - ``labels``: Series names (shown in legend)
+   - ``width``: Chart width in pixels (default 800)
+   - ``height``: Chart height in pixels (default 600)
+   - ``theme``: Theme name string or theme dictionary
+   - ``title``: Chart title text
+   - ``subtitle``: Optional subtitle text
 
    **Example:**
 

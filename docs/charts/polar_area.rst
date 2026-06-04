@@ -56,15 +56,15 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — Non-negative values, one per slice
-   - ``labels`` — Labels for each slice
-   - ``width`` — Chart width in pixels
-   - ``height`` — Chart height in pixels
-   - ``theme`` — Theme name string or theme dictionary
-   - ``title`` — Chart title text
-   - ``start_angle`` — Starting angle in degrees (0 = top, clockwise)
-   - ``series_styles`` — Optional per-slice styling overrides
-   - ``show_percentages`` — Show each slice's percentage of the total
+   - ``data``: Non-negative values, one per slice
+   - ``labels``: Labels for each slice
+   - ``width``: Chart width in pixels
+   - ``height``: Chart height in pixels
+   - ``theme``: Theme name string or theme dictionary
+   - ``title``: Chart title text
+   - ``start_angle``: Starting angle in degrees (0 = top, clockwise)
+   - ``series_styles``: Optional per-slice styling overrides
+   - ``show_percentages``: Show each slice's percentage of the total
 
    **Example:**
 
