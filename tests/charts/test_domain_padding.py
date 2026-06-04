@@ -67,7 +67,6 @@ class TestZeroBaselineHeadroom:
     def test_stacked_column_pads_against_stacked_total(self):
         """Headroom is measured against the stacked column sum, not raw values."""
         data = [[10, 20, 30], [5, 5, 5]]
-        base = ColumnChart(data=data, labels=["a", "b", "c"])
         padded = ColumnChart(data=data, labels=["a", "b", "c"], domain_padding=0.1)
         # Stacked total of the tallest column is 35; baseline stays at 0.
         assert padded.y_axis.axis_dimension.min_value == 0
