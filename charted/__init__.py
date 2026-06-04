@@ -1,6 +1,12 @@
 """Charted - A zero dependency SVG chart generator."""
 
-__version__ = "1.0.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("charted")
+except PackageNotFoundError:
+    # Running from a source checkout without an installed distribution.
+    __version__ = "1.0.5"
 
 from .charts import (
     AreaChart,
