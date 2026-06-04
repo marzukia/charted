@@ -372,6 +372,40 @@ class XAxis(Axis):
     def coordinates(self) -> list[float]:
         return [self.reproject(i) for i in self.values]
 
+    def _label_stride(self, count: int) -> int:
+        """Choose how many categories to skip between drawn labels.
+
+        Dense ordinal axes draw a label for every category, which turns into a
+        black smear once there are dozens of them. Mirror the YAxis grid's
+        halving behaviour: pick a stride so the number of drawn labels stays in
+        a readable range. When the plot width and label widths are available,
+        size the stride so labels do not overlap; otherwise fall back to a
+        count-based rule. Small axes (<=10 labels) keep every label.
+        """
+        if count <= 10:
+            return 1
+
+        # Width-aware path: how many labels can fit without overlapping. Each
+        # label needs roughly its own width plus a small gap. Use the widest
+        # label so nothing collides at the tightest point.
+        plot_width = getattr(self.parent, "plot_width", None)
+        if plot_width:
+            widths = [getattr(label, "width", 0) for label in self._labels]
+            max_width = max(widths) if widths else 0
+            if max_width > 0:
+                slot = max_width + 4
+                max_fit = max(1, int(plot_width // slot))
+                if count > max_fit:
+                    return math.ceil(count / max_fit)
+                return 1
+
+        # Width unavailable: halve repeatedly like the YAxis grid until the
+        # drawn label count drops to ~10 or fewer.
+        stride = 1
+        while count / stride > 10:
+            stride *= 2
+        return stride
+
     @property
     def grid_lines(self) -> Path:
         if not self.config:
@@ -455,7 +489,15 @@ class XAxis(Axis):
             dx = self.reproject(abs(min_v))
 
         y = self.parent.plot_height
-        for x, label in zip(self.coordinates, self.labels):
+        coordinates = list(self.coordinates)
+        all_labels = list(self.labels)
+        # Thin dense ordinal axes: keep first and last, skip every nth in the
+        # middle so labels stop overlapping into a smear.
+        stride = self._label_stride(len(all_labels))
+        last_index = len(all_labels) - 1
+        for index, (x, label) in enumerate(zip(coordinates, all_labels)):
+            if stride > 1 and index not in (0, last_index) and index % stride != 0:
+                continue
             x = x + dx
             transformations = [translate(-label.width / 2, 0)]
             if rotation_angle > 0:

@@ -138,6 +138,34 @@ class TestXAxisSadPath:
         assert all(label.text == "" for label in axis.labels)
 
 
+class TestXAxisLabelThinning:
+    """Tick-thinning on dense ordinal X axes."""
+
+    def test_small_label_count_draws_all(self):
+        """Small axes keep every label (no thinning)."""
+        parent = MockParent()
+        data = [[1, 2, 3, 4, 5]]
+        labels = [f"cat{i}" for i in range(5)]
+        axis = XAxis(parent=parent, data=data, labels=labels)
+        drawn = axis.axis_labels.children
+        # Padding adds two blanks, but every label is drawn for small counts.
+        assert len(drawn) == len(axis.labels)
+
+    def test_dense_axis_thins_labels(self):
+        """A dense ordinal axis renders only a subset of its labels."""
+        parent = MockParent()
+        labels = [f"cat{i}" for i in range(100)]
+        data = [list(range(len(labels)))]
+        axis = XAxis(parent=parent, data=data, labels=labels)
+        total = len(axis.labels)
+        drawn = axis.axis_labels.children
+        assert len(drawn) < total
+        # Endpoints are always kept.
+        drawn_texts = [c.children[0] for c in drawn]
+        assert axis.labels[0].text in drawn_texts
+        assert axis.labels[-1].text in drawn_texts
+
+
 class TestYAxisSadPath:
     """Sad path / edge case tests for YAxis."""
 
