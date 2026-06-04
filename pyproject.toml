@@ -117,3 +117,4 @@ artifacts = ["charted/fonts/definitions/*.json"]
 python_version = "3.10"
 files = ["charted"]
 strict = true
+disallow_any_explicit = true
