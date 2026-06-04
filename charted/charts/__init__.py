@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 
-def _CHART_CLASSES() -> dict:
+def _CHART_CLASSES() -> dict[str, type[Chart]]:
     """Return a mapping of chart type names to their classes.
 
     Used by Chart.from_config() to instantiate the right subclass.

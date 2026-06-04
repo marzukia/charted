@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
 from charted.charts.chart import Chart
 from charted.constants import (
     DEFAULT_CHART_HEIGHT,
@@ -10,6 +12,9 @@ from charted.themes.core import Theme
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.radar_renderer import RadarRenderer
 from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
+
+if TYPE_CHECKING:
+    from charted.utils.radar_renderer import _RadarHost
 
 
 class RadarChart(Chart):
@@ -127,7 +132,7 @@ class RadarChart(Chart):
         self.show_radial_labels = show_radial_labels
 
         # Create synthetic x_data and y_data for Chart base class compatibility
-        x_data = [[i for i in range(axis_count)] for _ in data]
+        x_data = cast("Vector2D", [[i for i in range(axis_count)] for _ in data])
         y_data = data
         self._series_data = (
             data  # Must set before super().__init__ calls representation
@@ -186,12 +191,12 @@ class RadarChart(Chart):
             palette = list(DEFAULT_COLORS)
         self._colors = [palette[i % len(palette)] for i in range(n_series)]
 
-    def get_base_transform(self) -> list:
+    def get_base_transform(self) -> list[str]:
         """Radar charts use polar coordinates: no base transform needed."""
         return []
 
     @property
     def representation(self) -> G:
         """Generate radar chart SVG elements using RadarRenderer."""
-        renderer = RadarRenderer(self)
+        renderer = RadarRenderer(cast("_RadarHost", self))
         return renderer.render()

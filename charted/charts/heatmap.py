@@ -81,8 +81,8 @@ class HeatmapChart(Chart):
     def __init__(
         self,
         data: list[list[float]],
-        x_labels: Labels = None,
-        y_labels: Labels = None,
+        x_labels: Labels | None = None,
+        y_labels: Labels | None = None,
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
@@ -215,7 +215,8 @@ class HeatmapChart(Chart):
         """
         labels = [
             format(
-                self._data_min + (self._data_max - self._data_min) * (i / (self.colorbar_ticks - 1)),
+                self._data_min
+                + (self._data_max - self._data_min) * (i / (self.colorbar_ticks - 1)),
                 self.value_format,
             )
             for i in range(self.colorbar_ticks)

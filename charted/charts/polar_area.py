@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import Any, cast
 
 from charted.charts.pie import PieChart
 from charted.config import get_pie_label_font_size
@@ -47,7 +48,7 @@ class PolarAreaChart(PieChart):
     def __init__(
         self,
         data: Vector,
-        labels: Labels = None,
+        labels: Labels | None = None,
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
@@ -128,7 +129,7 @@ class PolarAreaChart(PieChart):
             nice = 1 if frac < 1.5 else 2 if frac < 3 else 5 if frac < 7 else 10
         else:
             nice = 1 if frac <= 1 else 2 if frac <= 2 else 5 if frac <= 5 else 10
-        return nice * 10**exp
+        return cast("float", nice * 10**exp)
 
     def _radial_scale(self) -> tuple[float, list[float]]:
         """Return (axis_max, tick_values) snapped to round numbers.
@@ -187,9 +188,9 @@ class PolarAreaChart(PieChart):
             if self.series_styles and i < len(self.series_styles):
                 style = self.series_styles[i] or {}
                 if style.get("fill"):
-                    slice_color = style["fill"]
+                    slice_color = cast("str", style["fill"])
                 if style.get("fill_opacity"):
-                    slice_opacity = style["fill_opacity"]
+                    slice_opacity = cast("float", style["fill_opacity"])
 
             draw_fill = (
                 self._category_fill(i, slice_color)
@@ -201,6 +202,7 @@ class PolarAreaChart(PieChart):
             # Full-circle edge case (N == 1): the slice spans the whole circle,
             # so angle_span % 360 == 0 collapses _get_slice_path to a zero-area
             # sliver. Use the full-circle path instead, matching PieChart.
+            path_data: str | list[str]
             if (end_angle - start_angle) >= 359.9:
                 path_data = self._get_full_circle_path(cx, cy, radius)
             else:
@@ -255,8 +257,8 @@ class PolarAreaChart(PieChart):
         theme = self.theme
         resolved = getattr(theme, "resolved_grid_color", None)
         if resolved:
-            return resolved
-        return getattr(theme, "grid_color", "#cccccc")
+            return cast("str", resolved)
+        return cast("str", getattr(theme, "grid_color", "#cccccc"))
 
     def _ring_label_color(self) -> str:
         """High-contrast colour for the numeric ring labels.
@@ -268,8 +270,8 @@ class PolarAreaChart(PieChart):
         theme = self.theme
         resolved = getattr(theme, "resolved_label_color", None)
         if resolved:
-            return resolved
-        return getattr(theme, "title_color", "#333")
+            return cast("str", resolved)
+        return cast("str", getattr(theme, "title_color", "#333"))
 
     def _render_radial_grid(
         self, result: G, cx: float, cy: float, data: list[float]
@@ -369,7 +371,7 @@ class PolarAreaChart(PieChart):
                 )
             )
 
-    def to_config(self) -> dict:
+    def to_config(self) -> dict[str, Any]:
         cfg = super().to_config()
         cfg["data"] = list(self._pie_data)
         cfg["labels"] = [

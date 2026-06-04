@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, cast
+
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Text
 from charted.themes.core import Theme
 from charted.utils.curves import VALID_CURVES
 from charted.utils.line_renderer import LineRenderer
-from charted.utils.series_style import SeriesStyleConfig
-from charted.utils.types import Labels, Vector, Vector2D
+from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
+
+if TYPE_CHECKING:
+    from charted.utils.line_renderer import _LineHost
 
 
 class LineChart(Chart):
@@ -89,11 +93,11 @@ class LineChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list | None = None,
+        annotations: list[Any] | None = None,
         curve: str = "linear",
         x_scale: object | None = None,
         y_scale: object | None = None,
-        reference_lines: list[dict] | None = None,
+        reference_lines: list[dict[str, Any]] | None = None,
         colors: list[str] | None = None,
         legend: str = "none",
         dash_cycle: list[str] | bool | None = None,
@@ -147,7 +151,7 @@ class LineChart(Chart):
         ``stroke_dasharray`` of its own. Returns None when dash cycling is off
         or the cycle slot is the solid (``"none"``) token.
         """
-        cycle = getattr(self, "_dash_cycle", None)
+        cycle = cast("list[str] | None", getattr(self, "_dash_cycle", None))
         if not cycle:
             return None
         dash = cycle[series_idx % len(cycle)]
@@ -158,7 +162,7 @@ class LineChart(Chart):
     @property
     def representation(self) -> G:
         """Generate line chart SVG elements using LineRenderer."""
-        renderer = LineRenderer(self)
+        renderer = LineRenderer(cast("_LineHost", self))
         g = renderer.render()
 
         # Render data labels using the same x positions as the line renderer
