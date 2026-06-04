@@ -3,9 +3,10 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 from charted.utils.defaults import BASE_DEFINITIONS_DIR, DEFAULT_FONT, DEFAULT_FONT_SIZE
+from charted.utils.types import FontDefinition
 
 
 class Font:
@@ -31,7 +32,7 @@ class Font:
         # Load font definition file
         self.definitions = self._load_definitions()
 
-    def _load_definitions(self) -> dict[str, dict[str, Any]]:
+    def _load_definitions(self) -> FontDefinition:
         """Load font definitions from JSON file."""
         font_path = Path(self.definitions_dir) / f"{self.family}.json"
 
@@ -46,7 +47,7 @@ class Font:
 
         try:
             with open(font_path, "r") as f:
-                return cast("dict[str, dict[str, Any]]", json.load(f))
+                return cast("FontDefinition", json.load(f))
         except json.JSONDecodeError as e:
             import warnings
 
@@ -58,7 +59,7 @@ class Font:
             warnings.warn(f"Failed to load font file '{font_path}': {e}")
             return {}
 
-    def _load_definitions_fallback(self, fallback: str) -> dict[str, dict[str, Any]]:
+    def _load_definitions_fallback(self, fallback: str) -> FontDefinition:
         """Load fallback font definitions."""
         fallback_path = Path(self.definitions_dir) / f"{fallback}.json"
 
@@ -67,7 +68,7 @@ class Font:
 
         try:
             with open(fallback_path, "r") as f:
-                return cast("dict[str, dict[str, Any]]", json.load(f))
+                return cast("FontDefinition", json.load(f))
         except (json.JSONDecodeError, IOError):
             return {}
 
@@ -127,7 +128,7 @@ class Font:
         char_code = ord(char)
 
         if str(char_code) in definitions:
-            return cast("float", definitions[str(char_code)].get("width", 5))
+            return definitions[str(char_code)].get("width", 5)
         return 5  # Default width for unknown chars
 
     @classmethod
