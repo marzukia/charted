@@ -3,6 +3,8 @@
 Extracted from Chart class to reduce architectural debt and improve separation of concerns.
 """
 
+import math
+
 from charted.utils.exceptions import InvalidDataError, NoDataError
 from charted.utils.helpers import calculate_text_dimensions
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
@@ -83,6 +85,10 @@ class DataModel:
                     )
                 if isinstance(value, float) and (value != value):  # NaN check
                     raise InvalidDataError("NaN values are not allowed in chart data")
+                if isinstance(value, float) and math.isinf(value):
+                    raise InvalidDataError(
+                        "Infinite values are not allowed in chart data"
+                    )
 
         return data  # type: ignore
 
