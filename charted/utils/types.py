@@ -55,6 +55,50 @@ class SeriesStyleConfig(TypedDict, total=False):
     show_markers: bool | None
 
 
+class ReferenceLineDict(TypedDict, total=False):
+    """One entry of the ``reference_lines`` convenience API.
+
+    ``value`` is required in practice (validated by the chart); ``axis``
+    defaults to ``"y"`` and ``label`` to ``None`` during normalisation.
+    """
+
+    value: float
+    axis: str  # "x" | "y"
+    label: str | None
+
+
+class ValueLabelOptions(TypedDict, total=False):
+    """Keyword options forwarded to ``charted.utils.value_format.format_value``.
+
+    Mirrors that function's keyword-only parameters so the resolved value-label
+    options can be splatted into it with full type checking. The ``format`` key
+    is handled separately and is not part of this options mapping.
+    """
+
+    decimals: int | None
+    prefix: str
+    suffix: str
+    currency_symbol: str
+    thousands_sep: str
+    percent_scale: bool
+
+
+class ValueLabelConfig(TypedDict, total=False):
+    """Normalised ``value_labels`` config from ``Chart._normalize_value_labels``.
+
+    ``format`` selects the formatter; the remaining keys are forwarded to
+    ``format_value`` (see :class:`ValueLabelOptions`).
+    """
+
+    format: str
+    decimals: int | None
+    prefix: str
+    suffix: str
+    currency_symbol: str
+    thousands_sep: str
+    percent_scale: bool
+
+
 class PointStyleConfig(TypedDict, total=False):
     """Per-point marker styling overrides for scatter charts.
 

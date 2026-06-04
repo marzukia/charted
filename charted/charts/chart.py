@@ -6,7 +6,7 @@ separate modules to address God Class architectural debt (Issue #64).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 from charted.charts.axes import XAxis, YAxis
 from charted.constants import (
@@ -30,7 +30,10 @@ from charted.utils.transform import translate
 from charted.utils.types import (
     Labels,
     MeasuredText,
+    ReferenceLineDict,
     SeriesStyleConfig,
+    ValueLabelConfig,
+    ValueLabelOptions,
     Vector,
     Vector2D,
 )
@@ -38,7 +41,19 @@ from charted.utils.types import (
 if TYPE_CHECKING:
     from charted.charts.axes import _AxisParent
     from charted.charts.scales import Scale
-    from charted.html.element import Title
+    from charted.html.element import Element, Title
+    from charted.utils.patterns import Pattern
+
+
+class _Annotation(Protocol):
+    """Structural type for a chart annotation.
+
+    The three concrete annotation dataclasses (line, box, label) all expose a
+    ``render`` method that draws the annotation against a chart; this Protocol
+    captures that single contract without importing the concrete classes.
+    """
+
+    def render(self, chart: Chart) -> Element: ...
 
 
 class Chart(SeriesLegend, Svg):
@@ -180,7 +195,7 @@ class Chart(SeriesLegend, Svg):
                 f"Unsupported file extension '{ext}'. Supported: .svg, .png"
             )
 
-    def style(self, **kwargs: Any) -> "Chart":
+    def style(self, **kwargs: object) -> "Chart":
         """Fluently apply theme overrides.
 
         Args:
@@ -195,12 +210,15 @@ class Chart(SeriesLegend, Svg):
         """
         from charted.themes.core import Theme
 
-        # Build an override Theme from kwargs
-        override = Theme(**{k: v for k, v in kwargs.items() if hasattr(Theme, k)})
+        # Build an override Theme from kwargs. Theme's runtime ``__init__`` takes
+        # arbitrary keyword overrides (it replaces the dataclass-synthesised one),
+        # so the heterogeneous override mapping is splatted in directly.
+        overrides = {k: v for k, v in kwargs.items() if hasattr(Theme, k)}
+        override = Theme(**overrides)  # type: ignore[arg-type]
         self.theme = self.theme.compose(override)
         return self
 
-    def to_config(self) -> dict[str, Any]:
+    def to_config(self) -> dict[str, object]:
         """Serialize chart configuration to a dict.
 
         Returns a dict with all constructor parameters needed to
@@ -211,7 +229,7 @@ class Chart(SeriesLegend, Svg):
         """
         import dataclasses
 
-        cfg: dict[str, Any] = {
+        cfg: dict[str, object] = {
             "chart_type": self.__class__.__name__,
             "width": self._width,
             "height": self._height,
@@ -248,7 +266,7 @@ class Chart(SeriesLegend, Svg):
         return cfg
 
     @staticmethod
-    def _serialize_annotation(a: Any) -> Any:
+    def _serialize_annotation(a: object) -> object:
         """Serialize one annotation to a JSON-friendly dict.
 
         Tags the dict with its class name and strips private ``_ref_*`` fields
@@ -257,17 +275,13 @@ class Chart(SeriesLegend, Svg):
         """
         import dataclasses
 
-        if not dataclasses.is_dataclass(a):
+        if not dataclasses.is_dataclass(a) or isinstance(a, type):
             return a
-        data = {
-            k: v
-            for k, v in dataclasses.asdict(cast("Any", a)).items()
-            if not k.startswith("_")
-        }
+        data = {k: v for k, v in dataclasses.asdict(a).items() if not k.startswith("_")}
         return {"type": a.__class__.__name__, **data}
 
     @classmethod
-    def from_config(cls, config: dict[str, Any], **overrides: Any) -> "Chart":
+    def from_config(cls, config: dict[str, object], **overrides: object) -> "Chart":
         """Recreate a chart from a config dict.
 
         Merges ``overrides`` on top of ``config`` so agents can tweak
@@ -289,12 +303,13 @@ class Chart(SeriesLegend, Svg):
 
         # Reconstruct annotation objects from their serialized dict form.
         # to_config() emits each annotation as {"type": <ClassName>, **asdict(a)}.
-        if "annotations" in merged:
-            merged["annotations"] = cls._rebuild_annotations(merged["annotations"])
+        raw_annotations = merged.get("annotations")
+        if isinstance(raw_annotations, list):
+            merged["annotations"] = cls._rebuild_annotations(raw_annotations)
 
         chart_type = merged.pop("chart_type", None)
         cls_map = _CHART_CLASSES()
-        chart_cls = cls_map.get(chart_type, cls)
+        chart_cls = cls_map.get(chart_type, cls) if isinstance(chart_type, str) else cls
         if chart_cls is None:
             chart_cls = cls
 
@@ -312,10 +327,13 @@ class Chart(SeriesLegend, Svg):
         if "y_data" in valid_params and "y_data" not in filtered and "data" in merged:
             filtered["y_data"] = merged["data"]
 
-        return chart_cls(**filtered)
+        # ``filtered`` is a deserialised config whose values are statically
+        # ``object``; they are dispatched into the resolved subclass constructor
+        # at runtime after being filtered to that constructor's parameters.
+        return chart_cls(**filtered)  # type: ignore[arg-type]
 
     @staticmethod
-    def _rebuild_annotations(annotations: list[Any]) -> list[Any]:
+    def _rebuild_annotations(annotations: list[object]) -> list[object]:
         """Reconstruct annotation objects from their serialized dict form.
 
         ``to_config()`` serializes each annotation as
@@ -342,16 +360,16 @@ class Chart(SeriesLegend, Svg):
         # Fields that are (x, y) / (min, max) pairs and must be tuples.
         tuple_fields = {"start", "end", "x_range", "y_range", "point"}
 
-        rebuilt: list[Any] = []
+        rebuilt: list[object] = []
         for a in annotations:
             # Already an annotation object (not a serialized dict): keep as-is.
             if not isinstance(a, dict):
                 rebuilt.append(a)
                 continue
 
-            data = dict(a)
+            data: dict[str, object] = {str(k): v for k, v in a.items()}
             type_name = data.pop("type", None)
-            ann_cls = type_map.get(type_name)
+            ann_cls = type_map.get(type_name) if isinstance(type_name, str) else None
             if ann_cls is None:
                 # Unknown type: leave the raw dict untouched rather than guess.
                 rebuilt.append(a)
@@ -361,8 +379,9 @@ class Chart(SeriesLegend, Svg):
             data = {k: v for k, v in data.items() if not k.startswith("_")}
             # Coerce JSON lists back to tuples for coordinate pairs.
             for key in tuple_fields:
-                if key in data and isinstance(data[key], list):
-                    data[key] = tuple(data[key])
+                value = data.get(key)
+                if isinstance(value, list):
+                    data[key] = tuple(value)
 
             rebuilt.append(ann_cls(**data))
         return rebuilt
@@ -386,22 +405,22 @@ class Chart(SeriesLegend, Svg):
         title: str | None = None,
         subtitle: str | None = None,
         subtitle_leading: float = 8.0,
-        theme: Theme | str | dict[str, Any] | None = None,
+        theme: Theme | str | dict[str, object] | None = None,
         chart_type: str | None = None,
         x_label: str | None = None,
         y_label: str | None = None,
         data_labels: list[str] | list[list[str]] | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list[Any] | None = None,
+        annotations: list[_Annotation] | None = None,
         x_scale: object | None = None,
         y_scale: object | None = None,
-        reference_lines: list[dict[str, Any]] | None = None,
+        reference_lines: list[ReferenceLineDict] | None = None,
         colors: list[str] | None = None,
         x_range: tuple[float, float] | None = None,
         y_range: tuple[float, float] | None = None,
         domain_padding: float | None = None,
-        value_labels: bool | str | dict[str, Any] | None = None,
+        value_labels: bool | str | dict[str, object] | None = None,
         legend: str = "none",
         category_label_max_width: float | None = None,
         category_patterns: list[str] | bool | None = None,
@@ -498,7 +517,7 @@ class Chart(SeriesLegend, Svg):
         self._v_lines: list[float] | None = v_lines or []
 
         # Parse reference_lines convenience API into h_lines/v_lines + labels
-        self._reference_line_labels: list[dict[str, Any]] = []
+        self._reference_line_labels: list[ReferenceLineDict] = []
         if reference_lines:
             from charted.utils.exceptions import ValidationError
 
@@ -637,7 +656,7 @@ class Chart(SeriesLegend, Svg):
                 if (x_data is not None and x_labels is not None)
                 else self.zero_index
             ),
-            config=cast("str | None", grid_config),
+            config=grid_config,
             pad_labels=self.pad_x_labels,
             scale=x_scale_inst,
         )
@@ -648,7 +667,7 @@ class Chart(SeriesLegend, Svg):
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
-            config=cast("str | None", grid_config),
+            config=grid_config,
             scale=y_scale_inst,
         )
 
@@ -851,7 +870,7 @@ class Chart(SeriesLegend, Svg):
         colors = getattr(self, "colors", None) or []
         return len(colors)
 
-    def _pattern_defs(self) -> list[Any]:
+    def _pattern_defs(self) -> list[Pattern]:
         """Build one ``<pattern>`` def per (category, pattern) the chart uses.
 
         Returns an empty list unless ``category_patterns`` was enabled, so the
@@ -865,7 +884,7 @@ class Chart(SeriesLegend, Svg):
         from charted.utils.patterns import build_pattern
 
         colors = getattr(self, "colors", None) or []
-        defs: list[Any] = []
+        defs: list[Pattern] = []
         for idx, color in enumerate(colors):
             name = cycle[idx % len(cycle)]
             defs.append(build_pattern(self._pattern_id(idx), name, color))
@@ -886,7 +905,7 @@ class Chart(SeriesLegend, Svg):
             return color
         return f"url(#{self._pattern_id(index)})"
 
-    def _filled_outline_attrs(self) -> dict[str, Any]:
+    def _filled_outline_attrs(self) -> dict[str, object]:
         """Stroke attributes to apply to a filled shape, or ``{}`` when off.
 
         Reads the theme's ``filled_shape_outline``; when no outline colour is
@@ -1053,7 +1072,7 @@ class Chart(SeriesLegend, Svg):
         # data reach lo/hi without altering the plotted points themselves.
         return [*[list(row) for row in data], [lo, hi]]
 
-    def _build_grid_config(self) -> str | dict[str, Any]:
+    def _build_grid_config(self) -> str | dict[str, object]:
         """Assemble the gridline config passed to each axis.
 
         Returns the plain grid colour string when the theme requests no
@@ -1071,7 +1090,7 @@ class Chart(SeriesLegend, Svg):
         if width is None and dasharray is None and divisions <= 0:
             return color
 
-        config: dict[str, Any] = {
+        config: dict[str, object] = {
             "stroke": color,
             "stroke_dasharray": dasharray if dasharray is not None else "None",
         }
@@ -1423,7 +1442,7 @@ class Chart(SeriesLegend, Svg):
         from charted.utils.rendering import create_legend
 
         # Pass legend config as dict or Theme object
-        legend_config: dict[str, Any] = {
+        legend_config: dict[str, object] = {
             "font_size": self.theme.legend_font_size,
             "position": self.theme.legend_position,
             "font_family": self.theme.legend_font_family,
@@ -1445,7 +1464,7 @@ class Chart(SeriesLegend, Svg):
     # Introspection
     # =========================================================================
 
-    def describe(self) -> dict[str, Any]:
+    def describe(self) -> dict[str, object]:
         """Return a structured dictionary of chart metadata.
 
         Useful for AI agents that need to reason about a chart they just
@@ -1539,7 +1558,7 @@ class Chart(SeriesLegend, Svg):
     # Reference Lines & Axis Labels
     # =========================================================================
 
-    def _collect_legacy_reference_lines(self) -> list[Any]:
+    def _collect_legacy_reference_lines(self) -> list[_Annotation]:
         """Build the legacy ``h_lines`` / ``v_lines`` reference-line layer.
 
         These are expressed as dashed full-span ``LineAnnotation`` objects so
@@ -1550,14 +1569,14 @@ class Chart(SeriesLegend, Svg):
         """
         from charted.charts.annotations import LineAnnotation
 
-        annotations: list[Any] = []
+        annotations: list[_Annotation] = []
         if self._h_lines:
             annotations.extend(LineAnnotation._h_line(v) for v in self._h_lines)
         if self._v_lines:
             annotations.extend(LineAnnotation._v_line(v) for v in self._v_lines)
         return annotations
 
-    def _collect_annotations(self) -> list[Any]:
+    def _collect_annotations(self) -> list[_Annotation]:
         """Build the full annotation list for this chart.
 
         Legacy reference lines (``h_lines`` / ``v_lines``) come first, in their
@@ -1786,8 +1805,8 @@ class Chart(SeriesLegend, Svg):
 
     @staticmethod
     def _normalize_value_labels(
-        spec: bool | str | dict[str, Any] | None,
-    ) -> dict[str, Any] | None:
+        spec: bool | str | dict[str, object] | None,
+    ) -> ValueLabelConfig | None:
         """Coerce the ``value_labels`` argument into a config dict or None.
 
         Accepted forms:
@@ -1814,7 +1833,7 @@ class Chart(SeriesLegend, Svg):
         if isinstance(spec, str):
             return {"format": spec}
         if isinstance(spec, dict):
-            cfg = dict(spec)
+            cfg: ValueLabelConfig = cast("ValueLabelConfig", dict(spec))
             cfg.setdefault("format", "number")
             return cfg
         raise TypeError(
@@ -1842,7 +1861,10 @@ class Chart(SeriesLegend, Svg):
             return None
         from charted.utils.value_format import format_value
 
-        opts = {k: v for k, v in cfg.items() if k != "format"}
+        opts = cast(
+            "ValueLabelOptions",
+            {k: v for k, v in cfg.items() if k != "format"},
+        )
         fmt = cfg["format"]
         data = self._value_label_data()
         return [[format_value(v, fmt, **opts) for v in row] for row in data]
