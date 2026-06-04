@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 try:
     import tomllib  # type: ignore[import-not-found,unused-ignore]
@@ -22,6 +22,7 @@ from .utils.defaults import (
     DEFAULT_FONT_SIZE,
     DEFAULT_TITLE_FONT_SIZE,
 )
+from .utils.types import ChartedConfig
 
 CONFIG_FILENAMES = [".chartedrc.toml", ".chartedrc", "charted.toml"]
 
@@ -41,9 +42,9 @@ def find_config(start_dir: str | None = None) -> Path | None:
     return None
 
 
-def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
+def load_config(config_path: str | Path | None = None) -> ChartedConfig:
     """Load config from .chartedrc file, returning defaults if not found."""
-    defaults: dict[str, Any] = {
+    defaults: dict[str, object] = {
         "font": DEFAULT_FONT,
         "font_size": DEFAULT_FONT_SIZE,
         "title_font_size": DEFAULT_TITLE_FONT_SIZE,
@@ -62,17 +63,17 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
         config_path = find_config()
 
     if config_path is None:
-        return defaults
+        return cast("ChartedConfig", defaults)
 
     path = Path(config_path)
     if not path.exists():
-        return defaults
+        return cast("ChartedConfig", defaults)
 
     try:
         with open(path, "rb") as f:
-            loaded = tomllib.load(f)
+            loaded: dict[str, object] = tomllib.load(f)
     except (tomllib.TOMLDecodeError, OSError):
-        return defaults
+        return cast("ChartedConfig", defaults)
 
     # Merge loaded config with defaults
     for key in defaults:
@@ -80,13 +81,14 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
             defaults[key] = loaded[key]
 
     # Extract [theme] block for new theme API
-    if "theme" in loaded and isinstance(loaded["theme"], dict):
-        defaults["theme_section"] = loaded["theme"]
+    theme_block = loaded.get("theme")
+    if isinstance(theme_block, dict):
+        defaults["theme_section"] = theme_block
 
-    return defaults
+    return cast("ChartedConfig", defaults)
 
 
-def get_chart_theme(config: dict[str, Any], chart_type: str) -> dict[str, Any] | None:
+def get_chart_theme(config: ChartedConfig, chart_type: str) -> dict[str, object] | None:
     """Get chart-type-specific theme overrides.
 
     Args:
@@ -97,11 +99,13 @@ def get_chart_theme(config: dict[str, Any], chart_type: str) -> dict[str, Any] |
         Chart-specific theme overrides or None.
     """
     charts_config = config.get("charts", {})
-    result: dict[str, Any] | None = charts_config.get(chart_type, None)
-    return result
+    result = charts_config.get(chart_type, None)
+    if isinstance(result, dict):
+        return result
+    return None
 
 
-def get_font(config: dict[str, Any] | None = None) -> Font:
+def get_font(config: ChartedConfig | None = None) -> Font:
     """Create a Font instance from config.
 
     Args:
@@ -120,7 +124,7 @@ def get_font(config: dict[str, Any] | None = None) -> Font:
     )
 
 
-def get_title_font(config: dict[str, Any] | None = None) -> Font:
+def get_title_font(config: ChartedConfig | None = None) -> Font:
     """Create a Font instance for titles from config.
 
     Args:
@@ -139,7 +143,7 @@ def get_title_font(config: dict[str, Any] | None = None) -> Font:
     )
 
 
-def get_bar_gap(config: dict[str, Any] | None = None) -> float:
+def get_bar_gap(config: ChartedConfig | None = None) -> float:
     """Get bar gap setting from config.
 
     Args:
@@ -154,7 +158,7 @@ def get_bar_gap(config: dict[str, Any] | None = None) -> float:
     return cast("float", config.get("bar", {}).get("bar_gap", 0.50))
 
 
-def get_column_gap(config: dict[str, Any] | None = None) -> float:
+def get_column_gap(config: ChartedConfig | None = None) -> float:
     """Get column gap setting from config.
 
     Args:
@@ -169,7 +173,7 @@ def get_column_gap(config: dict[str, Any] | None = None) -> float:
     return cast("float", config.get("column", {}).get("column_gap", 0.50))
 
 
-def get_pie_label_font_size(config: dict[str, Any] | None = None) -> int:
+def get_pie_label_font_size(config: ChartedConfig | None = None) -> int:
     """Get pie label font size from config.
 
     Args:

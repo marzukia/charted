@@ -22,16 +22,26 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any
 
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
     from typing_extensions import Self
 
+from collections.abc import Mapping
+from typing import Protocol, TypeVar, cast
+
 from charted.themes.core import Theme
 from charted.utils.series_style import SeriesStyleConfig
-from charted.utils.types import Labels, Vector
+from charted.utils.types import ComboSeriesDict, Labels, Vector
+
+_C = TypeVar("_C", covariant=True)
+
+
+class _ConfigFactory(Protocol[_C]):
+    """Callable building a config object from keyword-only field values."""
+
+    def __call__(self, **kwargs: object) -> _C: ...
 
 
 @dataclasses.dataclass
@@ -73,7 +83,7 @@ class ChartConfig:
     x_scale: object | None = None
     y_scale: object | None = None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, object]:
         """Convert config to dictionary for serialization.
 
         Returns:
@@ -87,7 +97,7 @@ class ChartConfig:
         return dataclasses.asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, object]) -> Self:
         """Create config from dictionary.
 
         Args:
@@ -100,9 +110,14 @@ class ChartConfig:
             >>> config = ChartConfig.from_dict({'width': 600, 'title': 'Test'})
         """
         valid_fields = {f.name for f in dataclasses.fields(cls)}
-        return cls(**{k: v for k, v in data.items() if k in valid_fields})
+        filtered = {k: v for k, v in data.items() if k in valid_fields}
+        # The dataclass fields are heterogeneously typed, so a dynamically
+        # filtered kwargs mapping cannot be checked against the constructor
+        # signature statically. The cast confines that one dynamic call.
+        factory = cast("_ConfigFactory[Self]", cls)
+        return factory(**filtered)
 
-    def update(self, **kwargs: Any) -> Self:
+    def update(self, **kwargs: object) -> Self:
         """Update config with new values and return self.
 
         Args:
@@ -213,7 +228,7 @@ class ComboChartConfig(ChartConfig):
     """
 
     # Combo-specific settings
-    series: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    series: list[ComboSeriesDict] = dataclasses.field(default_factory=list)
     column_gap: float = 0.20
 
     # Labels

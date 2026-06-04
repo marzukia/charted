@@ -4,6 +4,41 @@ from typing import NamedTuple, TypedDict
 # Re-export exceptions from exceptions.py for backward compatibility
 
 
+# A JSON-schema definition fragment. JSON schemas are recursive objects whose
+# values are themselves schemas, primitives, or lists of either; ``object`` is
+# the precise type for these heterogeneous leaves.
+JSONSchema = dict[str, object]
+
+
+class ChartedConfig(TypedDict, total=False):
+    """Parsed ``.chartedrc`` configuration.
+
+    Produced by :func:`charted.config.load_config`. Every key carries a default
+    so consumers can ``.get`` safely; ``total=False`` reflects that a loaded TOML
+    file may omit any of them.
+    """
+
+    font: str
+    font_size: int
+    title_font_size: int
+    colors: list[str]
+    width: float
+    height: float
+    theme: object | None
+    charts: dict[str, object]
+    pie: dict[str, object]
+    bar: dict[str, object]
+    column: dict[str, object]
+    theme_section: dict[str, object]
+
+
+# Data dict produced by the CLI loaders (``load_data`` / ``_parse_csv``) and the
+# dict-config import path. Keys map directly onto chart constructor parameters,
+# so the values are heterogeneous (raw vectors, labels, series dicts, scalars).
+# ``object`` keeps it type-safe while permitting arbitrary constructor kwargs.
+ChartDataDict = dict[str, object]
+
+
 class SeriesStyleConfig(TypedDict, total=False):
     """Per-series styling overrides."""
 
@@ -39,6 +74,20 @@ Labels = list[str]
 
 Vector = list[float]
 Vector2D = list[Vector]
+
+
+class ComboSeriesDict(TypedDict, total=False):
+    """One series entry for a combo (mixed bar/line/area) chart.
+
+    ``data`` is the only field a caller must supply; ``type`` defaults to
+    ``"line"``, ``axis`` to ``"primary"`` and ``name`` to ``None`` during
+    normalisation inside :class:`charted.charts.combo.ComboChart`.
+    """
+
+    data: Vector
+    type: str  # "bar" | "column" | "line" | "area"
+    axis: str  # "primary" | "secondary"
+    name: str | None
 
 
 class MeasuredText(NamedTuple):
