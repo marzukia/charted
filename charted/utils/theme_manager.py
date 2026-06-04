@@ -4,7 +4,7 @@ Extracted from Chart class to reduce coupling and improve testability.
 This module encapsulates all theme loading and merging logic.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from charted.themes.core import Theme
@@ -97,7 +97,7 @@ def _dict_to_theme(data: dict[str, object]) -> "Theme":
     from charted.themes.core import Theme
 
     # Map dict keys to Theme fields - only allow known fields
-    theme_data: dict[str, Any] = {}
+    theme_data: dict[str, object] = {}
     theme_fields = {f.name for f in fields(Theme)}
 
     for key, value in data.items():
@@ -108,4 +108,7 @@ def _dict_to_theme(data: dict[str, object]) -> "Theme":
                 f"Unknown theme field '{key}'. Valid fields: {sorted(theme_fields)}"
             )
 
-    return Theme(**theme_data)
+    # ``theme_data`` is filtered above to only Theme field names, but the values
+    # are heterogeneous (str/int/float/bool/list per field), so the splat cannot
+    # be statically matched to each typed parameter.
+    return Theme(**theme_data)  # type: ignore[arg-type]

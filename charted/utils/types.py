@@ -114,6 +114,23 @@ class PointStyleConfig(TypedDict, total=False):
     opacity: float | None
 
 
+class CharMetrics(TypedDict):
+    """Width and height of a single glyph at a given font size.
+
+    The generator (:func:`charted.fonts.utils.create_font_definition`) writes
+    integer pixel metrics from tkinter, so every definition file holds ints.
+    """
+
+    width: int
+    height: int
+
+
+# A loaded font-definition JSON file (``charted/fonts/definitions/*.json``).
+# Outer key is the font size as a string, inner key the character code as a
+# string, mapping to that glyph's measured metrics.
+FontDefinition = dict[str, dict[str, CharMetrics]]
+
+
 Labels = list[str]
 
 Vector = list[float]

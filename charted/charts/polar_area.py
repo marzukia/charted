@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, cast
+from typing import cast
 
 from charted.charts.pie import PieChart
 from charted.config import get_pie_label_font_size
@@ -371,7 +371,7 @@ class PolarAreaChart(PieChart):
                 )
             )
 
-    def to_config(self) -> dict[str, Any]:
+    def to_config(self) -> dict[str, object]:
         cfg = super().to_config()
         cfg["data"] = list(self._pie_data)
         cfg["labels"] = [
