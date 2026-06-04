@@ -67,6 +67,11 @@ class GanttChart(Chart):
         >>> chart.save('project.svg')
     """
 
+    # Gantt stores N tasks as N (start, end) pairs, so x_data holds 2N
+    # coordinate values rather than one per label. The generic label-length
+    # cross-check does not apply; Gantt validates its own labels in __init__.
+    _skip_label_length_validation: bool = True
+
     def __init__(
         self,
         data: list,

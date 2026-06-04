@@ -57,6 +57,12 @@ class Chart(SeriesLegend, Svg):
         >>> from charted import BarChart, LineChart, PieChart
     """
 
+    # Subclasses whose data is not category-aligned (e.g. Gantt stores N tasks
+    # as N start/end coordinate pairs, so x_data holds 2N values rather than
+    # one per label) set this True to opt out of the generic label-length
+    # cross-check in DataModel and validate their own labels instead.
+    _skip_label_length_validation: bool = False
+
     x_stacked: bool = False
     y_stacked: bool = False
     render_axes: bool = True
@@ -450,6 +456,7 @@ class Chart(SeriesLegend, Svg):
             x_labels=x_labels,
             y_labels=y_labels,
             zero_index=zero_index,
+            skip_label_length_validation=self._skip_label_length_validation,
         )
 
         self.series_names = series_names

@@ -34,7 +34,9 @@ class DataModel:
         x_labels: Labels | None = None,
         y_labels: Labels | None = None,
         zero_index: bool = True,
+        skip_label_length_validation: bool = False,
     ) -> None:
+        self._skip_label_length_validation = skip_label_length_validation
         self._x_data: Vector2D | None = None
         self._y_data: Vector2D | None = None
         self._x_labels: list[MeasuredText] | None = None
@@ -81,6 +83,9 @@ class DataModel:
             LabelMismatchError: If a label count matches neither the per-series
                 length nor the number of series of the corresponding data axis.
         """
+        if self._skip_label_length_validation:
+            return
+
         if self._x_labels is not None and self._y_data:
             self._check_axis(self._x_labels, self._y_data, axis="x")
 

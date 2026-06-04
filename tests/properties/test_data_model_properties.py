@@ -124,11 +124,12 @@ class TestDataModelValidation:
 
     @given(invalid_data_with_infinity())
     @settings(max_examples=50)
-    def test_validate_accepts_infinity_values(self, data):
-        """Infinity values are allowed (only NaN is rejected)."""
-        # Note: Current implementation only checks for NaN, not infinity
-        result = DataModel.validate_data(data)
-        assert result is not None
+    def test_validate_rejects_infinity_values(self, data):
+        """Infinity values are rejected, like NaN."""
+        from charted import InvalidDataError
+
+        with pytest.raises(InvalidDataError, match="Infinite"):
+            DataModel.validate_data(data)
 
     @given(invalid_mismatched_series())
     @settings(max_examples=50, suppress_health_check=[HealthCheck.large_base_example])
