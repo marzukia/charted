@@ -1566,6 +1566,8 @@ class Chart(SeriesLegend, Svg):
             ref_labels[(entry["axis"], entry["value"])] = entry.get("label")
 
         if ref_labels:
+            from charted.utils.helpers import calculate_text_dimensions
+
             ref_color = self.theme.resolved_reference_line_color
             label_font_size = max(8, self.theme.title_font_size - 4)
             label_font_family = self.theme.title_font_family
@@ -1573,13 +1575,41 @@ class Chart(SeriesLegend, Svg):
             for (axis, value), label in ref_labels.items():
                 if not label:
                     continue
+                text_w = calculate_text_dimensions(
+                    str(label), font=label_font_family, font_size=label_font_size
+                ).width
                 if axis == "y":
+                    # The dashed line spans the full plot width. Anchor the label
+                    # to the line's right end, inside the plot, so it reads as a
+                    # callout on a continuous line rather than a floating tag next
+                    # to a clipped one. Sit it just below the line by default
+                    # (there is usually more clear space below a target line than
+                    # above it) and nudge it off any gridline it would touch.
                     y = self.plot_height - self.y_axis.reproject(value)
+                    label_x = self.plot_width - 4
+                    gap = label_font_size * 0.5
+                    # Candidate baseline below the line; flip above if that pushes
+                    # the text off the bottom of the plot.
+                    label_y = y + label_font_size + gap
+                    if label_y > self.plot_height - 2:
+                        label_y = y - gap
+                    # Keep the text band clear of horizontal gridlines.
+                    gridlines = [self.plot_height - c for c in self.y_axis.coordinates]
+                    text_top = label_y - label_font_size
+                    for tick_y in gridlines:
+                        if text_top - 2 <= tick_y <= label_y + 2:
+                            # Gridline cuts through the text: shift the whole label
+                            # below that gridline (or above the line if no room).
+                            shifted = tick_y + label_font_size + gap
+                            label_y = (
+                                shifted if shifted < self.plot_height - 2 else y - gap
+                            )
+                            break
                     g.add_child(
                         Text(
                             text=label,
-                            x=self.plot_width - 4,
-                            y=y - 4,
+                            x=label_x,
+                            y=label_y,
                             fill=ref_color,
                             font_size=label_font_size,
                             font_family=label_font_family,
@@ -1588,15 +1618,23 @@ class Chart(SeriesLegend, Svg):
                     )
                 else:
                     x = self.x_axis.reproject(value)
+                    # Keep the label fully on-canvas: anchor it to the left of the
+                    # line when it would otherwise overflow the right edge.
+                    if x + 4 + text_w > self.plot_width:
+                        label_x = x - 4
+                        anchor = "end"
+                    else:
+                        label_x = x + 4
+                        anchor = "start"
                     g.add_child(
                         Text(
                             text=label,
-                            x=x + 4,
+                            x=label_x,
                             y=label_font_size,
                             fill=ref_color,
                             font_size=label_font_size,
                             font_family=label_font_family,
-                            text_anchor="start",
+                            text_anchor=anchor,
                         )
                     )
 
