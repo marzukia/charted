@@ -26,14 +26,18 @@ Example:
 from __future__ import annotations
 
 import dataclasses
+from typing import TYPE_CHECKING
 
 from charted.constants import (
     REFERENCE_LINE_WIDTH,
 )
 from charted.html.element import Element, Path, Rect, Text
 
+if TYPE_CHECKING:
+    from charted.charts.chart import Chart
 
-def _project(chart, x: float, y: float) -> tuple[float, float]:
+
+def _project(chart: Chart, x: float, y: float) -> tuple[float, float]:
     """Reproject a data point into plot-area-local pixel coordinates.
 
     The y-axis is flipped (high values at the top), matching the convention
@@ -78,7 +82,7 @@ class LineAnnotation:
         """Legacy vertical reference line spanning the full plot height."""
         return cls((value, 0), (value, 0), dashed=True, _ref_line="v", _ref_value=value)
 
-    def render(self, chart) -> Element:
+    def render(self, chart: Chart) -> Element:
         color = self.color or chart.theme.resolved_reference_line_color
         width = (
             self.width
@@ -86,9 +90,11 @@ class LineAnnotation:
             else chart.theme.resolved_reference_line_width
         )
         if self._ref_line == "h":
+            assert self._ref_value is not None
             y = chart.plot_height - chart.y_axis.reproject(self._ref_value)
             return self._dashed_path(f"M0 {y} h{chart.plot_width}", color, width)
         if self._ref_line == "v":
+            assert self._ref_value is not None
             x = chart.x_axis.reproject(self._ref_value)
             return self._dashed_path(f"M{x} 0 v{chart.plot_height}", color, width)
 
@@ -135,7 +141,7 @@ class BoxAnnotation:
     color: str | None = None
     opacity: float = 0.15
 
-    def render(self, chart) -> Element:
+    def render(self, chart: Chart) -> Element:
         x0, _ = _project(chart, self.x_range[0], 0)
         x1, _ = _project(chart, self.x_range[1], 0)
         _, y0 = _project(chart, 0, self.y_range[0])
@@ -174,7 +180,7 @@ class LabelAnnotation:
     font_size: float = 11.0
     text_anchor: str = "middle"
 
-    def render(self, chart) -> Element:
+    def render(self, chart: Chart) -> Element:
         x, y = _project(chart, *self.point)
         color = self.color or chart.theme.resolved_axis_title_color
         return Text(

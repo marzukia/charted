@@ -9,16 +9,23 @@ task-duration labels.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date, datetime
+from typing import cast
 
 from charted.charts.chart import Chart
+from charted.charts.scales import TimeValue
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
-from charted.utils.types import Labels, SeriesStyleConfig
+from charted.utils.types import Labels, SeriesStyleConfig, Vector2D
+
+GanttTask = tuple[TimeValue, TimeValue]
+GanttSeries = list[GanttTask]
+DurationFormatter = Callable[[TimeValue, TimeValue], object]
 
 
-def _is_time_value(value) -> bool:
+def _is_time_value(value: object) -> bool:
     """True if a start/end value should be plotted on a date/time axis."""
     return isinstance(value, (date, datetime, str))
 
@@ -74,8 +81,8 @@ class GanttChart(Chart):
 
     def __init__(
         self,
-        data: list,
-        labels: Labels = None,
+        data: list[GanttTask] | list[GanttSeries],
+        labels: Labels | None = None,
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
@@ -85,9 +92,9 @@ class GanttChart(Chart):
         dependencies: list[tuple[int, int]] | None = None,
         bar_height_ratio: float = 0.6,
         show_today_line: bool = False,
-        x_position=None,
+        x_position: TimeValue | None = None,
         show_durations: bool = False,
-        duration_formatter=None,
+        duration_formatter: DurationFormatter | None = None,
     ):
         if not data:
             raise ValueError("No data was provided to the GanttChart element.")
@@ -147,7 +154,9 @@ class GanttChart(Chart):
             else:
                 labels = [f"Task {i + 1}" for i in range(self._total_tasks)]
 
-        x_data = [all_starts + all_ends]
+        # Time/date values flow through the Chart x_data plumbing unchanged when
+        # a time scale is active; the static type is widened only for mypy.
+        x_data = cast(Vector2D, [all_starts + all_ends])
         y_data = [[float(i) for i in range(self._total_tasks)]]
 
         super().__init__(
@@ -212,14 +221,14 @@ class GanttChart(Chart):
             if self.series_styles and series_idx < len(self.series_styles):
                 style = self.series_styles[series_idx] or {}
                 if style.get("fill"):
-                    fill = style["fill"]
+                    fill = cast(str, style["fill"])
 
             paths = []
             for task_idx, (start, end) in enumerate(series):
                 flat_idx = series_offset_y + task_idx
                 y = flat_idx * self.row_height + self.bar_y_offset
-                x_start = self.x_axis.reproject(start)
-                x_end = self.x_axis.reproject(end)
+                x_start = self.x_axis.reproject(cast(float, start))
+                x_end = self.x_axis.reproject(cast(float, end))
                 width = abs(x_end - x_start)
                 paths.append(Path.get_path(x_start, y, width, self.bar_height))
 
@@ -292,7 +301,7 @@ class GanttChart(Chart):
             result.add_children(line_g, head_g)
 
         if self.show_today_line and self._x_position is not None:
-            x_pos = self.x_axis.reproject(self._x_position)
+            x_pos = self.x_axis.reproject(cast(float, self._x_position))
             line_g = G(
                 stroke=self.theme.grid_color,
                 stroke_dasharray="4,4",
@@ -337,7 +346,7 @@ class GanttChart(Chart):
         offset = 0
         for series in self._raw_data:
             if flat_idx < offset + len(series):
-                return series[flat_idx - offset][0]
+                return cast(float, series[flat_idx - offset][0])
             offset += len(series)
         return 0.0
 
@@ -345,7 +354,7 @@ class GanttChart(Chart):
         offset = 0
         for series in self._raw_data:
             if flat_idx < offset + len(series):
-                return series[flat_idx - offset][1]
+                return cast(float, series[flat_idx - offset][1])
             offset += len(series)
         return 0.0
 
@@ -372,7 +381,7 @@ class GanttChart(Chart):
             return color
         return get_contrast_color(background)
 
-    def _duration_label(self, start, end) -> str:
+    def _duration_label(self, start: TimeValue, end: TimeValue) -> str:
         """Render a task's duration as text.
 
         A caller-supplied ``duration_formatter`` wins. Otherwise date tasks are
@@ -385,7 +394,7 @@ class GanttChart(Chart):
 
             days = (_to_epoch(end) - _to_epoch(start)) / 86400.0
             return f"{round(days)}d"
-        span = end - start
+        span = cast(float, end) - cast(float, start)
         if isinstance(span, float) and span.is_integer():
             span = int(span)
         return str(span)
