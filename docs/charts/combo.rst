@@ -55,14 +55,14 @@ API Reference
 
    **Parameters:**
 
-   - ``series`` — List of series dicts, each with ``data``, ``type``, optional ``name`` and optional ``axis``
-   - ``labels`` — Category labels for the shared x-axis
-   - ``width`` — Chart width in pixels (default 800)
-   - ``height`` — Chart height in pixels (default 600)
-   - ``title`` — Chart title text
-   - ``theme`` — Theme name string or theme dictionary
-   - ``x_label``, ``y_label`` — Optional axis titles
-   - ``column_gap`` — Gap between side-by-side columns (default 0.2)
+   - ``series``: List of series dicts, each with ``data``, ``type``, optional ``name`` and optional ``axis``
+   - ``labels``: Category labels for the shared x-axis
+   - ``width``: Chart width in pixels (default 800)
+   - ``height``: Chart height in pixels (default 600)
+   - ``title``: Chart title text
+   - ``theme``: Theme name string or theme dictionary
+   - ``x_label``, ``y_label``: Optional axis titles
+   - ``column_gap``: Gap between side-by-side columns (default 0.2)
 
    **Example:**
 

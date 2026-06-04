@@ -1,4 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 /* Charted Custom Styles */
+
+/* Use JetBrains Mono for all code / monospace text. Furo reads this variable
+   for inline code, code blocks, and kbd. */
+:root,
+body,
+body[data-theme="dark"],
+body[data-theme="light"] {
+    --font-stack--monospace: "JetBrains Mono", ui-monospace, SFMono-Regular,
+        "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
 
 /* Hero section styling */
 .hero-section {

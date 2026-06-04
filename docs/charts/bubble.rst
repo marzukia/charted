@@ -58,16 +58,16 @@ API Reference
 
    **Parameters:**
 
-   - ``x_data`` — X coordinates for each point
-   - ``y_data`` — Y coordinates for each point
-   - ``sizes`` — Third dimension; one non-negative value per point
-   - ``min_radius`` — Smallest rendered marker radius in pixels (default 4.0)
-   - ``max_radius`` — Largest rendered marker radius in pixels (default 24.0)
-   - ``width`` — Chart width in pixels
-   - ``height`` — Chart height in pixels
-   - ``theme`` — Theme name string or theme dictionary
-   - ``title`` — Chart title text
-   - ``series_names`` — Names for each series (shown in legend)
+   - ``x_data``: X coordinates for each point
+   - ``y_data``: Y coordinates for each point
+   - ``sizes``: Third dimension; one non-negative value per point
+   - ``min_radius``: Smallest rendered marker radius in pixels (default 4.0)
+   - ``max_radius``: Largest rendered marker radius in pixels (default 24.0)
+   - ``width``: Chart width in pixels
+   - ``height``: Chart height in pixels
+   - ``theme``: Theme name string or theme dictionary
+   - ``title``: Chart title text
+   - ``series_names``: Names for each series (shown in legend)
 
    **Example:**
 

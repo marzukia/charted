@@ -189,20 +189,20 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — Single list of values (one slice per value)
-   - ``labels`` — Slice labels
-   - ``inner_radius`` — Inner radius ratio for doughnut mode (0.3-0.7, default: 0; 0 = regular pie)
-   - ``slice_styles`` — Dictionary mapping slice index to style overrides
-   - ``height`` — Chart height in pixels (default 600)
-   - ``theme`` — Theme name string or theme dictionary
-   - ``title`` — Chart title text
-   - ``subtitle`` — Optional subtitle text
+   - ``data``: Single list of values (one slice per value)
+   - ``labels``: Slice labels
+   - ``inner_radius``: Inner radius ratio for doughnut mode (0.3-0.7, default: 0; 0 = regular pie)
+   - ``slice_styles``: Dictionary mapping slice index to style overrides
+   - ``height``: Chart height in pixels (default 600)
+   - ``theme``: Theme name string or theme dictionary
+   - ``title``: Chart title text
+   - ``subtitle``: Optional subtitle text
 
    **Slice Style Options:**
 
-   - ``color`` — Override slice color
-   - ``explode`` — Explode distance (0-1 ratio)
-   - ``label_position`` — "inside", "outside", or "auto"
+   - ``color``: Override slice color
+   - ``explode``: Explode distance (0-1 ratio)
+   - ``label_position``: "inside", "outside", or "auto"
 
    **Example:**
 

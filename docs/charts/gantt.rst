@@ -70,16 +70,16 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — List of (start, end) tuples for task bars
-   - ``labels`` — Task names on the y-axis
-   - ``width`` — Chart px px (default 800)
-   - ``height`` — Chart pixel px (default 600)
-   - ``dependencies`` — List of (from, to) task index tuples for arrows
-   - ``bar_height_ratio`` — Bar height as fraction of row (default 0.6)
-   - ``show_today_line`` — Draw dashed vertical line at x_position
-   - ``x_position`` — X value for the "today" line
-   - ``theme`` — Theme dictionary or string
-   - ``title`` — Chart title
+   - ``data``: List of (start, end) tuples for task bars
+   - ``labels``: Task names on the y-axis
+   - ``width``: Chart px px (default 800)
+   - ``height``: Chart pixel px (default 600)
+   - ``dependencies``: List of (from, to) task index tuples for arrows
+   - ``bar_height_ratio``: Bar height as fraction of row (default 0.6)
+   - ``show_today_line``: Draw dashed vertical line at x_position
+   - ``x_position``: X value for the "today" line
+   - ``theme``: Theme dictionary or string
+   - ``title``: Chart title
 
    **Example:**
 

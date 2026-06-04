@@ -197,15 +197,15 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — Single list for one series, or list of lists for multi-series
-   - ``labels`` — X-axis labels (or use ``x_data`` for XY mode)
-   - ``x_data`` — Custom x-axis values for XY mode (optional)
-   - ``series_names`` — Names for each data series (shown in legend)
-   - ``width`` — Chart width in pixels (default 800)
-   - ``height`` — Chart height in pixels (default 600)
-   - ``theme`` — Theme name string or theme dictionary
-   - ``title`` — Chart title text
-   - ``subtitle`` — Optional subtitle text
+   - ``data``: Single list for one series, or list of lists for multi-series
+   - ``labels``: X-axis labels (or use ``x_data`` for XY mode)
+   - ``x_data``: Custom x-axis values for XY mode (optional)
+   - ``series_names``: Names for each data series (shown in legend)
+   - ``width``: Chart width in pixels (default 800)
+   - ``height``: Chart height in pixels (default 600)
+   - ``theme``: Theme name string or theme dictionary
+   - ``title``: Chart title text
+   - ``subtitle``: Optional subtitle text
 
    **Example:**
 

@@ -25,11 +25,11 @@ Column Chart
 
    **Key Parameters:**
 
-   - ``data`` — List of lists for multi-series, or single list for one series
-   - ``labels`` — X-axis labels
-   - ``series_names`` — Names for each data series (used in legend)
-   - ``y_stacked`` — If True, stack bars vertically (default for multi-series)
-   - ``theme`` — Theme dictionary or theme name string
+   - ``data``: List of lists for multi-series, or single list for one series
+   - ``labels``: X-axis labels
+   - ``series_names``: Names for each data series (used in legend)
+   - ``y_stacked``: If True, stack bars vertically (default for multi-series)
+   - ``theme``: Theme dictionary or theme name string
 
    **Example:**
 
@@ -57,10 +57,10 @@ Bar Chart
 
    **Key Parameters:**
 
-   - ``data`` — Single list or list of lists for multi-series
-   - ``labels`` — Y-axis labels
-   - ``x_stacked`` — If True, stack bars horizontally
-   - ``theme`` — Theme dictionary or theme name string
+   - ``data``: Single list or list of lists for multi-series
+   - ``labels``: Y-axis labels
+   - ``x_stacked``: If True, stack bars horizontally
+   - ``theme``: Theme dictionary or theme name string
 
    **Example:**
 
@@ -87,10 +87,10 @@ Line Chart
 
    **Key Parameters:**
 
-   - ``data`` — List of lists for multi-series
-   - ``labels`` — X-axis labels (or ``x_data`` for XY mode)
-   - ``x_data`` — Custom X-axis values for XY mode
-   - ``theme`` — Theme dictionary or theme name string
+   - ``data``: List of lists for multi-series
+   - ``labels``: X-axis labels (or ``x_data`` for XY mode)
+   - ``x_data``: Custom X-axis values for XY mode
+   - ``theme``: Theme dictionary or theme name string
 
    **Example:**
 
@@ -118,10 +118,10 @@ Scatter Chart
 
    **Key Parameters:**
 
-   - ``data`` — List of [x, y] pairs or list of lists for multi-series
-   - ``labels`` — Series names
-   - ``marker_shape`` — "circle", "square", or "diamond"
-   - ``theme`` — Theme dictionary or theme name string
+   - ``data``: List of [x, y] pairs or list of lists for multi-series
+   - ``labels``: Series names
+   - ``marker_shape``: "circle", "square", or "diamond"
+   - ``theme``: Theme dictionary or theme name string
 
    **Example:**
 
@@ -149,11 +149,11 @@ Pie Chart
 
    **Key Parameters:**
 
-   - ``data`` — Single list of values
-   - ``labels`` — Slice labels
-   - ``series_names`` — Legend name
-    - ``inner_radius`` — Inner radius for doughnut mode (0.3-0.7, 0 = regular pie)
-    - ``slice_styles`` — Per-slice customization (colors, explosion, labels)
+   - ``data``: Single list of values
+   - ``labels``: Slice labels
+   - ``series_names``: Legend name
+    - ``inner_radius``: Inner radius for doughnut mode (0.3-0.7, 0 = regular pie)
+    - ``slice_styles``: Per-slice customization (colors, explosion, labels)
 
    **Example:**
 
@@ -205,10 +205,10 @@ Radar Chart
 
    **Key Parameters:**
 
-   - ``data`` — List of lists for multi-series, each inner list has one value per axis
-   - ``labels`` — Axis labels (one per data point)
-   - ``series_names`` — Names for each data series (used in legend)
-   - ``theme`` — Theme dictionary or theme name string
+   - ``data``: List of lists for multi-series, each inner list has one value per axis
+   - ``labels``: Axis labels (one per data point)
+   - ``series_names``: Names for each data series (used in legend)
+   - ``theme``: Theme dictionary or theme name string
 
    **Example:**
 
@@ -246,7 +246,7 @@ All chart types share these methods:
 
 .. py:method:: _repr_html_()
 
-   IPython/Jupyter integration — returns HTML with inline SVG.
+   IPython/Jupyter integration: returns HTML with inline SVG.
 
 Data Loading API
 ----------------
@@ -257,10 +257,10 @@ Data Loading API
 
    **Parameters:**
 
-   - ``filepath`` — Path to CSV file
-   - ``x_col`` — Column name for X-axis/labels
-   - ``y_cols`` — Column name(s) for Y-axis data
-   - ``delimiter`` — CSV delimiter (default: ",")
+   - ``filepath``: Path to CSV file
+   - ``x_col``: Column name for X-axis/labels
+   - ``y_cols``: Column name(s) for Y-axis data
+   - ``delimiter``: CSV delimiter (default: ",")
 
    **Returns:** Tuple of (x_values, y_values, column_names)
 
@@ -270,7 +270,7 @@ Data Loading API
 
    **Parameters:**
 
-   - ``filepath`` — Path to JSON file
+   - ``filepath``: Path to JSON file
 
    **Returns:** Tuple of (x_values, y_values, column_names)
 
@@ -309,7 +309,7 @@ Theme API
 
    **Parameters:**
 
-   - ``theme_name`` — Theme name string or theme dictionary
+   - ``theme_name``: Theme name string or theme dictionary
 
    **Returns:** Theme dictionary with chart styling
 

@@ -1,5 +1,5 @@
 ================================================================================
-**Charted** — Zero-Dependency SVG Charting for Python
+**Charted**: Zero-Dependency SVG Charting for Python
 ================================================================================
 
 .. raw:: html
@@ -121,7 +121,7 @@ Quick Start
 
          from charted import BarChart
 
-         # Just create a chart — it renders inline
+         # Just create a chart: it renders inline
          BarChart(
              data=[120, 180, 210, 150],
              labels=["Q1", "Q2", "Q3", "Q4"],
@@ -415,7 +415,7 @@ Documentation
 License
 ================================================================================
 
-MIT License — See `LICENSE <https://github.com/marzukia/charted/blob/main/LICENSE>`_ for details.
+MIT License: See `LICENSE <https://github.com/marzukia/charted/blob/main/LICENSE>`_ for details.
 
 ================================================================================
 Community

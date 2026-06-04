@@ -114,16 +114,16 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — Single list for one series, or list of lists for multi-series
-   - ``labels`` — Y-axis category labels
-   - ``series_names`` — Names for each data series (shown in legend)
-   - ``x_stacked`` — If True, stack bars horizontally
-   - ``bar_gap`` — Gap between bars as ratio (0-1, default 0.5)
-   - ``width`` — Chart width in pixels (default 800)
-   - ``height`` — Chart height in pixels (default 600)
-   - ``theme`` — Theme name string or theme dictionary
-   - ``title`` — Chart title text
-   - ``subtitle`` — Optional subtitle text
+   - ``data``: Single list for one series, or list of lists for multi-series
+   - ``labels``: Y-axis category labels
+   - ``series_names``: Names for each data series (shown in legend)
+   - ``x_stacked``: If True, stack bars horizontally
+   - ``bar_gap``: Gap between bars as ratio (0-1, default 0.5)
+   - ``width``: Chart width in pixels (default 800)
+   - ``height``: Chart height in pixels (default 600)
+   - ``theme``: Theme name string or theme dictionary
+   - ``title``: Chart title text
+   - ``subtitle``: Optional subtitle text
 
    **Example:**
 
