@@ -1,45 +1,35 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Security fixes are applied to the current minor release line. Older versions
+do not receive backported fixes; upgrade to the latest 1.1.x release.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 0.1.0 | :x:                |
+| 1.1.x   | :white_check_mark: |
+| < 1.1.0 | :x:                |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-We take the security of Charted seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+Please do not open a public GitHub issue for a security vulnerability.
 
-**Please do NOT report security vulnerabilities through public GitHub issues.**
+Report it privately through GitHub's private vulnerability reporting:
 
-Instead, please report them via email at [INSERT SECURITY EMAIL] with the following information:
+1. Go to the repository's Security tab.
+2. Click "Report a vulnerability".
+3. Fill in what you found, how to reproduce it, and the impact.
 
-1. Description of the vulnerability
-2. Steps to reproduce the issue
-3. Potential impact
-4. Suggested fix (if any)
+This opens a private security advisory visible only to the maintainers. If you
+can suggest a fix, include it, but it is not required.
 
-You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
+We will review the report, confirm the issue, and work on a fix. Once a fix
+ships, we publish a security advisory on GitHub and credit the reporter unless
+they ask us not to.
 
-After the initial reply to your report, we will send you a more detailed acknowledgment and begin working on a fix. We will keep you informed of the progress toward a fix and full announcement, and may ask for additional information or guidance.
+## Notes for users
 
-### Disclosure Policy
-
-When we release a security fix, we will:
-
-1. Publish a security advisory on GitHub
-2. Update this document with the fix version
-3. Announce the fix in our changelog
-4. Give credit to the reporter (if desired)
-
-### Security Best Practices
-
-When using Charted, please be aware of the following:
-
-- Charted generates SVG files. Always validate SVG output before deploying to production.
-- When loading CSV data, ensure the source is trusted to avoid injection attacks.
-- Keep your dependencies up to date using `uv update`.
+Charted produces SVG output. If you render that SVG in a browser, treat the
+input data the same way you would treat any other untrusted input, since
+attacker-controlled labels or values can end up in the markup. Validate or
+sanitize CSV and other data sources before charting them.
