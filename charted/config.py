@@ -8,7 +8,12 @@ from typing import cast
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib
+    try:
+        import tomli as tomllib
+    except ModuleNotFoundError:
+        # Keep the library importable on Python < 3.11 without tomli; only
+        # reading a TOML config actually needs it (see load_config).
+        tomllib = None
 
 from .constants import (
     DEFAULT_CHART_HEIGHT,
@@ -69,6 +74,12 @@ def load_config(config_path: str | Path | None = None) -> ChartedConfig:
     path = Path(config_path)
     if not path.exists():
         return cast("ChartedConfig", defaults)
+
+    if tomllib is None:
+        raise RuntimeError(
+            f"Reading the TOML config at {path} requires the 'tomli' package on "
+            "Python < 3.11. Install it with `pip install tomli`, or use Python 3.11+."
+        )
 
     try:
         with open(path, "rb") as f:
