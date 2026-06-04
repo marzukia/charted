@@ -251,10 +251,15 @@ class RadarRenderer:
         end_x: float,
         end_y: float,
     ) -> None:
-        """Render a single axis label rotated to align with its axis.
+        """Render a single axis label, kept upright for legibility.
 
-        Labels rotate to point outward from center along the axis direction,
-        preventing text overflow and overlap in multi-axis displays.
+        Spoke labels are drawn horizontally (never rotated to the spoke
+        angle). Rotating each label to its spoke direction made the top and
+        bottom labels vertical, where they collided with the vertical ring
+        badges and read as garbled, clipped text. Instead the label's
+        horizontal anchor and vertical baseline are chosen from its position
+        around the circle so the full string sits just outside the grid and
+        reads left-to-right on every spoke.
 
         Args:
             g: Parent G element
@@ -266,25 +271,46 @@ class RadarRenderer:
         label_radius = self._max_radius + self.chart.label_offset
         label_x, label_y = self._polar_to_cartesian(cx, cy, label_radius, angle)
 
-        # Rotate label to align with axis; flip for left side readability
-        if -90 <= angle <= 90:  # Right side: text reads outward
+        # Normalize the spoke direction onto the unit circle to decide which
+        # side of the point the text should sit on. cos drives the horizontal
+        # anchor, sin drives the vertical baseline nudge.
+        angle_rad = math.radians(angle)
+        cos_a = math.cos(angle_rad)
+        sin_a = math.sin(angle_rad)
+
+        # Horizontal anchoring: labels on the right read from the start, on
+        # the left from the end, and labels near the vertical (top/bottom)
+        # spokes are centered so they don't drift off the spoke.
+        eps = 1e-3
+        if cos_a > eps:
             text_anchor = "start"
             x_align = label_x + 5
-            rotation = angle
-        else:  # Left side: text reads outward (flipped to stay upright)
+        elif cos_a < -eps:
             text_anchor = "end"
             x_align = label_x - 5
-            rotation = angle + 180
+        else:
+            text_anchor = "middle"
+            x_align = label_x
+
+        # Vertical baseline: drop top labels above the grid, raise bottom
+        # labels below it. sin > 0 is the top half in SVG (y grows downward,
+        # but _polar_to_cartesian already negates y), so a positive sin means
+        # the point is above center and the text should sit a touch higher.
+        if sin_a > eps:
+            y_align = label_y - 2
+        elif sin_a < -eps:
+            y_align = label_y + DEFAULT_FONT_SIZE
+        else:
+            y_align = label_y + 4
 
         label_text = Text(
             x=x_align,
-            y=label_y + 4,  # Small y offset for baseline
+            y=y_align,
             text=label,
             fill=getattr(self.chart.theme, "title_color", "#333"),
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             text_anchor=text_anchor,
-            transform=[f"rotate({rotation}, {label_x}, {label_y})"],
         )
         g.add_child(label_text)
 
