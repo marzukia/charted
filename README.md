@@ -421,7 +421,7 @@ chart = BarChart(data=[120, 180, 210], labels=["Q1", "Q2", "Q3"], theme="high-co
 | Dark | ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples_themes/dark.svg) |
 | High Contrast | ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples_themes/high-contrast.svg) |
 
-See the [Theming docs](docs/THEMING.md) for custom palettes, font overrides, and per-series styling.
+See the [Theming docs](docs/guides/theming.md) for custom palettes, font overrides, and per-series styling.
 
 ---
 
@@ -612,9 +612,8 @@ Exposes tools: `create_chart`, `list_chart_types`, `list_themes`, `chart_from_cs
 ## Links
 
 - [Full Documentation](https://charted.mrzk.io)
-- [Configuration Reference](docs/config.md)
-- [Theming Guide](docs/THEMING.md)
-- [Font Definitions](docs/fonts.md)
+- [Configuration Reference](docs/guides/configuration.md)
+- [Theming Guide](docs/guides/theming.md)
 
 ### Font System
 
