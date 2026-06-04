@@ -163,8 +163,16 @@ class SeriesLegend:
                 cy = y + row_h / 2
                 cx = x + swatch / 2
                 self._legend_add_entry(
-                    g, name, color, shape, cx, cy,
-                    x + swatch + gap, font_size, font_family, font_color,
+                    g,
+                    name,
+                    color,
+                    shape,
+                    cx,
+                    cy,
+                    x + swatch + gap,
+                    font_size,
+                    font_family,
+                    font_color,
                 )
                 y += row_h
             return g
@@ -179,15 +187,31 @@ class SeriesLegend:
         item_gap = 16
         total_w = sum(widths) + item_gap * (len(entries) - 1)
         x = lp + (pw - total_w) / 2
+        band = self._legend_reserved_extent()
         if self._legend_placement == "top":
-            cy = tp - row_h / 2 - 2
+            # Centre the legend row within the band reserved above the plot,
+            # which sits just under the title (top_padding already includes it).
+            cy = tp - band + row_h / 2
         else:
-            cy = tp + ph + row_h / 2 + 6
+            # Centre the legend row within the band reserved at the very bottom
+            # of the chart, below the x-axis tick labels. The bottom padding is
+            # base label space + this legend band, so anchoring to the chart's
+            # bottom edge keeps the legend clear of the axis labels.
+            bottom_edge = tp + ph + self.bottom_padding
+            cy = bottom_edge - band + row_h / 2
         for (name, color, shape), w in zip(entries, widths):
             cx = x + swatch / 2
             self._legend_add_entry(
-                g, name, color, shape, cx, cy,
-                x + swatch + gap, font_size, font_family, font_color,
+                g,
+                name,
+                color,
+                shape,
+                cx,
+                cy,
+                x + swatch + gap,
+                font_size,
+                font_family,
+                font_color,
                 text_baseline=cy + font_size * 0.35,
             )
             x += w + item_gap
@@ -213,8 +237,18 @@ class SeriesLegend:
         )
 
     def _legend_add_entry(
-        self, g, name, color, shape, cx, cy, text_x,
-        font_size, font_family, font_color, text_baseline=None,
+        self,
+        g,
+        name,
+        color,
+        shape,
+        cx,
+        cy,
+        text_x,
+        font_size,
+        font_family,
+        font_color,
+        text_baseline=None,
     ) -> None:
         """Add one swatch + label to the legend group ``g``."""
         mark = self._legend_swatch(shape, cx, cy, font_size / 2, color)

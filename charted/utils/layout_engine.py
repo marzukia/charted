@@ -160,8 +160,19 @@ class LayoutEngine:
         """
         base = self.v_padding * self.height
 
-        # Reserve a band below the plot for a bottom-placed legend.
+        # Reserve a band below the plot for a bottom-placed legend. The legend
+        # is drawn at the chart's bottom edge, so the band must clear the
+        # x-axis tick labels. Those labels sit DEFAULT_PADDING below the plot
+        # plus their own font height; guarantee the base padding covers that
+        # before the legend band is appended, otherwise a thin v_padding lets
+        # the labels spill into the legend row.
         if self.legend_position == "bottom":
+            if self.x_labels:
+                from ..constants import DEFAULT_PADDING
+                from .defaults import DEFAULT_FONT_SIZE
+
+                tick_label_band = DEFAULT_PADDING + DEFAULT_FONT_SIZE
+                base = max(base, tick_label_band)
             base += self._legend_band
 
         # Extra space for x-axis title label (rendered below tick labels)
