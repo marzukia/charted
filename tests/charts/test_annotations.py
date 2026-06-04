@@ -147,6 +147,44 @@ def test_annotations_round_trip_via_config():
     assert len(cfg["annotations"]) == 3
 
 
+def test_zero_axis_layer_is_themeable_and_prominent():
+    """Reference lines (incl. the zero crosshair) are a distinct layer.
+
+    By default the zero crosshair keeps its historical 1.5px stroke, and a
+    theme can widen it so it reads above the grid. The widened stroke must be
+    greater than the grid stroke width, and the override must round-trip
+    through ``compose``.
+    """
+    from charted.themes.core import Theme
+
+    # Grid lines carry no explicit stroke-width, so they paint at the SVG
+    # default of 1px. The reference layer must read above that.
+    grid_stroke_width = 1.0
+
+    # Default: unchanged historical width (already above the grid).
+    default_chart = _chart(h_lines=[0], v_lines=[0])
+    default_el = LineAnnotation._h_line(0).render(default_chart)
+    assert 'stroke-width="1.5"' in default_el.html
+    assert default_chart.theme.resolved_reference_line_width == 1.5
+    assert default_chart.theme.resolved_reference_line_width > grid_stroke_width
+
+    # Themed: a wider, themeable zero/reference stroke that beats the grid.
+    theme = Theme().compose(Theme(reference_line_width=3.0))
+    assert theme.reference_line_width == 3.0
+    assert theme.resolved_reference_line_width == 3.0
+    assert theme.resolved_reference_line_width > grid_stroke_width
+
+    themed_chart = _chart(h_lines=[0], v_lines=[0], theme=theme)
+    themed_el = LineAnnotation._h_line(0).render(themed_chart)
+    assert 'stroke-width="3.0"' in themed_el.html
+    # Still rendered as the dashed reference layer, just more prominent.
+    assert 'stroke-dasharray="6 3"' in themed_el.html
+
+    # Per-call width override wins over the theme for a single annotation.
+    override_el = LineAnnotation((0, 0), (10, 100), width=5.0).render(themed_chart)
+    assert 'stroke-width="5.0"' in override_el.html
+
+
 def test_from_config_reconstructs_and_renders():
     """from_config(to_config(c)) rebuilds real annotation objects and renders.
 

@@ -33,6 +33,8 @@ class RadarChart(Chart):
         grid_levels: Number of concentric grid circles (default 5)
         show_axis_labels: Whether to display axis labels (default True)
         label_offset: Distance from grid edge for labels (default 20)
+        show_radial_labels: Whether to label radial rings with their numeric
+            scale value (default True)
 
     Example:
         >>> from charted import RadarChart
@@ -68,6 +70,7 @@ class RadarChart(Chart):
         grid_levels: int = 5,
         show_axis_labels: bool = True,
         label_offset: float = 20,
+        show_radial_labels: bool = True,
     ):
         """Initialize radar chart.
 
@@ -121,6 +124,7 @@ class RadarChart(Chart):
         self.grid_levels = grid_levels
         self.show_axis_labels = show_axis_labels
         self.label_offset = label_offset
+        self.show_radial_labels = show_radial_labels
 
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(axis_count)] for _ in data]
@@ -128,6 +132,14 @@ class RadarChart(Chart):
         self._series_data = (
             data  # Must set before super().__init__ calls representation
         )
+        # Resolve the theme palette up front: super().__init__ renders the
+        # series (via _build_children) before it returns, so the colours must
+        # already reflect the active preset / custom palette by then. The
+        # default theme palette equals DEFAULT_COLORS, keeping default renders
+        # unchanged.
+        from charted.utils.theme_manager import ThemeManager
+
+        self._resolved_palette = list(ThemeManager.load_theme(theme, "radar").colors)
         self.colors = data  # Must set before super().__init__ calls representation
 
         super().__init__(
@@ -152,17 +164,30 @@ class RadarChart(Chart):
 
     @colors.setter
     def colors(self, data: Vector | Vector2D) -> None:
-        """Generate colors for series."""
+        """Generate one colour per series from the theme palette.
+
+        Uses the resolved theme palette when available (so presets like
+        high-contrast and custom palettes drive series colours), falling back
+        to DEFAULT_COLORS during the pre-super() call when no theme exists yet.
+        The default theme palette equals DEFAULT_COLORS, so default renders are
+        unchanged.
+        """
         if not data or (isinstance(data, list) and len(data) == 0):
             self._colors = []
             return
         n_series = len(data) if isinstance(data[0], list) else 1
-        self._colors = list(DEFAULT_COLORS[:n_series])
-        while len(self._colors) < n_series:
-            self._colors.append(DEFAULT_COLORS[len(self._colors) % len(DEFAULT_COLORS)])
+        # Prefer the pre-resolved palette (set before super), then the loaded
+        # theme palette, then DEFAULT_COLORS.
+        theme = getattr(self, "theme", None)
+        palette = getattr(self, "_resolved_palette", None)
+        if not palette:
+            palette = list(theme.colors) if theme and theme.colors else None
+        if not palette:
+            palette = list(DEFAULT_COLORS)
+        self._colors = [palette[i % len(palette)] for i in range(n_series)]
 
     def get_base_transform(self) -> list:
-        """Radar charts use polar coordinates — no base transform needed."""
+        """Radar charts use polar coordinates: no base transform needed."""
         return []
 
     @property

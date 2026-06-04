@@ -67,6 +67,17 @@ class TestChartConstruction:
         ):
             DataModel.validate_data([[1, 2, 3], [4, 5]])
 
+    def test_validate_data_rejects_infinity(self):
+        """inf and -inf values raise InvalidDataError."""
+        from charted.utils.data_model import DataModel
+        from charted.utils.exceptions import InvalidDataError
+
+        with pytest.raises(InvalidDataError, match="Infinite values"):
+            DataModel.validate_data([1, 2, float("inf")])
+
+        with pytest.raises(InvalidDataError, match="Infinite values"):
+            DataModel.validate_data([1, 2, float("-inf")])
+
     def test_no_data_raises_nodataerror(self):
         """Chart with no x_data or y_data raises NoDataError."""
         with pytest.raises(NoDataError, match="No data"):

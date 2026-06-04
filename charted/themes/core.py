@@ -2,7 +2,10 @@
 
 import re
 from dataclasses import dataclass, field, replace
+from functools import wraps
 from typing import Optional
+
+from charted.constants import REFERENCE_LINE_WIDTH
 
 
 def _is_valid_hex_color(color: str) -> bool:
@@ -52,6 +55,19 @@ NAMED_PALETTES = {
     "sunset": ["#ff6b6b", "#ffa94d", "#ffd43b", "#69db69", "#4dabf7"],
     "forest": ["#2d6a4f", "#40916c", "#52b788", "#95d5b2", "#d8f3dc"],
     "inferno": ["#000004", "#1c1044", "#7e307a", "#e5612f", "#fca50a"],
+    # Okabe-Ito colourblind-safe qualitative palette. Eight hues chosen to
+    # stay distinguishable under the common forms of colour vision deficiency
+    # (protanopia, deuteranopia, tritanopia).
+    "okabe-ito": [
+        "#e69f00",
+        "#56b4e9",
+        "#009e73",
+        "#f0e442",
+        "#0072b2",
+        "#d55e00",
+        "#cc79a7",
+        "#000000",
+    ],
 }
 
 
@@ -189,11 +205,21 @@ class ColorPalette:
 # theme field is at its class default value.
 OPACITY_TIERS = {
     "grid_color": 0.20,
+    # Minor gridlines sit below the major grid so the structure recedes and
+    # data plus the zero axis dominate.
+    "minor_grid_color": 0.10,
     "axis_border_color": 0.60,
-    "reference_line_color": 0.50,
+    # Reference lines (incl. the zero crosshair) must read above the grid in
+    # every theme, so they sit well clear of the 0.20 grid tier.
+    "reference_line_color": 0.75,
     "axis_title_color": 0.80,
     "label_color": 1.0,
-    "quadrant_label_color": 0.18,
+    # Quadrant labels are a watermark, but 0.18 was illegible on the dark
+    # background; 0.40 stays subtle on light while remaining readable on dark.
+    "quadrant_label_color": 0.40,
+    # Data labels sit on data points and should read clearly. 0.80 matches the
+    # historical axis-title tier the labels previously borrowed.
+    "data_label_color": 0.80,
 }
 
 
@@ -233,6 +259,20 @@ class Theme:
     grid_color: str = "#CCCCCC"
     grid_dasharray: Optional[str] = None
     grid_visible: bool = True
+    # Gridline hierarchy / weight control. Defaults reproduce the historical
+    # single-weight grid (no minor lines, SVG-default stroke width).
+    # grid_width: stroke width for major gridlines. None emits no stroke-width
+    #   attribute, leaving the SVG default of 1.
+    # minor_grid_divisions: number of subdivisions drawn between adjacent major
+    #   gridlines. 0 disables minor gridlines entirely (current behaviour).
+    # minor_grid_color: colour for minor gridlines. None derives a lighter tier
+    #   from root_color so the minor grid recedes below the major grid.
+    # minor_grid_width: stroke width for minor gridlines. None falls back to
+    #   half the resolved major width.
+    grid_width: Optional[float] = None
+    minor_grid_divisions: int = 0
+    minor_grid_color: Optional[str] = None
+    minor_grid_width: Optional[float] = None
     legend_position: str = "topright"
     legend_font_size: int = 11
     legend_font_family: str = "Arial"
@@ -245,6 +285,37 @@ class Theme:
     v_padding: float = 0.05
     marker_size: float = 3.0
     arrow_color: str = "#555555"
+    # Stroke width for reference lines (incl. the zero crosshair). These draw
+    # on top of the grid as their own layer; a width above the grid line width
+    # keeps them reading as the most prominent line. None falls back to the
+    # library default (REFERENCE_LINE_WIDTH).
+    reference_line_width: Optional[float] = None
+    # Colour for data-point labels. None defers to the axis-title tier the
+    # labels historically borrowed, keeping existing renders unchanged. Set a
+    # hex/HSL string to give data labels their own themed colour.
+    data_label_color: Optional[str] = None
+    # Mandatory contrasting outline drawn around filled shapes (bars, columns,
+    # stacked segments, pie/polar wedges, bubbles, box bodies). None (the
+    # default) draws no outline, keeping existing renders byte-for-byte
+    # identical. Set a hex/HSL string (the high-contrast preset uses black) to
+    # separate adjacent same-ish fills without relying on colour alone.
+    shape_outline_color: Optional[str] = None
+    # Stroke width for the filled-shape outline. None falls back to 1px.
+    shape_outline_width: Optional[float] = None
+    # Default stroke width for plotted series lines (line/area/combo). None
+    # keeps the historical 2px line stroke. The high-contrast preset raises
+    # this so lines read clearly for low-vision users.
+    series_stroke_width: Optional[float] = None
+    # Font size and weight for axis tick labels. None keeps the library
+    # default size (DEFAULT_FONT_SIZE) and an unweighted (normal) label. The
+    # high-contrast preset enlarges and bolds these for legibility.
+    axis_label_font_size: Optional[int] = None
+    axis_label_font_weight: Optional[str] = None
+    # Minimum WCAG contrast ratio enforced for foreground colours (the series
+    # palette) against the background. None disables enforcement, leaving
+    # palettes untouched. The high-contrast preset sets 3.0 so washed-out hues
+    # like yellow/cyan on white are darkened until they clear the floor.
+    contrast_floor: Optional[float] = None
 
     def __post_init__(self) -> None:
         """Validate color format after initialization."""
@@ -268,6 +339,18 @@ class Theme:
             )
         if not _is_valid_hex_color(self.arrow_color):
             raise ValueError(f"Invalid color for arrow_color: {self.arrow_color!r}")
+        if self.data_label_color is not None and not _is_valid_hex_color(
+            self.data_label_color
+        ):
+            raise ValueError(
+                f"Invalid color for data_label_color: {self.data_label_color!r}"
+            )
+        if self.shape_outline_color is not None and not _is_valid_hex_color(
+            self.shape_outline_color
+        ):
+            raise ValueError(
+                f"Invalid color for shape_outline_color: {self.shape_outline_color!r}"
+            )
 
         # Validate legend contrast against background
         from charted.utils.colors import calculate_contrast_ratio
@@ -285,6 +368,16 @@ class Theme:
         class_default = self.__class__.__dataclass_fields__[field_name].default
         return getattr(self, field_name) != class_default
 
+    def _provided_fields(self) -> frozenset:
+        """Names of fields explicitly passed to this instance's constructor.
+
+        Recorded by the wrapped ``__init__`` (see below). Used by
+        ``compose()`` to apply only the fields a caller actually set, so an
+        override can re-assign a field to a value equal to a class default.
+        Falls back to an empty set for instances built without the wrapper.
+        """
+        return getattr(self, "_explicitly_set", frozenset())
+
     @property
     def resolved_grid_color(self) -> str:
         """Grid color: explicit override or root_color at 20% opacity."""
@@ -295,6 +388,33 @@ class Theme:
         return derive_color(
             self.root_color, OPACITY_TIERS["grid_color"], self.background_color
         )
+
+    @property
+    def resolved_grid_width(self) -> Optional[float]:
+        """Major gridline stroke width, or None for the SVG default."""
+        return self.grid_width
+
+    @property
+    def resolved_minor_grid_color(self) -> str:
+        """Minor gridline colour: explicit override or root_color at 10%."""
+        if self.minor_grid_color is not None:
+            return self.minor_grid_color
+        from charted.utils.colors import derive_color
+
+        return derive_color(
+            self.root_color,
+            OPACITY_TIERS["minor_grid_color"],
+            self.background_color,
+        )
+
+    @property
+    def resolved_minor_grid_width(self) -> float:
+        """Minor gridline stroke width: explicit override or half the major."""
+        if self.minor_grid_width is not None:
+            return self.minor_grid_width
+        major = self.resolved_grid_width
+        base = major if major is not None else 1.0
+        return base / 2.0
 
     @property
     def resolved_axis_border_color(self) -> str:
@@ -317,6 +437,13 @@ class Theme:
         )
 
     @property
+    def resolved_reference_line_width(self) -> float:
+        """Reference-line stroke width: explicit override or library default."""
+        if self.reference_line_width is not None:
+            return self.reference_line_width
+        return REFERENCE_LINE_WIDTH
+
+    @property
     def resolved_axis_title_color(self) -> str:
         """Axis title color: explicit override or root_color at 80% opacity."""
         if self._is_explicit("title_color"):
@@ -335,6 +462,78 @@ class Theme:
         return derive_color(
             self.root_color, OPACITY_TIERS["label_color"], self.background_color
         )
+
+    @property
+    def resolved_data_label_color(self) -> str:
+        """Data-label colour: explicit override or the axis-title tier.
+
+        Defaulting to ``resolved_axis_title_color`` keeps existing data-label
+        renders byte-for-byte identical when ``data_label_color`` is unset.
+        """
+        if self.data_label_color is not None:
+            return self.data_label_color
+        return self.resolved_axis_title_color
+
+    @property
+    def filled_shape_outline(self) -> tuple[Optional[str], float]:
+        """Outline (stroke, width) for filled shapes, or (None, 1.0) when off.
+
+        Returns the configured ``shape_outline_color`` (or None when unset) and
+        the stroke width, defaulting to 1px. Charts call this and only emit a
+        stroke when the colour is not None, so the default theme leaves filled
+        shapes unstroked exactly as before.
+        """
+        width = (
+            self.shape_outline_width if self.shape_outline_width is not None else 1.0
+        )
+        return self.shape_outline_color, width
+
+    @property
+    def resolved_series_stroke_width(self) -> float:
+        """Series line stroke width: explicit override or the 2px default.
+
+        The default is returned as ``int`` 2 so unstyled lines serialize to
+        ``stroke-width="2"`` exactly as before (a float would emit ``2.0``).
+        """
+        if self.series_stroke_width is not None:
+            return self.series_stroke_width
+        return 2
+
+    @property
+    def resolved_axis_label_font_size(self) -> int:
+        """Axis tick label font size: override or the library default (12)."""
+        from charted.constants import AXIS_LABEL_FONT_SIZE
+
+        if self.axis_label_font_size is not None:
+            return self.axis_label_font_size
+        return AXIS_LABEL_FONT_SIZE
+
+    def enforce_contrast(self, foreground: str) -> str:
+        """Apply ``contrast_floor`` to a foreground colour against background.
+
+        Returns ``foreground`` unchanged when no floor is set; otherwise
+        darkens/lightens it until it meets the floor against
+        ``background_color``.
+        """
+        if self.contrast_floor is None:
+            return foreground
+        from charted.utils.colors import enforce_contrast_floor
+
+        return enforce_contrast_floor(
+            foreground, self.background_color, self.contrast_floor
+        )
+
+    @property
+    def resolved_colors(self) -> list[str]:
+        """Series palette with the contrast floor applied (if any).
+
+        When ``contrast_floor`` is None this is just ``colors``, keeping every
+        existing render byte-for-byte identical. Otherwise each palette colour
+        is darkened/lightened until it clears the floor against the background.
+        """
+        if self.contrast_floor is None:
+            return self.colors
+        return [self.enforce_contrast(c) for c in self.colors]
 
     @property
     def resolved_quadrant_label_color(self) -> str:
@@ -364,24 +563,51 @@ class Theme:
             "light": cls(
                 colors=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
                 title_color="#1f2937",
-                grid_color="#6b7280",
+                # grid_color left at the class default so it derives from
+                # root_color at the 0.20 grid tier and recedes behind the data
+                # instead of caging it (a solid #6b7280 grid was too strong).
                 background_color="#f9fafb",
                 arrow_color="#374151",
             ),
             "dark": cls(
                 colors=["#5fab9e", "#f58b51", "#f7dd72", "#db504a", "#2e4756"],
                 root_color="#ffffff",
-                grid_color="#9ca3af",
+                # grid_color left at the class default so it derives from the
+                # white root at the 0.20 grid tier (a dim grey on the near-black
+                # background) instead of the old #9ca3af that glared and caged
+                # the data.
                 title_color="#ffffff",
                 background_color="#1a1a1a",
                 legend_font_color="#e5e5e5",
                 arrow_color="#d1d5db",
             ),
             "high-contrast": cls(
-                colors=["#000000", "#FFFF00", "#00FFFF", "#FF00FF", "#00FF00"],
+                # Okabe-Ito colourblind-safe palette: distinguishable under the
+                # common forms of colour vision deficiency.
+                colors=NAMED_PALETTES["okabe-ito"].copy(),
                 title_color="#000000",
+                title_font_size=18,
                 background_color="#FFFFFF",
-                grid_color="#000000",
+                # Mid-grey (~0.46 over white) rather than full black: gridlines
+                # stay accessible but recede below the data instead of forming a
+                # black cage of equal weight to the marks.
+                grid_color="#8a8a8a",
+                grid_width=1.5,
+                # Every filled shape gets a 1px black outline so adjacent
+                # wedges/bars/bubbles stay separable without relying on hue.
+                shape_outline_color="#000000",
+                shape_outline_width=1.0,
+                # Heavier line strokes and larger markers so plotted series
+                # read clearly for low-vision users.
+                series_stroke_width=3.0,
+                marker_size=5.0,
+                reference_line_width=2.5,
+                # Larger, bolder axis tick labels.
+                axis_label_font_size=14,
+                axis_label_font_weight="bold",
+                # Darken washed-out palette hues (yellow/cyan/orange) until they
+                # clear 3:1 against the white background.
+                contrast_floor=3.0,
             ),
         }
         if name not in presets:
@@ -418,20 +644,23 @@ class Theme:
             return self.__copy__()
 
         new_values = {}
-        overrides_dict = vars(overrides)
+        field_names = Theme.__dataclass_fields__.keys()
+        provided = overrides._provided_fields()
 
-        # Get the default Theme instance to compare against
-        default_theme = Theme()
-
-        for key, override_value in overrides_dict.items():
+        for key in field_names:
+            override_value = getattr(overrides, key)
             if key == "colors":
+                # ``colors`` keeps its historical opt-in semantics: an empty
+                # list never overrides, regardless of whether it was passed.
                 if override_value and len(override_value) > 0:
                     new_values[key] = override_value.copy()
             else:
-                # Compare against the default theme's value, not the class default
-                default_value = getattr(default_theme, key)
-
-                if override_value == default_value:
+                # Apply the override only when the field was explicitly passed
+                # to the override Theme's constructor. This lets callers set a
+                # field back to a value that happens to equal a class default
+                # (e.g. re-enabling grid_visible=True), which the old
+                # default-equality skip silently dropped.
+                if key not in provided:
                     continue
 
                 new_values[key] = override_value
@@ -439,7 +668,7 @@ class Theme:
         if not new_values:
             return self.__copy__()
 
-        base_dict = vars(self)
+        base_dict = {key: getattr(self, key) for key in field_names}
         merged = {**base_dict, **new_values}
 
         return Theme(**merged)
@@ -455,6 +684,47 @@ class Theme:
         """
         palette = ColorPalette(colors=self.colors)
         return palette.get_color(index)
+
+
+def _wrap_theme_init() -> None:
+    """Wrap Theme.__init__ to record which fields a caller explicitly passed.
+
+    The dataclass-generated ``__init__`` accepts each field as a positional or
+    keyword argument. We bind the call against that signature to find exactly
+    which fields were supplied (vs. left to their default), then stash the set
+    on the instance for ``compose()`` to read. This is the "track set fields"
+    mechanism that replaces the old default-equality skip.
+    """
+    import inspect
+
+    original_init = Theme.__init__
+    field_order = list(Theme.__dataclass_fields__.keys())
+    signature = inspect.signature(original_init)
+
+    @wraps(original_init)
+    def __init__(self, *args, **kwargs):  # noqa: N807
+        # The tracking marker leaks into ``vars(theme)``; tolerate (and honour)
+        # it when a caller round-trips a theme via ``Theme(**vars(theme))`` so
+        # the provided-set survives the copy and isn't passed to the dataclass
+        # constructor (which would reject the unknown keyword).
+        preset = kwargs.pop("_explicitly_set", None)
+        if preset is not None:
+            provided = frozenset(preset)
+        else:
+            try:
+                bound = signature.bind(self, *args, **kwargs)
+                provided = frozenset(
+                    name for name in bound.arguments if name in field_order
+                )
+            except TypeError:
+                provided = frozenset()
+        original_init(self, *args, **kwargs)
+        object.__setattr__(self, "_explicitly_set", provided)
+
+    Theme.__init__ = __init__
+
+
+_wrap_theme_init()
 
 
 # Backward compatibility aliases

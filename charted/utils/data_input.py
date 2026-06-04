@@ -140,7 +140,7 @@ def from_dataframe(df, **kwargs) -> Any:
     """
     from charted.charts import _CHART_CLASSES
 
-    # Try pandas import — graceful skip if unavailable
+    # Try pandas import: graceful skip if unavailable
     try:
         import pandas as pd
     except ImportError:
@@ -227,7 +227,7 @@ def auto(data, **kwargs) -> Any:
     - 2D matrix (N rows of M values) → HeatmapChart
 
     Args:
-        data: Raw data — list, list-of-lists, or dict.
+        data: Raw data: list, list-of-lists, or dict.
         **kwargs: Additional chart parameters (title, theme, etc.).
 
     Returns:
@@ -264,7 +264,7 @@ def auto(data, **kwargs) -> Any:
         if not data:
             raise ValueError("Empty data list. Provide at least one value.")
 
-        # 1D list — single series
+        # 1D list: single series
         if not isinstance(data[0], list):
             # Small sets → PieChart, otherwise BarChart
             if len(data) <= 6:
@@ -278,20 +278,20 @@ def auto(data, **kwargs) -> Any:
         n_cols = len(data[0]) if data[0] else 0
 
         if n_rows <= 3 and n_cols > 3:
-            # Few rows, many columns — could be grouped bar or line
+            # Few rows, many columns: could be grouped bar or line
             chart_cls = cls_map.get("ColumnChart")
             return chart_cls(data=data, **kwargs)
         elif n_rows > 3 and n_cols <= 6:
-            # Many rows, few columns — line chart
+            # Many rows, few columns: line chart
             chart_cls = cls_map.get("LineChart")
             return chart_cls(data=data, **kwargs)
         else:
-            # Square-ish matrix — heatmap
+            # Square-ish matrix: heatmap
             chart_cls = cls_map.get("HeatmapChart")
             return chart_cls(data=data, **kwargs)
 
     if isinstance(data, dict):
-        # Dict of column -> list — use from_dataframe
+        # Dict of column -> list: use from_dataframe
         return from_dataframe(data, **kwargs)
 
     raise TypeError(

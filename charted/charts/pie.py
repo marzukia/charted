@@ -57,6 +57,9 @@ class PieChart(Chart):
         start_angle: float = 0,
         series_styles: list[SeriesStyleConfig] | None = None,
         show_percentages: bool = False,
+        value_labels: bool | str | dict | None = None,
+        legend: str = "none",
+        category_patterns: list[str] | bool | None = None,
     ):
         """Initialize pie chart.
 
@@ -92,13 +95,20 @@ class PieChart(Chart):
         self.explode = explode if isinstance(explode, list) else [explode] * len(data)
         self.start_angle = start_angle
         self.show_percentages = show_percentages
+        self._pie_value_labels = Chart._normalize_value_labels(value_labels)
         self._pie_data = list(data)  # Store original data for rendering
         self._pie_labels = labels
         self.series_styles = series_styles
 
-        # Initialize colors before super().__init__() - Chart.__init__ accesses self.colors
-        # We generate colors from data length to match the expected number of slices
-        self._generate_colors_from_data(data)
+        # Initialize colors before super().__init__() - Chart.__init__ accesses
+        # self.colors (and renders slices) during _build_children. Resolve the
+        # theme palette up front so presets (e.g. high-contrast) and custom
+        # palettes drive slice colours. The default theme palette equals
+        # DEFAULT_COLORS, so default renders are byte-for-byte unchanged.
+        from charted.utils.theme_manager import ThemeManager
+
+        resolved_theme = ThemeManager.load_theme(theme, "pie")
+        self._generate_colors_from_data(data, base=resolved_theme.colors)
 
         # Create synthetic x_data and y_data for Chart base class compatibility
         x_data = [[i for i in range(len(data))]]
@@ -114,26 +124,72 @@ class PieChart(Chart):
             zero_index=True,
             theme=theme,
             chart_type="pie",
+            legend=legend,
+            category_patterns=category_patterns,
         )
 
-    def _generate_colors_from_data(self, data: Vector) -> None:
+    def _has_legend_entries(self) -> bool:
+        """Pie labels its slices, so any data drives the shared legend."""
+        return bool(self._pie_data)
+
+    def _legend_entries(self) -> list[tuple[str, str, str]]:
+        """One square swatch per slice, coloured to match the slice."""
+        data = self._pie_data
+        if not data:
+            return []
+        labels = self._pie_labels or [str(i) for i in range(len(data))]
+        colors = self.colors
+        entries: list[tuple[str, str, str]] = []
+        for idx, label in enumerate(labels):
+            text = label.text if hasattr(label, "text") else str(label)
+            color = colors[idx % len(colors)] if colors else "#000000"
+            entries.append((text, color, self._LEGEND_DEFAULT_SHAPE))
+        return entries
+
+    def _legend_reserved_extent(self) -> float:
+        """Reserve a band sized to the slice labels (not ``series_names``)."""
+        from charted.utils.helpers import calculate_text_dimensions
+
+        entries = self._legend_entries()
+        if not entries:
+            return 0.0
+        font_size = self._legend_font_size()
+        swatch = font_size
+        gap = 6
+        pad = 8
+        if self._legend_placement == "right":
+            max_w = max(
+                calculate_text_dimensions(name, font_size=font_size).width
+                for name, _, _ in entries
+            )
+            return swatch + gap + max_w + pad * 2
+        return font_size + 6 + pad
+
+    def _generate_colors_from_data(
+        self, data: Vector, base: list[str] | None = None
+    ) -> None:
         """Generate color palette based on data length.
 
-        Internal helper to generate colors before super().__init__() is called.
-        For dense data (>10 slices), uses evenly-spaced HSL hues for maximum
-        visual distinctness.
+        Internal helper to generate colors. For dense data (>10 slices), uses
+        evenly-spaced HSL hues for maximum visual distinctness.
 
         Args:
             data: Data values - length determines number of colors needed.
+            base: Base palette to cycle through for <=10 slices. Defaults to
+                DEFAULT_COLORS (used during the pre-super() call when the theme
+                palette is not yet resolved).
         """
+        base_palette = list(base) if base else list(DEFAULT_COLORS)
+        if not base_palette:
+            base_palette = list(DEFAULT_COLORS)
         if not data:
-            self._colors = list(DEFAULT_COLORS)
+            self._colors = list(base_palette)
             return
 
         n = len(data)
         if n <= 10:
-            # Use DEFAULT_COLORS as base and generate complementary colors
-            base_colors = list(DEFAULT_COLORS)
+            # Cycle the base palette and generate complementary colors past it.
+            base_colors = base_palette
             self._colors = []
             for i in range(n):
                 color_idx = i % len(base_colors)
@@ -281,6 +337,16 @@ class PieChart(Chart):
             if self.show_percentages:
                 pct = (value / total) * 100
                 label_display = f"{label_display} ({pct:.1f}%)"
+            elif self._pie_value_labels:
+                from charted.utils.value_format import format_value
+
+                cfg = self._pie_value_labels
+                opts = {k: v for k, v in cfg.items() if k != "format"}
+                fmt = cfg["format"]
+                # For percent format, label the slice's share of the whole.
+                raw = (value / total) if fmt == "percent" else value
+                formatted = format_value(raw, fmt, **opts)
+                label_display = f"{label_display} ({formatted})"
 
             text_width_est = len(label_display) * font_size * 0.55
 
@@ -315,17 +381,21 @@ class PieChart(Chart):
             )
             current_angle = end_angle
 
-        # --- Second pass: create dual-column legend for pie chart ---
-        # Use create_pie_legend() to split entries across left and right sides
-        legend = create_pie_legend(
-            series_names=labels,
-            colors=self.colors,
-            theme_config=self.theme,
-            chart_width=self.width,
-            chart_height=self.height,
-        )
-        if legend:
-            result.add_child(legend)
+        # --- Second pass: legend ---
+        # When the shared placement legend is active (legend='right'|'bottom'
+        # |'top'), the base class renders a single consistent box in a reserved
+        # band, so skip the legacy split legend here. With legend='none' (the
+        # default) keep the historical dual-column split legend unchanged.
+        if getattr(self, "_legend_placement", "none") == "none":
+            legend = create_pie_legend(
+                series_names=labels,
+                colors=self.colors,
+                theme_config=self.theme,
+                chart_width=self.width,
+                chart_height=self.height,
+            )
+            if legend:
+                result.add_child(legend)
 
         # --- Render slices ---
         for s in slices:
@@ -345,7 +415,8 @@ class PieChart(Chart):
                 transform = f"translate({offset_x}, {offset_y})"
 
             # Get slice-specific style
-            slice_color = self.colors[i % len(self.colors)]
+            base_color = self.colors[i % len(self.colors)]
+            slice_color = base_color
             slice_opacity = 0.8
             if self.series_styles and i < len(self.series_styles):
                 style = self.series_styles[i] or {}
@@ -354,21 +425,32 @@ class PieChart(Chart):
                 if style.get("fill_opacity"):
                     slice_opacity = style["fill_opacity"]
 
+            # Pattern fill (only when the colour wasn't overridden) and the
+            # high-contrast wedge outline. Both are no-ops by default.
+            draw_fill = (
+                self._category_fill(i, slice_color)
+                if slice_color == base_color
+                else slice_color
+            )
+            outline = self._filled_outline_attrs()
+
             # Render slice path
             if angle >= 359.9:
                 path_data = self._get_full_circle_path(cx, cy, radius)
                 slice_path = Path(
                     d=path_data,
-                    fill=slice_color,
+                    fill=draw_fill,
                     fill_rule="evenodd" if self.inner_radius > 0 else "nonzero",
                     opacity=slice_opacity,
+                    **outline,
                 )
             else:
                 path_data = self._get_slice_path(cx, cy, radius, start_angle, end_angle)
                 slice_path = Path(
                     d=path_data,
-                    fill=slice_color,
+                    fill=draw_fill,
                     opacity=slice_opacity,
+                    **outline,
                 )
 
             if transform:
@@ -378,31 +460,125 @@ class PieChart(Chart):
             else:
                 result.add_child(slice_path)
 
-        # --- Render labels (only those that fit inside slices) ---
+        # --- Render labels ---
+        # Labels that fit inside their slice are drawn at the slice centroid.
+        # Labels that don't fit (small or thin slices) are placed outside the
+        # pie with a leader line so every slice keeps its value label instead
+        # of being silently dropped.
+        #
+        # Only do this when a placement legend ('right'/'bottom') is active.
+        # With legend='none' (the default) the legacy dual-column split legend
+        # already names every slice in columns flanking the pie, so outside
+        # leader labels are redundant and collide with that legend's columns.
+        if getattr(self, "_legend_placement", "none") != "none":
+            outside = [s for s in slices if not s["fits_inside"]]
+            self._render_outside_labels(result, outside, cx, cy, radius, font_size)
+
         for s in slices:
+            if not s["fits_inside"]:
+                continue
             i = s["i"]
             mid_rad = s["mid_rad"]
-            mid_angle = s["mid_angle"]
             label_display = s["label_display"]
-            text_width_est = s["text_width_est"]
             slice_color = self.colors[i % len(self.colors)]
             text_color = get_contrast_color(slice_color)
 
-            if s["fits_inside"]:
-                # Label inside the slice
-                label_x = cx + s["inside_label_r"] * math.cos(mid_rad)
-                label_y = cy + s["inside_label_r"] * math.sin(mid_rad)
-                label_text = Text(
-                    x=label_x,
-                    y=label_y,
-                    text=label_display,
-                    fill=text_color,
-                    font_size=font_size,
-                    font_family=self.theme.title_font_family,
-                    text_anchor="middle",
-                    dominant_baseline="middle",
-                )
-                result.add_child(label_text)
-            # Labels that don't fit are handled by the legend above
+            # Label inside the slice
+            label_x = cx + s["inside_label_r"] * math.cos(mid_rad)
+            label_y = cy + s["inside_label_r"] * math.sin(mid_rad)
+            label_text = Text(
+                x=label_x,
+                y=label_y,
+                text=label_display,
+                fill=text_color,
+                font_size=font_size,
+                font_family=self.theme.title_font_family,
+                text_anchor="middle",
+                dominant_baseline="middle",
+            )
+            result.add_child(label_text)
 
         return result
+
+    def _render_outside_labels(
+        self,
+        result: G,
+        outside: list,
+        cx: float,
+        cy: float,
+        radius: float,
+        font_size: float,
+    ) -> None:
+        """Place labels for slices too small to hold an inside label.
+
+        Each label is drawn just beyond the pie edge with a short leader line
+        connecting it to its slice. Labels are split into left/right columns by
+        their slice mid-angle and stacked vertically so they do not overlap.
+        """
+        if not outside:
+            return
+
+        text_color = self.theme.resolved_label_color
+        line_color = self.theme.resolved_grid_color
+        leader_r = radius * 1.02  # where the leader line starts (slice edge)
+        line_h = font_size * 1.35
+
+        # Split into left/right by horizontal direction of the slice midpoint.
+        right = []
+        left = []
+        for s in outside:
+            if math.cos(s["mid_rad"]) >= 0:
+                right.append(s)
+            else:
+                left.append(s)
+
+        for side in (right, left):
+            if not side:
+                continue
+            is_right = side is right
+            # Order top-to-bottom by vertical position so leaders don't cross.
+            side.sort(key=lambda s: math.sin(s["mid_rad"]))
+
+            # Vertically distribute labels around the side, centred on the pie.
+            # A shared elbow x-column keeps the horizontal runs parallel so the
+            # leader lines for adjacent labels don't cross.
+            n = len(side)
+            start_y = cy - (n - 1) * line_h / 2
+            elbow_x = cx + (radius * 1.12 if is_right else -radius * 1.12)
+            text_x = cx + (radius * 1.18 if is_right else -radius * 1.18)
+            for k, s in enumerate(side):
+                mid_rad = s["mid_rad"]
+                # Point on the slice edge where the leader starts.
+                x0 = cx + leader_r * math.cos(mid_rad)
+                y0 = cy + leader_r * math.sin(mid_rad)
+                # Horizontal target row for the text.
+                text_y = start_y + k * line_h
+                # Leader line: slice edge -> elbow (at row height) -> text.
+                d = (
+                    f"M {x0:.2f} {y0:.2f} "
+                    f"L {elbow_x:.2f} {text_y:.2f} "
+                    f"L {text_x:.2f} {text_y:.2f}"
+                )
+                result.add_child(
+                    Path(
+                        d=d,
+                        stroke=line_color,
+                        stroke_width=1,
+                        fill="none",
+                        opacity=0.7,
+                    )
+                )
+                anchor = "start" if is_right else "end"
+                gap = 4 if is_right else -4
+                result.add_child(
+                    Text(
+                        x=text_x + gap,
+                        y=text_y,
+                        text=s["label_display"],
+                        fill=text_color,
+                        font_size=font_size,
+                        font_family=self.theme.title_font_family,
+                        text_anchor=anchor,
+                        dominant_baseline="middle",
+                    )
+                )

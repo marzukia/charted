@@ -19,6 +19,63 @@ def calculate_text_dimensions(
     return MeasuredText(text, width, height)
 
 
+def wrap_text_to_width(
+    text: str,
+    max_width: float,
+    font: str = DEFAULT_FONT,
+    font_size: int = DEFAULT_FONT_SIZE,
+) -> MeasuredText:
+    """Wrap a label across multiple lines so it fits within ``max_width``.
+
+    Splits on whitespace and greedily packs words onto each line. A single
+    word longer than ``max_width`` is kept whole on its own line rather than
+    being truncated, so the full text is always preserved. Returns a
+    MeasuredText whose width is the widest resulting line, whose height is the
+    total stacked height of all lines, and whose ``lines`` holds the per-line
+    strings (``None`` when no wrapping was needed).
+
+    A non-positive ``max_width`` disables wrapping and returns the label
+    measured as a single line.
+    """
+    text = str(text)
+    single = calculate_text_dimensions(text, font=font, font_size=font_size)
+    if max_width <= 0 or single.width <= max_width:
+        return single
+
+    words = text.split()
+    if not words:
+        return single
+
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if (
+            current
+            and calculate_text_dimensions(
+                candidate, font=font, font_size=font_size
+            ).width
+            > max_width
+        ):
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+
+    if len(lines) <= 1:
+        return single
+
+    measured_lines = [
+        calculate_text_dimensions(line, font=font, font_size=font_size)
+        for line in lines
+    ]
+    width = max(m.width for m in measured_lines)
+    height = sum(m.height for m in measured_lines)
+    return MeasuredText(text, width, height, lines=lines)
+
+
 def calculate_rotation_angle(
     total_label_width: float,
     total_permissible_width: float,

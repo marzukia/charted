@@ -216,6 +216,57 @@ class TestHeatmapContinuousScale:
         assert svg.startswith("<svg")
 
 
+class TestHeatmapColorbar:
+    """Tests for the gradient colorbar (ticks, title, sizing, borders)."""
+
+    def test_default_colorbar_tick_count(self):
+        """Default renders 5 tick labels including both endpoints."""
+        chart = HeatmapChart(data=[[0, 25, 50, 75, 100]], value_format=".0f")
+        svg = chart.html
+        # The five evenly spaced ticks for a 0..100 range.
+        for label in ("0", "25", "50", "75", "100"):
+            assert f">{label}</text>" in svg
+
+    def test_custom_tick_count(self):
+        """colorbar_ticks controls the number of intermediate labels."""
+        chart = HeatmapChart(
+            data=[[0, 100]], colorbar_ticks=3, value_format=".0f"
+        )
+        svg = chart.html
+        for label in ("0", "50", "100"):
+            assert f">{label}</text>" in svg
+
+    def test_ticks_clamped_minimum(self):
+        """Fewer than two ticks is clamped to two endpoints."""
+        chart = HeatmapChart(data=[[1, 9]], colorbar_ticks=1)
+        assert chart.colorbar_ticks == 2
+
+    def test_colorbar_title_rendered(self):
+        """A colorbar_title appears as rotated text in the SVG."""
+        chart = HeatmapChart(data=[[1, 9]], colorbar_title="Score")
+        svg = chart.html
+        assert ">Score</text>" in svg
+        assert "rotate(-90" in svg
+
+    def test_no_colorbar_title_by_default(self):
+        """No rotated title without colorbar_title."""
+        chart = HeatmapChart(data=[[1, 9]])
+        assert "rotate(-90" not in chart.html
+
+    def test_colorbar_reserves_right_band(self):
+        """The colorbar reserves right padding so it stays in bounds."""
+        chart = HeatmapChart(data=[[1, 2], [3, 4]])
+        # Right padding exceeds the bare h_padding band, leaving room
+        # for the gradient strip, ticks and labels.
+        assert chart._legend_layout_extent() > chart.colorbar_width
+        assert chart.right_padding > chart.h_padding * chart.width
+
+    def test_cell_border_width_configurable(self):
+        """cell_border_width sets the per-cell stroke width."""
+        chart = HeatmapChart(data=[[1, 2], [3, 4]], cell_border_width=0.1)
+        assert 'stroke-width="0.1"' in chart.html
+
+
 class TestLerpColor:
     """Test the internal color interpolation."""
 

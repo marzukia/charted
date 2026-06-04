@@ -3,6 +3,16 @@ from xml.sax.saxutils import escape as _xml_escape
 Children = list["Element"]
 
 
+def _escape_attr(value: str) -> str:
+    """XML-escape an attribute value for safe inclusion in a double-quoted attribute.
+
+    Escapes ``&``, ``<``, ``>`` and ``"`` so a value cannot terminate the
+    attribute or inject markup. Consistent with the text-node escaping used by
+    ``children_html``.
+    """
+    return _xml_escape(str(value), {'"': "&quot;"})
+
+
 class Element(object):
     tag: str
     kwargs: dict[str, str] = {}
@@ -45,7 +55,7 @@ class Element(object):
             string += " "
             attributes_array = []
             for k, v in self.kwargs.items():
-                attributes_array.append(f'{k.replace("_", "-")}="{v}"')
+                attributes_array.append(f'{k.replace("_", "-")}="{_escape_attr(v)}"')
             string += " ".join(attributes_array)
         return string
 
@@ -142,6 +152,16 @@ class Path(Element):
 
 class Text(Element):
     tag = "text"
+
+    def __init__(self, text: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self.add_child(text)
+
+
+class TSpan(Element):
+    """SVG ``<tspan>`` for a single line within a multi-line ``<text>``."""
+
+    tag = "tspan"
 
     def __init__(self, text: str = None, **kwargs):
         super().__init__(**kwargs)

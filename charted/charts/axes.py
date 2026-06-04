@@ -17,6 +17,7 @@ from charted.utils.types import (
     Vector,
     Vector2D,
 )
+from charted.utils.value_format import format_value
 
 
 class Axis(G):
@@ -237,6 +238,42 @@ class Axis(G):
     def grid_lines(self) -> Path:
         raise Exception("grid_lines not implemented for instance of Axis.")
 
+    @staticmethod
+    def _split_grid_config(config) -> tuple[dict, dict]:
+        """Split a grid config into (major_attrs, minor_params).
+
+        A string config becomes the historical single-weight attrs with no
+        minor grid. A dict config has its minor_* keys peeled off and returned
+        separately so the remaining keys can be splatted onto the major Path.
+        """
+        if isinstance(config, str):
+            return {"stroke": config, "stroke_dasharray": "None"}, {}
+        major = dict(config)
+        minor = {
+            "divisions": major.pop("minor_divisions", 0),
+            "stroke": major.pop("minor_stroke", None),
+            "stroke_width": major.pop("minor_stroke_width", None),
+            "stroke_dasharray": major.pop("minor_stroke_dasharray", "None"),
+        }
+        return major, minor
+
+    @staticmethod
+    def _minor_positions(coordinates: list[float], divisions: int) -> list[float]:
+        """Interpolate minor-line positions between adjacent major coordinates.
+
+        ``divisions`` is the number of equal subdivisions between two majors, so
+        ``divisions - 1`` minor lines fall strictly between each pair.
+        """
+        if divisions <= 1 or len(coordinates) < 2:
+            return []
+        ordered = sorted(coordinates)
+        minors: list[float] = []
+        for a, b in zip(ordered, ordered[1:]):
+            step = (b - a) / divisions
+            for k in range(1, divisions):
+                minors.append(a + step * k)
+        return minors
+
     @property
     def axis_labels(self) -> G:
         raise Exception("axis_labels not implemented for instance of Axis.")
@@ -298,8 +335,8 @@ class Axis(G):
                     decimal_value = str(label).split(".")[-1]
                     if float(decimal_value) > 0:
                         precision = 1
-                value = round(label, precision) if precision > 0 else int(label)
-                labels.append(value)
+            for label in self.values:
+                labels.append(format_value(label, decimals=precision))
         else:
             labels = [*labels]
         self._labels = [calculate_text_dimensions(label) for label in labels]
@@ -335,15 +372,48 @@ class XAxis(Axis):
     def coordinates(self) -> list[float]:
         return [self.reproject(i) for i in self.values]
 
+    def _label_stride(self, count: int) -> int:
+        """Choose how many categories to skip between drawn labels.
+
+        Dense ordinal axes draw a label for every category, which turns into a
+        black smear once there are dozens of them. Mirror the YAxis grid's
+        halving behaviour: pick a stride so the number of drawn labels stays in
+        a readable range. When the plot width and label widths are available,
+        size the stride so labels do not overlap; otherwise fall back to a
+        count-based rule. Small axes (<=10 labels) keep every label.
+        """
+        if count <= 10:
+            return 1
+
+        # Width-aware path: how many labels can fit without overlapping. Each
+        # label needs roughly its own width plus a small gap. Use the widest
+        # label so nothing collides at the tightest point.
+        plot_width = getattr(self.parent, "plot_width", None)
+        if plot_width:
+            widths = [getattr(label, "width", 0) for label in self._labels]
+            max_width = max(widths) if widths else 0
+            if max_width > 0:
+                slot = max_width + 4
+                max_fit = max(1, int(plot_width // slot))
+                if count > max_fit:
+                    return math.ceil(count / max_fit)
+                return 1
+
+        # Width unavailable: halve repeatedly like the YAxis grid until the
+        # drawn label count drops to ~10 or fewer.
+        stride = 1
+        while count / stride > 10:
+            stride *= 2
+        return stride
+
     @property
     def grid_lines(self) -> Path:
         if not self.config:
             return None
 
-        # Convert string config (grid_color) to dict for backward compatibility
-        config = self.config
-        if isinstance(config, str):
-            config = {"stroke": config, "stroke_dasharray": "None"}
+        # Split the config into major-line attrs and minor-grid params. A plain
+        # string config yields the historical single-weight grid.
+        major, minor = self._split_grid_config(self.config)
 
         # In stacked mode with negative values, the reproject formula is
         # relative to zero (value/range), so tick coordinates need to be
@@ -364,29 +434,49 @@ class XAxis(Axis):
             if not coordinates or abs((coordinates[-1] + dx) - plot_width) > 0.5:
                 coordinates.append(plot_width - dx)
 
-        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in coordinates]
-        return Path(
-            **config,
-            d=d,
-            transform=translate(
-                x=self.parent.left_padding,
-                y=self.parent.top_padding,
-            ),
+        transform = translate(
+            x=self.parent.left_padding,
+            y=self.parent.top_padding,
         )
+
+        d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in coordinates]
+        major_path = Path(**major, d=d, transform=transform)
+
+        minor_coords = self._minor_positions(coordinates, minor.get("divisions", 0))
+        if not minor_coords:
+            return major_path
+
+        minor_attrs = {
+            "stroke": minor["stroke"] or major.get("stroke"),
+            "stroke_dasharray": minor["stroke_dasharray"],
+        }
+        if minor["stroke_width"] is not None:
+            minor_attrs["stroke_width"] = minor["stroke_width"]
+        minor_d = [f"M{x + dx} {0} v{self.parent.plot_height}" for x in minor_coords]
+        minor_path = Path(**minor_attrs, d=minor_d, transform=transform)
+        # Minor lines first so the heavier major lines render on top.
+        return G().add_children(minor_path, major_path)
 
     @property
     def axis_labels(self) -> G:
-        labels = G(
-            font_size=DEFAULT_FONT_SIZE,
-            font_family=DEFAULT_FONT,
-            fill=self.parent.theme.resolved_label_color
-            if hasattr(self.parent, "theme")
-            else "#444444",
-            transform=translate(
+        theme = getattr(self.parent, "theme", None)
+        font_size = DEFAULT_FONT_SIZE
+        font_weight = None
+        if theme is not None:
+            font_size = theme.resolved_axis_label_font_size
+            font_weight = theme.axis_label_font_weight
+        group_kwargs = {
+            "font_size": font_size,
+            "font_family": DEFAULT_FONT,
+            "fill": theme.resolved_label_color if theme is not None else "#444444",
+            "transform": translate(
                 x=self.parent.left_padding,
                 y=self.parent.top_padding + DEFAULT_PADDING,
             ),
-        )
+        }
+        if font_weight:
+            group_kwargs["font_weight"] = font_weight
+        labels = G(**group_kwargs)
 
         rotation_angle = 0
         if self.parent.x_label_rotation:
@@ -399,7 +489,15 @@ class XAxis(Axis):
             dx = self.reproject(abs(min_v))
 
         y = self.parent.plot_height
-        for x, label in zip(self.coordinates, self.labels):
+        coordinates = list(self.coordinates)
+        all_labels = list(self.labels)
+        # Thin dense ordinal axes: keep first and last, skip every nth in the
+        # middle so labels stop overlapping into a smear.
+        stride = self._label_stride(len(all_labels))
+        last_index = len(all_labels) - 1
+        for index, (x, label) in enumerate(zip(coordinates, all_labels)):
+            if stride > 1 and index not in (0, last_index) and index % stride != 0:
+                continue
             x = x + dx
             transformations = [translate(-label.width / 2, 0)]
             if rotation_angle > 0:
@@ -471,34 +569,54 @@ class YAxis(Axis):
         if not self.config:
             return None
 
-        # Convert string config (grid_color) to dict for backward compatibility
-        config = self.config
-        if isinstance(config, str):
-            config = {"stroke": config, "stroke_dasharray": "None"}
+        # Split the config into major-line attrs and minor-grid params. A plain
+        # string config yields the historical single-weight grid.
+        major, minor = self._split_grid_config(self.config)
 
-        d = [f"M{0} {y} h{self.parent.plot_width}" for y in self.coordinates]
-        return Path(
-            **config,
-            d=d,
-            transform=translate(
-                x=self.parent.left_padding,
-                y=self.parent.top_padding,
-            ),
+        transform = translate(
+            x=self.parent.left_padding,
+            y=self.parent.top_padding,
         )
+
+        coordinates = list(self.coordinates)
+        d = [f"M{0} {y} h{self.parent.plot_width}" for y in coordinates]
+        major_path = Path(**major, d=d, transform=transform)
+
+        minor_coords = self._minor_positions(coordinates, minor.get("divisions", 0))
+        if not minor_coords:
+            return major_path
+
+        minor_attrs = {
+            "stroke": minor["stroke"] or major.get("stroke"),
+            "stroke_dasharray": minor["stroke_dasharray"],
+        }
+        if minor["stroke_width"] is not None:
+            minor_attrs["stroke_width"] = minor["stroke_width"]
+        minor_d = [f"M{0} {y} h{self.parent.plot_width}" for y in minor_coords]
+        minor_path = Path(**minor_attrs, d=minor_d, transform=transform)
+        # Minor lines first so the heavier major lines render on top.
+        return G().add_children(minor_path, major_path)
 
     @property
     def axis_labels(self) -> G:
-        labels = G(
-            font_size=DEFAULT_FONT_SIZE,
-            font_family=DEFAULT_FONT,
-            fill=self.parent.theme.resolved_label_color
-            if hasattr(self.parent, "theme")
-            else "#444444",
-            transform=translate(
+        theme = getattr(self.parent, "theme", None)
+        font_size = DEFAULT_FONT_SIZE
+        font_weight = None
+        if theme is not None:
+            font_size = theme.resolved_axis_label_font_size
+            font_weight = theme.axis_label_font_weight
+        group_kwargs = {
+            "font_size": font_size,
+            "font_family": DEFAULT_FONT,
+            "fill": theme.resolved_label_color if theme is not None else "#444444",
+            "transform": translate(
                 x=(self.parent.left_padding - 6),
                 y=self.parent.top_padding,
             ),
-        )
+        }
+        if font_weight:
+            group_kwargs["font_weight"] = font_weight
+        labels = G(**group_kwargs)
 
         bar_height = getattr(self.parent, "y_height", None)
         if bar_height is not None:
@@ -513,17 +631,22 @@ class YAxis(Axis):
             y_positions = self.coordinates
 
         for y, label in zip(y_positions, self.labels):
+            lines = getattr(label, "lines", None)
             if bar_height is not None:
-                text = Text(
-                    x=0,
-                    y=y,
-                    text=label.text,
-                    dominant_baseline="central",
-                    transform=translate(
-                        x=-label.width,
-                        y=0,
-                    ),
-                )
+                if lines:
+                    labels.add_child(self._wrapped_label(lines, y, label.height))
+                else:
+                    text = Text(
+                        x=0,
+                        y=y,
+                        text=label.text,
+                        dominant_baseline="central",
+                        transform=translate(
+                            x=-label.width,
+                            y=0,
+                        ),
+                    )
+                    labels.add_child(text)
             else:
                 text = Text(
                     x=0,
@@ -534,5 +657,35 @@ class YAxis(Axis):
                         y=label.height / 4,
                     ),
                 )
-            labels.add_child(text)
+                labels.add_child(text)
         return labels
+
+    @staticmethod
+    def _wrapped_label(lines: list[str], y: float, total_height: float) -> Text:
+        """Build a right-aligned multi-line label centred on ``y``.
+
+        Each line becomes a ``<tspan>`` (anchored at the gutter's right edge
+        via ``text-anchor="end"``) with its own ``dy`` so the stacked block of
+        ``len(lines)`` lines is vertically centred on the bar's midpoint ``y``.
+        """
+        from charted.html.element import TSpan
+
+        n = len(lines)
+        line_height = total_height / n if n else total_height
+        # Baseline of the first line so the block centres on y. Each subsequent
+        # line steps down by one line height.
+        first_dy = -(line_height * (n - 1)) / 2 + line_height / 4
+        text = Text(
+            x=0,
+            y=y,
+            text_anchor="end",
+        )
+        for i, line in enumerate(lines):
+            text.add_child(
+                TSpan(
+                    text=line,
+                    x=0,
+                    dy=first_dy if i == 0 else line_height,
+                )
+            )
+        return text

@@ -41,7 +41,13 @@ class RadarRenderer:
         Returns:
             G element containing all chart components
         """
-        g = G(opacity=0.8, transform=[*self.chart.get_base_transform()])
+        g = G(transform=[*self.chart.get_base_transform()])
+        # Grid, spokes and the semi-transparent data polygons share one 0.8
+        # opacity group. The numeric ring labels are kept OUT of this group so
+        # they render at full opacity on top of the data instead of inheriting
+        # the dimming (a nested opacity=1 would still multiply down to 0.8).
+        body = G(opacity=0.8)
+        g.add_child(body)
 
         # Calculate chart center and max radius
         cx = self.chart.width / 2
@@ -49,31 +55,76 @@ class RadarRenderer:
         min_dim = min(self.chart.width, self.chart.height)
         self._max_radius = (min_dim / 2 - DEFAULT_PADDING * 2) * self.chart.radius
 
+        # Ring labels are collected while drawing the grid but rendered last
+        # (on top of the data series) so the polygons cannot obscure them.
+        self._ring_label_specs: list[tuple[float, float, str]] = []
+
         # Render concentric grid circles
-        self._render_grid(g, cx, cy)
+        self._render_grid(body, cx, cy)
 
         # Render axis spokes and labels
-        self._render_axes(g, cx, cy)
+        self._render_axes(body, cx, cy)
 
         # Render data series
-        self._render_series(g, cx, cy)
+        self._render_series(body, cx, cy)
+
+        # Render the numeric ring labels on top of everything else (full
+        # opacity, not inside the dimmed body) so they stay readable even
+        # where a data polygon covers a ring.
+        self._render_ring_labels(g)
 
         return g
 
+    def _ring_color(self) -> str:
+        """Theme-aware colour for the radial ring lines.
+
+        Prefers the theme's resolved grid colour (which respects light/dark/
+        high-contrast presets and custom overrides) and falls back to the raw
+        ``grid_color`` attribute, then a light grey, when no theme is present.
+        """
+        theme = self.chart.theme
+        resolved = getattr(theme, "resolved_grid_color", None)
+        if resolved:
+            return resolved
+        return getattr(theme, "grid_color", "#e0e0e0")
+
+    def _ring_label_color(self) -> str:
+        """High-contrast colour for the numeric ring labels.
+
+        The faint grid colour reads fine for the ring lines but is nearly
+        invisible for text on a dark background. Use the theme's full-opacity
+        label colour so the numbers stay legible on every preset.
+        """
+        theme = self.chart.theme
+        resolved = getattr(theme, "resolved_label_color", None)
+        if resolved:
+            return resolved
+        return getattr(theme, "title_color", "#333")
+
+    def _ring_label_halo(self) -> str:
+        """Background colour used as a halo behind ring labels.
+
+        A thick stroke in the background colour, drawn behind the glyphs,
+        keeps the numbers readable where a data polygon sits underneath them.
+        """
+        theme = self.chart.theme
+        return getattr(theme, "background_color", "#ffffff")
+
     def _render_grid(self, g: G, cx: float, cy: float) -> None:
-        """Render concentric grid circles.
+        """Render concentric grid circles and numeric ring labels.
 
         Args:
             g: Parent G element
             cx: Center x coordinate
             cy: Center y coordinate
         """
-        grid_color = (
-            self.chart.theme.grid_color
-            if hasattr(self.chart.theme, "grid_color")
-            else "#e0e0e0"
-        )
-        grid_width = getattr(self.chart.theme, "grid_width", 1)
+        grid_color = self._ring_color()
+        grid_width = getattr(self.chart.theme, "grid_width", None) or 1
+
+        # Value at the outermost ring, used to label each ring level.
+        max_value = max(max(abs(v) for v in s) for s in self.chart._series_data)
+        if max_value == 0:
+            max_value = 1
 
         for level in range(self.chart.grid_levels):
             radius = self._get_grid_radius(level)
@@ -87,6 +138,87 @@ class RadarRenderer:
             )
             g.add_child(circle)
 
+            if getattr(self.chart, "show_radial_labels", False):
+                ring_value = max_value * (level + 1) / self.chart.grid_levels
+                self._collect_ring_label(cx, cy, radius, ring_value)
+
+    def _collect_ring_label(
+        self,
+        cx: float,
+        cy: float,
+        radius: float,
+        value: float,
+    ) -> None:
+        """Record a numeric ring label for later (top-of-stack) rendering.
+
+        The label sits just inside the ring along the vertical (12 o'clock)
+        spoke so it reads upright. Collecting the specs here and drawing them
+        after the data series keeps the numbers on top of the polygons.
+        """
+        from charted.utils.value_format import format_value
+
+        text = format_value(value)
+        label_x = cx + 3
+        label_y = cy - radius + DEFAULT_FONT_SIZE * 0.5
+        self._ring_label_specs.append((label_x, label_y, text))
+
+    def _render_ring_labels(self, g: G) -> None:
+        """Draw all collected ring labels on top of the data.
+
+        Each number is drawn with a background-coloured halo (a thick stroke
+        behind the glyphs via ``paint-order: stroke``) so it stays legible
+        even where a data polygon covers the ring, and in a high-contrast
+        label colour so it reads on dark themes.
+        """
+        if not self._ring_label_specs:
+            return
+
+        # Draw each number as a solid badge: a pill filled with the
+        # high-contrast label colour (white on dark themes) carrying the text
+        # in the background colour. Dark-on-light (or light-on-dark) badges
+        # read unambiguously over both the dark canvas and the data polygons.
+        pill_color = self._ring_label_color()
+        text_color = self._ring_label_halo()
+        font_size = DEFAULT_FONT_SIZE
+        # Full-opacity subgroup: the parent group is drawn at 0.8 opacity,
+        # which would otherwise dim the badges.
+        label_group = G(opacity=1)
+        for label_x, label_y, text in self._ring_label_specs:
+            char_w = font_size * 0.62
+            pad_x = 3
+            pad_y = 2
+            box_w = len(text) * char_w + pad_x * 2
+            box_h = font_size + pad_y * 2
+            box_x = label_x - pad_x
+            box_y = label_y - font_size + pad_y
+            label_group.add_child(
+                Rect(
+                    x=box_x,
+                    y=box_y,
+                    width=box_w,
+                    height=box_h,
+                    rx=2,
+                    fill=pill_color,
+                    fill_opacity=1,
+                )
+            )
+            # Anchor the text at the badge centre so it is centred both ways
+            # regardless of glyph metrics.
+            label_group.add_child(
+                Text(
+                    x=box_x + box_w / 2,
+                    y=box_y + box_h / 2,
+                    text=text,
+                    fill=text_color,
+                    font_size=font_size,
+                    font_family=DEFAULT_FONT,
+                    font_weight="bold",
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                )
+            )
+        g.add_child(label_group)
+
     def _render_axes(self, g: G, cx: float, cy: float) -> None:
         """Render axis spokes and labels.
 
@@ -95,12 +227,8 @@ class RadarRenderer:
             cx: Center x coordinate
             cy: Center y coordinate
         """
-        grid_color = (
-            self.chart.theme.grid_color
-            if hasattr(self.chart.theme, "grid_color")
-            else "#e0e0e0"
-        )
-        grid_width = getattr(self.chart.theme, "grid_width", 1)
+        grid_color = self._ring_color()
+        grid_width = getattr(self.chart.theme, "grid_width", None) or 1
 
         for i, label in enumerate(self.chart._radar_labels):
             angle = self._get_angle(i)
@@ -128,10 +256,15 @@ class RadarRenderer:
         end_x: float,
         end_y: float,
     ) -> None:
-        """Render a single axis label rotated to align with its axis.
+        """Render a single axis label, kept upright for legibility.
 
-        Labels rotate to point outward from center along the axis direction,
-        preventing text overflow and overlap in multi-axis displays.
+        Spoke labels are drawn horizontally (never rotated to the spoke
+        angle). Rotating each label to its spoke direction made the top and
+        bottom labels vertical, where they collided with the vertical ring
+        badges and read as garbled, clipped text. Instead the label's
+        horizontal anchor and vertical baseline are chosen from its position
+        around the circle so the full string sits just outside the grid and
+        reads left-to-right on every spoke.
 
         Args:
             g: Parent G element
@@ -143,25 +276,46 @@ class RadarRenderer:
         label_radius = self._max_radius + self.chart.label_offset
         label_x, label_y = self._polar_to_cartesian(cx, cy, label_radius, angle)
 
-        # Rotate label to align with axis; flip for left side readability
-        if -90 <= angle <= 90:  # Right side: text reads outward
+        # Normalize the spoke direction onto the unit circle to decide which
+        # side of the point the text should sit on. cos drives the horizontal
+        # anchor, sin drives the vertical baseline nudge.
+        angle_rad = math.radians(angle)
+        cos_a = math.cos(angle_rad)
+        sin_a = math.sin(angle_rad)
+
+        # Horizontal anchoring: labels on the right read from the start, on
+        # the left from the end, and labels near the vertical (top/bottom)
+        # spokes are centered so they don't drift off the spoke.
+        eps = 1e-3
+        if cos_a > eps:
             text_anchor = "start"
             x_align = label_x + 5
-            rotation = angle
-        else:  # Left side: text reads outward (flipped to stay upright)
+        elif cos_a < -eps:
             text_anchor = "end"
             x_align = label_x - 5
-            rotation = angle + 180
+        else:
+            text_anchor = "middle"
+            x_align = label_x
+
+        # Vertical baseline: drop top labels above the grid, raise bottom
+        # labels below it. sin > 0 is the top half in SVG (y grows downward,
+        # but _polar_to_cartesian already negates y), so a positive sin means
+        # the point is above center and the text should sit a touch higher.
+        if sin_a > eps:
+            y_align = label_y - 2
+        elif sin_a < -eps:
+            y_align = label_y + DEFAULT_FONT_SIZE
+        else:
+            y_align = label_y + 4
 
         label_text = Text(
             x=x_align,
-            y=label_y + 4,  # Small y offset for baseline
+            y=y_align,
             text=label,
             fill=getattr(self.chart.theme, "title_color", "#333"),
             font_size=DEFAULT_FONT_SIZE,
             font_family=DEFAULT_FONT,
             text_anchor=text_anchor,
-            transform=[f"rotate({rotation}, {label_x}, {label_y})"],
         )
         g.add_child(label_text)
 

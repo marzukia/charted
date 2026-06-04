@@ -74,7 +74,7 @@ class TestResolvedColors:
 
     def test_resolved_reference_line_color_default(self):
         t = Theme()
-        assert t.resolved_reference_line_color == derive_color("#000000", 0.50, "#FFFFFF")
+        assert t.resolved_reference_line_color == derive_color("#000000", 0.75, "#FFFFFF")
 
     def test_resolved_axis_title_color_default(self):
         """Default title_color (#444444) should resolve to root at 80%."""
@@ -91,7 +91,7 @@ class TestResolvedColors:
 
     def test_resolved_quadrant_label_color_default(self):
         t = Theme()
-        assert t.resolved_quadrant_label_color == derive_color("#000000", 0.18, "#FFFFFF")
+        assert t.resolved_quadrant_label_color == derive_color("#000000", 0.40, "#FFFFFF")
 
 
 # =========================================================================
@@ -118,9 +118,12 @@ class TestComposeRootColor:
 
 class TestBackwardCompat:
     def test_light_preset_explicit_colors(self):
+        from charted.utils.colors import derive_color
+
         t = Theme.from_preset("light")
-        # Light preset sets explicit grid_color="#6b7280" which != default "#CCCCCC"
-        assert t.resolved_grid_color == "#6b7280"
+        # Light leaves grid_color at the default so it derives from the 0.20
+        # tier over the light background and recedes behind the data.
+        assert t.resolved_grid_color == derive_color("#000000", 0.20, "#f9fafb")
 
     def test_dark_preset_explicit_colors(self):
         t = Theme.from_preset("dark")
@@ -129,5 +132,6 @@ class TestBackwardCompat:
 
     def test_high_contrast_preset_explicit_colors(self):
         t = Theme.from_preset("high-contrast")
-        # High-contrast preset sets explicit grid_color="#000000"
-        assert t.resolved_grid_color == "#000000"
+        # High-contrast uses a mid-grey grid that recedes below the data while
+        # staying accessible, rather than a full-black cage.
+        assert t.resolved_grid_color == "#8a8a8a"

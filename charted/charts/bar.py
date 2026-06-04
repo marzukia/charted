@@ -28,6 +28,10 @@ class BarChart(Chart):
         series_names: Names for each series (shown in legend)
         series_styles: Per-series style overrides
         x_stacked: If True, stack bars horizontally instead of side-by-side
+        category_label_max_width: Max pixel width for a category label before it
+            wraps onto multiple lines. None (default) keeps the full label on a
+            single line and grows the left gutter to fit it. Set this to wrap
+            long names (no truncation) and keep the plot area wide.
 
     Example:
         >>> from charted import BarChart
@@ -45,6 +49,7 @@ class BarChart(Chart):
         zero_index: bool = True,
         title: str | None = None,
         subtitle: str | None = None,
+        subtitle_leading: float = 8.0,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
@@ -57,6 +62,11 @@ class BarChart(Chart):
         annotations: list | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        value_labels: bool | str | dict | None = None,
+        legend: str = "none",
+        category_label_max_width: float | None = None,
+        category_patterns: list[str] | bool | None = None,
+        domain_padding: float | None = None,
     ):
         self._bar_data_labels = data_labels
         if bar_gap is None:
@@ -87,6 +97,7 @@ class BarChart(Chart):
             y_labels=labels,
             title=title,
             subtitle=subtitle,
+            subtitle_leading=subtitle_leading,
             zero_index=zero_index,
             theme=theme,
             series_names=series_names,
@@ -101,6 +112,11 @@ class BarChart(Chart):
             annotations=annotations,
             reference_lines=reference_lines,
             colors=colors,
+            value_labels=value_labels,
+            legend=legend,
+            category_label_max_width=category_label_max_width,
+            category_patterns=category_patterns,
+            domain_padding=domain_padding,
         )
 
         # Refresh axes grid_lines after parent is fully initialized.
@@ -115,6 +131,10 @@ class BarChart(Chart):
         if self.x_axis and self.x_axis.config:
             self.x_axis.children[0] = self.x_axis.grid_lines
             self.x_axis.children[1] = self.x_axis.axis_labels
+
+    def _value_label_data(self) -> Vector2D:
+        """Bar values live on the x-axis, not y."""
+        return self.x_data
 
     @property
     def y_height(self) -> float:
@@ -150,6 +170,7 @@ class BarChart(Chart):
             transform=f"translate({self.left_padding + dx}, {self.top_padding})",
         )
 
+        outline = self._filled_outline_attrs()
         if self.x_stacked:
             # Mirror ColumnChart: iterate series, accumulate offsets along the
             # value axis (x here, y in ColumnChart). x_offsets is pre-computed
@@ -177,7 +198,10 @@ class BarChart(Chart):
                     left_x = min(x_offset_val, x_offset_val + x)
                     width = abs(x)
                     paths.append(Path.get_path(left_x, slot_y, width, series_thickness))
-                bars_g.add_child(Path(d=paths, fill=fill))
+                draw_fill = (
+                    self._category_fill(series_idx, fill) if fill == color else fill
+                )
+                bars_g.add_child(Path(d=paths, fill=draw_fill, **outline))
         else:
             zero_x = self.x_axis.zero
             for series_idx, (x_values_series, color) in enumerate(
@@ -207,19 +231,26 @@ class BarChart(Chart):
                     else:
                         bar_path = Path.get_path(x, bar_y, zero_x - x, series_thickness)
                     if per_bar:
-                        bar_fill = self.colors[bar_idx % len(self.colors)]
-                        bars_g.add_child(Path(d=[bar_path], fill=bar_fill))
+                        bar_fill = self._category_fill(
+                            bar_idx, self.colors[bar_idx % len(self.colors)]
+                        )
+                        bars_g.add_child(Path(d=[bar_path], fill=bar_fill, **outline))
                     else:
                         paths.append(bar_path)
                 if not per_bar:
-                    bars_g.add_child(Path(d=paths, fill=fill))
+                    series_fill = (
+                        self._category_fill(series_idx, fill) if fill == color else fill
+                    )
+                    bars_g.add_child(Path(d=paths, fill=series_fill, **outline))
 
-        # Render data labels at end of bars
-        if self._bar_data_labels:
+        # Render data labels at end of bars. Explicit data_labels take
+        # precedence; otherwise fall back to synthesized value labels.
+        bar_labels = self._bar_data_labels or self._build_value_labels()
+        if bar_labels:
             from charted.utils.colors import get_contrast_color
             from charted.utils.helpers import calculate_text_dimensions
 
-            labels = self._bar_data_labels
+            labels = bar_labels
             if labels and not isinstance(labels[0], list):
                 labels = [labels]
 
@@ -236,13 +267,37 @@ class BarChart(Chart):
                     if bar_idx >= len(x_vals) or not label_text:
                         continue
                     x = x_vals[bar_idx]
-                    slot_y = start_y + bar_idx * (slot_height + gap)
-                    bar_y = slot_y + series_idx * series_thickness
 
                     if single_series:
                         bar_color = self.colors[bar_idx % len(self.colors)]
                     else:
                         bar_color = self.colors[series_idx % len(self.colors)]
+
+                    if self.x_stacked:
+                        # In stacked mode every series shares the bar's full
+                        # vertical slot, so the label's y-center is the slot
+                        # center (independent of series_idx). Center the label
+                        # horizontally inside its own segment, which runs from
+                        # the cumulative offset to offset+value.
+                        slot_y = start_y + bar_idx * (slot_height + gap)
+                        x_offset_val = self.x_offsets[series_idx][bar_idx]
+                        seg_left = min(x_offset_val, x_offset_val + x)
+                        seg_width = abs(x)
+                        bars_g.add_child(
+                            Text(
+                                text=str(label_text),
+                                x=seg_left + seg_width / 2,
+                                y=slot_y + slot_height / 2 + font_size / 3,
+                                fill=get_contrast_color(bar_color),
+                                font_size=font_size,
+                                font_family=font_family,
+                                text_anchor="middle",
+                            )
+                        )
+                        continue
+
+                    slot_y = start_y + bar_idx * (slot_height + gap)
+                    bar_y = slot_y + series_idx * series_thickness
 
                     # Check if label would overflow the chart boundary
                     measured = calculate_text_dimensions(
@@ -276,7 +331,7 @@ class BarChart(Chart):
                             )
                         )
 
-        # Plot borders — all four sides.
+        # Plot borders: all four sides.
         grid_color = self.theme.resolved_grid_color
         border_transform = f"translate({self.left_padding}, {self.top_padding})"
         borders = [

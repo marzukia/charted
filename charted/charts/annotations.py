@@ -52,14 +52,16 @@ class LineAnnotation:
         start: (x, y) start point in data coordinates.
         end: (x, y) end point in data coordinates.
         color: Stroke color. Defaults to the theme reference-line color.
-        width: Stroke width in pixels.
+        width: Stroke width in pixels. None falls back to the theme's
+            ``resolved_reference_line_width`` so reference lines (and the zero
+            crosshair) share one themeable, grid-beating stroke width.
         dashed: If True, draw a dashed line (the legacy reference-line style).
     """
 
     start: tuple[float, float]
     end: tuple[float, float]
     color: str | None = None
-    width: float = REFERENCE_LINE_WIDTH
+    width: float | None = None
     dashed: bool = False
     # Internal: when set, emit a full-span axis-aligned reference line whose
     # markup is byte-for-byte identical to the legacy h_lines / v_lines path.
@@ -78,19 +80,24 @@ class LineAnnotation:
 
     def render(self, chart) -> Element:
         color = self.color or chart.theme.resolved_reference_line_color
+        width = (
+            self.width
+            if self.width is not None
+            else chart.theme.resolved_reference_line_width
+        )
         if self._ref_line == "h":
             y = chart.plot_height - chart.y_axis.reproject(self._ref_value)
-            return self._dashed_path(f"M0 {y} h{chart.plot_width}", color)
+            return self._dashed_path(f"M0 {y} h{chart.plot_width}", color, width)
         if self._ref_line == "v":
             x = chart.x_axis.reproject(self._ref_value)
-            return self._dashed_path(f"M{x} 0 v{chart.plot_height}", color)
+            return self._dashed_path(f"M{x} 0 v{chart.plot_height}", color, width)
 
         x0, y0 = _project(chart, *self.start)
         x1, y1 = _project(chart, *self.end)
         kwargs = dict(
             d=[f"M{x0} {y0} L{x1} {y1}"],
             stroke=color,
-            stroke_width=self.width,
+            stroke_width=width,
             fill="none",
         )
         if self.dashed:
@@ -100,13 +107,13 @@ class LineAnnotation:
         return Path(**kwargs)
 
     @staticmethod
-    def _dashed_path(d: str, color: str) -> Path:
+    def _dashed_path(d: str, color: str, width: float = REFERENCE_LINE_WIDTH) -> Path:
         from charted.constants import REFERENCE_LINE_DASH
 
         return Path(
             d=[d],
             stroke=color,
-            stroke_width=REFERENCE_LINE_WIDTH,
+            stroke_width=width,
             stroke_dasharray=REFERENCE_LINE_DASH,
             fill="none",
         )

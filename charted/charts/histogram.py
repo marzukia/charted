@@ -1,4 +1,4 @@
-"""Histogram — distribution of data values across bins.
+"""Histogram: distribution of data values across bins.
 
 Shows the frequency of values within evenly-spaced intervals.
 """
@@ -69,6 +69,7 @@ class Histogram(Chart):
         height: float = DEFAULT_CHART_HEIGHT,
         title: str | None = None,
         subtitle: str | None = None,
+        subtitle_leading: float = 8.0,
         theme: Theme | None = None,
         x_label: str | None = None,
         y_label: str | None = None,
@@ -76,6 +77,8 @@ class Histogram(Chart):
         v_lines: list[float] | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        value_labels: bool | str | dict | None = None,
+        domain_padding: float | None = None,
     ):
         n_bins = bins if bins is not None else _auto_bins(data)
         bin_counts, bin_labels = _compute_bins(data, n_bins)
@@ -90,6 +93,7 @@ class Histogram(Chart):
             height=height,
             title=title,
             subtitle=subtitle,
+            subtitle_leading=subtitle_leading,
             theme=theme,
             chart_type="histogram",
             x_label=x_label,
@@ -98,11 +102,15 @@ class Histogram(Chart):
             v_lines=v_lines,
             reference_lines=reference_lines,
             colors=colors,
+            value_labels=value_labels,
+            domain_padding=domain_padding,
         )
 
     @property
     def representation(self) -> G:
         """Render histogram as bars."""
+        from charted.html.element import Text
+
         g = G()
         plot_h = self.plot_height
         x_offset = self.x_offset
@@ -111,6 +119,13 @@ class Histogram(Chart):
         pad_y = self.top_padding
 
         bar_w = x_offset
+
+        value_labels = self._build_value_labels()
+        label_row = value_labels[0] if value_labels else None
+        font_size = max(8, self.theme.title_font_size - 4)
+        font_color = self.theme.resolved_data_label_color
+        # Track placed label boxes so colliding bin labels are auto-hidden.
+        placed: list[tuple[float, float]] = []
 
         for i, (y_val, y_off) in enumerate(zip(self.y_values[0], self.y_offsets[0])):
             x = pad_x + x_vals[i] + x_offset
@@ -127,5 +142,22 @@ class Histogram(Chart):
                     stroke_width=0.5,
                 )
             )
+            if label_row and i < len(label_row) and label_row[i]:
+                cx = x + bar_w / 2
+                # Auto-hide if too close to a previously-placed label.
+                if any(abs(cx - px) < font_size * 1.6 for px, _ in placed):
+                    continue
+                placed.append((cx, 0))
+                g.add_child(
+                    Text(
+                        text=str(label_row[i]),
+                        x=cx,
+                        y=pad_y + plot_h - h - 4,
+                        fill=font_color,
+                        font_size=font_size,
+                        font_family=self.theme.title_font_family,
+                        text_anchor="middle",
+                    )
+                )
 
         return g

@@ -20,6 +20,7 @@ from charted.utils.rendering import (
     generate_html_wrapper,
     generate_markdown_image,
 )
+from charted.utils.series_legend import SeriesLegend
 from charted.utils.theme_manager import ThemeManager
 from charted.utils.transform import translate
 from charted.utils.types import (
@@ -31,7 +32,7 @@ from charted.utils.types import (
 )
 
 
-class Chart(Svg):
+class Chart(SeriesLegend, Svg):
     """Base class for all SVG chart types.
 
     Provides common functionality for chart rendering including
@@ -55,6 +56,12 @@ class Chart(Svg):
         >>> # Use concrete subclasses instead:
         >>> from charted import BarChart, LineChart, PieChart
     """
+
+    # Subclasses whose data is not category-aligned (e.g. Gantt stores N tasks
+    # as N start/end coordinate pairs, so x_data holds 2N values rather than
+    # one per label) set this True to opt out of the generic label-length
+    # cross-check in DataModel and validate their own labels instead.
+    _skip_label_length_validation: bool = False
 
     x_stacked: bool = False
     y_stacked: bool = False
@@ -358,6 +365,7 @@ class Chart(Svg):
         x_stacked: bool = False,
         title: str | None = None,
         subtitle: str | None = None,
+        subtitle_leading: float = 8.0,
         theme: Theme | str | dict | None = None,
         chart_type: str | None = None,
         x_label: str | None = None,
@@ -370,12 +378,47 @@ class Chart(Svg):
         y_scale: object | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        x_range: tuple[float, float] | None = None,
+        y_range: tuple[float, float] | None = None,
+        domain_padding: float | None = None,
+        value_labels: bool | str | dict | None = None,
+        legend: str = "none",
+        category_label_max_width: float | None = None,
+        category_patterns: list[str] | bool | None = None,
     ):
+        # Maximum pixel width a category (y-axis) label may occupy before it is
+        # wrapped onto multiple lines. ``None`` (the default) keeps the
+        # historical single-line behaviour where the left padding grows to fit
+        # the longest label. Set this to cap the label gutter and wrap instead
+        # of letting long category names eat the plot area.
+        self._category_label_max_width = (
+            float(category_label_max_width)
+            if category_label_max_width is not None
+            else None
+        )
+        # Placement for the shared series legend. ``'none'`` (the default)
+        # reserves no layout space and leaves any historical in-plot legend
+        # untouched, so existing renders are byte-for-byte preserved.
+        self._init_legend(legend)
+        # Optional per-category hatch/pattern fills. ``None``/``False`` (the
+        # default) keeps flat colour fills so existing renders are unchanged.
+        # ``True`` selects the built-in cycle; a list cycles custom patterns.
+        # Patterns add a redundant texture channel on top of colour so
+        # categories stay distinguishable without relying on hue.
+        from charted.utils.patterns import resolve_pattern_cycle
+
+        self._category_patterns = resolve_pattern_cycle(category_patterns)
         super().__init__(
             width=width,
             height=height,
             viewBox=f"0 0 {width} {height}",
         )
+
+        # Optional fixed scale domains / data-domain padding. All default to
+        # None, which preserves the historical auto-fit-from-data behaviour.
+        self._x_range = tuple(x_range) if x_range is not None else None
+        self._y_range = tuple(y_range) if y_range is not None else None
+        self._domain_padding = domain_padding
 
         # Record the requested scale specs (string or Scale instance) for
         # to_config()/describe(); default is linear so existing charts are
@@ -413,6 +456,7 @@ class Chart(Svg):
             x_labels=x_labels,
             y_labels=y_labels,
             zero_index=zero_index,
+            skip_label_length_validation=self._skip_label_length_validation,
         )
 
         self.series_names = series_names
@@ -422,6 +466,7 @@ class Chart(Svg):
         self._x_label = x_label
         self._y_label = y_label
         self._data_labels = data_labels
+        self._value_label_config = self._normalize_value_labels(value_labels)
         self._annotations = list(annotations) if annotations else []
         self._h_lines = h_lines or []
         self._v_lines = v_lines or []
@@ -429,7 +474,15 @@ class Chart(Svg):
         # Parse reference_lines convenience API into h_lines/v_lines + labels
         self._reference_line_labels: list[dict] = []
         if reference_lines:
-            for ref in reference_lines:
+            from charted.utils.exceptions import ValidationError
+
+            for index, ref in enumerate(reference_lines):
+                if "value" not in ref:
+                    raise ValidationError(
+                        f"reference_lines[{index}] is missing required key "
+                        "'value'; each reference line must be a dict with a "
+                        "'value' key (and optional 'axis' and 'label')."
+                    )
                 value = ref["value"]
                 axis = ref.get("axis", "y")
                 label = ref.get("label")
@@ -473,6 +526,10 @@ class Chart(Svg):
         else:
             self._title = None
 
+        # Extra vertical gap (leading) inserted between the title and the
+        # subtitle so the subtitle is not cramped directly under the title.
+        self._subtitle_leading = max(0.0, float(subtitle_leading))
+
         # Set subtitle
         if subtitle:
             self._subtitle = calculate_text_dimensions(
@@ -483,6 +540,11 @@ class Chart(Svg):
         else:
             self._subtitle = None
 
+        # Subclasses (e.g. ScatterChart) may reserve a band outside the plot
+        # for a legend. The defaults leave the layout unchanged.
+        legend_layout_position = self._legend_layout_position()
+        legend_layout_extent = self._legend_layout_extent()
+
         # Initialize LayoutEngine for layout calculations
         self.layout = LayoutEngine(
             width=width,
@@ -492,8 +554,12 @@ class Chart(Svg):
             x_labels=self.data_model.x_labels,
             y_labels=self.data_model.y_labels,
             title=self._title,
+            subtitle=self._subtitle,
+            subtitle_leading=self._subtitle_leading,
             has_x_axis_label=bool(x_label),
             has_y_axis_label=bool(y_label),
+            legend_position=legend_layout_position,
+            legend_extent=legend_layout_extent,
         )
 
         # Build scale instances from the data domain. None/linear leaves the
@@ -510,10 +576,32 @@ class Chart(Svg):
         # horizontal bar charts.
         self._reject_unsupported_scales(chart_type, x_scale_inst, y_scale_inst)
 
+        # Apply fixed-domain (x_range/y_range) or fractional domain_padding by
+        # anchoring the data the axes derive their min/max from. None leaves the
+        # axis data untouched, so the auto-fit domain is unchanged.
+        value_axis = self._BAR_VALUE_AXIS.get(chart_type)
+        x_axis_data = self._anchor_axis_data(
+            self.x_data,
+            self._x_range,
+            zero_baseline=(value_axis == "x"),
+            stacked=(value_axis == "x" and self.x_stacked),
+        )
+        y_axis_data = self._anchor_axis_data(
+            self.y_data,
+            self._y_range,
+            zero_baseline=(value_axis == "y"),
+            stacked=(value_axis == "y" and self.y_stacked),
+        )
+
+        # Build the gridline config. When the theme requests no extra weight,
+        # dash pattern, or minor lines, fall back to the plain colour string so
+        # existing single-weight renders are unchanged byte-for-byte.
+        grid_config = self._build_grid_config()
+
         # Initialize axes
         self.x_axis = XAxis(
             parent=self,
-            data=self.x_data,
+            data=x_axis_data,
             labels=x_labels,
             stacked=self.x_stacked,
             zero_index=(
@@ -521,18 +609,18 @@ class Chart(Svg):
                 if (x_data is not None and x_labels is not None)
                 else self.zero_index
             ),
-            config=self.theme.resolved_grid_color,
+            config=grid_config,
             pad_labels=self.pad_x_labels,
             scale=x_scale_inst,
         )
 
         self.y_axis = YAxis(
             parent=self,
-            data=self.y_data,
+            data=y_axis_data,
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
-            config=self.theme.resolved_grid_color,
+            config=grid_config,
             scale=y_scale_inst,
         )
 
@@ -620,18 +708,51 @@ class Chart(Svg):
                 [self.y_axis.reproject(y) for y in arr] for arr in offsets
             ]
 
-        # Initialize ColorManager for automatic color cycling
-        self._color_manager = ColorManager(colors=self.theme.colors)
+        # Initialize ColorManager for automatic color cycling. Use the theme's
+        # contrast-floor-adjusted palette so washed-out hues are darkened in
+        # the high-contrast theme; identical to theme.colors otherwise.
+        self._color_manager = ColorManager(colors=self.theme.resolved_colors)
 
         # Initialize colors (set internal variable directly since property is read-only)
         if not hasattr(self, "_colors"):
-            self._colors = self.theme.colors
+            self._colors = self.theme.resolved_colors
 
         # Whether data marks should carry native <title> tooltips. Off for
         # file output (to_svg/save); toggled on only by to_html(tooltips=True).
         self._tooltips = False
 
+        # Wrap long category (y-axis) labels onto multiple lines so the label
+        # gutter stays bounded instead of consuming the plot. No-op unless
+        # category_label_max_width was set and a label actually overflows.
+        self._apply_category_label_wrapping()
+
         self._build_children()
+
+    def _apply_category_label_wrapping(self) -> None:
+        """Wrap y-axis category labels to ``category_label_max_width``.
+
+        Replaces the measured y-axis labels (used for left-padding) and the
+        y-axis' own render labels with wrapped MeasuredText so the full text is
+        shown across multiple lines instead of truncated or allowed to expand
+        the gutter without bound. Does nothing when no cap is set, there are no
+        y-axis labels, or nothing overflows.
+        """
+        cap = self._category_label_max_width
+        if cap is None or not self.data_model.y_labels:
+            return
+
+        from charted.utils.helpers import wrap_text_to_width
+
+        wrapped = [
+            wrap_text_to_width(label.text, cap) for label in self.data_model.y_labels
+        ]
+        if not any(w.lines for w in wrapped):
+            return
+
+        self.data_model._y_labels = wrapped
+        self.layout.y_labels = wrapped
+        if getattr(self, "y_axis", None) is not None:
+            self.y_axis._labels = wrapped
 
     def _build_children(self) -> None:
         """Assemble the chart's SVG child elements.
@@ -653,6 +774,8 @@ class Chart(Svg):
         )
         defs = Defs()
         defs.add_child(plot_clip)
+        for pattern in self._pattern_defs():
+            defs.add_child(pattern)
 
         children = [self.container, self.title, self.subtitle_element, defs]
         if self.render_axes:
@@ -685,6 +808,66 @@ class Chart(Svg):
             children.extend(axis_labels)
         self.children = []
         self.add_children(*children)
+
+    # =========================================================================
+    # Colourblind-safe redundancy: contrasting outlines + pattern fills
+    # =========================================================================
+
+    def _pattern_color_count(self) -> int:
+        """Number of distinct category colours that may need a pattern tile."""
+        colors = getattr(self, "colors", None) or []
+        return len(colors)
+
+    def _pattern_defs(self) -> list:
+        """Build one ``<pattern>`` def per (category, pattern) the chart uses.
+
+        Returns an empty list unless ``category_patterns`` was enabled, so the
+        default ``<defs>`` block is byte-for-byte unchanged. One pattern is
+        emitted per colour index, drawn in that index's fill colour, so a hatch
+        keeps the underlying category colour while adding a texture channel.
+        """
+        cycle = getattr(self, "_category_patterns", None)
+        if not cycle:
+            return []
+        from charted.utils.patterns import build_pattern
+
+        colors = getattr(self, "colors", None) or []
+        defs: list = []
+        for idx, color in enumerate(colors):
+            name = cycle[idx % len(cycle)]
+            defs.append(build_pattern(self._pattern_id(idx), name, color))
+        return defs
+
+    def _pattern_id(self, index: int) -> str:
+        """Stable id for the pattern tile of category ``index``."""
+        return f"chart-pattern-{id(self) & 0xFFFFFF:x}-{index}"
+
+    def _category_fill(self, index: int, color: str) -> str:
+        """Return the fill for category ``index``: a pattern url or the colour.
+
+        With patterns disabled (the default) this returns ``color`` unchanged,
+        preserving existing renders. With patterns enabled it returns a
+        ``url(#...)`` reference to the matching pattern tile.
+        """
+        if not getattr(self, "_category_patterns", None):
+            return color
+        return f"url(#{self._pattern_id(index)})"
+
+    def _filled_outline_attrs(self) -> dict:
+        """Stroke attributes to apply to a filled shape, or ``{}`` when off.
+
+        Reads the theme's ``filled_shape_outline``; when no outline colour is
+        configured (the default and the light/dark presets) this returns an
+        empty dict so filled shapes stay unstroked exactly as before. The
+        high-contrast preset returns a 1px black outline.
+        """
+        theme = getattr(self, "theme", None)
+        if theme is None:
+            return {}
+        stroke, width = theme.filled_shape_outline
+        if stroke is None:
+            return {}
+        return {"stroke": stroke, "stroke_width": width}
 
     # =========================================================================
     # Scale Helpers
@@ -735,6 +918,129 @@ class Chart(Svg):
         if x_data and isinstance(x_data[0], list):
             return [conv(row) for row in x_data]
         return conv(x_data)
+
+    def _anchor_axis_data(
+        self,
+        data: Vector2D,
+        fixed_range: tuple[float, float] | None,
+        zero_baseline: bool = False,
+        stacked: bool = False,
+    ) -> Vector2D:
+        """Return axis data anchored to a fixed range or padded domain.
+
+        The linear axes derive their domain (min/max) from the flattened data
+        they are given. To let callers control the visible span without adding
+        invisible data points, this appends synthetic anchor values so the
+        derived domain reaches the requested bounds:
+
+        - ``fixed_range`` (``x_range``/``y_range``): anchor to its exact
+          (min, max), replacing the data-derived domain.
+        - ``domain_padding``: a fractional pad applied to the data-derived
+          (min, max) on each side, e.g. ``0.1`` adds 10% of the data span as
+          headroom above and below.
+
+        ``zero_baseline`` marks a value axis whose geometry fills from zero
+        (bar/column/area/histogram). For these, padding the side that holds the
+        baseline would push the baseline off zero and distort every bar, so the
+        pad is only applied away from zero: above the tallest positive value,
+        below the lowest negative value, or both when the data straddles zero.
+        The zero baseline itself never moves.
+
+        When neither range nor padding is set the original data is returned
+        unchanged, so the historical auto-fit domain is byte-for-byte preserved.
+        """
+        if fixed_range is None and self._domain_padding is None:
+            return data
+        if not data or not any(row for row in data):
+            return data
+
+        # Determine the data-derived extent the axis will see. A stacked value
+        # axis aggregates per category (sum of positive series for the top, sum
+        # of negative series for the bottom), so the extent must be measured the
+        # same way or the headroom is computed against the wrong magnitude.
+        count = len(data[0])
+        if stacked:
+            tops = [0.0] * count
+            bottoms = [0.0] * count
+            for row in data:
+                for i in range(min(count, len(row))):
+                    v = row[i]
+                    if v < 0:
+                        bottoms[i] += v
+                    else:
+                        tops[i] += v
+            d_min, d_max = min(bottoms), max(tops)
+        else:
+            flat = [v for row in data for v in row]
+            d_min, d_max = min(flat), max(flat)
+
+        if fixed_range is not None:
+            lo, hi = min(fixed_range), max(fixed_range)
+        else:
+            span = d_max - d_min
+            # A zero span (single distinct value) has no fraction to pad; leave
+            # the data alone so the axis keeps its own degenerate-domain logic.
+            if span == 0:
+                return data
+            pad = span * self._domain_padding
+            if zero_baseline:
+                # Keep the zero baseline pinned: only add headroom on the side
+                # away from zero. Positive-only data pads the top, negative-only
+                # pads the bottom, straddling data pads both.
+                lo = d_min - pad if d_min < 0 else d_min
+                hi = d_max + pad if d_max > 0 else d_max
+            else:
+                lo, hi = d_min - pad, d_max + pad
+
+        if stacked:
+            # The axis sums each category, so a short [lo, hi] anchor row would
+            # both crash the per-category loop and be summed into a column. Add
+            # full-width anchor rows whose top/bottom extremes already account
+            # for the existing stacked totals, so the aggregated max reaches hi
+            # and min reaches lo without inflating any real category.
+            top_row = [0.0] * count
+            bot_row = [0.0] * count
+            top_i = max(range(count), key=lambda i: tops[i])
+            bot_i = min(range(count), key=lambda i: bottoms[i])
+            if hi > tops[top_i]:
+                top_row[top_i] = hi - tops[top_i]
+            if lo < bottoms[bot_i]:
+                bot_row[bot_i] = lo - bottoms[bot_i]
+            return [*[list(row) for row in data], top_row, bot_row]
+
+        # Append the bounds as an extra series so min()/max() over the flattened
+        # data reach lo/hi without altering the plotted points themselves.
+        return [*[list(row) for row in data], [lo, hi]]
+
+    def _build_grid_config(self):
+        """Assemble the gridline config passed to each axis.
+
+        Returns the plain grid colour string when the theme requests no
+        gridline-hierarchy features, keeping existing renders unchanged. When a
+        dash pattern, an explicit major width, or minor subdivisions are set,
+        returns a dict carrying the major-line attributes plus the minor-grid
+        parameters (consumed by the axis grid_lines renderer).
+        """
+        theme = self.theme
+        color = theme.resolved_grid_color
+        width = theme.resolved_grid_width
+        dasharray = theme.grid_dasharray
+        divisions = theme.minor_grid_divisions
+
+        if width is None and dasharray is None and divisions <= 0:
+            return color
+
+        config = {
+            "stroke": color,
+            "stroke_dasharray": dasharray if dasharray is not None else "None",
+        }
+        if width is not None:
+            config["stroke_width"] = width
+        if divisions > 0:
+            config["minor_divisions"] = divisions
+            config["minor_stroke"] = theme.resolved_minor_grid_color
+            config["minor_stroke_width"] = theme.resolved_minor_grid_width
+        return config
 
     def _build_scale(self, spec: object | None, data: Vector2D):
         """Construct a Scale instance for an axis from its data domain.
@@ -896,9 +1202,16 @@ class Chart(Svg):
         if not self._subtitle:
             return None
         subtitle_font_size = self.theme.title_font_size - 4
-        # Position below the title (or at top if no title)
+        # Position below the title (or at top if no title). The configurable
+        # leading adds breathing room so the subtitle reads as secondary
+        # instead of sitting cramped against the title.
         if self._title:
-            y_pos = self.v_pad / 2 + self._title.height + subtitle_font_size
+            y_pos = (
+                self.v_pad / 2
+                + self._title.height
+                + subtitle_font_size
+                + self._subtitle_leading
+            )
         else:
             y_pos = self.v_pad / 2 + subtitle_font_size
         return Text(
@@ -1058,9 +1371,14 @@ class Chart(Svg):
         """Subclass must implement this."""
         raise Exception("representation not implemented for instance of Chart.")
 
-    @property
-    def legend(self) -> G | None:
-        """Create legend element."""
+    def _default_legend(self) -> G | None:
+        """Create the historical in-plot legend element.
+
+        This is the pre-issue-#60 legend: an in-plot box positioned by the
+        theme's ``legend_position``. It is used as the fallback when the new
+        placement-aware legend is off (``legend='none'``), so charts that
+        previously rendered an in-plot legend keep doing so unchanged.
+        """
         from charted.utils.rendering import create_legend
 
         # Pass legend config as dict or Theme object
@@ -1132,7 +1450,7 @@ class Chart(Svg):
                 }
             )
 
-        # Determine labels list — check pie labels, then y_labels (BarChart),
+        # Determine labels list: check pie labels, then y_labels (BarChart),
         # then x_labels (most chart types)
         if hasattr(self, "_pie_labels") and self._pie_labels:
             labels = [
@@ -1248,6 +1566,8 @@ class Chart(Svg):
             ref_labels[(entry["axis"], entry["value"])] = entry.get("label")
 
         if ref_labels:
+            from charted.utils.helpers import calculate_text_dimensions
+
             ref_color = self.theme.resolved_reference_line_color
             label_font_size = max(8, self.theme.title_font_size - 4)
             label_font_family = self.theme.title_font_family
@@ -1255,13 +1575,41 @@ class Chart(Svg):
             for (axis, value), label in ref_labels.items():
                 if not label:
                     continue
+                text_w = calculate_text_dimensions(
+                    str(label), font=label_font_family, font_size=label_font_size
+                ).width
                 if axis == "y":
+                    # The dashed line spans the full plot width. Anchor the label
+                    # to the line's right end, inside the plot, so it reads as a
+                    # callout on a continuous line rather than a floating tag next
+                    # to a clipped one. Sit it just below the line by default
+                    # (there is usually more clear space below a target line than
+                    # above it) and nudge it off any gridline it would touch.
                     y = self.plot_height - self.y_axis.reproject(value)
+                    label_x = self.plot_width - 4
+                    gap = label_font_size * 0.5
+                    # Candidate baseline below the line; flip above if that pushes
+                    # the text off the bottom of the plot.
+                    label_y = y + label_font_size + gap
+                    if label_y > self.plot_height - 2:
+                        label_y = y - gap
+                    # Keep the text band clear of horizontal gridlines.
+                    gridlines = [self.plot_height - c for c in self.y_axis.coordinates]
+                    text_top = label_y - label_font_size
+                    for tick_y in gridlines:
+                        if text_top - 2 <= tick_y <= label_y + 2:
+                            # Gridline cuts through the text: shift the whole label
+                            # below that gridline (or above the line if no room).
+                            shifted = tick_y + label_font_size + gap
+                            label_y = (
+                                shifted if shifted < self.plot_height - 2 else y - gap
+                            )
+                            break
                     g.add_child(
                         Text(
                             text=label,
-                            x=self.plot_width - 4,
-                            y=y - 4,
+                            x=label_x,
+                            y=label_y,
                             fill=ref_color,
                             font_size=label_font_size,
                             font_family=label_font_family,
@@ -1270,15 +1618,23 @@ class Chart(Svg):
                     )
                 else:
                     x = self.x_axis.reproject(value)
+                    # Keep the label fully on-canvas: anchor it to the left of the
+                    # line when it would otherwise overflow the right edge.
+                    if x + 4 + text_w > self.plot_width:
+                        label_x = x - 4
+                        anchor = "end"
+                    else:
+                        label_x = x + 4
+                        anchor = "start"
                     g.add_child(
                         Text(
                             text=label,
-                            x=x + 4,
+                            x=label_x,
                             y=label_font_size,
                             fill=ref_color,
                             font_size=label_font_size,
                             font_family=label_font_family,
-                            text_anchor="start",
+                            text_anchor=anchor,
                         )
                     )
 
@@ -1383,6 +1739,71 @@ class Chart(Svg):
 
         return Title(self._tooltip_label(series_idx, point_idx))
 
+    # =========================================================================
+    # Value labels (opt-in, formatted on-element data annotations)
+    # =========================================================================
+
+    @staticmethod
+    def _normalize_value_labels(spec: bool | str | dict | None) -> dict | None:
+        """Coerce the ``value_labels`` argument into a config dict or None.
+
+        Accepted forms:
+        - ``None`` / ``False``: feature off (returns None).
+        - ``True``: on with the default ``"number"`` format.
+        - a format string (``"number"`` / ``"percent"`` / ``"currency"``).
+        - a dict, e.g. ``{"format": "currency", "decimals": 2, "prefix": "US"}``.
+          A ``"format"`` key chooses the format; all other keys are passed
+          straight through to ``format_value`` as keyword options.
+
+        Foot-gun: the ``"percent"`` shorthand (and the dict form without an
+        explicit ``percent_scale``) defaults to ``percent_scale=True``, which
+        multiplies the raw value by 100 (``0.4`` -> ``"40%"``). That default
+        suits fractional data. If your data is *already* expressed in percent
+        units (``40`` meaning 40%), pass the dict form
+        ``{"format": "percent", "percent_scale": False}`` so the value renders
+        as ``"40%"`` rather than ``"4000%"``. The library cannot infer the
+        scale of arbitrary numbers, so the caller must say which one applies.
+        """
+        if spec is None or spec is False:
+            return None
+        if spec is True:
+            return {"format": "number"}
+        if isinstance(spec, str):
+            return {"format": spec}
+        if isinstance(spec, dict):
+            cfg = dict(spec)
+            cfg.setdefault("format", "number")
+            return cfg
+        raise TypeError(
+            "value_labels must be None, a bool, a format string, or a dict; "
+            f"got {type(spec).__name__}"
+        )
+
+    def _value_label_data(self) -> Vector2D:
+        """Return the raw per-series values that value labels annotate.
+
+        Defaults to ``y_data``. Charts whose value axis is X (horizontal bars)
+        or whose data lives elsewhere (pie) override this.
+        """
+        return self.y_data
+
+    def _build_value_labels(self) -> list[list[str]] | None:
+        """Synthesize formatted label strings from the chart's raw values.
+
+        Returns a 2D list mirroring the value-data shape, or None when value
+        labels are disabled. Used by ``_render_data_labels`` as the label source
+        when no explicit ``data_labels`` were supplied.
+        """
+        cfg = self._value_label_config
+        if not cfg:
+            return None
+        from charted.utils.value_format import format_value
+
+        opts = {k: v for k, v in cfg.items() if k != "format"}
+        fmt = cfg["format"]
+        data = self._value_label_data()
+        return [[format_value(v, fmt, **opts) for v in row] for row in data]
+
     @property
     def _data_label_x_offset(self) -> float:
         return 0
@@ -1396,13 +1817,22 @@ class Chart(Svg):
 
         Returns a G element with text labels positioned at each data point.
         Subclasses call this from their representation property.
-        """
-        if not self._data_labels:
-            return None
 
+        When no explicit ``data_labels`` are supplied but ``value_labels`` is
+        enabled, the labels are synthesized from the raw data with the requested
+        number/percent/currency formatting, and any label whose box would
+        collide with an already-placed one is hidden.
+        """
         from charted.utils.colors import get_contrast_color
 
         labels = self._data_labels
+        auto_hide = False
+        if not labels:
+            labels = self._build_value_labels()
+            auto_hide = labels is not None
+        if not labels:
+            return None
+
         # Normalize to 2D list
         if labels and not isinstance(labels[0], list):
             labels = [labels]
@@ -1410,7 +1840,13 @@ class Chart(Svg):
         g = G()
         font_size = max(8, self.theme.title_font_size - 4)
         font_family = self.theme.title_font_family
-        font_color = self.theme.resolved_axis_title_color
+        font_color = self.theme.resolved_data_label_color
+
+        # Track placed label boxes (in plot coordinates) so value labels can be
+        # auto-hidden when they would collide with an already-placed label.
+        placed_boxes: list[tuple[float, float, float, float]] = []
+
+        from charted.utils.helpers import calculate_text_dimensions
 
         for series_idx, label_row in enumerate(labels):
             if series_idx >= len(self.y_values):
@@ -1462,6 +1898,28 @@ class Chart(Svg):
                     anchor = "end"
                 elif x < self.plot_width * 0.15:
                     anchor = "start"
+                # Auto-hide synthesized value labels that would overlap an
+                # already-placed one. Explicit data_labels are left untouched so
+                # historical renders stay byte-for-byte identical.
+                if auto_hide:
+                    tw = calculate_text_dimensions(
+                        str(label_text), font=font_family, font_size=font_size
+                    ).width
+                    box = (
+                        x - tw / 2,
+                        ty - font_size / 2,
+                        x + tw / 2,
+                        ty + font_size / 2,
+                    )
+                    if any(
+                        box[0] < pb[2]
+                        and box[2] > pb[0]
+                        and box[1] < pb[3]
+                        and box[3] > pb[1]
+                        for pb in placed_boxes
+                    ):
+                        continue
+                    placed_boxes.append(box)
                 g.add_child(
                     Text(
                         text=str(label_text),
