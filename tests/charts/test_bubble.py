@@ -65,15 +65,45 @@ class TestBubbleChartHappyPath:
         assert all(6 <= r <= 30 for r in radii)
 
     def test_bubble_reuses_scatter_positioning(self):
-        """Point centers match a ScatterChart built with the same x/y."""
+        """Point centers match a ScatterChart built with the same x/y.
+
+        Bubble charts auto-reserve domain headroom so large markers near the
+        data extremes are not clipped by the plot edge; that headroom is keyed
+        off ``max_radius``. With ``max_radius=0`` no headroom is needed, so the
+        domain is untouched and the bubble must reuse the scatter's exact
+        positioning, which is what this guards.
+        """
         x = [0, 1, 2, 3]
         y = [10, 25, 5, 40]
-        bubble = BubbleChart(x_data=x, y_data=y, sizes=[1, 2, 3, 4])
+        bubble = BubbleChart(
+            x_data=x, y_data=y, sizes=[1, 2, 3, 4], min_radius=0, max_radius=0
+        )
         scatter = ScatterChart(x_data=x, y_data=y)
 
         bubble_centers = _circle_centers(bubble.html)
         scatter_centers = _circle_centers(scatter.html)
         assert bubble_centers == scatter_centers
+
+    def test_bubble_reserves_radius_headroom(self):
+        """Large markers get domain headroom so they are not clipped at edges.
+
+        The data extreme on each axis should sit far enough inside the plot
+        that a ``max_radius`` marker centred there stays within the plot
+        rectangle, unlike a plain scatter (which would clip it).
+        """
+        x = [0, 1, 2, 3]
+        y = [10, 25, 5, 40]
+        bubble = BubbleChart(x_data=x, y_data=y, sizes=[1, 2, 3, 4], max_radius=24)
+        # The auto domain-padding must have widened at least one axis domain
+        # beyond the raw data, leaving room for the largest bubble.
+        assert bubble._bubble_auto_pad is not None
+        assert max(bubble._bubble_auto_pad.values()) > 0
+        # The topmost data point's marker must clear the top plot edge.
+        yr = bubble.y_axis.axis_dimension
+        ph = bubble.plot_height
+        radii = bubble._scaled_radii()
+        top_y_px = ph - (max(y) - yr.min_value) / (yr.max_value - yr.min_value) * ph
+        assert top_y_px - max(radii) >= 0
 
     def test_bubble_equal_sizes_use_midpoint(self):
         """When every size is equal, radii equal the radius-range midpoint."""
@@ -198,6 +228,4 @@ class TestBubbleSizeLegendAndHue:
 
     def test_invalid_size_legend_value_raises(self):
         with pytest.raises(ValueError):
-            BubbleChart(
-                x_data=[1, 2], y_data=[1, 2], sizes=[5, 10], size_legend="left"
-            )
+            BubbleChart(x_data=[1, 2], y_data=[1, 2], sizes=[5, 10], size_legend="left")

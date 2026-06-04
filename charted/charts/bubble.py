@@ -162,6 +162,21 @@ class BubbleChart(ScatterChart):
         self._hue_colors = tuple(hue_colors) if hue_colors is not None else None
         self._hue_title = hue_title
 
+        # Bubble markers have a pixel radius, but the data domain is in data
+        # units, so a bubble sitting on the data min/max is centred on the plot
+        # edge and half of it spills outside the plot rectangle (where it gets
+        # clipped). Reserve enough domain headroom that the largest bubble fits
+        # inside the plot on every side. A bubble's radius is the same in pixels
+        # on both axes, but each axis has its own data-to-pixel scale, so the
+        # required padding fraction differs per axis; we compute and apply them
+        # separately (see ``_anchor_axis_data``). An explicit ``domain_padding``
+        # from the caller disables this and is honoured verbatim on both axes.
+        self._bubble_auto_pad: dict[str, float] | None = None
+        if domain_padding is None:
+            self._bubble_auto_pad = self._radius_aware_domain_padding(
+                x_data, y_data, width, height
+            )
+
         super().__init__(
             x_data=x_data,
             y_data=y_data,
@@ -184,7 +199,7 @@ class BubbleChart(ScatterChart):
 
     # Pixel geometry for the size / hue legend band.
     _SIZE_LEGEND_GAP = 16
-    _SIZE_LEGEND_LABEL_GAP = 8
+    _SIZE_LEGEND_LABEL_GAP = 12
     _SIZE_LEGEND_PAD = 8
     _HUE_BAR_WIDTH = 14
     _HUE_BAR_HEIGHT = 90
@@ -239,6 +254,112 @@ class BubbleChart(ScatterChart):
         if hi == lo:
             return [lo]
         return [lo, (lo + hi) / 2, hi]
+
+    def _radius_aware_domain_padding(
+        self,
+        x_data: Vector | Vector2D,
+        y_data: Vector | Vector2D,
+        width: float,
+        height: float,
+    ) -> dict[str, float]:
+        """Per-axis domain-padding fractions that keep edge bubbles in the plot.
+
+        A bubble centred on a data extreme overhangs the plot edge by its
+        radius (up to ``max_radius`` px), so without headroom the outermost
+        bubbles are clipped by the plot boundary. We want at least
+        ``max_radius`` px of empty space between the outermost data point and
+        the plot edge on every side.
+
+        ``domain_padding`` inflates an axis by a fraction ``f`` of its *data*
+        span (``d_max - d_min``) on each side. The axis actually rendered also
+        includes zero (``zero_index``), so the data span can be a small slice of
+        the full rendered span, and an ``f`` sized against the data span yields
+        far less pixel headroom than ``f`` of the rendered span would. The
+        per-edge headroom in pixels is ``f * data_span / rendered_span *
+        plot_dim``. Solving ``headroom >= max_radius`` gives
+        ``f >= max_radius * rendered_span / (data_span * plot_dim)``.
+
+        A bubble's radius is identical in pixels on both axes, but each axis has
+        its own data-to-pixel scale, so we compute a fraction per axis rather
+        than forcing one shared value (which would massively over-pad the looser
+        axis). Plot dimensions are estimated from the chart size because the
+        real layout is not built yet; over-reserving slightly is harmless.
+        """
+        if self.max_radius <= 0:
+            return {"x": 0.0, "y": 0.0}
+
+        def flat(data) -> list[float]:
+            if data and isinstance(data[0], list):
+                return [v for row in data for v in row]
+            return list(data) if data else []
+
+        # Rough plot-area estimates: title/axis chrome eats vertical space and
+        # the value-axis gutter plus any reserved legend band eats horizontal
+        # space. Deliberately conservative (smaller plot -> larger pad).
+        plot_h = max(1.0, height - 110.0)
+        plot_w = max(1.0, width - 110.0)
+        if self._size_legend == "right" or self.hue is not None:
+            # A right-hand legend band steals horizontal space. The exact band
+            # width needs the theme (not built yet), so subtract a rough fixed
+            # estimate keyed off the legend swatch size.
+            plot_w = max(1.0, plot_w - (2.0 * self.max_radius + 90.0))
+
+        def axis_fraction(values: list[float], plot_dim: float) -> float:
+            if not values:
+                return 0.0
+            d_min, d_max = min(values), max(values)
+            data_span = d_max - d_min
+            if data_span <= 0:
+                return 0.0
+            # zero_index pulls the rendered domain to include 0 on each axis.
+            rendered_span = max(d_max, 0.0) - min(d_min, 0.0)
+            rendered_span = max(rendered_span, data_span)
+            f = self.max_radius * rendered_span / (data_span * plot_dim)
+            # The axis rounds its domain to "nice" tick values after padding,
+            # which can snap the padded extreme back toward the data and swallow
+            # reserved headroom. A modest safety factor keeps a clear margin so
+            # the largest bubble still clears the edge after rounding. Cap each
+            # axis so a pathological max_radius cannot blow the domain up.
+            return min(f * 1.35, 1.0)
+
+        return {
+            "x": axis_fraction(flat(x_data), plot_w),
+            "y": axis_fraction(flat(y_data), plot_h),
+        }
+
+    def _anchor_axis_data(self, data, fixed_range, zero_baseline=False, stacked=False):
+        """Apply the per-axis radius-aware pad before delegating to the base.
+
+        When the caller passed an explicit ``domain_padding`` we leave the base
+        behaviour untouched. Otherwise we temporarily install the fraction for
+        the axis being anchored (identified by whether ``data`` is the chart's
+        x- or y-data) so each axis reserves exactly its own bubble headroom.
+        """
+        auto = getattr(self, "_bubble_auto_pad", None)
+        if auto is None or fixed_range is not None:
+            return super()._anchor_axis_data(data, fixed_range, zero_baseline, stacked)
+        if data is self.y_data:
+            frac = auto.get("y", 0.0)
+        elif data is self.x_data:
+            frac = auto.get("x", 0.0)
+        else:
+            frac = 0.0
+        if frac <= 0:
+            return super()._anchor_axis_data(data, fixed_range, zero_baseline, stacked)
+        saved = self._domain_padding
+        self._domain_padding = frac
+        try:
+            # Pad only the side away from zero (like a zero baseline). The
+            # bubbles needing headroom sit at the data extreme far from zero;
+            # padding the near-zero side too would push the domain below zero on
+            # all-positive data, which forces the axis onto a finer tick step
+            # and clutters the gridlines. Keeping the zero side pinned preserves
+            # the clean tick spacing while still clearing the outer bubbles.
+            return super()._anchor_axis_data(
+                data, fixed_range, zero_baseline=True, stacked=stacked
+            )
+        finally:
+            self._domain_padding = saved
 
     def _radius_for_size(self, value: float) -> float:
         """Map a raw size value onto the radius range (matches _scaled_radii)."""
@@ -365,9 +486,7 @@ class BubbleChart(ScatterChart):
         # Centre the bubble column on the largest radius so all bubbles share
         # a vertical centre line.
         bubble_cx = band_x + self.max_radius
-        label_x = (
-            band_x + 2 * self.max_radius + self._SIZE_LEGEND_LABEL_GAP
-        )
+        label_x = band_x + 2 * self.max_radius + self._SIZE_LEGEND_LABEL_GAP
 
         g = G()
         y = self.top_padding + self._SIZE_LEGEND_PAD
@@ -416,14 +535,22 @@ class BubbleChart(ScatterChart):
             y = cy + r + row_gap
 
         if self.hue is not None:
-            y += self._SIZE_LEGEND_PAD
+            # Clear vertical separation between the size-legend block and the
+            # hue colorbar so the two legends never crowd or overlap. The gap
+            # leaves room for the hue title's ascender below the last bubble.
+            y += self._SIZE_LEGEND_GAP + font_size
             self._add_hue_bar(g, band_x, y, font_size, font_family, font_color)
 
         return g
 
     def _add_hue_bar(
-        self, g: G, band_x: float, bar_top: float,
-        font_size: float, font_family: str, font_color: str,
+        self,
+        g: G,
+        band_x: float,
+        bar_top: float,
+        font_size: float,
+        font_family: str,
+        font_color: str,
     ) -> None:
         """Render a vertical hue gradient strip with low/high value labels."""
         if self._hue_title:
