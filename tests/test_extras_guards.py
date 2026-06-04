@@ -11,10 +11,10 @@ import sys
 
 import pytest
 
-_HAS_DUCKDB = importlib.util.find_spec("duckdb") is not None
-
 import duckdb_ext.extension as duckdb_ext
 import mcp_server
+
+_HAS_DUCKDB = importlib.util.find_spec("duckdb") is not None
 
 
 def _import_blocker(blocked: str):
