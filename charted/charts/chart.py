@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, cast
 
 from charted.charts._chart_output import ChartOutputMixin
+from charted.charts._chart_tooltips import ChartTooltipMixin
 from charted.charts.axes import XAxis, YAxis
 from charted.constants import (
     AXIS_BORDER_COLOR,
@@ -38,7 +39,7 @@ from charted.utils.types import (
 if TYPE_CHECKING:
     from charted.charts.axes import _AxisParent
     from charted.charts.scales import Scale
-    from charted.html.element import Element, Title
+    from charted.html.element import Element
     from charted.utils.patterns import Pattern
 
 
@@ -53,7 +54,7 @@ class _Annotation(Protocol):
     def render(self, chart: Chart) -> Element: ...
 
 
-class Chart(ChartOutputMixin, SeriesLegend, Svg):
+class Chart(ChartTooltipMixin, ChartOutputMixin, SeriesLegend, Svg):
     """Base class for all SVG chart types.
 
     Provides common functionality for chart rendering including
@@ -1643,62 +1644,6 @@ class Chart(ChartOutputMixin, SeriesLegend, Svg):
             )
 
         return elements
-
-    # =========================================================================
-    # Tooltips (opt-in, HTML-only native <title> hover labels)
-    # =========================================================================
-
-    def _tooltip_label(self, series_idx: int, point_idx: int) -> str:
-        """Build the tooltip text for one data point.
-
-        Format is ``"<label>: <value>"`` when a category label is available,
-        otherwise just the value. The series name is prefixed when there is
-        more than one series so multi-series marks stay distinguishable.
-        """
-        value = self._tooltip_value(series_idx, point_idx)
-        label = None
-        if self.x_labels and point_idx < len(self.x_labels):
-            lbl = self.x_labels[point_idx]
-            label = lbl.text if hasattr(lbl, "text") else str(lbl)
-
-        series_name = None
-        if self.series_names and series_idx < len(self.series_names):
-            series_name = self.series_names[series_idx]
-
-        multi_series = len(self.y_data) > 1
-
-        if label is not None:
-            if multi_series:
-                prefix = (
-                    series_name
-                    if series_name is not None
-                    else f"Series {series_idx + 1}"
-                )
-                return f"{prefix} - {label}: {value}"
-            return f"{label}: {value}"
-        if series_name is not None:
-            return f"{series_name}: {value}"
-        if multi_series:
-            return f"Series {series_idx + 1}: {value}"
-        return str(value)
-
-    def _tooltip_value(self, series_idx: int, point_idx: int) -> float | str:
-        """Return the raw data value for a point (overridable per chart)."""
-        data = self.y_data
-        if series_idx < len(data) and point_idx < len(data[series_idx]):
-            value = data[series_idx][point_idx]
-            if isinstance(value, float) and value.is_integer():
-                return int(value)
-            return value
-        return ""
-
-    def _tooltip_title(self, series_idx: int, point_idx: int) -> "Title | None":
-        """Return a ``Title`` element for a mark, or None when tooltips off."""
-        if not self._tooltips:
-            return None
-        from charted.html.element import Title
-
-        return Title(self._tooltip_label(series_idx, point_idx))
 
     # =========================================================================
     # Value labels (opt-in, formatted on-element data annotations)
