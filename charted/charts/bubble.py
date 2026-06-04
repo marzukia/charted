@@ -221,29 +221,31 @@ class BubbleChart(ScatterChart):
         if getattr(self, "_size_legend", "none") != "right":
             return super()._legend_layout_extent()
         font_size = self._legend_font_size()
-        # Widest value label drives the band width. Representative bubbles
-        # are at most ``max_radius`` wide.
         from charted.utils.helpers import calculate_text_dimensions
 
-        labels = [format(v, "g") for v in self._size_legend_values()]
-        if self.hue is not None:
-            labels += [format(min(self.hue), "g"), format(max(self.hue), "g")]
-        if self._hue_title:
-            labels.append(self._hue_title)
+        def text_w(s: str) -> float:
+            return calculate_text_dimensions(s, font_size=font_size).width
+
+        # The titles ("Population (M)", "Literacy %") sit at the band start, so
+        # their width competes with the WHOLE row, not with the swatch column.
+        # The value/tick labels sit AFTER the swatch. Sizing the band as
+        # swatch + every label (titles included) double-counts a wide title
+        # against the swatch and leaves dead space to the right of the legend.
+        title_w = 0.0
         if self._size_legend_title:
-            labels.append(self._size_legend_title)
-        max_label = max(
-            (calculate_text_dimensions(s, font_size=font_size).width for s in labels),
-            default=0.0,
-        )
-        swatch = 2 * self.max_radius
-        return (
-            self._SIZE_LEGEND_GAP
-            + max(swatch, self._HUE_BAR_WIDTH)
-            + self._SIZE_LEGEND_LABEL_GAP
-            + max_label
-            + self._SIZE_LEGEND_PAD
-        )
+            title_w = max(title_w, text_w(self._size_legend_title))
+        if self._hue_title:
+            title_w = max(title_w, text_w(self._hue_title))
+
+        value_labels = [format(v, "g") for v in self._size_legend_values()]
+        if self.hue is not None:
+            value_labels += [format(min(self.hue), "g"), format(max(self.hue), "g")]
+        value_label_w = max((text_w(s) for s in value_labels), default=0.0)
+
+        swatch = max(2 * self.max_radius, self._HUE_BAR_WIDTH)
+        row_w = swatch + self._SIZE_LEGEND_LABEL_GAP + value_label_w
+        content_w = max(title_w, row_w)
+        return self._SIZE_LEGEND_GAP + content_w + self._SIZE_LEGEND_PAD
 
     def _size_legend_values(self) -> list[float]:
         """Representative size values to key in the legend (min, mid, max)."""
