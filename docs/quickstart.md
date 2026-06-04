@@ -100,7 +100,7 @@ Charts render inline automatically:
 ```python
 from charted import BarChart
 
-# Just create a chart — it displays inline
+# Just create a chart, it displays inline
 BarChart(
     data=[120, 180, 210, 150],
     labels=["Q1", "Q2", "Q3", "Q4"],
@@ -147,9 +147,9 @@ python -m charted --help
 
 ## Next Steps
 
-- [Explore Chart Types](charts/column) — See all 14 chart types
-- [Theming Guide](guides/theming) — Customize colors and styles
-- [Configuration](guides/configuration) — Global settings and defaults
+- [Explore Chart Types](charts/column): See all 14 chart types
+- [Theming Guide](guides/theming): Customize colors and styles
+- [Configuration](guides/configuration): Global settings and defaults
 
 ---
 

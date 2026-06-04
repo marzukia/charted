@@ -53,8 +53,13 @@ def _parse_color_to_rgb(color: str) -> tuple[int, int, int]:
     color = color.strip()
     if color.startswith("hsl"):
         return _hsl_to_rgb(color)
-    else:
-        return hex_to_rgb(color)
+    # Validate strictly here: hex_to_rgb is intentionally lenient (it accepts
+    # hex without a leading '#'), but this is the public color-parsing path, so
+    # an input that is not a well-formed '#'-prefixed hex (e.g. '000') must be
+    # rejected rather than silently coerced.
+    if not is_valid_hex_color(color):
+        raise ValueError(f"Invalid color: {color!r}")
+    return hex_to_rgb(color)
 
 
 def is_valid_hex_color(color: str) -> bool:
@@ -263,6 +268,55 @@ def calculate_contrast_ratio(color1: str, color2: str) -> float:
     darker = min(l1, l2)
 
     return (lighter + 0.05) / (darker + 0.05)
+
+
+def enforce_contrast_floor(
+    foreground: str,
+    background: str,
+    min_ratio: float,
+) -> str:
+    """Darken (or lighten) a foreground color until it meets a contrast floor.
+
+    Returns a hex color whose WCAG contrast ratio against ``background`` is at
+    least ``min_ratio``. If the foreground already passes, it is returned
+    unchanged (re-encoded to 6-digit hex). Otherwise the color is shifted
+    toward black on light backgrounds (or toward white on dark backgrounds) in
+    small steps until the floor is met, falling back to pure black/white if the
+    target is unreachable any other way.
+
+    Args:
+        foreground: Foreground color in hex or HSL format.
+        background: Background color the contrast is measured against.
+        min_ratio: Minimum acceptable WCAG contrast ratio (e.g. 3.0).
+
+    Returns:
+        A 6-digit hex foreground color meeting the contrast floor.
+    """
+    fr, fg, fb = _parse_color_to_rgb(foreground)
+    current = rgb_to_hex((fr, fg, fb))
+    if calculate_contrast_ratio(current, background) >= min_ratio:
+        return current
+
+    # Shift toward black on a light background, toward white on a dark one.
+    bg_lum = (
+        0.2126 * (_parse_color_to_rgb(background)[0] / 255)
+        + 0.7152 * (_parse_color_to_rgb(background)[1] / 255)
+        + 0.0722 * (_parse_color_to_rgb(background)[2] / 255)
+    )
+    target = (0, 0, 0) if bg_lum > 0.5 else (255, 255, 255)
+
+    for i in range(1, 101):
+        t = i / 100.0
+        blended = (
+            round(fr + (target[0] - fr) * t),
+            round(fg + (target[1] - fg) * t),
+            round(fb + (target[2] - fb) * t),
+        )
+        candidate = rgb_to_hex(blended)
+        if calculate_contrast_ratio(candidate, background) >= min_ratio:
+            return candidate
+
+    return rgb_to_hex(target)
 
 
 def derive_color(base_hex: str, opacity: float, background_hex: str = "#ffffff") -> str:

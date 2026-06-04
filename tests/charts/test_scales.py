@@ -127,6 +127,62 @@ class TestTimeScale:
         assert any("2024" in label or "-" in label for label in labels)
 
 
+class TestDegenerateRanges:
+    """Single-point, all-equal, and all-zero domains must not collapse.
+
+    A zero-width domain (min == max) previously made ``ticks()`` return two
+    identical positions, giving an empty axis, and ``reproject`` divides by a
+    zero range. These guards keep the axis non-empty and the math NaN-free.
+    """
+
+    def test_linear_single_point_does_not_divide_by_zero(self):
+        scale = LinearScale(5, 5)
+        # No ZeroDivisionError, no NaN: collapses to the min pixel.
+        assert scale.reproject(5, 400) == 0.0
+
+    def test_linear_single_point_ticks_are_distinct(self):
+        scale = LinearScale(5, 5)
+        ticks = scale.ticks()
+        assert len(ticks) == 2
+        assert ticks[0] != ticks[1]
+        assert all(t == t for t in ticks)  # not NaN
+
+    def test_linear_all_zero_ticks_are_distinct(self):
+        scale = LinearScale(0, 0)
+        ticks = scale.ticks()
+        assert len(ticks) == 2
+        assert ticks[0] != ticks[1]
+        assert ticks == [0.0, 1.0]
+
+    def test_linear_all_equal_series_ticks_span_value(self):
+        """An all-equal series (e.g. [7, 7, 7]) gives a window around 7."""
+        scale = LinearScale(7, 7)
+        ticks = scale.ticks()
+        assert ticks[0] < 7 < ticks[1]
+
+    def test_log_single_point_ticks_are_distinct(self):
+        scale = LogScale(5, 5)
+        ticks = scale.ticks()
+        assert len(ticks) == 2
+        assert ticks[0] != ticks[1]
+        assert all(t == t for t in ticks)  # not NaN
+
+    def test_log_single_point_does_not_divide_by_zero(self):
+        scale = LogScale(5, 5)
+        assert scale.reproject(5, 300) == 0.0
+
+    def test_time_single_date_ticks_are_distinct(self):
+        scale = TimeScale(date(2024, 6, 1), date(2024, 6, 1))
+        ticks = scale.ticks()
+        assert len(ticks) == 2
+        assert ticks[0] != ticks[1]
+        assert all(t == t for t in ticks)  # not NaN
+
+    def test_time_single_date_does_not_divide_by_zero(self):
+        scale = TimeScale(date(2024, 6, 1), date(2024, 6, 1))
+        assert scale.reproject(date(2024, 6, 1), 400) == 0.0
+
+
 class TestBarColumnScaleRejection:
     """log/time scales are unsupported on a bar/column value axis."""
 

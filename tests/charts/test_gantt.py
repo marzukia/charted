@@ -88,14 +88,17 @@ class TestGanttChartRendering:
         assert "Testing" in svg
 
     def test_dependencies(self):
-        """Dependency arrows should render."""
+        """Dependency arrows should render as connectors with arrowheads."""
         chart = GanttChart(
             data=[(1, 3), (3, 5), (5, 7)],
             labels=["A", "B", "C"],
             dependencies=[(0, 1), (1, 2)],
         )
         svg = chart.svg
-        assert "Q" in svg
+        # Orthogonal dashed connector lines plus a filled triangular arrowhead
+        # (closed path, "Z") render for each dependency.
+        assert "stroke-dasharray=\"5,3\"" in svg
+        assert "Z" in svg
 
     def test_today_line(self):
         """Today line should render when enabled."""
@@ -125,6 +128,80 @@ class TestGanttChartRendering:
         )
         assert chart.row_height == chart.plot_height / 2
         assert chart.bar_height == chart.row_height * 0.6
+
+
+class TestGanttChartDateAxis:
+    """Date/time axis behaviour."""
+
+    def test_string_dates_switch_to_time_scale(self):
+        """ISO-string start/end values produce a time x-axis with date labels."""
+        chart = GanttChart(
+            data=[("2024-01-01", "2024-02-15"), ("2024-02-01", "2024-04-01")],
+            labels=["Design", "Dev"],
+        )
+        assert chart._is_time is True
+        assert chart.x_scale == "time"
+        labels = [lbl.text for lbl in chart.x_axis.labels]
+        # Calendar-aware month labels, not bare integers.
+        assert any("2024" in lbl for lbl in labels)
+
+    def test_date_objects_accepted(self):
+        """datetime.date start/end values are accepted and plotted."""
+        from datetime import date
+
+        chart = GanttChart(
+            data=[(date(2024, 1, 1), date(2024, 3, 1))],
+            labels=["Task"],
+        )
+        assert chart.x_scale == "time"
+        svg = chart.svg
+        assert svg.startswith("<svg")
+
+    def test_numeric_data_stays_linear(self):
+        """Plain numeric data keeps the historical linear integer axis."""
+        chart = GanttChart(data=[(1, 3), (2, 5)], labels=["A", "B"])
+        assert chart._is_time is False
+        assert chart.x_scale == "linear"
+
+
+class TestGanttChartDurations:
+    """Optional task-duration labels."""
+
+    def test_numeric_duration_labels(self):
+        """show_durations renders numeric span labels inside the SVG."""
+        chart = GanttChart(
+            data=[(1, 4), (2, 5)],
+            labels=["A", "B"],
+            show_durations=True,
+        )
+        svg = chart.svg
+        assert ">3<" in svg  # 4 - 1 == 3
+
+    def test_date_duration_labels_in_days(self):
+        """Date durations are labelled in whole days."""
+        chart = GanttChart(
+            data=[("2024-01-01", "2024-01-31")],
+            labels=["A"],
+            show_durations=True,
+        )
+        svg = chart.svg
+        assert "30d" in svg
+
+    def test_duration_formatter_override(self):
+        """A custom duration_formatter controls the rendered text."""
+        chart = GanttChart(
+            data=[(1, 4)],
+            labels=["A"],
+            show_durations=True,
+            duration_formatter=lambda s, e: f"{e - s} units",
+        )
+        svg = chart.svg
+        assert "3 units" in svg
+
+    def test_durations_off_by_default(self):
+        """No duration text is emitted unless show_durations is set."""
+        chart = GanttChart(data=[(1, 4)], labels=["A"])
+        assert chart.show_durations is False
 
 
 class TestGanttChartLayout:

@@ -126,14 +126,24 @@ class ColorManager:
                     f"against background '{theme.background_color}' (ratio: {ratio:.1f})"
                 )
 
-        # Check grid vs background
-        if hasattr(theme, "grid_color") and hasattr(theme, "background_color"):
-            ratio = self.validate_contrast(theme.grid_color, theme.background_color)
-            if theme.grid_visible and ratio < 4.5:
-                warnings.append(
-                    f"Grid color '{theme.grid_color}' has insufficient contrast "
-                    f"against background '{theme.background_color}' (ratio: {ratio:.1f})"
-                )
+        # Check grid vs background. Gridlines are non-text reference graphics
+        # that are MEANT to recede behind the data, so a faint, low-contrast
+        # grid is correct by design, not a defect. They are therefore held only
+        # to a minimum-visibility floor (the grid must be perceptible at all),
+        # not the 4.5:1 text threshold. The resolved colour (which may derive
+        # from an opacity tier) is checked rather than the raw field.
+        GRID_MIN_VISIBLE_RATIO = 1.5
+        if hasattr(theme, "background_color"):
+            grid_color = getattr(theme, "resolved_grid_color", None) or getattr(
+                theme, "grid_color", None
+            )
+            if grid_color is not None:
+                ratio = self.validate_contrast(grid_color, theme.background_color)
+                if theme.grid_visible and ratio < GRID_MIN_VISIBLE_RATIO:
+                    warnings.append(
+                        f"Grid color '{grid_color}' is too faint to be visible "
+                        f"against background '{theme.background_color}' (ratio: {ratio:.1f})"
+                    )
 
         # Check legend text vs background
         if hasattr(theme, "legend_position") and hasattr(theme, "background_color"):

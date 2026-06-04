@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "charted"
-version = "1.0.4"
+version = "1.1.0"
 description = "Charted is a zero dependency SVG chart generator that aims to provide a simple interface for generating beautiful and customisable graphs. This project is inspired by chart libraries like mermaid.js."
 authors = [{ name = "Andryo Marzuki", email = "andryo@mrzk.io" }]
 readme = "README.md"
@@ -28,10 +28,12 @@ dependencies = []
 [project.urls]
 homepage = "https://github.com/marzukia/charted"
 repository = "https://github.com/marzukia/charted"
-documentation = "https://github.com/marzukia/charted"
+documentation = "https://charted.mrzk.io"
+"Bug Tracker" = "https://github.com/marzukia/charted/issues"
 changelog = "https://github.com/marzukia/charted/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+png = ["cairosvg>=2.7.0"]
 dev = [
     "pytest>=8.2.1",
     "ipython>=8.24.0",
@@ -105,3 +107,8 @@ charted-mcp = "mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["charted", "duckdb_ext", "mcp_server"]
+# Ship the PEP 561 marker and the runtime-loaded font JSON definitions
+# (loaded via a __file__-relative path), which are not Python modules and
+# so are not picked up by `packages` alone.
+force-include = { "charted/py.typed" = "charted/py.typed" }
+artifacts = ["charted/fonts/definitions/*.json"]

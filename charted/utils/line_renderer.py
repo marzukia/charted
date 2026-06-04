@@ -60,8 +60,10 @@ class LineRenderer:
         """
         self.chart = chart
 
-        # Initialize ColorManager for automatic color cycling
-        self._color_manager = ColorManager(colors=self.chart.theme.colors)
+        # Initialize ColorManager for automatic color cycling. Use the theme's
+        # contrast-floor-adjusted palette (identical to colors unless a floor
+        # is set, e.g. the high-contrast theme).
+        self._color_manager = ColorManager(colors=self.chart.theme.resolved_colors)
 
     def render(self) -> G:
         """Generate complete line chart SVG elements.
@@ -138,20 +140,30 @@ class LineRenderer:
 
         # Extract style properties
         stroke = style.get("stroke") or color
-        stroke_width = style.get("stroke_width") or 2
+        stroke_width = style.get("stroke_width") or self.chart.theme.resolved_series_stroke_width
         stroke_dasharray = style.get("stroke_dasharray")
+        # Fall back to the chart's redundant dash cycle when this series has no
+        # explicit dash of its own. No-op unless dash_cycle was enabled.
+        if not stroke_dasharray:
+            dash_fn = getattr(self.chart, "_series_dasharray", None)
+            if dash_fn is not None:
+                stroke_dasharray = dash_fn(series_idx)
         stroke_opacity = style.get("stroke_opacity")
         area_fill = style.get("area_fill", False)
         area_fill_opacity = style.get("area_fill_opacity", 0.3)
         marker_shape = style.get("marker_shape", "circle")
         marker_size = style.get("marker_size") or self.chart.theme.marker_size
 
-        # Create series group with common styles
-        series = G(fill="white", stroke=stroke, stroke_width=stroke_width)
+        # Create series group with common styles. Dash/opacity are passed as
+        # constructor kwargs so they actually emit (the Element ``attributes``
+        # property is read-only, so post-hoc item assignment was a silent
+        # no-op). Omitting them when unset keeps solid lines byte-for-byte.
+        group_attrs = {"fill": "white", "stroke": stroke, "stroke_width": stroke_width}
         if stroke_dasharray:
-            series.attributes["stroke_dasharray"] = stroke_dasharray
+            group_attrs["stroke_dasharray"] = stroke_dasharray
         if stroke_opacity:
-            series.attributes["stroke_opacity"] = stroke_opacity
+            group_attrs["stroke_opacity"] = stroke_opacity
+        series = G(**group_attrs)
 
         # Build markers (always on the ORIGINAL data points) and collect
         # the boundary coordinates that the line path will be drawn through.

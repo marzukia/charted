@@ -36,8 +36,12 @@ class LayoutEngine:
         x_labels: list["MeasuredText"] | None = None,
         y_labels: list["MeasuredText"] | None = None,
         title: "MeasuredText | None" = None,
+        subtitle: "MeasuredText | None" = None,
+        subtitle_leading: float = 0.0,
         has_x_axis_label: bool = False,
         has_y_axis_label: bool = False,
+        legend_position: str = "none",
+        legend_extent: float = 0.0,
     ):
         self.width = width
         self.height = height
@@ -46,8 +50,16 @@ class LayoutEngine:
         self.x_labels = x_labels or []
         self.y_labels = y_labels or []
         self.title = title
+        self.subtitle = subtitle
+        self.subtitle_leading = max(0.0, float(subtitle_leading))
         self.has_x_axis_label = has_x_axis_label
         self.has_y_axis_label = has_y_axis_label
+        # Outside-the-plot legend placement. ``legend_position`` is one of
+        # 'right' | 'bottom' | 'top' | 'none' and ``legend_extent`` is the
+        # pixel band reserved on that side. 'none'/zero extent leaves all
+        # padding untouched, so existing layouts are byte-for-byte preserved.
+        self.legend_position = legend_position or "none"
+        self.legend_extent = max(0.0, float(legend_extent))
 
     @property
     def plot_width(self) -> float:
@@ -92,13 +104,24 @@ class LayoutEngine:
         return h_pad + max_width
 
     @property
+    def _legend_band(self) -> float:
+        """Pixel band reserved for an outside-the-plot legend, or 0."""
+        if self.legend_position in ("right", "bottom", "top"):
+            return self.legend_extent
+        return 0.0
+
+    @property
     def right_padding(self) -> float:
         """Calculate right padding.
 
         Returns:
-            Right padding in pixels (base horizontal padding).
+            Right padding in pixels (base horizontal padding plus any
+            right-placed legend band).
         """
-        return self.h_padding * self.width
+        pad = self.h_padding * self.width
+        if self.legend_position == "right":
+            pad += self._legend_band
+        return pad
 
     @property
     def top_padding(self) -> float:
@@ -113,6 +136,19 @@ class LayoutEngine:
         if self.title:
             offset += self.title.height * 1.5
 
+        # Reserve room for the subtitle plus a gap so it never overlaps the
+        # plot grid. The subtitle is rendered below the title.
+        if self.subtitle:
+            offset += self.subtitle.height * 1.5
+            # Reserve the configurable leading gap between title and subtitle
+            # so the extra spacing never pushes the subtitle into the plot.
+            if self.title:
+                offset += self.subtitle_leading
+
+        # Reserve a band above the plot for a top-placed legend.
+        if self.legend_position == "top":
+            offset += self._legend_band
+
         return v_pad + offset
 
     @property
@@ -123,6 +159,21 @@ class LayoutEngine:
             Total bottom padding in pixels (base padding + rotated label space if any).
         """
         base = self.v_padding * self.height
+
+        # Reserve a band below the plot for a bottom-placed legend. The legend
+        # is drawn at the chart's bottom edge, so the band must clear the
+        # x-axis tick labels. Those labels sit DEFAULT_PADDING below the plot
+        # plus their own font height; guarantee the base padding covers that
+        # before the legend band is appended, otherwise a thin v_padding lets
+        # the labels spill into the legend row.
+        if self.legend_position == "bottom":
+            if self.x_labels:
+                from ..constants import DEFAULT_PADDING
+                from .defaults import DEFAULT_FONT_SIZE
+
+                tick_label_band = DEFAULT_PADDING + DEFAULT_FONT_SIZE
+                base = max(base, tick_label_band)
+            base += self._legend_band
 
         # Extra space for x-axis title label (rendered below tick labels)
         if self.has_x_axis_label:
@@ -175,10 +226,14 @@ class LayoutEngine:
         """
         from .transform import rotate, scale, translate
 
-        h_pad = self.h_padding * self.width
-
+        # The horizontal translate must use the FULL right padding, not the bare
+        # base padding. When a right-placed legend inflates right_padding, the
+        # plot area shrinks; using bare base padding here would shift every data
+        # point right by the legend band (pushing edge marks into the legend).
+        # right_padding == base padding whenever there is no right legend, so
+        # legend-free layouts are byte-for-byte unchanged.
         return [
-            translate(-h_pad, -self.bottom_padding),
+            translate(-self.right_padding, -self.bottom_padding),
             rotate(180, self.width / 2, self.height / 2),
             scale(-1, 1),
             translate(-self.plot_width, 0),

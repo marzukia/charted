@@ -9,6 +9,7 @@ from charted.charts.column import ColumnChart
 from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.scatter import ScatterChart
+from charted.utils.exceptions import ChartedError
 
 # =========================================================================
 # Feature 1: Axis titles on all chart types
@@ -131,6 +132,18 @@ class TestReferenceLinesLineChart:
         )
         svg = chart.svg
         assert "stroke-dasharray" in svg
+
+    def test_line_reference_lines_missing_value_raises(self):
+        """A reference-line dict missing 'value' raises a ChartedError naming it."""
+        import pytest
+
+        with pytest.raises(ChartedError) as excinfo:
+            LineChart(
+                data=[10, 20, 30],
+                labels=["A", "B", "C"],
+                reference_lines=[{"axis": "x", "label": "oops"}],
+            )
+        assert "value" in str(excinfo.value)
 
 
 class TestReferenceLinesBarChart:
@@ -409,3 +422,56 @@ class TestSubtitle:
         )
         svg = chart.svg
         assert "Title Only" in svg
+
+
+class TestSubtitleLeading:
+    """subtitle_leading controls the vertical gap below the title."""
+
+    def _chart(self, **kwargs):
+        return LineChart(
+            data=[10, 20, 30],
+            labels=["A", "B", "C"],
+            title="Main Title",
+            subtitle="A subtitle",
+            **kwargs,
+        )
+
+    def test_default_leading_is_positive(self):
+        """Default gives breathing room so the subtitle is not cramped."""
+        chart = self._chart()
+        assert chart._subtitle_leading > 0
+
+    def test_larger_leading_pushes_subtitle_down(self):
+        """A bigger leading moves the subtitle further below the title."""
+        small_y = self._chart(subtitle_leading=0).subtitle_element.kwargs["y"]
+        large_y = self._chart(subtitle_leading=40).subtitle_element.kwargs["y"]
+        assert large_y > small_y
+        # The y offset difference equals the extra leading.
+        assert large_y - small_y == 40
+
+    def test_zero_leading_restores_cramped_position(self):
+        """subtitle_leading=0 reproduces the original tight position."""
+        chart = self._chart(subtitle_leading=0)
+        subtitle_font_size = chart.theme.title_font_size - 4
+        expected = chart.v_pad / 2 + chart._title.height + subtitle_font_size
+        assert chart.subtitle_element.kwargs["y"] == expected
+
+    def test_leading_reserves_layout_space(self):
+        """Larger leading reserves more top padding so the plot stays clear."""
+        small = self._chart(subtitle_leading=0)
+        large = self._chart(subtitle_leading=40)
+        assert large.layout.top_padding > small.layout.top_padding
+
+    def test_negative_leading_clamped_to_zero(self):
+        """Negative leading is clamped, never pulling the subtitle up."""
+        chart = self._chart(subtitle_leading=-20)
+        assert chart._subtitle_leading == 0
+
+    def test_subtitle_is_secondary_hierarchy(self):
+        """Subtitle is smaller and not bold so it reads as secondary."""
+        chart = self._chart()
+        title_el = chart.title
+        subtitle_el = chart.subtitle_element
+        assert subtitle_el.kwargs["font_size"] < title_el.kwargs["font_size"]
+        assert title_el.kwargs["font_weight"] == "bold"
+        assert subtitle_el.kwargs.get("font_weight") != "bold"

@@ -1,4 +1,4 @@
-"""Area chart — line chart with filled area underneath.
+"""Area chart: line chart with filled area underneath.
 
 Shows one or more series as filled regions under the line.
 """
@@ -51,6 +51,7 @@ class AreaChart(Chart):
         fill_opacity: float = 0.3,
         title: str | None = None,
         subtitle: str | None = None,
+        subtitle_leading: float = 8.0,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
@@ -64,6 +65,7 @@ class AreaChart(Chart):
         annotations: list | None = None,
         reference_lines: list[dict] | None = None,
         colors: list[str] | None = None,
+        domain_padding: float | None = None,
     ):
         if curve not in VALID_CURVES:
             raise ValueError(
@@ -79,6 +81,7 @@ class AreaChart(Chart):
             height=height,
             title=title,
             subtitle=subtitle,
+            subtitle_leading=subtitle_leading,
             theme=theme,
             series_names=series_names,
             series_styles=series_styles,
@@ -92,6 +95,7 @@ class AreaChart(Chart):
             annotations=annotations,
             reference_lines=reference_lines,
             colors=colors,
+            domain_padding=domain_padding,
         )
 
     @property

@@ -372,6 +372,7 @@ Documentation
    :maxdepth: 2
    :caption: Chart Types
 
+   gallery
    charts/column
    charts/bar
    charts/line

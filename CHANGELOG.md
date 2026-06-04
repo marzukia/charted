@@ -5,15 +5,39 @@ All notable changes to Charted will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-06-04
 
 ### Added
-- `charted create` now accepts `--title`, `--width`, and `--height`. These set
-  the chart title and dimensions from the command line and override the matching
+- `png` optional extra: `pip install charted[png]` installs cairosvg for PNG
+  export. The base library stays zero-dependency.
+- PEP 561 `py.typed` marker so the inline type hints are visible to downstream
+  type checkers.
+- Bubble, Combo, and Polar Area chart types are now documented as first-class
+  (14 chart types total).
+- `charted create` accepts `--title`, `--width`, and `--height`, which set the
+  chart title and dimensions from the command line and override the matching
   values in a `--config` file.
-- `charted create --transpose` reads a wide / series-per-row CSV, where each data
-  row is a series and the header row supplies the x-axis labels. The default
-  layout (first column as x labels, each other column as a series) is unchanged.
+- `charted create --transpose` reads a wide / series-per-row CSV, where each
+  data row is a series and the header row supplies the x-axis labels.
+
+### Changed
+- Input validation is stricter: infinite values, and a label count that does
+  not match the data, now raise an actionable error instead of rendering a
+  broken chart silently. Gantt is exempt from the label-length check because it
+  stores tasks as coordinate pairs.
+- `__version__` is read from the installed package metadata.
+- Pie charts label small slices with leader lines, and the bubble size legend
+  draws hollow outline circles so it reads as a scale key rather than data.
+
+### Fixed
+- Bottom and top legends no longer overlap the axis category labels.
+- A right-side legend no longer shifts data marks out of the plot area (the
+  data-flip transform now accounts for the full right padding).
+- Percent value labels on already-percentage data no longer multiply by 100,
+  and stacked-bar value labels sit centered in their segment.
+- Dark-theme radial axis labels on radar and polar-area charts are readable and
+  centered in their badges; radar spoke labels render without garbling.
+- Malformed colour strings are rejected by the contrast-ratio path.
 
 ## [1.0.5] - 2026-05-30
 
@@ -43,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Native PNG output (`chart.save_png()`)
 - Plot-area clipping mask for scatter charts
 - Chart describe API (`chart.describe()`) for AI-readable summaries
-- Agent-friendly API surface — `to_config()`/`from_config()`, color palettes, output methods
+- Agent-friendly API surface: `to_config()`/`from_config()`, color palettes, output methods
 - Heatmap chart type with color bar and customizable cell dimensions
 - Gantt chart type with dependency arrows and multi-series timelines
 - Area chart type with fill support

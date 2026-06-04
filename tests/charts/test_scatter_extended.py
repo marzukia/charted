@@ -230,3 +230,172 @@ class TestScatterChartRendering:
         chart = ScatterChart(x_data=[0, 1, 2], y_data=[10, 20, 30])
         html = chart.html
         assert "path" in html.lower()
+
+
+class TestScatterChartLegend:
+    """Test the scatter legend (shape + colour mapping and placement)."""
+
+    def _two_series(self, **kwargs):
+        return ScatterChart(
+            x_data=[[0, 1, 2], [0, 1, 2]],
+            y_data=[[1, 2, 3], [2, 3, 4]],
+            series_names=["Alpha", "Beta"],
+            shape_cycle=True,
+            **kwargs,
+        )
+
+    def test_legend_defaults_to_none_layout_unchanged(self):
+        """Default legend='none' reserves no extra layout space."""
+        plain = ScatterChart(
+            x_data=[[0, 1, 2], [0, 1, 2]],
+            y_data=[[1, 2, 3], [2, 3, 4]],
+            series_names=["Alpha", "Beta"],
+        )
+        assert plain.layout.legend_position == "none"
+        assert plain.layout.legend_extent == 0.0
+        # Padding matches a chart constructed with no legend argument at all.
+        assert plain.right_padding == plain.h_padding * plain.width
+
+    def test_legend_right_reserves_horizontal_space(self):
+        """A right legend shrinks the plot width and lists each series."""
+        with_legend = self._two_series(legend="right")
+        without = self._two_series()
+        assert with_legend.layout.legend_position == "right"
+        assert with_legend.layout.legend_extent > 0
+        # Reserved band comes out of the plot width.
+        assert with_legend.plot_width < without.plot_width
+        html = with_legend.html
+        assert "Alpha" in html and "Beta" in html
+
+    def test_legend_bottom_reserves_vertical_space(self):
+        """A bottom legend shrinks the plot height."""
+        with_legend = self._two_series(legend="bottom")
+        without = self._two_series()
+        assert with_legend.layout.legend_position == "bottom"
+        assert with_legend.plot_height < without.plot_height
+
+    def test_legend_top_reserves_vertical_space(self):
+        """A top legend shrinks the plot height."""
+        with_legend = self._two_series(legend="top")
+        without = self._two_series()
+        assert with_legend.layout.legend_position == "top"
+        assert with_legend.plot_height < without.plot_height
+
+    def test_legend_maps_shape_and_colour(self):
+        """Legend swatches carry the series colour and per-series marker shape."""
+        chart = ScatterChart(
+            x_data=[[0, 1, 2], [0, 1, 2]],
+            y_data=[[1, 2, 3], [2, 3, 4]],
+            series_names=["Circles", "Squares"],
+            series_styles=[{"marker_shape": "circle"}, {"marker_shape": "square"}],
+            colors=["#112233", "#445566"],
+            legend="right",
+        )
+        legend = chart.legend
+        html = legend.html
+        # Both series colours appear on swatches.
+        assert "#112233" in html
+        assert "#445566" in html
+        # Shape mapping: a circle and a square swatch are both present.
+        assert "<circle" in html.lower()
+        assert "<rect" in html.lower()
+
+    def test_legend_invalid_placement_raises(self):
+        """An unknown placement is rejected up front."""
+        with pytest.raises(ValueError, match="Invalid legend placement"):
+            ScatterChart(
+                x_data=[0, 1, 2],
+                y_data=[1, 2, 3],
+                series_names=["A"],
+                legend="sideways",
+            )
+
+    def test_legend_without_series_names_reserves_nothing(self):
+        """With no series names there is nothing to label, so no band."""
+        chart = ScatterChart(
+            x_data=[0, 1, 2], y_data=[1, 2, 3], legend="right"
+        )
+        assert chart.layout.legend_position == "none"
+        assert chart.layout.legend_extent == 0.0
+
+
+class TestDataLabelCollisionAvoidance:
+    """Data-label collision avoidance + leader lines (avoid_label_collisions)."""
+
+    def test_default_off_is_unchanged(self):
+        """Default keeps the original fixed-offset placement byte-for-byte."""
+        kwargs = dict(
+            x_data=[0, 1, 2],
+            y_data=[1, 2, 3],
+            data_labels=["a", "b", "c"],
+        )
+        baseline = ScatterChart(**kwargs).html
+        explicit_off = ScatterChart(avoid_label_collisions=False, **kwargs).html
+        assert baseline == explicit_off
+
+    def test_enabling_changes_output_and_keeps_labels(self):
+        """Turning it on alters placement but still emits every label."""
+        kwargs = dict(
+            x_data=[0, 0.01, 0.02, 0.0],
+            y_data=[0, 0.01, 0.0, 0.02],
+            data_labels=["Alpha", "Bravo", "Charlie", "Delta"],
+        )
+        off = ScatterChart(**kwargs).html
+        on = ScatterChart(avoid_label_collisions=True, **kwargs).html
+        assert off != on
+        for label in ("Alpha", "Bravo", "Charlie", "Delta"):
+            assert label in on
+
+    def test_clustered_points_draw_leader_lines(self):
+        """A tight cluster displaces labels enough to draw leader paths."""
+        chart = ScatterChart(
+            x_data=[0, 0.01, 0.02, 0.0],
+            y_data=[0, 0.01, 0.0, 0.02],
+            data_labels=["Alpha", "Bravo", "Charlie", "Delta"],
+            avoid_label_collisions=True,
+        )
+        html = chart.html.lower()
+        assert "<path" in html
+        assert 'stroke-width="1"' in html
+
+    def test_deoverlap_reduces_pairwise_overlap(self):
+        """The greedy pass strictly reduces total label box overlap."""
+
+        def total_overlap(boxes):
+            total = 0.0
+            for i, a in enumerate(boxes):
+                for b in boxes[i + 1 :]:
+                    ox = (a["w"] + b["w"]) / 2 - abs(a["cx"] - b["cx"])
+                    oy = (a["h"] + b["h"]) / 2 - abs(a["cy"] - b["cy"])
+                    if ox > 0 and oy > 0:
+                        total += ox * oy
+            return total
+
+        # Five labels stacked on the same spot: maximal initial overlap.
+        boxes = [
+            {
+                "text": str(k),
+                "px": 0.0,
+                "py": 0.0,
+                "cx": 0.0,
+                "cy": 0.0,
+                "w": 20.0,
+                "h": 10.0,
+                "marker": 4.0,
+            }
+            for k in range(5)
+        ]
+        before = total_overlap(boxes)
+        ScatterChart._deoverlap_labels(boxes)
+        after = total_overlap(boxes)
+        assert before > 0
+        assert after < before
+
+    def test_no_labels_returns_none(self):
+        """With no data labels the override produces no label group."""
+        chart = ScatterChart(
+            x_data=[0, 1, 2],
+            y_data=[1, 2, 3],
+            avoid_label_collisions=True,
+        )
+        assert chart._render_data_labels() is None

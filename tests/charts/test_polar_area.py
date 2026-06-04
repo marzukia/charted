@@ -58,7 +58,12 @@ class TestPolarAreaHappyPath:
         when ``angle_span % 360 == 0``.
         """
         chart = PolarAreaChart(data=[42])
-        path_d = chart.representation.children[0].kwargs["d"]
+        # Radial scale rings render first; grab the first slice path element.
+        path_d = next(
+            child.kwargs["d"]
+            for child in chart.representation.children
+            if "d" in child.kwargs
+        )
 
         # A full circle path is two semicircle arcs with the large-arc/sweep
         # flags '1 1', as emitted by _get_full_circle_path. The degenerate
@@ -98,3 +103,42 @@ class TestPolarAreaConfig:
         rebuilt = Chart.from_config(cfg)
         assert isinstance(rebuilt, PolarAreaChart)
         assert rebuilt._pie_data == [10, 20, 30]
+
+
+class TestPolarAreaRadialGrid:
+    """Radial scale rings and numeric ring labels (issue #62)."""
+
+    def test_radial_rings_rendered(self):
+        """Concentric rings are drawn behind the slices, one per nice tick."""
+        chart = PolarAreaChart(data=[10, 20, 30, 15], radial_levels=5)
+        html = chart.html
+        # Each ring is a <circle ... fill="none" ...>; count those.
+        ring_count = html.count('fill="none"')
+        # Ring values snap to round numbers, so the count is the nice-tick count.
+        assert ring_count == len(chart._radial_scale()[1])
+
+    def test_radial_labels_present_by_default(self):
+        """Ring labels are round numbers, with the outer ring at the nice max."""
+        chart = PolarAreaChart(data=[10, 20, 30, 15], radial_levels=5)
+        html = chart.html
+        # data max 30 snaps to ticks 5, 10, 15, 20, 25, 30.
+        assert ">30<" in html  # nice max at the outer ring
+        assert ">5<" in html  # round inner tick (not 30 * 1/5 == 6)
+
+    def test_radial_labels_can_be_disabled(self):
+        """show_radial_labels=False keeps rings but drops their labels."""
+        chart = PolarAreaChart(
+            data=[10, 20, 30, 15], radial_levels=5, show_radial_labels=False
+        )
+        html = chart.html
+        assert html.count('fill="none"') == len(chart._radial_scale()[1])
+        assert ">30<" not in html
+
+    def test_rings_use_theme_grid_color(self):
+        """Rings adopt the theme's resolved grid colour (dark preset)."""
+        from charted.themes.core import Theme
+
+        theme = Theme.from_preset("dark")
+        chart = PolarAreaChart(data=[10, 20, 30], theme=theme)
+        html = chart.html
+        assert theme.resolved_grid_color.lower() in html.lower()

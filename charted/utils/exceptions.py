@@ -87,8 +87,9 @@ class UnknownChartTypeError(ChartedError):
     def __init__(self, chart_type: str):
         super().__init__(
             f"Unknown chart type: '{chart_type}'. "
-            "Available types: BarChart, ColumnChart, LineChart, PieChart, "
-            "ScatterChart, HeatmapChart, GanttChart, RadarChart. "
+            "Available types: BarChart, ColumnChart, LineChart, ScatterChart, "
+            "PieChart, AreaChart, RadarChart, BoxPlot, Histogram, HeatmapChart, "
+            "GanttChart, BubbleChart, ComboChart, PolarAreaChart. "
             "Use charted.auto(data) to auto-detect."
         )
 

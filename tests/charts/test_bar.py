@@ -97,3 +97,65 @@ class TestBarChartSadPath:
         chart = BarChart(data=[10, 20, 30], labels=["a", "b", "c"])
         transforms = chart.get_base_transform()
         assert transforms == []
+
+
+class TestBarCategoryLabelWrapping:
+    """Full category-label rendering with wrapping (issue #65)."""
+
+    LONG_LABELS = [
+        "International Marketing Department",
+        "Research and Development Division",
+        "Q3",
+    ]
+
+    def test_no_wrapping_by_default(self):
+        """Without a cap, labels stay single-line (no tspans), unchanged."""
+        chart = BarChart(data=[10, 20, 30], labels=self.LONG_LABELS)
+        assert "<tspan" not in chart.svg
+
+    def test_long_labels_wrap_to_tspans(self):
+        """A width cap wraps overflowing labels into multiple tspan lines."""
+        chart = BarChart(
+            data=[10, 20, 30],
+            labels=self.LONG_LABELS,
+            category_label_max_width=110,
+        )
+        svg = chart.svg
+        assert "<tspan" in svg
+        # Full words preserved, nothing truncated/abbreviated.
+        for word in ("International", "Marketing", "Department", "Research", "Division"):
+            assert word in svg
+
+    def test_short_label_not_wrapped(self):
+        """A label that fits the cap is not split."""
+        from charted.utils.helpers import wrap_text_to_width
+
+        measured = wrap_text_to_width("Q3", 110)
+        assert measured.lines is None
+
+    def test_cap_bounds_left_padding(self):
+        """Capping the label width shrinks the gutter and grows the plot."""
+        labels = self.LONG_LABELS
+        uncapped = BarChart(data=[10, 20, 30], labels=labels)
+        capped = BarChart(
+            data=[10, 20, 30], labels=labels, category_label_max_width=110
+        )
+        assert capped.left_padding < uncapped.left_padding
+        assert capped.plot_width > uncapped.plot_width
+
+    def test_no_overflow_cap_is_noop(self):
+        """A cap wider than every label leaves the render byte-for-byte equal."""
+        short = ["A", "B", "C"]
+        plain = BarChart(data=[10, 20, 30], labels=short)
+        capped = BarChart(data=[10, 20, 30], labels=short, category_label_max_width=500)
+        assert plain.svg == capped.svg
+
+    def test_long_single_word_kept_whole(self):
+        """A single word wider than the cap is not truncated."""
+        from charted.utils.helpers import wrap_text_to_width
+
+        measured = wrap_text_to_width("Supercalifragilisticexpialidocious", 40)
+        assert measured.text == "Supercalifragilisticexpialidocious"
+        assert measured.lines is None or "".join(measured.lines).replace(
+            " ", ""
+        ) == "Supercalifragilisticexpialidocious"

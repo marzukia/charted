@@ -21,13 +21,22 @@ chart.save("sales.svg")
 ```
 
 That's it! You now have a `sales.svg` file ready to use in presentations, websites, or documentation.
-Charted supports 5 chart types:
+Charted supports 14 chart types:
 
 - **BarChart** - Horizontal bars (comparing categories)
 - **ColumnChart** - Vertical bars (time series, distributions)
 - **LineChart** - Line graphs (trends over time)
 - **ScatterChart** - Scatter plots (correlations, distributions)
 - **PieChart** - Pie/doughnut charts (proportions)
+- **AreaChart** - Filled line charts (cumulative trends)
+- **RadarChart** - Radar/spider charts (multivariate comparison)
+- **BoxPlot** - Box-and-whisker plots (distribution summaries)
+- **Histogram** - Frequency distributions
+- **HeatmapChart** - Color-coded matrices
+- **GanttChart** - Project timelines
+- **BubbleChart** - Scatter plots with a third (size) dimension
+- **ComboChart** - Mixed column and line series on shared axes
+- **PolarAreaChart** - Pie variant where slice radius encodes value
 
 ## Basic Usage
 
@@ -405,14 +414,14 @@ python -m charted create bar sales.svg --data sales.csv --config .chartedrc.toml
 
 **Data Formats:**
 
-CSV — first column is labels, remaining columns are data series:
+CSV: first column is labels, remaining columns are data series:
 ```csv
 Quarter,Q1,Q2,Q3,Q4
 Sales,120,180,210,150
 Profit,80,120,140,100
 ```
 
-JSON — supports arrays, arrays of objects, or structured objects:
+JSON: supports arrays, arrays of objects, or structured objects:
 ```json
 [120, 180, 210, 150]
 ```

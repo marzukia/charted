@@ -1,4 +1,4 @@
-"""Box plot — statistical chart showing distribution quartiles.
+"""Box plot: statistical chart showing distribution quartiles.
 
 Displays median, quartiles, and outliers for one or more data series.
 """
@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import G, Path, Rect
+from charted.html.element import G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.types import Labels, Vector2D
 
@@ -60,6 +60,8 @@ class BoxPlot(Chart):
         title: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
+        value_labels: bool | str | dict | None = None,
+        legend: str = "none",
     ):
         self._raw_data = data
         super().__init__(
@@ -71,6 +73,8 @@ class BoxPlot(Chart):
             theme=theme,
             series_names=series_names,
             chart_type="box",
+            value_labels=value_labels,
+            legend=legend,
         )
 
     @property
@@ -125,7 +129,12 @@ class BoxPlot(Chart):
                 )
             )
 
-            # Box (Q1 to Q3)
+            # Box (Q1 to Q3). In a theme with a configured shape outline
+            # (high-contrast), the body gets the contrasting outline instead of
+            # its own colour so adjacent boxes stay separable without hue.
+            outline = self._filled_outline_attrs()
+            box_stroke = outline.get("stroke", color)
+            box_stroke_width = outline.get("stroke_width", 1.5)
             g.add_child(
                 Rect(
                     x=cx - box_w / 2,
@@ -134,8 +143,8 @@ class BoxPlot(Chart):
                     height=y_q3 - y_q1,
                     fill=color,
                     fill_opacity=0.3,
-                    stroke=color,
-                    stroke_width=1.5,
+                    stroke=box_stroke,
+                    stroke_width=box_stroke_width,
                 )
             )
             # Median line
@@ -146,5 +155,24 @@ class BoxPlot(Chart):
                     stroke_width=2,
                 )
             )
+
+            # Optional median value label above the box.
+            if self._value_label_config:
+                from charted.utils.value_format import format_value
+
+                cfg = self._value_label_config
+                opts = {k: v for k, v in cfg.items() if k != "format"}
+                font_size = max(8, self.theme.title_font_size - 4)
+                g.add_child(
+                    Text(
+                        text=format_value(med, cfg["format"], **opts),
+                        x=cx,
+                        y=y_max - 6,
+                        fill=self.theme.resolved_data_label_color,
+                        font_size=font_size,
+                        font_family=self.theme.title_font_family,
+                        text_anchor="middle",
+                    )
+                )
 
         return g
