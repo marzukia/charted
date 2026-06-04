@@ -5,7 +5,11 @@ Extracted from Chart class to reduce architectural debt and improve separation o
 
 import math
 
-from charted.utils.exceptions import InvalidDataError, NoDataError
+from charted.utils.exceptions import (
+    InvalidDataError,
+    LabelMismatchError,
+    NoDataError,
+)
 from charted.utils.helpers import calculate_text_dimensions
 from charted.utils.types import Labels, MeasuredText, Vector, Vector2D
 
@@ -42,6 +46,65 @@ class DataModel:
         self.y_data = y_data
         self.x_labels = x_labels
         self.y_labels = y_labels
+
+        # Cross-check that any provided label axis matches the category count of
+        # the data it annotates.
+        self._validate_label_lengths()
+
+    def _validate_label_lengths(self) -> None:
+        """Ensure provided labels line up with the data they label.
+
+        Labels are optional, so this only fires when both a label set and the
+        data it annotates are present.
+
+        The labels describe the *category axis*, and multi-series data shares
+        one set of category labels (you do not get one label per series). The
+        tricky part is that chart types disagree on which dimension of a 2D
+        list is the category axis. Bar, line, and area treat the inner length
+        as the categories (one label per point), while a stacked column chart
+        treats the outer length as the categories (each inner list is one
+        category's stacked segments). To stay correct for every type, a label
+        count is accepted when it matches either the inner length or the number
+        of series; it is rejected only when it matches neither, which is the
+        case that silently truncates or misaligns the chart.
+
+        Across chart types the category axis is wired one of two ways:
+        - x-axis charts (column, line, area, ...) pass the category labels as
+          ``x_labels`` and the values as ``y_data``.
+        - y-axis / categorical charts (bar, pie, ...) pass the category labels
+          as ``y_labels`` and the values as ``x_data``.
+
+        Both cross-pairings are validated so every chart type inherits the
+        guard.
+
+        Raises:
+            LabelMismatchError: If a label count matches neither the per-series
+                length nor the number of series of the corresponding data axis.
+        """
+        if self._x_labels is not None and self._y_data:
+            self._check_axis(self._x_labels, self._y_data, axis="x")
+
+        if self._y_labels is not None and self._x_data:
+            self._check_axis(self._y_labels, self._x_data, axis="y")
+
+    @staticmethod
+    def _check_axis(labels: list[MeasuredText], data: Vector2D, axis: str) -> None:
+        """Raise LabelMismatchError if ``labels`` fit no valid orientation of ``data``.
+
+        Accepted counts:
+        - ``per_series``: one label per point (bar, line, area, pie, ...).
+        - ``n_series``: one label per category for transposed stacks (column).
+        - ``per_series + 1``: boundary labels for ``per_series`` intervals
+          (histogram bin edges), where N bins are labelled by N+1 edges.
+
+        Everything else means the labels truncate or misalign the data, which
+        is the silent failure this guard exists to surface.
+        """
+        n_labels = len(labels)
+        per_series = len(data[0])
+        n_series = len(data)
+        if n_labels not in (per_series, n_series, per_series + 1):
+            raise LabelMismatchError(n_labels=n_labels, n_data=per_series, axis=axis)
 
     # =========================================================================
     # Data Properties (with validation)
