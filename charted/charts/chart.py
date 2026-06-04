@@ -312,7 +312,7 @@ class Chart(SeriesLegend, Svg):
         if "y_data" in valid_params and "y_data" not in filtered and "data" in merged:
             filtered["y_data"] = merged["data"]
 
-        return cast("Chart", chart_cls(**filtered))
+        return chart_cls(**filtered)
 
     @staticmethod
     def _rebuild_annotations(annotations: list[Any]) -> list[Any]:

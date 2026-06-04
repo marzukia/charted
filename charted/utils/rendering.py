@@ -240,10 +240,7 @@ def create_legend_entry(
     )
 
     g = G()
-    # Element.add_children types *children as list[Element] but at runtime
-    # accepts individual Elements (it iterates and appends each), which is how
-    # every caller uses it. Fixing the signature lives in html/element.py.
-    g.add_children(rect, legend_text)  # type: ignore[arg-type]
+    g.add_children(rect, legend_text)
     return g
 
 

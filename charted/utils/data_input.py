@@ -88,10 +88,11 @@ def from_dict(data: dict[str, Any], **kwargs: Any) -> Any:
     raw = cfg.pop("data", None)
     cls_map = _CHART_CLASSES()
 
+    chart_cls: Any
     if chart_type and chart_type in cls_map:
         chart_cls = cls_map[chart_type]
     else:
-        chart_cls = cls_map.get("BarChart")
+        chart_cls = cls_map["BarChart"]
 
     # Flatten dict-style data into constructor args
     if isinstance(raw, dict):
@@ -153,10 +154,11 @@ def from_dataframe(df: Any, **kwargs: Any) -> Any:
     chart_type = kwargs.pop("chart_type", None)
     cls_map = _CHART_CLASSES()
 
+    chart_cls: Any
     if chart_type and chart_type in cls_map:
         chart_cls = cls_map[chart_type]
     else:
-        chart_cls = cls_map.get("BarChart")
+        chart_cls = cls_map["BarChart"]
 
     if pd is not None and isinstance(df, pd.DataFrame):
         numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
@@ -244,6 +246,7 @@ def auto(data: Any, **kwargs: Any) -> Any:
     from charted.charts import _CHART_CLASSES
 
     cls_map = _CHART_CLASSES()
+    chart_cls: Any
 
     # Auto-size if width/height not specified
     if "width" not in kwargs and "height" not in kwargs:

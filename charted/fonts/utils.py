@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any
 
 from charted.utils.defaults import BASE_DEFINITIONS_DIR
 from charted.utils.helpers import nested_defaultdict
@@ -13,7 +14,7 @@ def create_font_definition(
     from charted.fonts.tkinter import TextMeasurer
 
     chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()-_=+[]{}|;:\'",.<>?/\\"£¥€©®™✓•¶§±æøåßüñ¿¡çµ½¼¾×÷°ƒ∆≈∞Ω≠≤≥¬√πø∆¥¤¢₱₩₹₽℅ℓ№©℗℠℮∞‽ '
-    lookup = nested_defaultdict()
+    lookup: Any = nested_defaultdict()
 
     with TextMeasurer() as tm:
         for font_size in range(min_font_size, max_font_size):
