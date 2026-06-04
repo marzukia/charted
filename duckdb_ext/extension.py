@@ -32,11 +32,33 @@ from __future__ import annotations
 import inspect
 import json
 from pathlib import Path
-from typing import Optional
-
-import duckdb
+from types import ModuleType
+from typing import TYPE_CHECKING, Optional
 
 import charted
+
+if TYPE_CHECKING:
+    import duckdb
+
+DUCKDB_MISSING_MESSAGE = (
+    "DuckDB support requires charted[duckdb]. "
+    'Install with: pip install "charted[duckdb]"'
+)
+
+
+def _require_duckdb() -> ModuleType:
+    """Import and return the ``duckdb`` module, or raise a clear error.
+
+    Keeps the optional ``duckdb`` dependency out of import time. When it is not
+    installed, surface a single-line install hint instead of a bare
+    ModuleNotFoundError.
+    """
+    try:
+        import duckdb
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(DUCKDB_MISSING_MESSAGE) from exc
+    return duckdb
+
 
 # Map short names to chart classes
 CHART_TYPES = {
@@ -126,6 +148,7 @@ def _build_chart(
         if labels and len(data) == 1:
             # Group values by label
             from collections import defaultdict
+
             groups = defaultdict(list)
             for i, val in enumerate(data[0]):
                 groups[labels[i]].append(val)
@@ -233,7 +256,9 @@ def charted_query(
     rows = result.fetchall()
 
     labels, data, series_names = _extract_chart_data_from_result(columns, rows)
-    chart = _build_chart(chart_type, labels, data, series_names, title, width, height, theme)
+    chart = _build_chart(
+        chart_type, labels, data, series_names, title, width, height, theme
+    )
 
     Path(output).parent.mkdir(parents=True, exist_ok=True)
     chart.save(output)
@@ -258,7 +283,9 @@ def charted_svg(
     rows = result.fetchall()
 
     labels, data, series_names = _extract_chart_data_from_result(columns, rows)
-    chart = _build_chart(chart_type, labels, data, series_names, title, width, height, theme)
+    chart = _build_chart(
+        chart_type, labels, data, series_names, title, width, height, theme
+    )
     return chart.to_svg()
 
 
@@ -267,7 +294,9 @@ def charted_svg(
 # =============================================================================
 
 
-def _charted_from_arrays_impl(labels_json: str, data_json: str, chart_type: str, title: str, output: str) -> str:
+def _charted_from_arrays_impl(
+    labels_json: str, data_json: str, chart_type: str, title: str, output: str
+) -> str:
     """UDF implementation: takes JSON-encoded labels and data arrays."""
     labels = json.loads(labels_json) if labels_json else None
     data_raw = json.loads(data_json)
@@ -275,7 +304,7 @@ def _charted_from_arrays_impl(labels_json: str, data_json: str, chart_type: str,
     # data_raw is either a single list or list-of-lists
     if data_raw and isinstance(data_raw[0], list):
         data = data_raw
-        series_names = [f"series_{i+1}" for i in range(len(data))]
+        series_names = [f"series_{i + 1}" for i in range(len(data))]
     else:
         data = [data_raw]
         series_names = ["value"]
@@ -290,14 +319,16 @@ def _charted_from_arrays_impl(labels_json: str, data_json: str, chart_type: str,
     return o
 
 
-def _charted_svg_from_arrays_impl(labels_json: str, data_json: str, chart_type: str, title: str) -> str:
+def _charted_svg_from_arrays_impl(
+    labels_json: str, data_json: str, chart_type: str, title: str
+) -> str:
     """UDF implementation: returns SVG string from JSON-encoded arrays."""
     labels = json.loads(labels_json) if labels_json else None
     data_raw = json.loads(data_json)
 
     if data_raw and isinstance(data_raw[0], list):
         data = data_raw
-        series_names = [f"series_{i+1}" for i in range(len(data))]
+        series_names = [f"series_{i + 1}" for i in range(len(data))]
     else:
         data = [data_raw]
         series_names = ["value"]
@@ -322,6 +353,7 @@ def register(con: duckdb.DuckDBPyConnection) -> None:
     For the simpler query-based workflow, use the Python functions:
     charted_query() and charted_svg() directly.
     """
+    duckdb = _require_duckdb()
     VARCHAR = duckdb.sqltype("VARCHAR")
 
     con.create_function(
@@ -357,6 +389,7 @@ def load(db_path: str = ":memory:") -> duckdb.DuckDBPyConnection:
         >>> from charted.duckdb_ext.extension import charted_query
         >>> charted_query(con, 'SELECT x, y FROM data', chart_type='line')
     """
+    duckdb = _require_duckdb()
     con = duckdb.connect(db_path)
     register(con)
     return con
