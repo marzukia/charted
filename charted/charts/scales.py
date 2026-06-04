@@ -30,6 +30,20 @@ class Scale:
         self.min_value = min_value
         self.max_value = max_value
 
+    @staticmethod
+    def _degenerate_ticks(value: float) -> list:
+        """Return two distinct ticks for a zero-width (min == max) domain.
+
+        A single data point, an all-equal series, or all-zero data collapses
+        the domain to ``[value, value]``. Returning ``[value, value]`` gives an
+        empty axis (both ticks at the same pixel). Instead, pad the value to a
+        sensible visible range: ``[0, 1]`` when the value is zero, otherwise a
+        unit window centred on the value.
+        """
+        if value == 0:
+            return [0.0, 1.0]
+        return [value - 1, value + 1]
+
     def reproject(self, value: float, length: float) -> float:
         """Map ``value`` to a pixel offset in ``[0, length]``."""
         raise NotImplementedError
@@ -69,6 +83,8 @@ class LinearScale(Scale):
         return self.min_value + (pixel / length) * value_range
 
     def ticks(self) -> list:
+        if self.max_value == self.min_value:
+            return self._degenerate_ticks(self.min_value)
         return [self.min_value, self.max_value]
 
 
@@ -110,6 +126,14 @@ class LogScale(Scale):
 
     def ticks(self) -> list:
         """Return the powers of ten spanning the domain (inclusive)."""
+        if self.max_value == self.min_value:
+            # Single positive point / all-equal positive series: pad to the
+            # bracketing decade so the axis has two distinct ticks.
+            lo = 10 ** math.floor(self._log_min)
+            hi = 10 ** math.ceil(self._log_max)
+            if hi == lo:
+                hi = lo * 10
+            return [int(lo) if lo >= 1 else lo, int(hi) if hi >= 1 else hi]
         lo = math.floor(self._log_min)
         hi = math.ceil(self._log_max)
         powers = []
@@ -202,6 +226,11 @@ class TimeScale(Scale):
         fall back to year boundaries; sub-month spans fall back to evenly
         spaced ticks.
         """
+        if self.max_value == self.min_value:
+            # Single date / all-equal dates: pad to a one-day window so the
+            # axis has two distinct tick positions instead of one.
+            return [self.min_value, self.min_value + 86400.0]
+
         start = datetime.fromtimestamp(self.min_value, tz=timezone.utc)
         span_days = self._span_days()
 
