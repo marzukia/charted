@@ -189,10 +189,12 @@ class RadarRenderer:
             pad_y = 2
             box_w = len(text) * char_w + pad_x * 2
             box_h = font_size + pad_y * 2
+            box_x = label_x - pad_x
+            box_y = label_y - font_size + pad_y
             label_group.add_child(
                 Rect(
-                    x=label_x - pad_x,
-                    y=label_y - font_size + pad_y,
+                    x=box_x,
+                    y=box_y,
                     width=box_w,
                     height=box_h,
                     rx=2,
@@ -200,16 +202,19 @@ class RadarRenderer:
                     fill_opacity=1,
                 )
             )
+            # Anchor the text at the badge centre so it is centred both ways
+            # regardless of glyph metrics.
             label_group.add_child(
                 Text(
-                    x=label_x,
-                    y=label_y,
+                    x=box_x + box_w / 2,
+                    y=box_y + box_h / 2,
                     text=text,
                     fill=text_color,
                     font_size=font_size,
                     font_family=DEFAULT_FONT,
                     font_weight="bold",
-                    text_anchor="start",
+                    text_anchor="middle",
+                    dominant_baseline="central",
                 )
             )
         g.add_child(label_group)
