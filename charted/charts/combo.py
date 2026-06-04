@@ -7,7 +7,7 @@ that scales to its own range and renders tick labels on the right.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import cast
 
 from charted.charts.axes import XAxis, YAxis, _AxisParent
 from charted.charts.chart import Chart
@@ -19,7 +19,7 @@ from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.layout_engine import LayoutEngine
 from charted.utils.line_renderer import LineRenderer, _LineHost
 from charted.utils.transform import translate
-from charted.utils.types import Labels, SeriesStyleConfig, Vector2D
+from charted.utils.types import ComboSeriesDict, Labels, SeriesStyleConfig, Vector2D
 
 _BAR_TYPES = {"bar", "column"}
 _LINE_TYPES = {"line", "area"}
@@ -206,7 +206,7 @@ class ComboChart(Chart):
 
     def __init__(
         self,
-        series: list[dict[str, Any]],
+        series: list[ComboSeriesDict],
         labels: Labels | None = None,
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
@@ -224,7 +224,7 @@ class ComboChart(Chart):
         if not series or len(series) < 2:
             raise ValueError("ComboChart requires at least two series.")
 
-        normalized: list[dict[str, Any]] = []
+        normalized: list[ComboSeriesDict] = []
         for s in series:
             stype = s.get("type", "line")
             if stype not in _VALID_TYPES:
@@ -260,7 +260,10 @@ class ComboChart(Chart):
             self._secondary_indices = []
 
         series_names_list = [s["name"] for s in self.series]
-        names: list[Any] | None = series_names_list
+        # Series names may individually be ``None``; the base chart's
+        # ``series_names`` contract is ``list[str]`` but tolerates the optional
+        # entries at runtime (the legend skips unnamed series).
+        names = cast("list[str] | None", series_names_list)
         if all(n is None for n in series_names_list):
             names = None
 
@@ -393,7 +396,7 @@ class ComboChart(Chart):
             )
         return group
 
-    def describe(self) -> dict[str, Any]:
+    def describe(self) -> dict[str, object]:
         meta = super().describe()
         meta["chart_type"] = "ComboChart"
         meta["series_count"] = len(self.series)
@@ -416,7 +419,7 @@ class ComboChart(Chart):
         meta["series"] = series_info
         return meta
 
-    def to_config(self) -> dict[str, Any]:
+    def to_config(self) -> dict[str, object]:
         cfg = super().to_config()
         cfg["chart_type"] = "ComboChart"
         cfg["series"] = [dict(s) for s in self.series]
