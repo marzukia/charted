@@ -6,9 +6,12 @@ assert the friendly install hint is surfaced instead of a bare traceback.
 """
 
 import builtins
+import importlib.util
 import sys
 
 import pytest
+
+_HAS_DUCKDB = importlib.util.find_spec("duckdb") is not None
 
 import duckdb_ext.extension as duckdb_ext
 import mcp_server
@@ -57,8 +60,11 @@ class TestMcpGuard:
 
 
 class TestDuckdbGuard:
+    @pytest.mark.skipif(not _HAS_DUCKDB, reason="duckdb extra not installed")
     def test_require_duckdb_returns_module_when_present(self):
-        assert duckdb_ext._require_duckdb() is sys.modules["duckdb"]
+        import duckdb
+
+        assert duckdb_ext._require_duckdb() is duckdb
 
     def test_require_duckdb_raises_hint_when_missing(self, monkeypatch):
         monkeypatch.delitem(sys.modules, "duckdb", raising=False)
