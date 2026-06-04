@@ -111,6 +111,26 @@ class TestThemeCompose:
         base.compose(Theme(title_color="#fff"))
         assert base.colors == original_colors
 
+    def test_compose_override_to_class_default_value(self):
+        """An explicitly-set override equal to the class default still applies.
+
+        The base disables the grid; the override re-enables it back to the
+        class default (True). The old default-equality skip dropped this,
+        leaving the grid disabled. It must now take effect.
+        """
+        base = Theme(grid_visible=False)
+        assert base.grid_visible is False
+
+        composed = base.compose(Theme(grid_visible=True))
+        assert composed.grid_visible is True
+
+    def test_compose_override_string_equal_to_default(self):
+        """Override applies even when its value equals the class default string."""
+        # "topright" is the class default for legend_position.
+        base = Theme(legend_position="topleft")
+        composed = base.compose(Theme(legend_position="topright"))
+        assert composed.legend_position == "topright"
+
 
 class TestThemeCycleColor:
     """Test Theme.cycle_color() method."""

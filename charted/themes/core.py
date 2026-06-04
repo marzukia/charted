@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass, field, replace
+from functools import wraps
 from typing import Optional
 
 from charted.constants import REFERENCE_LINE_WIDTH
@@ -367,6 +368,16 @@ class Theme:
         class_default = self.__class__.__dataclass_fields__[field_name].default
         return getattr(self, field_name) != class_default
 
+    def _provided_fields(self) -> frozenset:
+        """Names of fields explicitly passed to this instance's constructor.
+
+        Recorded by the wrapped ``__init__`` (see below). Used by
+        ``compose()`` to apply only the fields a caller actually set, so an
+        override can re-assign a field to a value equal to a class default.
+        Falls back to an empty set for instances built without the wrapper.
+        """
+        return getattr(self, "_explicitly_set", frozenset())
+
     @property
     def resolved_grid_color(self) -> str:
         """Grid color: explicit override or root_color at 20% opacity."""
@@ -633,20 +644,23 @@ class Theme:
             return self.__copy__()
 
         new_values = {}
-        overrides_dict = vars(overrides)
+        field_names = Theme.__dataclass_fields__.keys()
+        provided = overrides._provided_fields()
 
-        # Get the default Theme instance to compare against
-        default_theme = Theme()
-
-        for key, override_value in overrides_dict.items():
+        for key in field_names:
+            override_value = getattr(overrides, key)
             if key == "colors":
+                # ``colors`` keeps its historical opt-in semantics: an empty
+                # list never overrides, regardless of whether it was passed.
                 if override_value and len(override_value) > 0:
                     new_values[key] = override_value.copy()
             else:
-                # Compare against the default theme's value, not the class default
-                default_value = getattr(default_theme, key)
-
-                if override_value == default_value:
+                # Apply the override only when the field was explicitly passed
+                # to the override Theme's constructor. This lets callers set a
+                # field back to a value that happens to equal a class default
+                # (e.g. re-enabling grid_visible=True), which the old
+                # default-equality skip silently dropped.
+                if key not in provided:
                     continue
 
                 new_values[key] = override_value
@@ -654,7 +668,7 @@ class Theme:
         if not new_values:
             return self.__copy__()
 
-        base_dict = vars(self)
+        base_dict = {key: getattr(self, key) for key in field_names}
         merged = {**base_dict, **new_values}
 
         return Theme(**merged)
@@ -670,6 +684,47 @@ class Theme:
         """
         palette = ColorPalette(colors=self.colors)
         return palette.get_color(index)
+
+
+def _wrap_theme_init() -> None:
+    """Wrap Theme.__init__ to record which fields a caller explicitly passed.
+
+    The dataclass-generated ``__init__`` accepts each field as a positional or
+    keyword argument. We bind the call against that signature to find exactly
+    which fields were supplied (vs. left to their default), then stash the set
+    on the instance for ``compose()`` to read. This is the "track set fields"
+    mechanism that replaces the old default-equality skip.
+    """
+    import inspect
+
+    original_init = Theme.__init__
+    field_order = list(Theme.__dataclass_fields__.keys())
+    signature = inspect.signature(original_init)
+
+    @wraps(original_init)
+    def __init__(self, *args, **kwargs):  # noqa: N807
+        # The tracking marker leaks into ``vars(theme)``; tolerate (and honour)
+        # it when a caller round-trips a theme via ``Theme(**vars(theme))`` so
+        # the provided-set survives the copy and isn't passed to the dataclass
+        # constructor (which would reject the unknown keyword).
+        preset = kwargs.pop("_explicitly_set", None)
+        if preset is not None:
+            provided = frozenset(preset)
+        else:
+            try:
+                bound = signature.bind(self, *args, **kwargs)
+                provided = frozenset(
+                    name for name in bound.arguments if name in field_order
+                )
+            except TypeError:
+                provided = frozenset()
+        original_init(self, *args, **kwargs)
+        object.__setattr__(self, "_explicitly_set", provided)
+
+    Theme.__init__ = __init__
+
+
+_wrap_theme_init()
 
 
 # Backward compatibility aliases
