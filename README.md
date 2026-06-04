@@ -2,9 +2,9 @@
 
 [![codecov](https://codecov.io/github/marzukia/charted/graph/badge.svg)](https://codecov.io/github/marzukia/charted) [![charted-ci](https://github.com/marzukia/charted/actions/workflows/ci.yml/badge.svg)](https://github.com/marzukia/charted/actions/workflows/ci.yml)
 
-**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. 14 chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
+**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string with no numpy, no pandas, and no heavy dependencies. 14 chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
 
-> **Core principle:** charted itself has zero runtime dependencies. PNG export and MCP server support are opt-in extras that pull in their own dependencies — the base library stays pure Python.
+> **Core principle:** charted itself has zero runtime dependencies. PNG export and MCP server support are opt-in extras that pull in their own dependencies, and the base library stays pure Python.
 
 ```sh
 pip install charted
@@ -26,29 +26,29 @@ chart.save("chart.png")  # PNG export (requires cairosvg)
 
 ## Why Charted?
 
-- **Zero runtime dependencies** — pure Python, no numpy/pandas required
-- **14 chart types** — Bar, Column, Line, Scatter, Pie, Area, Radar, Box Plot, Histogram, Heatmap, Gantt, Bubble, Combo, Polar Area
-- **Multi-series support** — stacked, side-by-side, grouped layouts
-- **Negative values handled** — proper zero baseline calculations
-- **SVG and PNG output** — SVG natively, PNG via optional `cairosvg` (`pip install charted[png]`)
-- **Theme system** — 3 built-in presets + custom theme composition
-- **Per-series styling** — granular control with SeriesStyle builders
-- **Data loading** — CSV/JSON parsers built-in
-- **Markdown export** — generate embed-ready markdown snippets
-- **CLI included** — create charts without writing Python code
-- **Jupyter ready** — charts render inline automatically
-- **Base Chart class** — unified API for dynamic chart type selection
+- **Zero runtime dependencies**: pure Python, no numpy/pandas required
+- **14 chart types**: Bar, Column, Line, Scatter, Pie, Area, Radar, Box Plot, Histogram, Heatmap, Gantt, Bubble, Combo, Polar Area
+- **Multi-series support**: stacked, side-by-side, grouped layouts
+- **Negative values handled**: proper zero baseline calculations
+- **SVG and PNG output**: SVG natively, PNG via optional `cairosvg` (`pip install charted[png]`)
+- **Theme system**: 3 built-in presets + custom theme composition
+- **Per-series styling**: granular control with SeriesStyle builders
+- **Data loading**: CSV/JSON parsers built-in
+- **Markdown export**: generate embed-ready markdown snippets
+- **CLI included**: create charts without writing Python code
+- **Jupyter ready**: charts render inline automatically
+- **Base Chart class**: unified API for dynamic chart type selection
 
 ---
 
 ## Quick Tour
 
-Every chart type shares the same simple interface — pass data, labels, dimensions, and a title:
+Every chart type shares the same simple interface: pass data, labels, dimensions, and a title:
 
 ```python
 from charted.charts import BarChart, LineChart, PieChart
 
-# Bar — single series with negatives
+# Bar: single series with negatives
 BarChart(
     title="Profit/Loss by Region ($M)",
     data=[-12, 34, -8, 52, -5, 28, 41, -19, 15, 60],
@@ -60,7 +60,7 @@ BarChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar.svg)
 
 ```python
-# Bar — multi-series side-by-side
+# Bar: multi-series side-by-side
 BarChart(
     title="Revenue vs Expenses by Quarter ($K)",
     data=[[120, -45, 180, -30, 210, -60], [-80, -20, -95, -15, -110, -25]],
@@ -72,7 +72,7 @@ BarChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar_multi.svg)
 
 ```python
-# Bar — stacked
+# Bar: stacked
 BarChart(
     title="Budget by Department ($K)",
     data=[[100, -50, 120], [80, 60, -40]],
@@ -85,7 +85,7 @@ BarChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/bar_stacked.svg)
 
 ```python
-# Bar — side-by-side with negatives
+# Bar: side-by-side with negatives
 BarChart(
     title="Revenue vs Expenses by Quarter ($K)",
     data=[[120, 180, 210], [-80, -95, -110]],
@@ -100,7 +100,7 @@ BarChart(
 ---
 
 ```python
-# Column — multi-series with negatives
+# Column: multi-series with negatives
 from charted.charts import ColumnChart
 
 ColumnChart(
@@ -115,7 +115,7 @@ ColumnChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/column.svg)
 
 ```python
-# Column — stacked (default for multi-series)
+# Column: stacked (default for multi-series)
 ColumnChart(
     title="Year-over-Year Growth by Segment",
     data=[[12, 22, 30], [-8, -15, -20], [4, 7, 10]],
@@ -128,7 +128,7 @@ ColumnChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/column_stacked.svg)
 
 ```python
-# Column — side-by-side
+# Column: side-by-side
 ColumnChart(
     title="Sales Performance by Region",
     data=[[45, 52, 38, 61], [38, 46, 52, 49], [52, 39, 46, 51]],
@@ -143,7 +143,7 @@ ColumnChart(
 ---
 
 ```python
-# Line — multi-series signal data
+# Line: multi-series signal data
 import math
 from charted.charts import LineChart
 
@@ -163,7 +163,7 @@ LineChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line.svg)
 
 ```python
-# Line — XY mode with temperature anomaly data
+# Line: XY mode with temperature anomaly data
 years = list(range(1990, 2010))
 anomalies = [-15, -5, 10, 20, 5, 25, 15, 30, 10, 20, 40, 25, 45, 30, 50, 35, 60, 55, 45, 70]
 baseline = [round(5 + 2 * math.sin(i * 0.4) + i * 0.5, 1) for i in range(len(years))]
@@ -180,7 +180,7 @@ LineChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/xy_line.svg)
 
 ```python
-# Line — single series
+# Line: single series
 LineChart(
     title="Monthly Active Users (K)",
     data=[[42, 48, 55, 61, 58, 70, 80, 78, 85, 92, 88, 100]],
@@ -194,7 +194,7 @@ LineChart(
 ---
 
 ```python
-# Scatter — multi-series cluster analysis
+# Scatter: multi-series cluster analysis
 import random
 from charted.charts import ScatterChart
 
@@ -205,7 +205,7 @@ cb_x = [70 + random.gauss(0, 10) for _ in range(20)]
 cb_y = [20 + random.gauss(0, 10) for _ in range(20)]
 
 ScatterChart(
-    title="Cluster Analysis — Two Distinct Populations",
+    title="Cluster Analysis: Two Distinct Populations",
     x_data=[ca_x, cb_x], y_data=[ca_y, cb_y],
     series_names=["Cluster A", "Cluster B"],
     width=700, height=400,
@@ -215,13 +215,13 @@ ScatterChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/scatter.svg)
 
 ```python
-# Scatter — single series with quadratic curve
+# Scatter: single series with quadratic curve
 random.seed(1)
 x_vals = [i for i in range(5, 95, 5)]
 y_vals = [round(10 + (v - 50) ** 2 / 50 + random.gauss(0, 4), 1) for v in x_vals]
 
 ScatterChart(
-    title="U-Shaped Response Curve — Signal vs Input",
+    title="U-Shaped Response Curve: Signal vs Input",
     x_data=x_vals, y_data=y_vals,
     series_names=["Observations"],
     width=700, height=400,
@@ -233,7 +233,7 @@ ScatterChart(
 ---
 
 ```python
-# Pie — basic
+# Pie: basic
 from charted.charts import PieChart
 
 PieChart(
@@ -247,7 +247,7 @@ PieChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/pie.svg)
 
 ```python
-# Pie — doughnut mode
+# Pie: doughnut mode
 PieChart(
     title="Operating System Market Share",
     data=[72, 15, 8, 5],
@@ -261,7 +261,7 @@ PieChart(
 ---
 
 ```python
-# Radar — multi-series
+# Radar: multi-series
 from charted.charts import RadarChart
 
 RadarChart(
@@ -275,7 +275,7 @@ RadarChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/radar.svg)
 
 ```python
-# Radar — single series
+# Radar: single series
 RadarChart(
     title="Character Stats",
     data=[20, 35, 30, 45, 25],
@@ -289,13 +289,13 @@ RadarChart(
 ---
 
 ```python
-# Area — CPU temperature over 24 hours
+# Area: CPU temperature over 24 hours
 from charted.charts import AreaChart
 
 temps = [42 + 10 * math.sin(i * 0.6) + (hash(str(i)) % 5 - 2) * 1.5 for i in range(24)]
 
 AreaChart(
-    title="CPU Temperature (°C) — 24-hour Cycle",
+    title="CPU Temperature (°C): 24-hour Cycle",
     data=[round(t, 1) for t in temps],
     labels=[f"{h}:00" for h in range(24)],
     width=700, height=400,
@@ -305,9 +305,9 @@ AreaChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/area.svg)
 
 ```python
-# Area — multi-series revenue by channel
+# Area: multi-series revenue by channel
 AreaChart(
-    title="Multi-series Area — Revenue by Channel",
+    title="Multi-series Area: Revenue by Channel",
     data=[[30, 50, 45, 60, 70, 80, 65, 55], [20, 35, 30, 45, 50, 55, 40, 35]],
     labels=["Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "Q7", "Q8"],
     series_names=["Online", "Retail"],
@@ -320,7 +320,7 @@ AreaChart(
 ---
 
 ```python
-# Box Plot — distribution quartiles with outliers
+# Box Plot: distribution quartiles with outliers
 import random
 from charted.charts import BoxPlot
 
@@ -330,7 +330,7 @@ box_b = [round(random.gauss(70, 15), 1) for _ in range(50)] + [120, 30, 130]
 box_c = [round(random.gauss(30, 8), 1) for _ in range(50)] + [55, 8, 60]
 
 BoxPlot(
-    title="Test Scores by Group — with Outliers",
+    title="Test Scores by Group: with Outliers",
     data=[box_a, box_b, box_c],
     labels=["Group A", "Group B", "Group C"],
     width=700, height=400,
@@ -342,7 +342,7 @@ BoxPlot(
 ---
 
 ```python
-# Histogram — normal distribution (bell curve)
+# Histogram: normal distribution (bell curve)
 import random
 from charted.charts import Histogram
 
@@ -350,7 +350,7 @@ random.seed(42)
 scores = [random.gauss(50, 15) for _ in range(500)]
 
 Histogram(
-    title="Exam Scores — Normal Distribution (500 Students, 10 Bins)",
+    title="Exam Scores: Normal Distribution (500 Students, 10 Bins)",
     data=scores,
     bins=10, width=700, height=400,
 ).save("histogram.svg")
@@ -361,11 +361,11 @@ Histogram(
 ---
 
 ```python
-# Heatmap — monthly temperature matrix
+# Heatmap: monthly temperature matrix
 from charted.charts import HeatmapChart
 
 HeatmapChart(
-    title="Average Temperature (°C) — Monthly by City",
+    title="Average Temperature (°C): Monthly by City",
     data=[
         [35, 36, 38, 40, 43, 45, 47, 46, 44, 41, 38, 36],
         [22, 24, 28, 32, 36, 40, 42, 41, 38, 33, 27, 23],
@@ -384,11 +384,11 @@ HeatmapChart(
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/heatmap.svg)
 
 ```python
-# Gantt — software project timeline
+# Gantt: software project timeline
 from charted.charts import GanttChart
 
 GanttChart(
-    title="Software Project Timeline — Q1 2026",
+    title="Software Project Timeline: Q1 2026",
     data=[(0, 2), (1, 4), (3, 6), (5, 8), (6, 9)],
     labels=["Design", "Frontend", "Backend", "Testing", "Deployment"],
     width=700, height=400,
@@ -404,7 +404,7 @@ GanttChart(
 
 ## Theming
 
-Three built-in presets — light, dark, high-contrast — plus custom theme composition:
+Three built-in presets (light, dark, high-contrast) plus custom theme composition:
 
 ```python
 from charted import BarChart
@@ -510,7 +510,7 @@ chart = ColumnChart(data=y, labels=x)
 
 ## Jupyter Notebook
 
-Charts render inline automatically — no extra setup needed:
+Charts render inline automatically, no extra setup needed:
 
 ```python
 from charted.charts import BarChart
@@ -570,7 +570,7 @@ md = chart.to_markdown()
 pip install charted
 ```
 
-Optional extras (these add dependencies — the core library stays zero-dep):
+Optional extras (these add dependencies, the core library stays zero-dep):
 ```sh
 pip install 'charted[png]'     # PNG export via cairosvg
 pip install 'charted[mcp]'     # MCP server for AI agent integration

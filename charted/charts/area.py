@@ -1,4 +1,4 @@
-"""Area chart — line chart with filled area underneath.
+"""Area chart: line chart with filled area underneath.
 
 Shows one or more series as filled regions under the line.
 """

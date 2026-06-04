@@ -1,4 +1,4 @@
-"""Box plot — statistical chart showing distribution quartiles.
+"""Box plot: statistical chart showing distribution quartiles.
 
 Displays median, quartiles, and outliers for one or more data series.
 """

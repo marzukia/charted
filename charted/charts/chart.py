@@ -1450,7 +1450,7 @@ class Chart(SeriesLegend, Svg):
                 }
             )
 
-        # Determine labels list — check pie labels, then y_labels (BarChart),
+        # Determine labels list: check pie labels, then y_labels (BarChart),
         # then x_labels (most chart types)
         if hasattr(self, "_pie_labels") and self._pie_labels:
             labels = [

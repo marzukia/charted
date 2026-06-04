@@ -331,7 +331,7 @@ class BarChart(Chart):
                             )
                         )
 
-        # Plot borders — all four sides.
+        # Plot borders: all four sides.
         grid_color = self.theme.resolved_grid_color
         border_transform = f"translate({self.left_padding}, {self.top_padding})"
         borders = [

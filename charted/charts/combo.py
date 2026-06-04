@@ -1,4 +1,4 @@
-"""Combo (mixed) chart — bar/column and line/area on shared axes.
+"""Combo (mixed) chart: bar/column and line/area on shared axes.
 
 Composes a column representation and a line representation against one shared
 coordinate system. Series can optionally be assigned to a secondary y-axis

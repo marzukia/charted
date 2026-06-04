@@ -1,4 +1,4 @@
-"""Histogram — distribution of data values across bins.
+"""Histogram: distribution of data values across bins.
 
 Shows the frequency of values within evenly-spaced intervals.
 """

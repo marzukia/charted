@@ -414,14 +414,14 @@ python -m charted create bar sales.svg --data sales.csv --config .chartedrc.toml
 
 **Data Formats:**
 
-CSV — first column is labels, remaining columns are data series:
+CSV: first column is labels, remaining columns are data series:
 ```csv
 Quarter,Q1,Q2,Q3,Q4
 Sales,120,180,210,150
 Profit,80,120,140,100
 ```
 
-JSON — supports arrays, arrays of objects, or structured objects:
+JSON: supports arrays, arrays of objects, or structured objects:
 ```json
 [120, 180, 210, 150]
 ```

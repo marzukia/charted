@@ -187,7 +187,7 @@ class RadarChart(Chart):
         self._colors = [palette[i % len(palette)] for i in range(n_series)]
 
     def get_base_transform(self) -> list:
-        """Radar charts use polar coordinates — no base transform needed."""
+        """Radar charts use polar coordinates: no base transform needed."""
         return []
 
     @property

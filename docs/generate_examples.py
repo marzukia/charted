@@ -264,7 +264,7 @@ save(
 # Scatter charts
 # ---------------------------------------------------------------------------
 
-# Multi-series scatter — two distinct clusters with noise
+# Multi-series scatter: two distinct clusters with noise
 import random
 
 random.seed(42)
@@ -275,7 +275,7 @@ cluster_b_y = [20 + random.gauss(0, 10) for _ in range(20)]
 save(
     "scatter.svg",
     ScatterChart(
-        title="Cluster Analysis — Two Distinct Populations",
+        title="Cluster Analysis: Two Distinct Populations",
         x_data=[cluster_a_x, cluster_b_x],
         y_data=[cluster_a_y, cluster_b_y],
         series_names=["Cluster A", "Cluster B"],
@@ -284,14 +284,14 @@ save(
     ).html,
 )
 
-# Single-series scatter — quadratic relationship with spread
+# Single-series scatter: quadratic relationship with spread
 random.seed(1)
 x_vals = [i for i in range(5, 95, 5)]
 y_vals = [round(10 + (v - 50) ** 2 / 50 + random.gauss(0, 4), 1) for v in x_vals]
 save(
     "scatter_single.svg",
     ScatterChart(
-        title="U-Shaped Response Curve — Signal vs Input",
+        title="U-Shaped Response Curve: Signal vs Input",
         x_data=x_vals,
         y_data=y_vals,
         series_names=["Observations"],
@@ -362,12 +362,12 @@ save(
 # Area charts
 # ---------------------------------------------------------------------------
 
-# Single-series area — CPU temperature over a day
+# Single-series area: CPU temperature over a day
 temps = [42 + 10 * math.sin(i * 0.6) + (hash(str(i)) % 5 - 2) * 1.5 for i in range(24)]
 save(
     "area.svg",
     AreaChart(
-        title="CPU Temperature (°C) — 24-hour Cycle",
+        title="CPU Temperature (°C): 24-hour Cycle",
         data=[round(t, 1) for t in temps],
         labels=[f"{h}:00" for h in range(24)],
         width=700,
@@ -379,7 +379,7 @@ save(
 save(
     "area_multi.svg",
     AreaChart(
-        title="Multi-series Area — Revenue by Channel",
+        title="Multi-series Area: Revenue by Channel",
         data=[
             [30, 50, 45, 60, 70, 80, 65, 55],
             [20, 35, 30, 45, 50, 55, 40, 35],
@@ -403,7 +403,7 @@ box_c = [round(random.gauss(30, 8), 1) for _ in range(50)] + [55, 8, 60]
 save(
     "boxplot.svg",
     BoxPlot(
-        title="Test Scores by Group — with Outliers",
+        title="Test Scores by Group: with Outliers",
         data=[box_a, box_b, box_c],
         labels=["Group A", "Group B", "Group C"],
         width=700,
@@ -415,13 +415,13 @@ save(
 # Histogram
 # ---------------------------------------------------------------------------
 
-# Histogram — 10-bin normal distribution (bell curve)
+# Histogram: 10-bin normal distribution (bell curve)
 random.seed(42)
 hist_data = [random.gauss(50, 15) for _ in range(500)]
 save(
     "histogram.svg",
     Histogram(
-        title="Exam Scores — Normal Distribution (500 Students, 10 Bins)",
+        title="Exam Scores: Normal Distribution (500 Students, 10 Bins)",
         data=hist_data,
         bins=10,
         width=700,
@@ -433,11 +433,11 @@ save(
 # Heatmap
 # ---------------------------------------------------------------------------
 
-# Heatmap — monthly temperature matrix (°C)
+# Heatmap: monthly temperature matrix (°C)
 save(
     "heatmap.svg",
     HeatmapChart(
-        title="Average Temperature (°C) — Monthly by City",
+        title="Average Temperature (°C): Monthly by City",
         data=[
             [35, 36, 38, 40, 43, 45, 47, 46, 44, 41, 38, 36],
             [22, 24, 28, 32, 36, 40, 42, 41, 38, 33, 27, 23],
@@ -473,11 +473,11 @@ save(
 # Gantt chart
 # ---------------------------------------------------------------------------
 
-# Gantt — software project timeline
+# Gantt: software project timeline
 save(
     "gantt.svg",
     GanttChart(
-        title="Software Project Timeline — Q1 2026",
+        title="Software Project Timeline: Q1 2026",
         data=[(0, 2), (1, 4), (3, 6), (5, 8), (6, 9)],
         labels=["Design", "Frontend", "Backend", "Testing", "Deployment"],
         width=700,
@@ -526,7 +526,7 @@ save(
 )
 
 # ---------------------------------------------------------------------------
-# Showcase examples — feature-rich, real-domain charts
+# Showcase examples: feature-rich, real-domain charts
 # ---------------------------------------------------------------------------
 
 # Combo dual-axis: bar revenue on the primary axis, line conversion rate on a
@@ -605,7 +605,7 @@ save(
 
 # Box plot: request latency (ms) by service. NOTE: BoxPlot's constructor does
 # not accept reference_lines (or h_lines), so the SLA marker requested in the
-# spec cannot be drawn through the public API — see the EX-GENERATE summary.
+# spec cannot be drawn through the public API: see the EX-GENERATE summary.
 random.seed(7)
 svc_auth = [round(random.gauss(45, 8), 1) for _ in range(60)] + [110, 95, 12]
 svc_search = [round(random.gauss(120, 25), 1) for _ in range(60)] + [260, 240, 40]
@@ -680,7 +680,7 @@ save(
 save(
     "line_forecast.svg",
     LineChart(
-        title="Monthly Active Users (K) — Actual vs Forecast",
+        title="Monthly Active Users (K): Actual vs Forecast",
         data=[
             [42, 48, 55, 61, 58, 70, 80, 78, 85, 92, 88, 100],
             [40, 47, 53, 60, 63, 71, 79, 84, 90, 96, 103, 110],
@@ -745,4 +745,4 @@ save(
     ).html,
 )
 
-print("Done — all examples written to docs/examples/")
+print("Done. All examples written to docs/examples/")

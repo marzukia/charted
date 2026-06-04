@@ -305,7 +305,7 @@ class GanttChart(Chart):
             )
             result.add_children(line_g)
 
-        # Plot borders — all four sides.
+        # Plot borders: all four sides.
         grid_color = self.theme.grid_color
         borders = [
             Path(
