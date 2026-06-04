@@ -106,3 +106,8 @@ charted-mcp = "mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["charted", "duckdb_ext", "mcp_server"]
+# Ship the PEP 561 marker and the runtime-loaded font JSON definitions
+# (loaded via a __file__-relative path), which are not Python modules and
+# so are not picked up by `packages` alone.
+force-include = { "charted/py.typed" = "charted/py.typed" }
+artifacts = ["charted/fonts/definitions/*.json"]
