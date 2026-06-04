@@ -480,7 +480,6 @@ class BubbleChart(ScatterChart):
         font_size = self._legend_font_size()
         font_family = self.theme.legend_font_family
         font_color = self.theme.legend_font_color
-        fill = self.colors[0] if self.colors else "#3366cc"
 
         band_x = self.left_padding + self.plot_width + self._SIZE_LEGEND_GAP
         # Centre the bubble column on the largest radius so all bubbles share
@@ -511,13 +510,17 @@ class BubbleChart(ScatterChart):
         for value in sorted(values, reverse=True):
             r = self._radius_for_size(value)
             cy = y + r
+            # Hollow outline circles, not filled in the data colour: a filled
+            # legend bubble in the right margin reads as a data bubble that
+            # escaped the plot. An outline reads unambiguously as a scale key.
             g.add_child(
                 Circle(
                     cx=bubble_cx,
                     cy=cy,
                     r=r,
-                    fill=fill,
-                    opacity=0.8,
+                    fill="none",
+                    stroke=font_color,
+                    stroke_width=1.3,
                 )
             )
             g.add_child(
