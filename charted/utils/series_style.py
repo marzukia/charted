@@ -123,7 +123,7 @@ class SeriesStyle:
         """
         return dataclasses.replace(self, _marker_size=size)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> object:
         """Provide backward-compatible attribute access for dict-style usage.
 
         Allows code like `style["fill"]` or `style.fill` to work with SeriesStyle.
@@ -145,20 +145,20 @@ class SeriesStyle:
             return getattr(self, internal_name)
         raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default: object = None) -> object:
         """Dict-style get method for backward compatibility."""
         try:
             return getattr(self, key)
         except AttributeError:
             return default
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for backward compatibility.
 
         Returns:
             Dictionary with all non-None properties.
         """
-        result = {}
+        result: dict[str, object] = {}
         if self._fill is not None:
             result["fill"] = self._fill
         if self._stroke is not None:
@@ -177,4 +177,4 @@ class SeriesStyle:
 
 
 # Backward compatibility alias
-SeriesStyleConfig = SeriesStyle | dict
+SeriesStyleConfig = SeriesStyle | dict[str, object]

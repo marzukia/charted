@@ -14,7 +14,48 @@ identical.
 
 from __future__ import annotations
 
-from charted.html.element import G, Rect, Text
+from typing import TYPE_CHECKING, Protocol, cast
+
+from charted.html.element import Element, G, Rect, Text
+
+if TYPE_CHECKING:
+    from charted.themes.core import Theme
+
+
+class _LegendHost(Protocol):
+    """Structural type for the chart that hosts the :class:`SeriesLegend` mixin.
+
+    Used only by the type checker (via :func:`typing.cast`) so the mixin can
+    reference host-provided attributes without coupling to a concrete chart
+    class. It introduces no runtime members on the mixin or its hosts.
+    """
+
+    @property
+    def colors(self) -> list[str]: ...
+
+    @property
+    def series_names(self) -> list[str] | None: ...
+
+    @property
+    def theme(self) -> Theme: ...
+
+    @property
+    def left_padding(self) -> float: ...
+
+    @property
+    def top_padding(self) -> float: ...
+
+    @property
+    def bottom_padding(self) -> float: ...
+
+    @property
+    def plot_width(self) -> float: ...
+
+    @property
+    def plot_height(self) -> float: ...
+
+    def _default_legend(self) -> G | None: ...
+
 
 VALID_LEGEND_PLACEMENTS = ("none", "right", "bottom", "top")
 
@@ -84,7 +125,7 @@ class SeriesLegend:
         names = getattr(self, "series_names", None)
         if not names:
             return []
-        colors = self.colors
+        colors = cast("_LegendHost", self).colors
         category_fill = getattr(self, "_category_fill", None)
         entries: list[tuple[str, str, str]] = []
         for idx, name in enumerate(names):
@@ -98,7 +139,7 @@ class SeriesLegend:
     # ------------------------------------------------------------------
 
     def _legend_font_size(self) -> float:
-        return self.theme.legend_font_size
+        return cast("_LegendHost", self).theme.legend_font_size
 
     def _legend_reserved_extent(self) -> float:
         """Pixel band to reserve for the legend on its placement side.
@@ -130,7 +171,7 @@ class SeriesLegend:
     # ------------------------------------------------------------------
 
     @property
-    def legend(self):
+    def legend(self) -> G | None:
         """Render the series legend in the band reserved by the layout.
 
         When ``legend='none'`` (the default), defers to the host's previous
@@ -138,25 +179,26 @@ class SeriesLegend:
         unchanged. Otherwise draws one swatch + label per series in the chosen
         band.
         """
+        host = cast("_LegendHost", self)
         if getattr(self, "_legend_placement", "none") == "none":
-            return self._default_legend()
+            return host._default_legend()
 
         entries = self._legend_entries()
         if not entries:
             return None
 
         font_size = self._legend_font_size()
-        font_family = self.theme.legend_font_family
-        font_color = self.theme.legend_font_color
+        font_family = host.theme.legend_font_family
+        font_color = host.theme.legend_font_color
         swatch = font_size
         gap = 6
         pad = 8
         row_h = font_size + 6
 
-        lp = self.left_padding
-        tp = self.top_padding
-        pw = self.plot_width
-        ph = self.plot_height
+        lp = host.left_padding
+        tp = host.top_padding
+        pw = host.plot_width
+        ph = host.plot_height
 
         g = G()
 
@@ -202,7 +244,7 @@ class SeriesLegend:
             # of the chart, below the x-axis tick labels. The bottom padding is
             # base label space + this legend band, so anchoring to the chart's
             # bottom edge keeps the legend clear of the axis labels.
-            bottom_edge = tp + ph + self.bottom_padding
+            bottom_edge = tp + ph + host.bottom_padding
             cy = bottom_edge - band + row_h / 2
         for (name, color, shape), w in zip(entries, widths):
             cx = x + swatch / 2
@@ -222,7 +264,9 @@ class SeriesLegend:
             x += w + item_gap
         return g
 
-    def _legend_swatch(self, shape: str, cx: float, cy: float, size: float, color: str):
+    def _legend_swatch(
+        self, shape: str, cx: float, cy: float, size: float, color: str
+    ) -> Element | None:
         """Build the swatch element for one legend row.
 
         Charts that draw shaped markers (scatter) provide ``_marker_element``;
@@ -234,7 +278,7 @@ class SeriesLegend:
             mark = marker(shape, cx, cy, size, color)
             if mark is not None:
                 mark.kwargs["fill"] = color
-                return mark
+                return cast("Element", mark)
             return None
         # Default square chip.
         return Rect(
@@ -243,17 +287,17 @@ class SeriesLegend:
 
     def _legend_add_entry(
         self,
-        g,
-        name,
-        color,
-        shape,
-        cx,
-        cy,
-        text_x,
-        font_size,
-        font_family,
-        font_color,
-        text_baseline=None,
+        g: G,
+        name: str,
+        color: str,
+        shape: str,
+        cx: float,
+        cy: float,
+        text_x: float,
+        font_size: float,
+        font_family: str,
+        font_color: str,
+        text_baseline: float | None = None,
     ) -> None:
         """Add one swatch + label to the legend group ``g``."""
         mark = self._legend_swatch(shape, cx, cy, font_size / 2, color)
