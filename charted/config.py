@@ -1,12 +1,13 @@
 """Configuration loader for .chartedrc files."""
 
 import os
+import sys
 from pathlib import Path
 from typing import cast
 
-try:
-    import tomllib  # type: ignore[import-not-found,unused-ignore]
-except ImportError:
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
     import tomli as tomllib  # type: ignore[import-not-found]
 
 from .constants import (
