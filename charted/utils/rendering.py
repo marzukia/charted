@@ -3,7 +3,7 @@
 Extracted from Chart class to reduce coupling and improve testability.
 """
 
-from typing import Any
+from typing import cast
 from urllib.parse import quote
 
 from charted.html.element import G, Path, Rect, Text
@@ -247,7 +247,7 @@ def create_legend_entry(
 def create_legend(
     series_names: list[str],
     colors: list[str],
-    theme_config: "Theme | dict[str, Any]",
+    theme_config: "Theme | dict[str, object]",
     plot_left: float,
     plot_right: float,
     top_padding: float,
@@ -279,12 +279,12 @@ def create_legend(
         position = getattr(theme_config, "legend_position", "topright")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
-        font_size = theme_config.get("font_size", 12)
-        legend_padding = theme_config.get("legend_padding", 0.15)
-        font_family = theme_config.get("font_family", "Arial")
-        font_color = theme_config.get("font_color", "#444444")
-        position = theme_config.get("position", "topright")
-        background_color = theme_config.get("background_color", "#ffffff")
+        font_size = cast("float", theme_config.get("font_size", 12))
+        legend_padding = cast("float", theme_config.get("legend_padding", 0.15))
+        font_family = cast("str", theme_config.get("font_family", "Arial"))
+        font_color = cast("str", theme_config.get("font_color", "#444444"))
+        position = cast("str", theme_config.get("position", "topright"))
+        background_color = cast("str", theme_config.get("background_color", "#ffffff"))
 
     # Derive legend-specific colors from the background
     stroke_color = _derive_legend_stroke(background_color)
@@ -358,7 +358,7 @@ def create_legend(
 def create_pie_legend(
     series_names: list[str],
     colors: list[str],
-    theme_config: "Theme | dict[str, Any]",
+    theme_config: "Theme | dict[str, object]",
     chart_width: float,
     chart_height: float,
 ) -> G | None:
@@ -388,10 +388,10 @@ def create_pie_legend(
         font_color = getattr(theme_config, "legend_font_color", "#444444")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
-        font_size = theme_config.get("font_size", 12)
-        font_family = theme_config.get("font_family", "Arial")
-        font_color = theme_config.get("font_color", "#444444")
-        background_color = theme_config.get("background_color", "#ffffff")
+        font_size = cast("float", theme_config.get("font_size", 12))
+        font_family = cast("str", theme_config.get("font_family", "Arial"))
+        font_color = cast("str", theme_config.get("font_color", "#444444"))
+        background_color = cast("str", theme_config.get("background_color", "#ffffff"))
 
     # Derive legend-specific colors from the background
     legend_bg = _derive_legend_background(background_color)

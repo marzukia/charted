@@ -5,13 +5,13 @@ Displays median, quartiles, and outliers for one or more data series.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import cast
 
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path, Rect, Text
 from charted.themes.core import Theme
-from charted.utils.types import Labels, Vector2D
+from charted.utils.types import Labels, ValueLabelOptions, Vector2D
 
 
 def _quartiles(data: list[float]) -> tuple[float, float, float, float, float]:
@@ -62,7 +62,7 @@ class BoxPlot(Chart):
         title: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
-        value_labels: bool | str | dict[str, Any] | None = None,
+        value_labels: bool | str | dict[str, object] | None = None,
         legend: str = "none",
     ):
         self._raw_data = data
@@ -163,7 +163,10 @@ class BoxPlot(Chart):
                 from charted.utils.value_format import format_value
 
                 cfg = self._value_label_config
-                opts = {k: v for k, v in cfg.items() if k != "format"}
+                opts = cast(
+                    "ValueLabelOptions",
+                    {k: v for k, v in cfg.items() if k != "format"},
+                )
                 font_size = max(8, self.theme.title_font_size - 4)
                 g.add_child(
                     Text(

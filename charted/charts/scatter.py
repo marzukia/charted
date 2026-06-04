@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import TypedDict, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from charted.charts.chart import Chart
 from charted.constants import (
@@ -14,10 +14,14 @@ from charted.html.element import Circle, Element, G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.types import (
     PointStyleConfig,
+    ReferenceLineDict,
     SeriesStyleConfig,
     Vector,
     Vector2D,
 )
+
+if TYPE_CHECKING:
+    from charted.charts.chart import _Annotation
 
 
 class _PlacedLabel(TypedDict):
@@ -148,7 +152,7 @@ class ScatterChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list[object] | None = None,
+        annotations: list[_Annotation] | None = None,
         quadrant_labels: list[str] | None = None,
         quadrant_label_inset: float = 12.0,
         quadrant_label_backplate: bool = False,
@@ -156,7 +160,7 @@ class ScatterChart(Chart):
         legend: str = "none",
         x_scale: object | None = None,
         y_scale: object | None = None,
-        reference_lines: list[dict[str, object]] | None = None,
+        reference_lines: list[ReferenceLineDict] | None = None,
         colors: list[str] | None = None,
         x_range: tuple[float, float] | None = None,
         y_range: tuple[float, float] | None = None,

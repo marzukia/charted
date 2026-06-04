@@ -4,10 +4,12 @@ This module provides JSON schema definitions and validation logic
 for .chartedrc.toml configuration files with theme support.
 """
 
-from typing import Any, Dict, List
+from collections.abc import Mapping
+
+from .types import JSONSchema
 
 # Theme property schema definition
-THEME_SCHEMA: Dict[str, Any] = {
+THEME_SCHEMA: JSONSchema = {
     "type": "object",
     "properties": {
         "colors": {
@@ -95,7 +97,7 @@ THEME_SCHEMA: Dict[str, Any] = {
 }
 
 # Chart-type specific theme override schema
-CHART_THEME_OVERRIDES: Dict[str, Any] = {
+CHART_THEME_OVERRIDES: JSONSchema = {
     "type": "object",
     "properties": {
         "theme": THEME_SCHEMA,
@@ -104,7 +106,7 @@ CHART_THEME_OVERRIDES: Dict[str, Any] = {
 }
 
 
-def validate_theme_dict(theme_dict: Dict[str, Any]) -> tuple[bool, List[str]]:
+def validate_theme_dict(theme_dict: Mapping[str, object]) -> tuple[bool, list[str]]:
     """Validate a theme dictionary against the schema.
 
     Args:
@@ -169,7 +171,7 @@ def validate_theme_dict(theme_dict: Dict[str, Any]) -> tuple[bool, List[str]]:
     return len(errors) == 0, errors
 
 
-def validate_config(config: Dict[str, Any]) -> tuple[bool, List[str]]:
+def validate_config(config: Mapping[str, object]) -> tuple[bool, list[str]]:
     """Validate entire config dictionary.
 
     Args:
@@ -181,18 +183,20 @@ def validate_config(config: Dict[str, Any]) -> tuple[bool, List[str]]:
     errors = []
 
     # Validate theme section if present
-    if "theme_section" in config and config["theme_section"]:
-        is_valid, theme_errors = validate_theme_dict(config["theme_section"])
+    theme_section = config.get("theme_section")
+    if isinstance(theme_section, dict):
+        is_valid, theme_errors = validate_theme_dict(theme_section)
         if not is_valid:
             errors.extend([f"[theme] {e}" for e in theme_errors])
 
     # Validate chart-specific themes
     chart_types = ["bar", "column", "line", "pie", "scatter", "radar"]
     for chart_type in chart_types:
-        if chart_type in config and isinstance(config[chart_type], dict):
-            chart_config = config[chart_type]
-            if "theme" in chart_config:
-                is_valid, theme_errors = validate_theme_dict(chart_config["theme"])
+        chart_config = config.get(chart_type)
+        if isinstance(chart_config, dict):
+            theme = chart_config.get("theme")
+            if isinstance(theme, dict):
+                is_valid, theme_errors = validate_theme_dict(theme)
                 if not is_valid:
                     errors.extend([f"[{chart_type}.theme] {e}" for e in theme_errors])
 

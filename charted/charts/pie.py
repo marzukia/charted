@@ -11,7 +11,13 @@ from charted.themes.core import Theme
 from charted.utils.colors import complementary_color, get_contrast_color
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.rendering import create_pie_legend
-from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
+from charted.utils.types import (
+    Labels,
+    SeriesStyleConfig,
+    ValueLabelOptions,
+    Vector,
+    Vector2D,
+)
 
 
 class _PieSlice(TypedDict):
@@ -359,7 +365,10 @@ class PieChart(Chart):
                 from charted.utils.value_format import format_value
 
                 cfg = self._pie_value_labels
-                opts = {k: v for k, v in cfg.items() if k != "format"}
+                opts = cast(
+                    "ValueLabelOptions",
+                    {k: v for k, v in cfg.items() if k != "format"},
+                )
                 fmt = cfg["format"]
                 # For percent format, label the slice's share of the whole.
                 raw = (value / total) if fmt == "percent" else value

@@ -1,9 +1,10 @@
 """Core Theme dataclass and ColorPalette for charted."""
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field, replace
 from functools import wraps
-from typing import Any, Optional
+from typing import Optional, cast
 
 from charted.constants import REFERENCE_LINE_WIDTH
 
@@ -702,14 +703,14 @@ def _wrap_theme_init() -> None:
     signature = inspect.signature(original_init)
 
     @wraps(original_init)
-    def __init__(self: Theme, *args: Any, **kwargs: Any) -> None:  # noqa: N807
+    def __init__(self: Theme, *args: object, **kwargs: object) -> None:  # noqa: N807
         # The tracking marker leaks into ``vars(theme)``; tolerate (and honour)
         # it when a caller round-trips a theme via ``Theme(**vars(theme))`` so
         # the provided-set survives the copy and isn't passed to the dataclass
         # constructor (which would reject the unknown keyword).
         preset = kwargs.pop("_explicitly_set", None)
         if preset is not None:
-            provided = frozenset(preset)
+            provided = frozenset(cast("Iterable[str]", preset))
         else:
             try:
                 bound = signature.bind(self, *args, **kwargs)
@@ -718,7 +719,10 @@ def _wrap_theme_init() -> None:
                 )
             except TypeError:
                 provided = frozenset()
-        original_init(self, *args, **kwargs)
+        # Dynamic passthrough to the real dataclass ``__init__``; ``*args`` /
+        # ``**kwargs`` carry heterogeneous per-field values that cannot be
+        # statically matched to the generated typed parameters.
+        original_init(self, *args, **kwargs)  # type: ignore[arg-type]
         object.__setattr__(self, "_explicitly_set", provided)
 
     Theme.__init__ = __init__  # type: ignore[method-assign]
