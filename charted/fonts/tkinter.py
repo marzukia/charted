@@ -4,7 +4,7 @@ Provides TextMeasurer for measuring text dimensions using tkinter.
 Gracefully handles environments where tkinter is not available.
 """
 
-from typing import Any, cast
+from typing import Literal, cast
 
 try:
     import tkinter as tk
@@ -42,10 +42,14 @@ class TextMeasurer:
         family: str = "Helvetica",
         size: int = 12,
         weight: str = "normal",
-    ) -> tuple[float, float]:
+    ) -> tuple[int, int]:
         if self.root is None:
             raise RuntimeError("TextMeasurer must be used within a 'with' statement")
-        font = tkfont.Font(family=family, size=size, weight=cast("Any", weight))
+        font = tkfont.Font(
+            family=family,
+            size=size,
+            weight=cast('Literal["normal", "bold"]', weight),
+        )
 
         canvas = tk.Canvas(self.root)
         text_id = canvas.create_text(0, 0, text=text, font=font, anchor="nw")
@@ -54,7 +58,7 @@ class TextMeasurer:
 
         return font.measure(text), height
 
-    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+    def __exit__(self, *args: object, **kwargs: object) -> None:
         if self.root:
             self.root.destroy()
             self.root = None

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import cast
 
 from charted.charts.scatter import ScatterChart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
@@ -105,7 +105,7 @@ class BubbleChart(ScatterChart):
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
         quadrant_labels: list[str] | None = None,
-        value_labels: bool | str | dict[str, Any] | None = None,
+        value_labels: bool | str | dict[str, object] | None = None,
         legend: str = "none",
         domain_padding: float | None = None,
     ):
@@ -624,7 +624,7 @@ class BubbleChart(ScatterChart):
                 )
             )
 
-    def to_config(self) -> dict[str, Any]:
+    def to_config(self) -> dict[str, object]:
         cfg = super().to_config()
         cfg["sizes"] = list(self.sizes)
         cfg["min_radius"] = self.min_radius

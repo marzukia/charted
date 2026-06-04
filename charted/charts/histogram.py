@@ -6,13 +6,12 @@ Shows the frequency of values within evenly-spaced intervals.
 from __future__ import annotations
 
 import math
-from typing import Any
 
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Rect
 from charted.themes.core import Theme
-from charted.utils.types import Vector
+from charted.utils.types import ReferenceLineDict, Vector
 
 
 def _auto_bins(data: list[float]) -> int:
@@ -76,9 +75,9 @@ class Histogram(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        reference_lines: list[dict[str, Any]] | None = None,
+        reference_lines: list[ReferenceLineDict] | None = None,
         colors: list[str] | None = None,
-        value_labels: bool | str | dict[str, Any] | None = None,
+        value_labels: bool | str | dict[str, object] | None = None,
         domain_padding: float | None = None,
     ):
         n_bins = bins if bins is not None else _auto_bins(data)

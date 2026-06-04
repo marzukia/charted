@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Protocol, TypedDict, cast
 
 from charted.constants import DEFAULT_PADDING
 from charted.html.element import Element, G, Path, Text
@@ -40,6 +40,21 @@ class _AxisParent(Protocol):
     x_label_rotation: tuple[float, float] | None
 
 
+class _TickLabeled(Protocol):
+    """Structural type for a scale that exposes formatted tick labels."""
+
+    def tick_labels(self) -> list[str]: ...
+
+
+class _GridMinorParams(TypedDict):
+    """Minor-grid parameters peeled off a dict grid config."""
+
+    divisions: int
+    stroke: str | None
+    stroke_width: float | None
+    stroke_dasharray: str
+
+
 class Axis(G):
     parent: _AxisParent
 
@@ -50,7 +65,7 @@ class Axis(G):
         labels: list[str] | None = None,
         stacked: bool = False,
         zero_index: bool = True,
-        config: str | None = None,
+        config: str | dict[str, object] | None = None,
         pad_labels: bool = True,
         scale: Scale | None = None,
     ):
@@ -97,7 +112,7 @@ class Axis(G):
         if hasattr(scale, "tick_labels"):
             self._labels = [
                 calculate_text_dimensions(text)
-                for text in cast("Any", scale).tick_labels()
+                for text in cast("_TickLabeled", scale).tick_labels()
             ]
         else:
             self.labels = [str(v) for v in tick_values]
@@ -275,8 +290,8 @@ class Axis(G):
 
     @staticmethod
     def _split_grid_config(
-        config: str | dict[str, Any],
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        config: str | dict[str, object],
+    ) -> tuple[dict[str, object], _GridMinorParams]:
         """Split a grid config into (major_attrs, minor_params).
 
         A string config becomes the historical single-weight attrs with no
@@ -284,13 +299,21 @@ class Axis(G):
         separately so the remaining keys can be splatted onto the major Path.
         """
         if isinstance(config, str):
-            return {"stroke": config, "stroke_dasharray": "None"}, {}
+            empty: _GridMinorParams = {
+                "divisions": 0,
+                "stroke": None,
+                "stroke_width": None,
+                "stroke_dasharray": "None",
+            }
+            return {"stroke": config, "stroke_dasharray": "None"}, empty
         major = dict(config)
-        minor = {
-            "divisions": major.pop("minor_divisions", 0),
-            "stroke": major.pop("minor_stroke", None),
-            "stroke_width": major.pop("minor_stroke_width", None),
-            "stroke_dasharray": major.pop("minor_stroke_dasharray", "None"),
+        minor: _GridMinorParams = {
+            "divisions": cast("int", major.pop("minor_divisions", 0)),
+            "stroke": cast("str | None", major.pop("minor_stroke", None)),
+            "stroke_width": cast("float | None", major.pop("minor_stroke_width", None)),
+            "stroke_dasharray": cast(
+                "str", major.pop("minor_stroke_dasharray", "None")
+            ),
         }
         return major, minor
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
 
 from charted.charts.chart import Chart
 from charted.config import get_bar_gap
@@ -8,7 +8,16 @@ from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import Element, G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.exceptions import NoDataError
-from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
+from charted.utils.types import (
+    Labels,
+    ReferenceLineDict,
+    SeriesStyleConfig,
+    Vector,
+    Vector2D,
+)
+
+if TYPE_CHECKING:
+    from charted.charts.chart import _Annotation
 
 
 class BarChart(Chart):
@@ -60,10 +69,10 @@ class BarChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list[Any] | None = None,
-        reference_lines: list[dict[str, Any]] | None = None,
+        annotations: list[_Annotation] | None = None,
+        reference_lines: list[ReferenceLineDict] | None = None,
         colors: list[str] | None = None,
-        value_labels: bool | str | dict[str, Any] | None = None,
+        value_labels: bool | str | dict[str, object] | None = None,
         legend: str = "none",
         category_label_max_width: float | None = None,
         category_patterns: list[str] | bool | None = None,
