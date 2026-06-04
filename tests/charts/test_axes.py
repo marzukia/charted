@@ -57,6 +57,16 @@ class TestXAxisHappyPath:
         # Labels should be formatted
         assert len(labels) > 0
 
+    def test_thousands_separator(self):
+        """Large numeric tick labels are grouped with thousands separators."""
+        parent = MockParent()
+        data = [[0, 1000000]]
+        axis = YAxis(parent=parent, data=data)
+        texts = [label.text for label in axis.labels]
+        assert "1,000,000" in texts
+        # Small values stay ungrouped.
+        assert not any("," in t and len(t.replace(",", "")) <= 3 for t in texts)
+
 
 class TestYAxisHappyPath:
     """Happy path tests for YAxis."""

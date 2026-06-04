@@ -17,6 +17,7 @@ from charted.utils.types import (
     Vector,
     Vector2D,
 )
+from charted.utils.value_format import format_value
 
 
 class Axis(G):
@@ -334,8 +335,8 @@ class Axis(G):
                     decimal_value = str(label).split(".")[-1]
                     if float(decimal_value) > 0:
                         precision = 1
-                value = round(label, precision) if precision > 0 else int(label)
-                labels.append(value)
+            for label in self.values:
+                labels.append(format_value(label, decimals=precision))
         else:
             labels = [*labels]
         self._labels = [calculate_text_dimensions(label) for label in labels]
@@ -591,9 +592,7 @@ class YAxis(Axis):
             lines = getattr(label, "lines", None)
             if bar_height is not None:
                 if lines:
-                    labels.add_child(
-                        self._wrapped_label(lines, y, label.height)
-                    )
+                    labels.add_child(self._wrapped_label(lines, y, label.height))
                 else:
                     text = Text(
                         x=0,
