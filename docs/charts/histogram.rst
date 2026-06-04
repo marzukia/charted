@@ -68,13 +68,13 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — Single flat list of numeric values to bin
-   - ``bins`` — Number of bins (auto-computed if None)
-   - ``labels`` — Optional x-axis labels (auto-generated if omitted)
-   - ``width`` — Chart width px (default 800)
-   - ``height`` — Chart height px (default 600)
-   - ``theme`` — Theme dict or string
-   - ``title`` — Chart title
+   - ``data``: Single flat list of numeric values to bin
+   - ``bins``: Number of bins (auto-computed if None)
+   - ``labels``: Optional x-axis labels (auto-generated if omitted)
+   - ``width``: Chart width px (default 800)
+   - ``height``: Chart height px (default 600)
+   - ``theme``: Theme dict or string
+   - ``title``: Chart title
 
    **Example:**
 

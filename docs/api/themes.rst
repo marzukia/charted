@@ -8,9 +8,9 @@ Built-in Themes
 
 The following presets are available out of the box:
 
-- ``"dark"`` — Dark background with high-contrast light colors
-- ``"light"`` — Light background with subtle grid lines
-- ``"high-contrast"`` — Maximum visibility with bold colors
+- ``"dark"``: Dark background with high-contrast light colors
+- ``"light"``: Light background with subtle grid lines
+- ``"high-contrast"``: Maximum visibility with bold colors
 
 Using the ``theme.load()`` method to load a theme by name:
 

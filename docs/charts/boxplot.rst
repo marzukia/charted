@@ -50,12 +50,12 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — List of lists; each inner list is raw data values for one group
-   - ``labels`` — Labels for each group (box)
-   - ``width`` — Chart width in pixel (default 800)
-   - ``height`` — Chart height pixels (default 600)
-   - ``theme`` — Theme string dict
-   - ``title`` — Chart title
+   - ``data``: List of lists; each inner list is raw data values for one group
+   - ``labels``: Labels for each group (box)
+   - ``width``: Chart width in pixel (default 800)
+   - ``height``: Chart height pixels (default 600)
+   - ``theme``: Theme string dict
+   - ``title``: Chart title
 
    **Example:**
 

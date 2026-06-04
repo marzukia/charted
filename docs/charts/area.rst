@@ -91,15 +91,15 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — Single list (one series) or list of lists (multi-series)
-   - ``labels`` — X-axis categories
-   - ``x_data`` — Optional x-axis values for XY mode
-   - ``series_names`` — Series names for legend
-   - ``width`` — Width in pixels (default 800)
-   - ``height`` — Height in pixels (default 600)
-   - ``fill_opacity`` — Fill opacity 0-1 (default 0.1)
-   - ``theme`` — Theme string or dict
-   - ``title`` — Chart title
+   - ``data``: Single list (one series) or list of lists (multi-series)
+   - ``labels``: X-axis categories
+   - ``x_data``: Optional x-axis values for XY mode
+   - ``series_names``: Series names for legend
+   - ``width``: Width in pixels (default 800)
+   - ``height``: Height in pixels (default 600)
+   - ``fill_opacity``: Fill opacity 0-1 (default 0.1)
+   - ``theme``: Theme string or dict
+   - ``title``: Chart title
 
    **Example:**
 

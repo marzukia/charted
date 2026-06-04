@@ -113,20 +113,20 @@ API Reference
 
    **Parameters:**
 
-   - ``data`` — 2D matrix (list of list of numbers)
-   - ``x_labels`` — Column labels (auto-generated if omitted)
-   - ``y_labels`` — Row labels (auto-generated if omitted)
-   - ``width`` — Chart px (default 800)
-   - ``height`` — Chart px (default 600)
-   - ``low_color`` — Color for minimum value (default "#1a6b8f")
-   - ``high_color`` — Color for maximum value (default "#f7a55c")
-   - ``color_scale`` — Continuous multi-stop gradient: a named palette (e.g. "viridis"), a list of hex stops, or a ``ColorScale``. Overrides ``low_color``/``high_color`` (default None)
-   - ``show_values`` — Display values in cells (default True)
-   - ``value_format`` — Format string for cell values (default ".1f")
-   - ``cell_gap`` — Gap between cells as fraction (default 0.04)
-   - ``label_font_size`` — Label font size px (default 11)
-   - ``theme`` — Theme or theme dict
-   - ``title`` — Chart title
+   - ``data``: 2D matrix (list of list of numbers)
+   - ``x_labels``: Column labels (auto-generated if omitted)
+   - ``y_labels``: Row labels (auto-generated if omitted)
+   - ``width``: Chart px (default 800)
+   - ``height``: Chart px (default 600)
+   - ``low_color``: Color for minimum value (default "#1a6b8f")
+   - ``high_color``: Color for maximum value (default "#f7a55c")
+   - ``color_scale``: Continuous multi-stop gradient: a named palette (e.g. "viridis"), a list of hex stops, or a ``ColorScale``. Overrides ``low_color``/``high_color`` (default None)
+   - ``show_values``: Display values in cells (default True)
+   - ``value_format``: Format string for cell values (default ".1f")
+   - ``cell_gap``: Gap between cells as fraction (default 0.04)
+   - ``label_font_size``: Label font size px (default 11)
+   - ``theme``: Theme or theme dict
+   - ``title``: Chart title
 
    **Example:**
 
