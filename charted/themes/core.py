@@ -3,7 +3,7 @@
 import re
 from dataclasses import dataclass, field, replace
 from functools import wraps
-from typing import Optional
+from typing import Any, Optional
 
 from charted.constants import REFERENCE_LINE_WIDTH
 
@@ -366,9 +366,9 @@ class Theme:
     def _is_explicit(self, field_name: str) -> bool:
         """Check if a field was explicitly set (differs from class default)."""
         class_default = self.__class__.__dataclass_fields__[field_name].default
-        return getattr(self, field_name) != class_default
+        return bool(getattr(self, field_name) != class_default)
 
-    def _provided_fields(self) -> frozenset:
+    def _provided_fields(self) -> frozenset[str]:
         """Names of fields explicitly passed to this instance's constructor.
 
         Recorded by the wrapped ``__init__`` (see below). Used by
@@ -702,7 +702,7 @@ def _wrap_theme_init() -> None:
     signature = inspect.signature(original_init)
 
     @wraps(original_init)
-    def __init__(self, *args, **kwargs):  # noqa: N807
+    def __init__(self: Theme, *args: Any, **kwargs: Any) -> None:  # noqa: N807
         # The tracking marker leaks into ``vars(theme)``; tolerate (and honour)
         # it when a caller round-trips a theme via ``Theme(**vars(theme))`` so
         # the provided-set survives the copy and isn't passed to the dataclass
@@ -721,7 +721,7 @@ def _wrap_theme_init() -> None:
         original_init(self, *args, **kwargs)
         object.__setattr__(self, "_explicitly_set", provided)
 
-    Theme.__init__ = __init__
+    Theme.__init__ = __init__  # type: ignore[method-assign]
 
 
 _wrap_theme_init()

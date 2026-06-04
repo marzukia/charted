@@ -7,7 +7,7 @@ from pathlib import Path
 from .create import CHART_TYPES, load_data
 
 
-def batch_command(args: argparse.Namespace):
+def batch_command(args: argparse.Namespace) -> None:
     """Generate multiple charts from a directory."""
     input_dir = Path(args.input_dir)
     output_dir = Path(args.output_dir)
@@ -101,7 +101,18 @@ def batch_command(args: argparse.Namespace):
 def _infer_chart_type(filename: str) -> str:
     """Infer chart type from filename."""
     # Look for chart type keywords in filename
-    keywords = ["bar", "column", "line", "pie", "scatter", "area", "boxplot", "histogram", "heatmap", "gantt"]
+    keywords = [
+        "bar",
+        "column",
+        "line",
+        "pie",
+        "scatter",
+        "area",
+        "boxplot",
+        "histogram",
+        "heatmap",
+        "gantt",
+    ]
 
     for keyword in keywords:
         if keyword in filename:
