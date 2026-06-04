@@ -49,6 +49,11 @@ class TestElement:
         expected = f'<{self.tag} id="parent"><{self.tag} id="child1"/><{self.tag} id="child2"/></{self.tag}>'
         assert parent.html == expected
 
+    def test_attribute_value_escaped(self):
+        element = self.cls(a='"><script>&', b="x < y")
+        expected = f'<{self.tag} a="&quot;&gt;&lt;script&gt;&amp;" b="x &lt; y"/>'
+        assert element.html == expected
+
 
 class TestSvg:
     def setup_method(self, method):
