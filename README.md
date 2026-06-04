@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/github/marzukia/charted/graph/badge.svg)](https://codecov.io/github/marzukia/charted) [![charted-ci](https://github.com/marzukia/charted/actions/workflows/ci.yml/badge.svg)](https://github.com/marzukia/charted/actions/workflows/ci.yml)
 
-**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. 11 chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
+**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string — no numpy, no pandas, no heavy dependencies. 14 chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
 
 > **Core principle:** charted itself has zero runtime dependencies. PNG export and MCP server support are opt-in extras that pull in their own dependencies — the base library stays pure Python.
 
@@ -27,7 +27,7 @@ chart.save("chart.png")  # PNG export (requires cairosvg)
 ## Why Charted?
 
 - **Zero runtime dependencies** — pure Python, no numpy/pandas required
-- **11 chart types** — Bar, Column, Line, Scatter, Pie, Radar, Area, Box Plot, Histogram, Heatmap, Gantt
+- **14 chart types** — Bar, Column, Line, Scatter, Pie, Area, Radar, Box Plot, Histogram, Heatmap, Gantt, Bubble, Combo, Polar Area
 - **Multi-series support** — stacked, side-by-side, grouped layouts
 - **Negative values handled** — proper zero baseline calculations
 - **SVG and PNG output** — SVG natively, PNG via optional `cairosvg` (`pip install charted[png]`)
