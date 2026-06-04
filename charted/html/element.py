@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+from typing import Union, cast
 from xml.sax.saxutils import escape as _xml_escape
 
-Children = list["Element"]
+Child = Union["Element", str]
+Children = list[Child]
 
 
 def _escape_attr(value: str) -> str:
@@ -19,10 +23,10 @@ class Element(object):
     children: Children = []
     class_name: str | None = None
 
-    def __init__(self, parent: object = None, **kwargs):
+    def __init__(self, parent: object = None, **kwargs: object) -> None:
         self.parent = parent
 
-        _kwargs = dict(kwargs)
+        _kwargs: dict[str, object] = dict(kwargs)
         class_name = _kwargs.pop("class_name", None)
         if class_name:
             _kwargs["class"] = class_name
@@ -31,14 +35,14 @@ class Element(object):
             if type(value) is list:
                 _kwargs[key] = " ".join(value)
 
-        self.kwargs: dict[str, str] = {**self.kwargs, **_kwargs}
+        self.kwargs: dict[str, str] = cast("dict[str, str]", {**self.kwargs, **_kwargs})
 
         if self.class_name:
             self.kwargs["class"] = self.class_name
 
-        self.children: list = []
+        self.children: Children = []
 
-    def __new__(cls, *args, **kwargs) -> "Element":
+    def __new__(cls, *args: object, **kwargs: object) -> "Element":
         instance = super().__new__(cls)
         instance.children = []
         return instance
@@ -78,11 +82,13 @@ class Element(object):
             str: A string containing the HTML markup for all child elements.
         """
         return "".join(
-            child.html if type(child) is not str else _xml_escape(child)
+            cast("Element", child).html
+            if type(child) is not str
+            else _xml_escape(child)
             for child in self.children
         )
 
-    def add_child(self, child: "Element") -> "Element":
+    def add_child(self, child: Child | None) -> "Element":
         """Add a child element to the current element.
 
         Args:
@@ -95,7 +101,7 @@ class Element(object):
             self.children.append(child)
         return self
 
-    def add_children(self, *children: Children) -> "Element":
+    def add_children(self, *children: Child | None) -> "Element":
         """Add multiple child elements to the current element.
 
         Args:
@@ -136,7 +142,7 @@ class Path(Element):
     tag = "path"
 
     @classmethod
-    def get_path(cls, x: float, y: float, width: float, height: float) -> list[str]:
+    def get_path(cls, x: float, y: float, width: float, height: float) -> str:
         from charted.utils.helpers import round_coordinate
 
         return " ".join(
@@ -153,7 +159,7 @@ class Path(Element):
 class Text(Element):
     tag = "text"
 
-    def __init__(self, text: str = None, **kwargs):
+    def __init__(self, text: str | None = None, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self.add_child(text)
 
@@ -163,7 +169,7 @@ class TSpan(Element):
 
     tag = "tspan"
 
-    def __init__(self, text: str = None, **kwargs):
+    def __init__(self, text: str | None = None, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self.add_child(text)
 
@@ -178,7 +184,7 @@ class Title(Element):
 
     tag = "title"
 
-    def __init__(self, text: str = None, **kwargs):
+    def __init__(self, text: str | None = None, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self.add_child(text)
 

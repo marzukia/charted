@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
+from typing import Any
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -72,7 +73,7 @@ class ChartConfig:
     x_scale: object | None = None
     y_scale: object | None = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary for serialization.
 
         Returns:
@@ -86,7 +87,7 @@ class ChartConfig:
         return dataclasses.asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> Self:
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create config from dictionary.
 
         Args:
@@ -101,7 +102,7 @@ class ChartConfig:
         valid_fields = {f.name for f in dataclasses.fields(cls)}
         return cls(**{k: v for k, v in data.items() if k in valid_fields})
 
-    def update(self, **kwargs) -> Self:
+    def update(self, **kwargs: Any) -> Self:
         """Update config with new values and return self.
 
         Args:
@@ -212,7 +213,7 @@ class ComboChartConfig(ChartConfig):
     """
 
     # Combo-specific settings
-    series: list[dict] = dataclasses.field(default_factory=list)
+    series: list[dict[str, Any]] = dataclasses.field(default_factory=list)
     column_gap: float = 0.20
 
     # Labels
@@ -306,7 +307,7 @@ class PieChartConfig(ChartConfig):
         ... )
     """
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate pie-specific settings."""
         if not 0 <= self.inner_radius < 1:
             raise ValueError(
@@ -369,7 +370,7 @@ class BubbleChartConfig(ChartConfig):
         ... )
     """
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate bubble-specific settings."""
         if self.min_radius < 0 or self.max_radius < 0:
             raise ValueError("min_radius and max_radius cannot be negative")
@@ -430,7 +431,7 @@ class RadarChartConfig(ChartConfig):
         ... )
     """
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate radar-specific settings."""
         if not 0 < self.radius <= 1:
             raise ValueError("radius must be between 0 (exclusive) and 1 (inclusive)")

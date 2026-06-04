@@ -112,3 +112,8 @@ packages = ["charted", "duckdb_ext", "mcp_server"]
 # so are not picked up by `packages` alone.
 force-include = { "charted/py.typed" = "charted/py.typed" }
 artifacts = ["charted/fonts/definitions/*.json"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["charted"]
+strict = true

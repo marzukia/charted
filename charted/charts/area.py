@@ -5,13 +5,14 @@ Shows one or more series as filled regions under the line.
 
 from __future__ import annotations
 
+from typing import Any
+
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path
 from charted.themes.core import Theme
 from charted.utils.curves import VALID_CURVES, curve_path
-from charted.utils.series_style import SeriesStyleConfig
-from charted.utils.types import Labels, Vector, Vector2D
+from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
 
 
 class AreaChart(Chart):
@@ -62,8 +63,8 @@ class AreaChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list | None = None,
-        reference_lines: list[dict] | None = None,
+        annotations: list[Any] | None = None,
+        reference_lines: list[dict[str, Any]] | None = None,
         colors: list[str] | None = None,
         domain_padding: float | None = None,
     ):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import TypedDict, cast
 
 from charted.charts.chart import Chart
 from charted.config import get_pie_label_font_size
@@ -10,7 +11,24 @@ from charted.themes.core import Theme
 from charted.utils.colors import complementary_color, get_contrast_color
 from charted.utils.defaults import DEFAULT_COLORS
 from charted.utils.rendering import create_pie_legend
-from charted.utils.types import Labels, SeriesStyleConfig, Vector
+from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
+
+
+class _PieSlice(TypedDict):
+    """Per-slice geometry computed in the pie chart's first render pass."""
+
+    i: int
+    value: float
+    angle: float
+    start_angle: float
+    end_angle: float
+    mid_angle: float
+    mid_rad: float
+    label_display: str
+    text_width_est: float
+    fits_inside: bool
+    inside_label_r: float
+    slice_pct: float
 
 
 class PieChart(Chart):
@@ -47,7 +65,7 @@ class PieChart(Chart):
     def __init__(
         self,
         data: Vector,
-        labels: Labels = None,
+        labels: Labels | None = None,
         width: float = PIE_CHART_WIDTH,
         height: float = PIE_CHART_HEIGHT,
         title: str | None = None,
@@ -57,7 +75,7 @@ class PieChart(Chart):
         start_angle: float = 0,
         series_styles: list[SeriesStyleConfig] | None = None,
         show_percentages: bool = False,
-        value_labels: bool | str | dict | None = None,
+        value_labels: bool | str | dict[str, object] | None = None,
         legend: str = "none",
         category_patterns: list[str] | bool | None = None,
     ):
@@ -111,8 +129,8 @@ class PieChart(Chart):
         self._generate_colors_from_data(data, base=resolved_theme.colors)
 
         # Create synthetic x_data and y_data for Chart base class compatibility
-        x_data = [[i for i in range(len(data))]]
-        y_data = [[0, 1]]  # Minimal y range
+        x_data = cast(Vector2D, [[i for i in range(len(data))]])
+        y_data = cast(Vector2D, [[0, 1]])  # Minimal y range
 
         super().__init__(
             width=width,
@@ -324,7 +342,7 @@ class PieChart(Chart):
         current_angle = self.start_angle
 
         # --- First pass: compute slice geometry and classify labels ---
-        slices = []  # list of dicts with geometry for each slice
+        slices: list[_PieSlice] = []  # geometry for each slice
         for i, (value, label) in enumerate(zip(data, labels)):
             angle = (value / total) * 360
             start_angle = current_angle
@@ -421,9 +439,9 @@ class PieChart(Chart):
             if self.series_styles and i < len(self.series_styles):
                 style = self.series_styles[i] or {}
                 if style.get("fill"):
-                    slice_color = style["fill"]
+                    slice_color = cast(str, style["fill"])
                 if style.get("fill_opacity"):
-                    slice_opacity = style["fill_opacity"]
+                    slice_opacity = cast(float, style["fill_opacity"])
 
             # Pattern fill (only when the colour wasn't overridden) and the
             # high-contrast wedge outline. Both are no-ops by default.
@@ -435,6 +453,7 @@ class PieChart(Chart):
             outline = self._filled_outline_attrs()
 
             # Render slice path
+            path_data: str | list[str]
             if angle >= 359.9:
                 path_data = self._get_full_circle_path(cx, cy, radius)
                 slice_path = Path(
@@ -503,7 +522,7 @@ class PieChart(Chart):
     def _render_outside_labels(
         self,
         result: G,
-        outside: list,
+        outside: list[_PieSlice],
         cx: float,
         cy: float,
         radius: float,

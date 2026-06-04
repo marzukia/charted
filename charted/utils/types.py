@@ -27,7 +27,9 @@ class PointStyleConfig(TypedDict, total=False):
     style (``series_styles``)/shape-cycle resolution and finally the defaults.
     """
 
-    marker_shape: str | None  # "circle" | "square" | "diamond" | "triangle" | "star" | "none"
+    marker_shape: (
+        str | None
+    )  # "circle" | "square" | "diamond" | "triangle" | "star" | "none"
     marker_size: float | None
     fill: str | None
     opacity: float | None
@@ -57,7 +59,9 @@ class Coordinate(NamedTuple):
 class AxisDimension(NamedTuple):
     min_value: float
     max_value: float
-    count: float
+    # `count` shadows tuple.count; keeping the public field name (used widely as
+    # AxisDimension.count) means accepting this known NamedTuple/mypy clash.
+    count: float  # type: ignore[assignment]
 
     @property
     def value_range(self) -> float:

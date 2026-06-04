@@ -4,10 +4,10 @@ Extracted from Chart class to reduce coupling and improve testability.
 This module encapsulates all theme loading and merging logic.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .themes import Theme
+    from charted.themes.core import Theme
 
 
 class ThemeManager:
@@ -26,7 +26,8 @@ class ThemeManager:
 
     @staticmethod
     def load_theme(
-        theme: "Theme | str | dict | None", chart_type: str | None = None
+        theme: "Theme | str | dict[str, object] | None",
+        chart_type: str | None = None,
     ) -> "Theme":
         """Load base theme and apply chart-type overrides.
 
@@ -79,7 +80,7 @@ class ThemeManager:
         return base_theme
 
 
-def _dict_to_theme(data: dict) -> "Theme":
+def _dict_to_theme(data: dict[str, object]) -> "Theme":
     """Convert a dict to Theme object (backward compatibility).
 
     Args:
@@ -96,7 +97,7 @@ def _dict_to_theme(data: dict) -> "Theme":
     from charted.themes.core import Theme
 
     # Map dict keys to Theme fields - only allow known fields
-    theme_data = {}
+    theme_data: dict[str, Any] = {}
     theme_fields = {f.name for f in fields(Theme)}
 
     for key, value in data.items():

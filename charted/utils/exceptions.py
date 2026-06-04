@@ -14,7 +14,7 @@ class InvalidValue(ChartedError):
         self.value = value
         super().__init__(self.__str__())
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"'{self.value}' is not a valid value for '{self.name}'"
 
 
@@ -35,7 +35,7 @@ class DataShapeError(ChartedError):
         self.detail = detail
         super().__init__(self.__str__())
 
-    def __str__(self):
+    def __str__(self) -> str:
         msg = f"Data shape mismatch: expected {self.expected} but got {self.actual}. "
         if self.detail:
             msg += self.detail
@@ -54,7 +54,7 @@ class LabelMismatchError(ChartedError):
         self.axis = axis
         super().__init__(self.__str__())
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Label count mismatch: {self.n_labels} {self.axis}-labels "
             f"provided but data has {self.n_data} values. "

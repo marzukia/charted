@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import math
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from charted.constants import DEFAULT_PADDING
-from charted.html.element import G, Path, Text
+from charted.html.element import Element, G, Path, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
 from charted.utils.exceptions import InvalidDataError
 from charted.utils.helpers import (
@@ -19,18 +22,37 @@ from charted.utils.types import (
 )
 from charted.utils.value_format import format_value
 
+if TYPE_CHECKING:
+    from charted.charts.scales import Scale
+
+
+class _AxisParent(Protocol):
+    """Structural type for the chart object an axis renders against.
+
+    The axis only ever reads these layout attributes off its parent chart; the
+    Protocol documents that contract without constraining concrete parents.
+    """
+
+    plot_width: float
+    plot_height: float
+    left_padding: float
+    top_padding: float
+    x_label_rotation: tuple[float, float] | None
+
 
 class Axis(G):
+    parent: _AxisParent
+
     def __init__(
         self,
-        parent: object,
+        parent: _AxisParent,
         data: Vector2D | None = None,
         labels: list[str] | None = None,
         stacked: bool = False,
         zero_index: bool = True,
         config: str | None = None,
         pad_labels: bool = True,
-        scale: object | None = None,
+        scale: Scale | None = None,
     ):
         if not data and not labels:
             raise InvalidDataError("Need labels or data.")
@@ -40,7 +62,7 @@ class Axis(G):
             data = [[i for i in range(len(labels))]]
 
         self.stacked = stacked
-        self.data = data
+        self.data: Vector2D | None = data
         self.parent = parent
         # A None scale means the default LinearScale: existing behaviour is
         # preserved byte-for-byte. Non-linear scales (log/time) own their tick
@@ -55,20 +77,27 @@ class Axis(G):
         self.config = config
         self.add_children(self.grid_lines, self.axis_labels)
 
-    def _init_with_scale(self, data, labels, zero_index) -> None:
+    def _init_with_scale(
+        self,
+        data: Vector2D | None,
+        labels: list[str] | None,
+        zero_index: bool,
+    ) -> None:
         """Set tick values and labels from a non-linear scale."""
         from charted.utils.types import AxisDimension
 
-        tick_values = self.scale.ticks()
+        scale = cast("Scale", self.scale)
+        tick_values = scale.ticks()
         self.axis_dimension = AxisDimension(
-            self.scale.min_value, self.scale.max_value, len(tick_values)
+            scale.min_value, scale.max_value, len(tick_values)
         )
-        self._values = list(tick_values)
-        self._grid_line_values = list(tick_values)
+        self._values: Vector = list(tick_values)
+        self._grid_line_values: Vector = list(tick_values)
         # Scale-provided labels (e.g. formatted dates) take priority.
-        if hasattr(self.scale, "tick_labels"):
+        if hasattr(scale, "tick_labels"):
             self._labels = [
-                calculate_text_dimensions(text) for text in self.scale.tick_labels()
+                calculate_text_dimensions(text)
+                for text in cast("Any", scale).tick_labels()
             ]
         else:
             self.labels = [str(v) for v in tick_values]
@@ -112,11 +141,14 @@ class Axis(G):
         has_labels: bool = False,
         zero_index: bool = True,
     ) -> AxisDimension:
+        assert data is not None
         count = len(data[0])
 
+        min_value: float
+        max_value: float
         if stacked:
-            min_values = [0] * count
-            max_values = [0] * count
+            min_values: list[float] = [0] * count
+            max_values: list[float] = [0] * count
             for series in data:
                 for n in range(count):
                     if series[n] < 0:
@@ -153,12 +185,12 @@ class Axis(G):
         labels: list[str] | None = None,
         zero_index: bool = True,
         stacked: bool | None = None,
-    ) -> tuple[AxisDimension, list[float]]:
+    ) -> tuple[AxisDimension, list[float], list[float]]:
         axd = cls.calculate_axis_dimensions(
             data=data,
             has_labels=labels is not None,
             zero_index=zero_index,
-            stacked=stacked,
+            stacked=bool(stacked),
         )
 
         if labels is not None:
@@ -169,7 +201,7 @@ class Axis(G):
             # Grid lines use full range from min to max for proper rendering
             min_val = min(values)
             max_val = max(values)
-            grid_line_values = list(range(int(min_val), int(max_val) + 1))
+            grid_line_values: list[float] = list(range(int(min_val), int(max_val) + 1))
             return (axd, values, grid_line_values)
 
         denominators = common_denominators(axd.min_value, axd.max_value)
@@ -226,6 +258,9 @@ class Axis(G):
     def reverse(self, value: float) -> float:
         raise Exception("reverse not implemented for instance of Axis.")
 
+    def reproject(self, value: float) -> float:
+        raise Exception("reproject not implemented for instance of Axis.")
+
     @property
     def zero(self) -> float:
         # Zero has no meaning on a log scale (and may be outside a time
@@ -235,11 +270,13 @@ class Axis(G):
         return self.reproject(0)
 
     @property
-    def grid_lines(self) -> Path:
+    def grid_lines(self) -> Element | None:
         raise Exception("grid_lines not implemented for instance of Axis.")
 
     @staticmethod
-    def _split_grid_config(config) -> tuple[dict, dict]:
+    def _split_grid_config(
+        config: str | dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """Split a grid config into (major_attrs, minor_params).
 
         A string config becomes the historical single-weight attrs with no
@@ -293,6 +330,7 @@ class Axis(G):
         This replaces the tuple (data, labels, zero_index) which was prone to
         ordering errors. Using AxisValues provides self-documenting field names.
         """
+        assert axis_values.data is not None
         self.axis_dimension, self._values, self._grid_line_values = (
             self.calculate_axis_values(
                 data=axis_values.data,
@@ -326,9 +364,10 @@ class Axis(G):
         return self._labels
 
     @labels.setter
-    def labels(self, labels: Vector | list[str] = None) -> None:
+    def labels(self, labels: Vector | list[str] | None = None) -> None:
+        resolved: list[str]
         if not labels:
-            labels = []
+            resolved = []
             precision = 0
             for label in self.values:
                 if "." in str(label):
@@ -336,10 +375,10 @@ class Axis(G):
                     if float(decimal_value) > 0:
                         precision = 1
             for label in self.values:
-                labels.append(format_value(label, decimals=precision))
+                resolved.append(format_value(label, decimals=precision))
         else:
-            labels = [*labels]
-        self._labels = [calculate_text_dimensions(label) for label in labels]
+            resolved = [str(label) for label in labels]
+        self._labels = [calculate_text_dimensions(label) for label in resolved]
 
     @property
     def count(self) -> int:
@@ -407,7 +446,7 @@ class XAxis(Axis):
         return stride
 
     @property
-    def grid_lines(self) -> Path:
+    def grid_lines(self) -> Element | None:
         if not self.config:
             return None
 
@@ -419,7 +458,7 @@ class XAxis(Axis):
         # relative to zero (value/range), so tick coordinates need to be
         # shifted right by reproject(abs(min_value)) to land at absolute
         # positions within the plot.
-        dx = 0
+        dx: float = 0
         min_v = self.axis_dimension.min_value
         if self.stacked and min_v < 0:
             dx = self.reproject(abs(min_v))
@@ -478,12 +517,12 @@ class XAxis(Axis):
             group_kwargs["font_weight"] = font_weight
         labels = G(**group_kwargs)
 
-        rotation_angle = 0
+        rotation_angle: float = 0
         if self.parent.x_label_rotation:
             rotation_angle, _ = self.parent.x_label_rotation
 
         # Same absolute-position compensation as grid_lines.
-        dx = 0
+        dx: float = 0
         min_v = self.axis_dimension.min_value
         if self.stacked and min_v < 0:
             dx = self.reproject(abs(min_v))
@@ -549,7 +588,7 @@ class YAxis(Axis):
         else:
             values = self.values
 
-        offset = 0
+        offset: float = 0
         if self.stacked and self.axis_dimension.min_value < 0:
             offset = self.axis_dimension.min_value
 
@@ -565,7 +604,7 @@ class YAxis(Axis):
         return [self.reproject(i + abs(offset)) for i in reversed(values)]
 
     @property
-    def grid_lines(self) -> Path:
+    def grid_lines(self) -> Element | None:
         if not self.config:
             return None
 

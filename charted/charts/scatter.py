@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import TypedDict, cast
 
 from charted.charts.chart import Chart
 from charted.constants import (
@@ -9,7 +10,7 @@ from charted.constants import (
     QUADRANT_BOTTOM_MARGIN_FACTOR,
     QUADRANT_LABEL_LINE_GAP,
 )
-from charted.html.element import Circle, G, Path, Rect, Text
+from charted.html.element import Circle, Element, G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.types import (
     PointStyleConfig,
@@ -17,6 +18,19 @@ from charted.utils.types import (
     Vector,
     Vector2D,
 )
+
+
+class _PlacedLabel(TypedDict):
+    """A data label's placement state during collision avoidance."""
+
+    text: str
+    px: float
+    py: float
+    cx: float
+    cy: float
+    w: float
+    h: float
+    marker: float
 
 
 class ScatterChart(Chart):
@@ -134,7 +148,7 @@ class ScatterChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list | None = None,
+        annotations: list[object] | None = None,
         quadrant_labels: list[str] | None = None,
         quadrant_label_inset: float = 12.0,
         quadrant_label_backplate: bool = False,
@@ -142,13 +156,13 @@ class ScatterChart(Chart):
         legend: str = "none",
         x_scale: object | None = None,
         y_scale: object | None = None,
-        reference_lines: list[dict] | None = None,
+        reference_lines: list[dict[str, object]] | None = None,
         colors: list[str] | None = None,
         x_range: tuple[float, float] | None = None,
         y_range: tuple[float, float] | None = None,
         domain_padding: float | None = None,
         avoid_label_collisions: bool = False,
-        value_labels: bool | str | dict | None = None,
+        value_labels: bool | str | dict[str, object] | None = None,
     ):
         self._avoid_label_collisions = avoid_label_collisions
         self._point_styles = point_styles
@@ -216,7 +230,7 @@ class ScatterChart(Chart):
         if self.series_styles and series_idx < len(self.series_styles):
             style = self.series_styles[series_idx] or {}
             if style.get("marker_shape"):
-                shape = style["marker_shape"]
+                shape = cast(str, style["marker_shape"])
         return shape
 
     @property
@@ -234,7 +248,7 @@ class ScatterChart(Chart):
             # Default marker size is 4px. A theme that explicitly sets
             # marker_size (e.g. high-contrast) raises it for legibility while
             # the standard themes keep the historical 4px.
-            marker_size = 4
+            marker_size: float = 4
             if self.theme._is_explicit("marker_size"):
                 marker_size = self.theme.marker_size
             # Default shape is a circle; with shape_cycle enabled, each series
@@ -246,11 +260,11 @@ class ScatterChart(Chart):
             if self.series_styles and series_idx < len(self.series_styles):
                 style = self.series_styles[series_idx] or {}
                 if style.get("fill"):
-                    fill = style["fill"]
+                    fill = cast(str, style["fill"])
                 if style.get("marker_size"):
-                    marker_size = style["marker_size"]
+                    marker_size = cast(float, style["marker_size"])
                 if style.get("marker_shape"):
-                    marker_shape = style["marker_shape"]
+                    marker_shape = cast(str, style["marker_shape"])
 
             series = G(fill=fill)
             x_offset = self.x_offset
@@ -265,15 +279,15 @@ class ScatterChart(Chart):
                 p_shape = marker_shape
                 p_size = marker_size
                 p_fill = fill
-                p_opacity = None
+                p_opacity: float | None = None
                 pstyle = self._point_style(series_idx, i)
                 if pstyle:
                     if pstyle.get("marker_shape"):
-                        p_shape = pstyle["marker_shape"]
+                        p_shape = cast(str, pstyle["marker_shape"])
                     if pstyle.get("marker_size"):
-                        p_size = pstyle["marker_size"]
+                        p_size = cast(float, pstyle["marker_size"])
                     if pstyle.get("fill"):
-                        p_fill = pstyle["fill"]
+                        p_fill = cast(str, pstyle["fill"])
                     if pstyle.get("opacity") is not None:
                         p_opacity = pstyle["opacity"]
                 mark = self._marker_element(p_shape, x, y, p_size, p_fill)
@@ -284,7 +298,7 @@ class ScatterChart(Chart):
                     if p_fill != fill:
                         mark.kwargs["fill"] = p_fill
                     if p_opacity is not None:
-                        mark.kwargs["opacity"] = p_opacity
+                        mark.kwargs["opacity"] = cast(str, p_opacity)
                     if title is not None:
                         mark.add_child(title)
                     series.add_child(mark)
@@ -313,7 +327,7 @@ class ScatterChart(Chart):
 
         return wrapper
 
-    def _point_style(self, series_idx: int, point_idx: int):
+    def _point_style(self, series_idx: int, point_idx: int) -> PointStyleConfig | None:
         """Return the ``PointStyleConfig`` for one point, or None.
 
         ``point_styles`` is a list of per-series rows mirroring the data shape;
@@ -327,7 +341,9 @@ class ScatterChart(Chart):
             return None
         return row[point_idx] or None
 
-    def _marker_element(self, shape: str, x: float, y: float, size: float, fill: str):
+    def _marker_element(
+        self, shape: str, x: float, y: float, size: float, fill: str
+    ) -> Element | None:
         """Build a marker element centred at (x, y).
 
         ``size`` is the radius / half-extent, so every shape shares the same
@@ -415,7 +431,7 @@ class ScatterChart(Chart):
         line_color = self.theme.resolved_reference_line_color
 
         # Gather placed labels and their anchor markers in plot coordinates.
-        placed: list[dict] = []
+        placed: list[_PlacedLabel] = []
         for series_idx, label_row in enumerate(labels):
             if series_idx >= len(self.y_values):
                 break
@@ -426,7 +442,7 @@ class ScatterChart(Chart):
             if self.series_styles and series_idx < len(self.series_styles):
                 style = self.series_styles[series_idx] or {}
                 if style.get("marker_size"):
-                    marker_size = float(style["marker_size"])
+                    marker_size = float(cast(float, style["marker_size"]))
             for i, label_text in enumerate(label_row):
                 if i >= len(x_vals) or not label_text:
                     continue
@@ -491,7 +507,7 @@ class ScatterChart(Chart):
         return g
 
     @staticmethod
-    def _deoverlap_labels(placed: list[dict], iterations: int = 60) -> None:
+    def _deoverlap_labels(placed: list[_PlacedLabel], iterations: int = 60) -> None:
         """Greedily push overlapping label boxes apart, in place.
 
         Each iteration walks every label pair plus every label/marker pair and,
@@ -501,7 +517,17 @@ class ScatterChart(Chart):
         heuristic with no global guarantee (see ``_render_data_labels``).
         """
 
-        def overlap(a_cx, a_cy, a_w, a_h, b_cx, b_cy, b_w, b_h, pad=2.0):
+        def overlap(
+            a_cx: float,
+            a_cy: float,
+            a_w: float,
+            a_h: float,
+            b_cx: float,
+            b_cy: float,
+            b_w: float,
+            b_h: float,
+            pad: float = 2.0,
+        ) -> tuple[float, float] | None:
             ox = (a_w + b_w) / 2 + pad - abs(a_cx - b_cx)
             oy = (a_h + b_h) / 2 + pad - abs(a_cy - b_cy)
             if ox > 0 and oy > 0:
@@ -514,8 +540,14 @@ class ScatterChart(Chart):
                 # Label vs every other label.
                 for b in placed[i + 1 :]:
                     res = overlap(
-                        a["cx"], a["cy"], a["w"], a["h"],
-                        b["cx"], b["cy"], b["w"], b["h"],
+                        a["cx"],
+                        a["cy"],
+                        a["w"],
+                        a["h"],
+                        b["cx"],
+                        b["cy"],
+                        b["w"],
+                        b["h"],
                     )
                     if res is None:
                         continue
@@ -535,8 +567,14 @@ class ScatterChart(Chart):
                 for b in placed:
                     m = b["marker"] * 2
                     res = overlap(
-                        a["cx"], a["cy"], a["w"], a["h"],
-                        b["px"], b["py"], m, m,
+                        a["cx"],
+                        a["cy"],
+                        a["w"],
+                        a["h"],
+                        b["px"],
+                        b["py"],
+                        m,
+                        m,
                     )
                     if res is None:
                         continue

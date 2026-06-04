@@ -7,14 +7,42 @@ and address long function issues (Issue #70).
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING, Protocol, cast
 
 from charted.constants import (
     DEFAULT_PADDING,
     FULL_CIRCLE,
     RIGHT_ANGLE,
 )
-from charted.html.element import Circle, G, Path, Rect, Text
+from charted.html.element import Circle, Element, G, Path, Rect, Text
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
+
+if TYPE_CHECKING:
+    from charted.themes.core import Theme
+    from charted.utils.series_style import SeriesStyleConfig
+
+
+class _RadarHost(Protocol):
+    """Structural type for the radar chart consumed by :class:`RadarRenderer`.
+
+    Declared for the type checker only so the renderer can reference the chart's
+    attributes without importing the concrete (and, during this typing pass,
+    not-yet-typed) ``RadarChart`` class.
+    """
+
+    width: float
+    height: float
+    radius: float
+    grid_levels: int
+    label_offset: float
+    show_axis_labels: bool
+    colors: list[str]
+    theme: Theme
+    series_styles: list[SeriesStyleConfig] | None
+    _radar_labels: list[str]
+    _series_data: list[list[float]]
+
+    def get_base_transform(self) -> list[str]: ...
 
 
 class RadarRenderer:
@@ -27,7 +55,7 @@ class RadarRenderer:
     - Data series polygons and markers
     """
 
-    def __init__(self, chart):
+    def __init__(self, chart: _RadarHost):
         """Initialize radar renderer.
 
         Args:
@@ -85,8 +113,8 @@ class RadarRenderer:
         theme = self.chart.theme
         resolved = getattr(theme, "resolved_grid_color", None)
         if resolved:
-            return resolved
-        return getattr(theme, "grid_color", "#e0e0e0")
+            return cast("str", resolved)
+        return cast("str", getattr(theme, "grid_color", "#e0e0e0"))
 
     def _ring_label_color(self) -> str:
         """High-contrast colour for the numeric ring labels.
@@ -98,8 +126,8 @@ class RadarRenderer:
         theme = self.chart.theme
         resolved = getattr(theme, "resolved_label_color", None)
         if resolved:
-            return resolved
-        return getattr(theme, "title_color", "#333")
+            return cast("str", resolved)
+        return cast("str", getattr(theme, "title_color", "#333"))
 
     def _ring_label_halo(self) -> str:
         """Background colour used as a halo behind ring labels.
@@ -360,7 +388,7 @@ class RadarRenderer:
             max_value: Maximum value for scaling
         """
         # Get effective style for this series
-        style = {}
+        style: SeriesStyleConfig = {}
         if self.chart.series_styles and series_idx < len(self.chart.series_styles):
             style = self.chart.series_styles[series_idx] or {}
 
@@ -390,7 +418,13 @@ class RadarRenderer:
             g.add_child(polygon)
 
             # Render markers
-            self._render_markers(g, points, marker_shape, marker_size, stroke)
+            self._render_markers(
+                g,
+                points,
+                cast("str", marker_shape),
+                cast("float", marker_size),
+                cast("str", stroke),
+            )
 
     def _render_markers(
         self,
@@ -410,6 +444,7 @@ class RadarRenderer:
             stroke: Marker fill color
         """
         for x, y in points:
+            marker: Element
             if marker_shape == "circle":
                 marker = Circle(
                     cx=x,
@@ -499,6 +534,7 @@ class RadarRenderer:
         Returns:
             Tuple of (x, y) coordinates
         """
+        radius: float
         if max_value == 0:
             radius = 0
         else:
