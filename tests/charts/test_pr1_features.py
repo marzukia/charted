@@ -9,6 +9,7 @@ from charted.charts.column import ColumnChart
 from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.scatter import ScatterChart
+from charted.utils.exceptions import ChartedError
 
 # =========================================================================
 # Feature 1: Axis titles on all chart types
@@ -131,6 +132,18 @@ class TestReferenceLinesLineChart:
         )
         svg = chart.svg
         assert "stroke-dasharray" in svg
+
+    def test_line_reference_lines_missing_value_raises(self):
+        """A reference-line dict missing 'value' raises a ChartedError naming it."""
+        import pytest
+
+        with pytest.raises(ChartedError) as excinfo:
+            LineChart(
+                data=[10, 20, 30],
+                labels=["A", "B", "C"],
+                reference_lines=[{"axis": "x", "label": "oops"}],
+            )
+        assert "value" in str(excinfo.value)
 
 
 class TestReferenceLinesBarChart:

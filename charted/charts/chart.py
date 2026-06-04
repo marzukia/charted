@@ -467,7 +467,15 @@ class Chart(SeriesLegend, Svg):
         # Parse reference_lines convenience API into h_lines/v_lines + labels
         self._reference_line_labels: list[dict] = []
         if reference_lines:
-            for ref in reference_lines:
+            from charted.utils.exceptions import ValidationError
+
+            for index, ref in enumerate(reference_lines):
+                if "value" not in ref:
+                    raise ValidationError(
+                        f"reference_lines[{index}] is missing required key "
+                        "'value'; each reference line must be a dict with a "
+                        "'value' key (and optional 'axis' and 'label')."
+                    )
                 value = ref["value"]
                 axis = ref.get("axis", "y")
                 label = ref.get("label")
@@ -1843,7 +1851,12 @@ class Chart(SeriesLegend, Svg):
                     tw = calculate_text_dimensions(
                         str(label_text), font=font_family, font_size=font_size
                     ).width
-                    box = (x - tw / 2, ty - font_size / 2, x + tw / 2, ty + font_size / 2)
+                    box = (
+                        x - tw / 2,
+                        ty - font_size / 2,
+                        x + tw / 2,
+                        ty + font_size / 2,
+                    )
                     if any(
                         box[0] < pb[2]
                         and box[2] > pb[0]
