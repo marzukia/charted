@@ -209,14 +209,24 @@ class PolarAreaChart(PieChart):
                 Path(d=path_data, fill=draw_fill, opacity=slice_opacity, **outline)
             )
 
-            # Label near the outer edge of the slice midpoint.
+            # Label near the slice midpoint. Small slices have a tiny radius, so
+            # placing the label at a fraction of their own radius piles every
+            # short slice's label on top of the centre. Floor the label distance
+            # so short slices push their labels outward (where the wider angular
+            # span separates them); when that floor lands the label beyond the
+            # slice arc, colour it for the background instead of the fill.
             label_angle = (start_angle + end_angle) / 2
             label_rad = math.radians(label_angle - 90)
-            label_radius = radius * 0.6
+            inner_label_radius = radius * 0.6
+            min_label_radius = self._max_radius() * 0.42
+            if inner_label_radius >= min_label_radius:
+                label_radius = inner_label_radius
+                text_color = get_contrast_color(slice_color)
+            else:
+                label_radius = min_label_radius
+                text_color = self._ring_label_color()
             label_x = cx + label_radius * math.cos(label_rad)
             label_y = cy + label_radius * math.sin(label_rad)
-
-            text_color = get_contrast_color(slice_color)
             label_display = str(label)
             if self.show_percentages and total > 0:
                 pct = (value / total) * 100
