@@ -1,6 +1,6 @@
 import colorsys
 import re
-from typing import Generator
+from typing import Generator, cast
 
 
 def _hsl_to_rgb(hsl: str) -> tuple[int, int, int]:
@@ -103,7 +103,10 @@ def hex_to_rgb(hex: str) -> tuple[int, int, int]:
             f"Invalid hex color length: expected 3, 6, or 8 characters, got {len(hex)}"
         )
     try:
-        return tuple(int(hex[i : i + 2], 16) for i in (0, 2, 4))
+        return cast(
+            "tuple[int, int, int]",
+            tuple(int(hex[i : i + 2], 16) for i in (0, 2, 4)),
+        )
     except ValueError:
         raise ValueError(f"Invalid hex color: {hex}")
 
@@ -152,7 +155,7 @@ def interpolate_color(a: str, b: str, t: float) -> str:
     )
 
 
-def interpolate_palette(palette_or_list, t: float) -> str:
+def interpolate_palette(palette_or_list: str | list[str], t: float) -> str:
     """Map t in [0, 1] to a color along a multi-stop gradient.
 
     The palette stops are spread evenly across [0, 1]. The value is
@@ -207,8 +210,11 @@ def complementary_color(hex_color: str) -> str:
         b=rgb[2] / 255.0,
     )
     comp_hsv = ((hsv[0] + 0.5) % 1.0, hsv[1], hsv[2])
-    comp_rgb = colorsys.hsv_to_rgb(*comp_hsv)
-    comp_rgb = tuple(int(c * 255) for c in comp_rgb)
+    comp_rgb_float = colorsys.hsv_to_rgb(*comp_hsv)
+    comp_rgb = cast(
+        "tuple[int, int, int]",
+        tuple(int(c * 255) for c in comp_rgb_float),
+    )
     return rgb_to_hex(comp_rgb)
 
 
@@ -252,7 +258,7 @@ def calculate_contrast_ratio(color1: str, color2: str) -> float:
             v = value / 255.0
             if v <= 0.03928:
                 return v / 12.92
-            return ((v + 0.055) / 1.055) ** 2.4
+            return float(((v + 0.055) / 1.055) ** 2.4)
 
         r, g, b = rgb
         return (

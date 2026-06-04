@@ -139,7 +139,7 @@ def validate_theme_dict(theme_dict: Dict[str, Any]) -> tuple[bool, List[str]]:
                 errors.append(f"{field} must be a string")
 
     # Numeric field validation
-    numeric_fields = {
+    numeric_fields: dict[str, tuple[float, float, float]] = {
         "legend_font_size": (8, 72, 11),
         "title_font_size": (8, 72, 16),
         "h_padding": (0.0, 0.5, 0.05),
@@ -147,7 +147,7 @@ def validate_theme_dict(theme_dict: Dict[str, Any]) -> tuple[bool, List[str]]:
         "marker_size": (1.0, 20.0, 3.0),
     }
 
-    for field, (min_val, max_val, default) in numeric_fields.items():
+    for field, (min_val, max_val, _default) in numeric_fields.items():
         if field in theme_dict:
             value = theme_dict[field]
             if not isinstance(value, (int, float)):

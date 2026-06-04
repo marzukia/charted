@@ -47,7 +47,9 @@ def resolve_pattern_cycle(spec: list[str] | bool | None) -> list[str] | None:
     return None
 
 
-def _pattern_geometry(name: str, color: str, size: float, stroke_width: float):
+def _pattern_geometry(
+    name: str, color: str, size: float, stroke_width: float
+) -> list[Element]:
     """Return the child SVG element(s) drawing one pattern's geometry."""
     from charted.html.element import Circle, Path
 

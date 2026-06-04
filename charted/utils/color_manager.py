@@ -4,7 +4,7 @@ This module provides a ColorManager class for automatic color cycling,
 palette expansion, and contrast validation.
 """
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from charted.utils.colors import calculate_contrast_ratio
 
@@ -106,7 +106,7 @@ class ColorManager:
         ratio = calculate_contrast_ratio(foreground, background)
         return ratio
 
-    def validate_theme(self, theme) -> List[str]:
+    def validate_theme(self, theme: Any) -> List[str]:
         """Validate theme colors for WCAG contrast compliance.
 
         Args:

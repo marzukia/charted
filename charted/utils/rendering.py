@@ -3,6 +3,7 @@
 Extracted from Chart class to reduce coupling and improve testability.
 """
 
+from typing import Any
 from urllib.parse import quote
 
 from charted.html.element import G, Path, Rect, Text
@@ -239,14 +240,17 @@ def create_legend_entry(
     )
 
     g = G()
-    g.add_children(rect, legend_text)
+    # Element.add_children types *children as list[Element] but at runtime
+    # accepts individual Elements (it iterates and appends each), which is how
+    # every caller uses it. Fixing the signature lives in html/element.py.
+    g.add_children(rect, legend_text)  # type: ignore[arg-type]
     return g
 
 
 def create_legend(
     series_names: list[str],
     colors: list[str],
-    theme_config: dict,
+    theme_config: "Theme | dict[str, Any]",
     plot_left: float,
     plot_right: float,
     top_padding: float,
@@ -357,7 +361,7 @@ def create_legend(
 def create_pie_legend(
     series_names: list[str],
     colors: list[str],
-    theme_config: dict,
+    theme_config: "Theme | dict[str, Any]",
     chart_width: float,
     chart_height: float,
 ) -> G | None:

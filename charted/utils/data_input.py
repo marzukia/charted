@@ -11,7 +11,9 @@ from typing import Any
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 
 
-def auto_size(data, width: float | None = None, height: float | None = None):
+def auto_size(
+    data: Any, width: float | None = None, height: float | None = None
+) -> tuple[float, float]:
     """Calculate canvas dimensions based on data size.
 
     If width/height are not provided, scale up for datasets larger
@@ -40,6 +42,8 @@ def auto_size(data, width: float | None = None, height: float | None = None):
             n_cols = len(data)
 
         # Scale: 50px per data point, min 500x500
+        w: float
+        h: float
         if width is None:
             w = max(DEFAULT_CHART_WIDTH, n_cols * 50)
         else:
@@ -53,7 +57,7 @@ def auto_size(data, width: float | None = None, height: float | None = None):
     return DEFAULT_CHART_WIDTH, DEFAULT_CHART_HEIGHT
 
 
-def from_dict(data: dict, **kwargs) -> Any:
+def from_dict(data: dict[str, Any], **kwargs: Any) -> Any:
     """Create a chart from a dict-based config.
 
     Expects a dict with at least ``data`` key containing the raw data,
@@ -119,7 +123,7 @@ def from_dict(data: dict, **kwargs) -> Any:
     return chart_cls(**filtered_cfg)
 
 
-def from_dataframe(df, **kwargs) -> Any:
+def from_dataframe(df: Any, **kwargs: Any) -> Any:
     """Create a chart from a pandas DataFrame.
 
     Accepts an optional ``pandas.DataFrame``. If pandas is not installed,
@@ -142,9 +146,9 @@ def from_dataframe(df, **kwargs) -> Any:
 
     # Try pandas import: graceful skip if unavailable
     try:
-        import pandas as pd
+        import pandas as pd  # type: ignore[import-untyped]
     except ImportError:
-        pd = None  # type: ignore
+        pd = None
 
     chart_type = kwargs.pop("chart_type", None)
     cls_map = _CHART_CLASSES()
@@ -217,7 +221,7 @@ def from_dataframe(df, **kwargs) -> Any:
     )
 
 
-def auto(data, **kwargs) -> Any:
+def auto(data: Any, **kwargs: Any) -> Any:
     """Auto-detect chart type from data shape and create the chart.
 
     Heuristic:
@@ -252,6 +256,7 @@ def auto(data, **kwargs) -> Any:
     # maps to marker radius -> BubbleChart.
     if "sizes" in kwargs and kwargs["sizes"] is not None:
         chart_cls = cls_map.get("BubbleChart")
+        assert chart_cls is not None
         if isinstance(data, list) and data and isinstance(data[0], list):
             x, y = data[0], data[1]
         else:
@@ -271,6 +276,7 @@ def auto(data, **kwargs) -> Any:
                 chart_cls = cls_map.get("PieChart")
             else:
                 chart_cls = cls_map.get("BarChart")
+            assert chart_cls is not None
             return chart_cls(data=data, **kwargs)
 
         # 2D data
@@ -280,14 +286,17 @@ def auto(data, **kwargs) -> Any:
         if n_rows <= 3 and n_cols > 3:
             # Few rows, many columns: could be grouped bar or line
             chart_cls = cls_map.get("ColumnChart")
+            assert chart_cls is not None
             return chart_cls(data=data, **kwargs)
         elif n_rows > 3 and n_cols <= 6:
             # Many rows, few columns: line chart
             chart_cls = cls_map.get("LineChart")
+            assert chart_cls is not None
             return chart_cls(data=data, **kwargs)
         else:
             # Square-ish matrix: heatmap
             chart_cls = cls_map.get("HeatmapChart")
+            assert chart_cls is not None
             return chart_cls(data=data, **kwargs)
 
     if isinstance(data, dict):
