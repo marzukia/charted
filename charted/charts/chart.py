@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Protocol, cast
 
 from charted.charts._chart_config import ChartConfigMixin
 from charted.charts._chart_output import ChartOutputMixin
+from charted.charts._chart_patterns import ChartPatternMixin
 from charted.charts._chart_tooltips import ChartTooltipMixin
 from charted.charts.axes import XAxis, YAxis
 from charted.constants import (
@@ -41,7 +42,6 @@ if TYPE_CHECKING:
     from charted.charts.axes import _AxisParent
     from charted.charts.scales import Scale
     from charted.html.element import Element
-    from charted.utils.patterns import Pattern
 
 
 class _Annotation(Protocol):
@@ -55,7 +55,14 @@ class _Annotation(Protocol):
     def render(self, chart: Chart) -> Element: ...
 
 
-class Chart(ChartConfigMixin, ChartTooltipMixin, ChartOutputMixin, SeriesLegend, Svg):
+class Chart(
+    ChartPatternMixin,
+    ChartConfigMixin,
+    ChartTooltipMixin,
+    ChartOutputMixin,
+    SeriesLegend,
+    Svg,
+):
     """Base class for all SVG chart types.
 
     Provides common functionality for chart rendering including
@@ -595,66 +602,6 @@ class Chart(ChartConfigMixin, ChartTooltipMixin, ChartOutputMixin, SeriesLegend,
             children.extend(axis_labels)
         self.children = []
         self.add_children(*children)
-
-    # =========================================================================
-    # Colourblind-safe redundancy: contrasting outlines + pattern fills
-    # =========================================================================
-
-    def _pattern_color_count(self) -> int:
-        """Number of distinct category colours that may need a pattern tile."""
-        colors = getattr(self, "colors", None) or []
-        return len(colors)
-
-    def _pattern_defs(self) -> list[Pattern]:
-        """Build one ``<pattern>`` def per (category, pattern) the chart uses.
-
-        Returns an empty list unless ``category_patterns`` was enabled, so the
-        default ``<defs>`` block is byte-for-byte unchanged. One pattern is
-        emitted per colour index, drawn in that index's fill colour, so a hatch
-        keeps the underlying category colour while adding a texture channel.
-        """
-        cycle = getattr(self, "_category_patterns", None)
-        if not cycle:
-            return []
-        from charted.utils.patterns import build_pattern
-
-        colors = getattr(self, "colors", None) or []
-        defs: list[Pattern] = []
-        for idx, color in enumerate(colors):
-            name = cycle[idx % len(cycle)]
-            defs.append(build_pattern(self._pattern_id(idx), name, color))
-        return defs
-
-    def _pattern_id(self, index: int) -> str:
-        """Stable id for the pattern tile of category ``index``."""
-        return f"chart-pattern-{id(self) & 0xFFFFFF:x}-{index}"
-
-    def _category_fill(self, index: int, color: str) -> str:
-        """Return the fill for category ``index``: a pattern url or the colour.
-
-        With patterns disabled (the default) this returns ``color`` unchanged,
-        preserving existing renders. With patterns enabled it returns a
-        ``url(#...)`` reference to the matching pattern tile.
-        """
-        if not getattr(self, "_category_patterns", None):
-            return color
-        return f"url(#{self._pattern_id(index)})"
-
-    def _filled_outline_attrs(self) -> dict[str, object]:
-        """Stroke attributes to apply to a filled shape, or ``{}`` when off.
-
-        Reads the theme's ``filled_shape_outline``; when no outline colour is
-        configured (the default and the light/dark presets) this returns an
-        empty dict so filled shapes stay unstroked exactly as before. The
-        high-contrast preset returns a 1px black outline.
-        """
-        theme = getattr(self, "theme", None)
-        if theme is None:
-            return {}
-        stroke, width = theme.filled_shape_outline
-        if stroke is None:
-            return {}
-        return {"stroke": stroke, "stroke_width": width}
 
     # =========================================================================
     # Scale Helpers
