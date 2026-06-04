@@ -609,6 +609,68 @@ Exposes tools: `create_chart`, `list_chart_types`, `list_themes`, `chart_from_cs
 
 ---
 
+## More features
+
+A few extra parts of the public API that the examples above don't cover.
+
+**Auto chart selection.** `auto(data, **kwargs)` picks a chart type from the shape of the data (1D becomes a bar or pie, a matrix becomes a heatmap, and so on) and returns a chart instance. `auto_size(data, width, height)` returns the `(width, height)` it would scale a dataset up to when you don't pass explicit dimensions.
+
+```python
+from charted import auto
+
+chart = auto([10, 20, 30], title="Sales")
+```
+
+**Build from a dict or DataFrame.** `from_dict({"data": ..., "chart_type": ...})` builds a chart from a config dict. `from_dataframe(df)` takes a pandas DataFrame (or a plain dict of column to list if pandas isn't installed) and uses the first numeric column as the data and the index or first string column as the labels.
+
+```python
+from charted import from_dict, from_dataframe
+
+chart = from_dict({"chart_type": "line", "data": [1, 2, 3]})
+chart = from_dataframe(df)  # falls back to a dict if pandas is missing
+```
+
+**Inline and data-URL embedding.** `inline_svg(path)` reads an SVG file back as a string for embedding in HTML or notebooks. `chart_to_data_url(path)` returns the same SVG URL-encoded as a `data:image/svg+xml,...` URI you can drop straight into an `<img>` tag or markdown image.
+
+**Save and restore a chart's config.** `chart.to_config()` serializes a chart to a JSON-friendly dict (dimensions, data, labels, scales, reference lines, annotations, and so on). `Chart.from_config(config, **overrides)` rebuilds the chart from that dict, with keyword overrides merged on top so you can tweak one value without rebuilding the whole config.
+
+```python
+config = chart.to_config()
+chart2 = Chart.from_config(config, title="Updated title")
+```
+
+**Fluent styling.** `chart.style(**kwargs)` applies theme overrides and returns the chart for chaining, so you can set things like `background_color` or `legend_font_size` after construction.
+
+```python
+chart = BarChart(data=[1, 2, 3]).style(background_color="#fff", legend_font_size=12)
+```
+
+**Hover tooltips in HTML.** `chart.to_html(tooltips=True)` attaches a native SVG `<title>` to each data mark so browsers show a built-in hover tooltip with no JavaScript. This only affects the HTML output; `to_svg()` and `save()` are unchanged.
+
+**Named palettes.** `resolve_palette(name)` turns one of the built-in palette names into a list of hex colors you can pass as `colors=`. The names live in `NAMED_PALETTES`: `default`, `viridis`, `ocean`, `categorical`, `rainbow`, `monochrome`, `pastel`, `sunset`, `forest`, `inferno`, and the colourblind-safe `okabe-ito`.
+
+```python
+from charted import resolve_palette
+
+chart = BarChart(data=[1, 2, 3], colors=resolve_palette("viridis"))
+```
+
+**Reference lines.** Pass `reference_lines=[{"value": 50, "axis": "y", "label": "Target"}]` to draw a horizontal or vertical line at a value with an optional label. `axis` is `"y"` for a horizontal line (the default) or `"x"` for a vertical one.
+
+**Annotations.** Pass `annotations=[...]` using `LineAnnotation`, `BoxAnnotation`, or `LabelAnnotation` to mark up the plot with lines, shaded regions, or text.
+
+```python
+from charted import BarChart, LineAnnotation, BoxAnnotation, LabelAnnotation
+```
+
+**Log and time scales.** Pass `x_scale=` or `y_scale=` as `"log"` for a logarithmic axis or `"time"` for a time axis (which accepts dates, datetimes, or ISO date strings as x values). The default is `"linear"`. Log and time scales are rejected on the value axis of a bar or column chart, since those fill from a zero baseline.
+
+```python
+LineChart(data=[1, 10, 100, 1000], labels=["a", "b", "c", "d"], y_scale="log")
+```
+
+---
+
 ## Links
 
 - [Full Documentation](https://charted.mrzk.io)
