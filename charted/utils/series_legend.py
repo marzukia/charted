@@ -73,19 +73,24 @@ class SeriesLegend:
         return bool(getattr(self, "series_names", None))
 
     def _legend_entries(self) -> list[tuple[str, str, str]]:
-        """Build ``(name, colour, shape)`` rows, one per named series.
+        """Build ``(name, fill, shape)`` rows, one per named series.
 
-        Default: a square swatch per ``series_names`` entry, coloured from the
-        chart palette. Returns an empty list when there is nothing to label.
+        Default: a square swatch per ``series_names`` entry. The swatch fill is
+        the same fill the chart paints that series with, so when the chart uses
+        category hatch patterns (``category_patterns=True``) the legend swatch
+        shows the matching pattern instead of a flat colour. Returns an empty
+        list when there is nothing to label.
         """
         names = getattr(self, "series_names", None)
         if not names:
             return []
         colors = self.colors
+        category_fill = getattr(self, "_category_fill", None)
         entries: list[tuple[str, str, str]] = []
         for idx, name in enumerate(names):
             color = colors[idx] if idx < len(colors) else "#000000"
-            entries.append((str(name), color, self._LEGEND_DEFAULT_SHAPE))
+            fill = category_fill(idx, color) if callable(category_fill) else color
+            entries.append((str(name), fill, self._LEGEND_DEFAULT_SHAPE))
         return entries
 
     # ------------------------------------------------------------------
