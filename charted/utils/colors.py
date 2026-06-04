@@ -53,8 +53,13 @@ def _parse_color_to_rgb(color: str) -> tuple[int, int, int]:
     color = color.strip()
     if color.startswith("hsl"):
         return _hsl_to_rgb(color)
-    else:
-        return hex_to_rgb(color)
+    # Validate strictly here: hex_to_rgb is intentionally lenient (it accepts
+    # hex without a leading '#'), but this is the public color-parsing path, so
+    # an input that is not a well-formed '#'-prefixed hex (e.g. '000') must be
+    # rejected rather than silently coerced.
+    if not is_valid_hex_color(color):
+        raise ValueError(f"Invalid color: {color!r}")
+    return hex_to_rgb(color)
 
 
 def is_valid_hex_color(color: str) -> bool:
