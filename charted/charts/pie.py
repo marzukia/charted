@@ -460,31 +460,119 @@ class PieChart(Chart):
             else:
                 result.add_child(slice_path)
 
-        # --- Render labels (only those that fit inside slices) ---
+        # --- Render labels ---
+        # Labels that fit inside their slice are drawn at the slice centroid.
+        # Labels that don't fit (small or thin slices) are placed outside the
+        # pie with a leader line so every slice keeps its value label instead
+        # of being silently dropped.
+        outside = [s for s in slices if not s["fits_inside"]]
+        self._render_outside_labels(result, outside, cx, cy, radius, font_size)
+
         for s in slices:
+            if not s["fits_inside"]:
+                continue
             i = s["i"]
             mid_rad = s["mid_rad"]
-            mid_angle = s["mid_angle"]
             label_display = s["label_display"]
-            text_width_est = s["text_width_est"]
             slice_color = self.colors[i % len(self.colors)]
             text_color = get_contrast_color(slice_color)
 
-            if s["fits_inside"]:
-                # Label inside the slice
-                label_x = cx + s["inside_label_r"] * math.cos(mid_rad)
-                label_y = cy + s["inside_label_r"] * math.sin(mid_rad)
-                label_text = Text(
-                    x=label_x,
-                    y=label_y,
-                    text=label_display,
-                    fill=text_color,
-                    font_size=font_size,
-                    font_family=self.theme.title_font_family,
-                    text_anchor="middle",
-                    dominant_baseline="middle",
-                )
-                result.add_child(label_text)
-            # Labels that don't fit are handled by the legend above
+            # Label inside the slice
+            label_x = cx + s["inside_label_r"] * math.cos(mid_rad)
+            label_y = cy + s["inside_label_r"] * math.sin(mid_rad)
+            label_text = Text(
+                x=label_x,
+                y=label_y,
+                text=label_display,
+                fill=text_color,
+                font_size=font_size,
+                font_family=self.theme.title_font_family,
+                text_anchor="middle",
+                dominant_baseline="middle",
+            )
+            result.add_child(label_text)
 
         return result
+
+    def _render_outside_labels(
+        self,
+        result: G,
+        outside: list,
+        cx: float,
+        cy: float,
+        radius: float,
+        font_size: float,
+    ) -> None:
+        """Place labels for slices too small to hold an inside label.
+
+        Each label is drawn just beyond the pie edge with a short leader line
+        connecting it to its slice. Labels are split into left/right columns by
+        their slice mid-angle and stacked vertically so they do not overlap.
+        """
+        if not outside:
+            return
+
+        text_color = self.theme.resolved_label_color
+        line_color = self.theme.resolved_grid_color
+        leader_r = radius * 1.02  # where the leader line starts (slice edge)
+        line_h = font_size * 1.35
+
+        # Split into left/right by horizontal direction of the slice midpoint.
+        right = []
+        left = []
+        for s in outside:
+            if math.cos(s["mid_rad"]) >= 0:
+                right.append(s)
+            else:
+                left.append(s)
+
+        for side in (right, left):
+            if not side:
+                continue
+            is_right = side is right
+            # Order top-to-bottom by vertical position so leaders don't cross.
+            side.sort(key=lambda s: math.sin(s["mid_rad"]))
+
+            # Vertically distribute labels around the side, centred on the pie.
+            # A shared elbow x-column keeps the horizontal runs parallel so the
+            # leader lines for adjacent labels don't cross.
+            n = len(side)
+            start_y = cy - (n - 1) * line_h / 2
+            elbow_x = cx + (radius * 1.12 if is_right else -radius * 1.12)
+            text_x = cx + (radius * 1.18 if is_right else -radius * 1.18)
+            for k, s in enumerate(side):
+                mid_rad = s["mid_rad"]
+                # Point on the slice edge where the leader starts.
+                x0 = cx + leader_r * math.cos(mid_rad)
+                y0 = cy + leader_r * math.sin(mid_rad)
+                # Horizontal target row for the text.
+                text_y = start_y + k * line_h
+                # Leader line: slice edge -> elbow (at row height) -> text.
+                d = (
+                    f"M {x0:.2f} {y0:.2f} "
+                    f"L {elbow_x:.2f} {text_y:.2f} "
+                    f"L {text_x:.2f} {text_y:.2f}"
+                )
+                result.add_child(
+                    Path(
+                        d=d,
+                        stroke=line_color,
+                        stroke_width=1,
+                        fill="none",
+                        opacity=0.7,
+                    )
+                )
+                anchor = "start" if is_right else "end"
+                gap = 4 if is_right else -4
+                result.add_child(
+                    Text(
+                        x=text_x + gap,
+                        y=text_y,
+                        text=s["label_display"],
+                        fill=text_color,
+                        font_size=font_size,
+                        font_family=self.theme.title_font_family,
+                        text_anchor=anchor,
+                        dominant_baseline="middle",
+                    )
+                )
