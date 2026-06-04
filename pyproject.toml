@@ -28,7 +28,8 @@ dependencies = []
 [project.urls]
 homepage = "https://github.com/marzukia/charted"
 repository = "https://github.com/marzukia/charted"
-documentation = "https://github.com/marzukia/charted"
+documentation = "https://charted.mrzk.io"
+"Bug Tracker" = "https://github.com/marzukia/charted/issues"
 changelog = "https://github.com/marzukia/charted/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
