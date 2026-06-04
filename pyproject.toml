@@ -119,3 +119,7 @@ python_version = "3.10"
 files = ["charted"]
 strict = true
 disallow_any_explicit = true
+
+[[tool.mypy.overrides]]
+module = ["tomli"]
+ignore_missing_imports = true
