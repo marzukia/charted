@@ -465,8 +465,14 @@ class PieChart(Chart):
         # Labels that don't fit (small or thin slices) are placed outside the
         # pie with a leader line so every slice keeps its value label instead
         # of being silently dropped.
-        outside = [s for s in slices if not s["fits_inside"]]
-        self._render_outside_labels(result, outside, cx, cy, radius, font_size)
+        #
+        # Only do this when a placement legend ('right'/'bottom') is active.
+        # With legend='none' (the default) the legacy dual-column split legend
+        # already names every slice in columns flanking the pie, so outside
+        # leader labels are redundant and collide with that legend's columns.
+        if getattr(self, "_legend_placement", "none") != "none":
+            outside = [s for s in slices if not s["fits_inside"]]
+            self._render_outside_labels(result, outside, cx, cy, radius, font_size)
 
         for s in slices:
             if not s["fits_inside"]:
