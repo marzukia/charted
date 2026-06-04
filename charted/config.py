@@ -5,16 +5,6 @@ import sys
 from pathlib import Path
 from typing import cast
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomli as tomllib
-    except ModuleNotFoundError:
-        # Keep the library importable on Python < 3.11 without tomli; only
-        # reading a TOML config actually needs it (see load_config).
-        tomllib = None
-
 from .constants import (
     DEFAULT_CHART_HEIGHT,
     DEFAULT_CHART_WIDTH,
@@ -29,6 +19,29 @@ from .utils.defaults import (
     DEFAULT_TITLE_FONT_SIZE,
 )
 from .utils.types import ChartedConfig
+
+
+def _read_toml(path: Path) -> dict[str, object]:
+    """Parse a TOML file, importing the parser lazily.
+
+    tomllib is stdlib on 3.11+. On older Pythons it needs the optional tomli
+    package, so the import is deferred to here (the only place that needs it):
+    the library stays importable on 3.10 without tomli, and a missing parser
+    surfaces as a clear, actionable error only when a TOML config is read.
+    """
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:
+        try:
+            import tomli as tomllib
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                f"Reading the TOML config at {path} requires the 'tomli' package "
+                "on Python < 3.11. Install it with `pip install tomli`, or use "
+                "Python 3.11+."
+            ) from exc
+    with open(path, "rb") as f:
+        return cast("dict[str, object]", tomllib.load(f))
 
 CONFIG_FILENAMES = [".chartedrc.toml", ".chartedrc", "charted.toml"]
 
@@ -75,16 +88,12 @@ def load_config(config_path: str | Path | None = None) -> ChartedConfig:
     if not path.exists():
         return cast("ChartedConfig", defaults)
 
-    if tomllib is None:
-        raise RuntimeError(
-            f"Reading the TOML config at {path} requires the 'tomli' package on "
-            "Python < 3.11. Install it with `pip install tomli`, or use Python 3.11+."
-        )
-
     try:
-        with open(path, "rb") as f:
-            loaded: dict[str, object] = tomllib.load(f)
-    except (tomllib.TOMLDecodeError, OSError):
+        loaded: dict[str, object] = _read_toml(path)
+    except (OSError, ValueError):
+        # ValueError covers tomllib.TOMLDecodeError (a ValueError subclass). A
+        # missing-tomli RuntimeError is intentionally NOT caught: it should
+        # surface to the caller.
         return cast("ChartedConfig", defaults)
 
     # Merge loaded config with defaults
