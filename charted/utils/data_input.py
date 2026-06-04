@@ -6,13 +6,33 @@ the best chart type based on data shape.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Protocol, cast
 
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 
+if TYPE_CHECKING:
+    from charted.charts import Chart
+
+
+class _ChartFactory(Protocol):
+    """Callable producing a chart from keyword-only constructor arguments."""
+
+    def __call__(self, **kwargs: object) -> Chart: ...
+
+
+def _construct(chart_cls: type[Chart], **kwargs: object) -> Chart:
+    """Instantiate a chart class with dynamically-built keyword arguments.
+
+    The keyword arguments are assembled at runtime from heterogeneous user
+    data, so they are typed as ``object`` and the concrete subclass signature
+    cannot be checked statically. The cast localises that one unavoidable
+    dynamic call.
+    """
+    return cast("_ChartFactory", chart_cls)(**kwargs)
+
 
 def auto_size(
-    data: Any, width: float | None = None, height: float | None = None
+    data: object, width: float | None = None, height: float | None = None
 ) -> tuple[float, float]:
     """Calculate canvas dimensions based on data size.
 
@@ -57,7 +77,7 @@ def auto_size(
     return DEFAULT_CHART_WIDTH, DEFAULT_CHART_HEIGHT
 
 
-def from_dict(data: dict[str, Any], **kwargs: Any) -> Any:
+def from_dict(data: dict[str, object], **kwargs: object) -> Chart:
     """Create a chart from a dict-based config.
 
     Expects a dict with at least ``data`` key containing the raw data,
@@ -88,8 +108,8 @@ def from_dict(data: dict[str, Any], **kwargs: Any) -> Any:
     raw = cfg.pop("data", None)
     cls_map = _CHART_CLASSES()
 
-    chart_cls: Any
-    if chart_type and chart_type in cls_map:
+    chart_cls: type[Chart]
+    if isinstance(chart_type, str) and chart_type in cls_map:
         chart_cls = cls_map[chart_type]
     else:
         chart_cls = cls_map["BarChart"]
@@ -121,10 +141,10 @@ def from_dict(data: dict[str, Any], **kwargs: Any) -> Any:
     sig = inspect.signature(chart_cls.__init__)
     valid_params = set(sig.parameters.keys()) - {"self"}
     filtered_cfg = {k: v for k, v in cfg.items() if k in valid_params}
-    return chart_cls(**filtered_cfg)
+    return _construct(chart_cls, **filtered_cfg)
 
 
-def from_dataframe(df: Any, **kwargs: Any) -> Any:
+def from_dataframe(df: object, **kwargs: object) -> Chart:
     """Create a chart from a pandas DataFrame.
 
     Accepts an optional ``pandas.DataFrame``. If pandas is not installed,
@@ -154,8 +174,8 @@ def from_dataframe(df: Any, **kwargs: Any) -> Any:
     chart_type = kwargs.pop("chart_type", None)
     cls_map = _CHART_CLASSES()
 
-    chart_cls: Any
-    if chart_type and chart_type in cls_map:
+    chart_cls: type[Chart]
+    if isinstance(chart_type, str) and chart_type in cls_map:
         chart_cls = cls_map[chart_type]
     else:
         chart_cls = cls_map["BarChart"]
@@ -179,8 +199,12 @@ def from_dataframe(df: Any, **kwargs: Any) -> Any:
         else:
             x_labels = list(range(len(df)))
 
-        return chart_cls(
-            y_data=y_data, x_labels=x_labels, series_names=series_names, **kwargs
+        return _construct(
+            chart_cls,
+            y_data=y_data,
+            x_labels=x_labels,
+            series_names=series_names,
+            **kwargs,
         )
 
     # Dict fallback: column-name -> list
@@ -201,7 +225,7 @@ def from_dataframe(df: Any, **kwargs: Any) -> Any:
 
         sig = inspect.signature(chart_cls.__init__)
         valid_params = set(sig.parameters.keys()) - {"self"}
-        chart_kwargs = {}
+        chart_kwargs: dict[str, object] = {}
         # Map x_labels -> labels for classes that expect labels
         labels_param = "labels" if "labels" in valid_params else "x_labels"
         if labels_param in valid_params:
@@ -215,7 +239,7 @@ def from_dataframe(df: Any, **kwargs: Any) -> Any:
         for k, v in kwargs.items():
             if k in valid_params:
                 chart_kwargs[k] = v
-        return chart_cls(**chart_kwargs)
+        return _construct(chart_cls, **chart_kwargs)
 
     raise TypeError(
         f"Expected a pandas DataFrame or dict, got {type(df).__name__}. "
@@ -223,7 +247,7 @@ def from_dataframe(df: Any, **kwargs: Any) -> Any:
     )
 
 
-def auto(data: Any, **kwargs: Any) -> Any:
+def auto(data: object, **kwargs: object) -> Chart:
     """Auto-detect chart type from data shape and create the chart.
 
     Heuristic:
@@ -246,11 +270,17 @@ def auto(data: Any, **kwargs: Any) -> Any:
     from charted.charts import _CHART_CLASSES
 
     cls_map = _CHART_CLASSES()
-    chart_cls: Any
+    chart_cls: type[Chart]
 
     # Auto-size if width/height not specified
     if "width" not in kwargs and "height" not in kwargs:
-        w, h = auto_size(data, kwargs.get("width"), kwargs.get("height"))
+        kw_width = kwargs.get("width")
+        kw_height = kwargs.get("height")
+        w, h = auto_size(
+            data,
+            kw_width if isinstance(kw_width, (int, float)) else None,
+            kw_height if isinstance(kw_height, (int, float)) else None,
+        )
         kwargs.setdefault("width", w)
         kwargs.setdefault("height", h)
 
@@ -258,14 +288,18 @@ def auto(data: Any, **kwargs: Any) -> Any:
     # equal-length rows [x, y, sizes], signals a third numeric dimension that
     # maps to marker radius -> BubbleChart.
     if "sizes" in kwargs and kwargs["sizes"] is not None:
-        chart_cls = cls_map.get("BubbleChart")
-        assert chart_cls is not None
+        chart_cls = cls_map["BubbleChart"]
+        x: object
+        y: object
         if isinstance(data, list) and data and isinstance(data[0], list):
             x, y = data[0], data[1]
-        else:
+        elif isinstance(data, list):
             x = list(range(len(data)))
             y = data
-        return chart_cls(x_data=x, y_data=y, **kwargs)
+        else:
+            x = []
+            y = data
+        return _construct(chart_cls, x_data=x, y_data=y, **kwargs)
 
     # Detect shape
     if isinstance(data, list):
@@ -276,11 +310,10 @@ def auto(data: Any, **kwargs: Any) -> Any:
         if not isinstance(data[0], list):
             # Small sets → PieChart, otherwise BarChart
             if len(data) <= 6:
-                chart_cls = cls_map.get("PieChart")
+                chart_cls = cls_map["PieChart"]
             else:
-                chart_cls = cls_map.get("BarChart")
-            assert chart_cls is not None
-            return chart_cls(data=data, **kwargs)
+                chart_cls = cls_map["BarChart"]
+            return _construct(chart_cls, data=data, **kwargs)
 
         # 2D data
         n_rows = len(data)
@@ -288,19 +321,16 @@ def auto(data: Any, **kwargs: Any) -> Any:
 
         if n_rows <= 3 and n_cols > 3:
             # Few rows, many columns: could be grouped bar or line
-            chart_cls = cls_map.get("ColumnChart")
-            assert chart_cls is not None
-            return chart_cls(data=data, **kwargs)
+            chart_cls = cls_map["ColumnChart"]
+            return _construct(chart_cls, data=data, **kwargs)
         elif n_rows > 3 and n_cols <= 6:
             # Many rows, few columns: line chart
-            chart_cls = cls_map.get("LineChart")
-            assert chart_cls is not None
-            return chart_cls(data=data, **kwargs)
+            chart_cls = cls_map["LineChart"]
+            return _construct(chart_cls, data=data, **kwargs)
         else:
             # Square-ish matrix: heatmap
-            chart_cls = cls_map.get("HeatmapChart")
-            assert chart_cls is not None
-            return chart_cls(data=data, **kwargs)
+            chart_cls = cls_map["HeatmapChart"]
+            return _construct(chart_cls, data=data, **kwargs)
 
     if isinstance(data, dict):
         # Dict of column -> list: use from_dataframe
