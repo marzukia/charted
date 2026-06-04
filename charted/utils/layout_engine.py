@@ -226,10 +226,14 @@ class LayoutEngine:
         """
         from .transform import rotate, scale, translate
 
-        h_pad = self.h_padding * self.width
-
+        # The horizontal translate must use the FULL right padding, not the bare
+        # base padding. When a right-placed legend inflates right_padding, the
+        # plot area shrinks; using bare base padding here would shift every data
+        # point right by the legend band (pushing edge marks into the legend).
+        # right_padding == base padding whenever there is no right legend, so
+        # legend-free layouts are byte-for-byte unchanged.
         return [
-            translate(-h_pad, -self.bottom_padding),
+            translate(-self.right_padding, -self.bottom_padding),
             rotate(180, self.width / 2, self.height / 2),
             scale(-1, 1),
             translate(-self.plot_width, 0),
