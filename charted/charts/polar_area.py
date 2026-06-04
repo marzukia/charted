@@ -5,7 +5,7 @@ import math
 from charted.charts.pie import PieChart
 from charted.config import get_pie_label_font_size
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import Circle, G, Path, Text
+from charted.html.element import Circle, G, Path, Rect, Text
 from charted.themes.core import Theme
 from charted.utils.colors import get_contrast_color
 from charted.utils.types import Labels, SeriesStyleConfig, Vector
@@ -235,25 +235,41 @@ class PolarAreaChart(PieChart):
                 )
             )
 
+        # Numeric ring labels are drawn last so the slices cannot cover them.
+        self._render_radial_labels(result, cx, cy)
+
         return result
 
     def _ring_color(self) -> str:
-        """Theme-aware colour for radial rings and their numeric labels."""
+        """Theme-aware colour for the radial ring lines."""
         theme = self.theme
         resolved = getattr(theme, "resolved_grid_color", None)
         if resolved:
             return resolved
         return getattr(theme, "grid_color", "#cccccc")
 
+    def _ring_label_color(self) -> str:
+        """High-contrast colour for the numeric ring labels.
+
+        The faint grid colour reads fine for the ring lines but is nearly
+        invisible for text on a dark background. Use the theme's full-opacity
+        label colour so the numbers stay legible on every preset.
+        """
+        theme = self.theme
+        resolved = getattr(theme, "resolved_label_color", None)
+        if resolved:
+            return resolved
+        return getattr(theme, "title_color", "#333")
+
     def _render_radial_grid(
         self, result: G, cx: float, cy: float, data: list[float]
     ) -> None:
-        """Draw concentric scale rings with numeric labels behind the slices.
+        """Draw concentric scale rings behind the slices.
 
-        Rings are evenly spaced from the centre to the outer radius. Each ring
-        is labelled with the data value that maps to that radius on a linear
-        ``0..max`` scale, giving the otherwise scale-less polar slices a
-        readable magnitude reference.
+        Rings are spaced so each one sits on a round value of the linear
+        ``0..axis_max`` scale, giving the otherwise scale-less polar slices a
+        readable magnitude reference. The numeric labels are drawn separately
+        (after the slices) so they cannot be hidden under a slice.
         """
         if self.radial_levels <= 0:
             return
@@ -264,9 +280,6 @@ class PolarAreaChart(PieChart):
             return
         ring_color = self._ring_color()
         grid_width = getattr(self.theme, "grid_width", None) or 1
-        font_size = get_pie_label_font_size() * 0.8
-        # Gap (px) between a ring line and its numeric label so they don't touch.
-        label_gap = 3
 
         for tick in ticks:
             radius = (tick / axis_max) * outer
@@ -281,20 +294,65 @@ class PolarAreaChart(PieChart):
                 )
             )
 
-            if self.show_radial_labels:
-                # Sit the label just OUTSIDE the ring at 12 o'clock with a gap,
-                # so it clears the ring line instead of overprinting it.
-                result.add_child(
-                    Text(
-                        x=cx + 3,
-                        y=cy - radius - label_gap,
-                        text=format_value(tick),
-                        fill=ring_color,
-                        font_size=font_size,
-                        font_family=self.theme.title_font_family,
-                        text_anchor="start",
-                    )
+    def _render_radial_labels(self, result: G, cx: float, cy: float) -> None:
+        """Draw the numeric ring labels on top of the slices.
+
+        Each number sits just outside its ring at 12 o'clock and carries a
+        background-coloured halo (a thick stroke behind the glyphs via
+        ``paint-order: stroke``) so it stays readable even where a slice
+        covers the ring, in a high-contrast colour so it reads on dark themes.
+        """
+        if self.radial_levels <= 0 or not self.show_radial_labels:
+            return
+
+        outer = self._max_radius()
+        axis_max, ticks = self._radial_scale()
+        if not ticks or axis_max <= 0:
+            return
+
+        # Draw each number as a solid badge: a pill filled with the
+        # high-contrast label colour (white on dark themes) carrying the text
+        # in the background colour. Dark-on-light (or light-on-dark) badges
+        # read unambiguously over both the dark canvas and the slices.
+        pill_color = self._ring_label_color()
+        text_color = getattr(self.theme, "background_color", "#ffffff")
+        font_size = get_pie_label_font_size()
+        # Gap (px) between a ring line and its numeric label so they don't touch.
+        label_gap = 3
+
+        for tick in ticks:
+            radius = (tick / axis_max) * outer
+            text = format_value(tick)
+            label_x = cx + 3
+            label_y = cy - radius - label_gap
+            char_w = font_size * 0.62
+            pad_x = 3
+            pad_y = 2
+            box_w = len(text) * char_w + pad_x * 2
+            box_h = font_size + pad_y * 2
+            result.add_child(
+                Rect(
+                    x=label_x - pad_x,
+                    y=label_y - font_size + pad_y,
+                    width=box_w,
+                    height=box_h,
+                    rx=2,
+                    fill=pill_color,
+                    fill_opacity=1,
                 )
+            )
+            result.add_child(
+                Text(
+                    x=label_x,
+                    y=label_y,
+                    text=text,
+                    fill=text_color,
+                    font_size=font_size,
+                    font_family=self.theme.title_font_family,
+                    font_weight="bold",
+                    text_anchor="start",
+                )
+            )
 
     def to_config(self) -> dict:
         cfg = super().to_config()
