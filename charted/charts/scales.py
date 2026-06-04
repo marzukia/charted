@@ -16,6 +16,9 @@ from __future__ import annotations
 import calendar
 import math
 from datetime import date, datetime, timezone
+from typing import TypeAlias, Union, cast
+
+TimeValue: TypeAlias = Union[date, datetime, str, int, float]
 
 
 class Scale:
@@ -31,7 +34,7 @@ class Scale:
         self.max_value = max_value
 
     @staticmethod
-    def _degenerate_ticks(value: float) -> list:
+    def _degenerate_ticks(value: float) -> list[float]:
         """Return two distinct ticks for a zero-width (min == max) domain.
 
         A single data point, an all-equal series, or all-zero data collapses
@@ -52,7 +55,7 @@ class Scale:
         """Map a pixel offset back to a data value (inverse of reproject)."""
         raise NotImplementedError
 
-    def ticks(self) -> list:
+    def ticks(self) -> list[float]:
         """Return tick positions in data space for this scale."""
         raise NotImplementedError
 
@@ -82,7 +85,7 @@ class LinearScale(Scale):
         value_range = self.max_value - self.min_value
         return self.min_value + (pixel / length) * value_range
 
-    def ticks(self) -> list:
+    def ticks(self) -> list[float]:
         if self.max_value == self.min_value:
             return self._degenerate_ticks(self.min_value)
         return [self.min_value, self.max_value]
@@ -124,7 +127,7 @@ class LogScale(Scale):
         log_val = self._log_min + (pixel / length) * log_range
         return 10**log_val
 
-    def ticks(self) -> list:
+    def ticks(self) -> list[float]:
         """Return the powers of ten spanning the domain (inclusive)."""
         if self.max_value == self.min_value:
             # Single positive point / all-equal positive series: pad to the
@@ -136,7 +139,7 @@ class LogScale(Scale):
             return [int(lo) if lo >= 1 else lo, int(hi) if hi >= 1 else hi]
         lo = math.floor(self._log_min)
         hi = math.ceil(self._log_max)
-        powers = []
+        powers: list[float] = []
         for exp in range(lo, hi + 1):
             value = 10**exp
             if value < self.min_value or value > self.max_value:
@@ -148,7 +151,7 @@ class LogScale(Scale):
         return powers
 
 
-def _to_epoch(value) -> float:
+def _to_epoch(value: TimeValue) -> float:
     """Normalise a date/datetime/ISO-string into epoch seconds.
 
     All conversion is timezone-independent. A timezone-aware ``datetime``
@@ -188,7 +191,7 @@ class TimeScale(Scale):
     the domain bounds and for values passed to :meth:`reproject`.
     """
 
-    def __init__(self, min_value, max_value):
+    def __init__(self, min_value: TimeValue, max_value: TimeValue):
         lo = _to_epoch(min_value)
         hi = _to_epoch(max_value)
         super().__init__(lo, hi)
@@ -197,7 +200,7 @@ class TimeScale(Scale):
     def name(self) -> str:
         return "time"
 
-    def reproject(self, value, length: float) -> float:
+    def reproject(self, value: TimeValue, length: float) -> float:
         epoch = _to_epoch(value)
         value_range = self.max_value - self.min_value
         if value_range == 0:
@@ -219,7 +222,7 @@ class TimeScale(Scale):
     def _span_days(self) -> float:
         return (self.max_value - self.min_value) / 86400.0
 
-    def ticks(self) -> list:
+    def ticks(self) -> list[float]:
         """Return tick positions (epoch seconds) on clean calendar boundaries.
 
         Spans up to ~3 years land on month or quarter boundaries; longer spans
@@ -241,7 +244,7 @@ class TimeScale(Scale):
         if span_days <= 3 * 366:
             # Monthly (or quarterly for ~1-3 year spans) boundaries.
             step_months = 1 if span_days <= 200 else 3
-            ticks = []
+            ticks: list[float] = []
             year, month = start.year, start.month
             # Snap up to the first month boundary >= start.
             if start.day != 1 or start.hour or start.minute or start.second:
@@ -284,13 +287,13 @@ class TimeScale(Scale):
             return ticks
         return self._even_ticks(5)
 
-    def _even_ticks(self, count: int) -> list:
+    def _even_ticks(self, count: int) -> list[float]:
         if count < 2:
             return [self.min_value, self.max_value]
         step = (self.max_value - self.min_value) / (count - 1)
         return [self.min_value + i * step for i in range(count)]
 
-    def tick_labels(self, fmt: str | None = None) -> list:
+    def tick_labels(self, fmt: str | None = None) -> list[str]:
         """Return formatted date strings for each tick position."""
         ticks = self.ticks()
         span_days = self._span_days()
@@ -304,7 +307,9 @@ class TimeScale(Scale):
         return [datetime.fromtimestamp(t, tz=timezone.utc).strftime(fmt) for t in ticks]
 
 
-def make_scale(spec, min_value, max_value) -> Scale:
+def make_scale(
+    spec: str | Scale | None, min_value: TimeValue, max_value: TimeValue
+) -> Scale:
     """Build a Scale from a string spec or pass through a Scale instance.
 
     Args:
@@ -318,9 +323,9 @@ def make_scale(spec, min_value, max_value) -> Scale:
     if isinstance(spec, Scale):
         return spec
     if spec is None or spec == "linear":
-        return LinearScale(min_value, max_value)
+        return LinearScale(cast(float, min_value), cast(float, max_value))
     if spec == "log":
-        return LogScale(min_value, max_value)
+        return LogScale(cast(float, min_value), cast(float, max_value))
     if spec == "time":
         return TimeScale(min_value, max_value)
     raise ValueError(

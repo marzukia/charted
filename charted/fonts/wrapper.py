@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from charted.utils.defaults import BASE_DEFINITIONS_DIR, DEFAULT_FONT, DEFAULT_FONT_SIZE
 
@@ -46,7 +46,7 @@ class Font:
 
         try:
             with open(font_path, "r") as f:
-                return json.load(f)
+                return cast("dict[str, dict[str, Any]]", json.load(f))
         except json.JSONDecodeError as e:
             import warnings
 
@@ -67,7 +67,7 @@ class Font:
 
         try:
             with open(fallback_path, "r") as f:
-                return json.load(f)
+                return cast("dict[str, dict[str, Any]]", json.load(f))
         except (json.JSONDecodeError, IOError):
             return {}
 
@@ -127,7 +127,7 @@ class Font:
         char_code = ord(char)
 
         if str(char_code) in definitions:
-            return definitions[str(char_code)].get("width", 5)
+            return cast("float", definitions[str(char_code)].get("width", 5))
         return 5  # Default width for unknown chars
 
     @classmethod

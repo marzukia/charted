@@ -2,9 +2,10 @@
 
 import argparse
 import sys
+from collections.abc import Sequence
 
 
-def main(args=None):
+def main(args: Sequence[str] | None = None) -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         prog="charted",
@@ -87,21 +88,21 @@ def main(args=None):
     batch_parser.add_argument("--config", "-c", help="Config file path")
     batch_parser.set_defaults(func="batch")
 
-    args = parser.parse_args(args)
+    parsed_args = parser.parse_args(args)
 
-    if args.command is None:
+    if parsed_args.command is None:
         parser.print_help()
         sys.exit(1)
 
     # Import here to avoid circular imports
-    if args.command == "create":
+    if parsed_args.command == "create":
         from .cli.create import create_command
 
-        create_command(args)
-    elif args.command == "batch":
+        create_command(parsed_args)
+    elif parsed_args.command == "batch":
         from .cli.batch import batch_command
 
-        batch_command(args)
+        batch_command(parsed_args)
 
 
 if __name__ == "__main__":

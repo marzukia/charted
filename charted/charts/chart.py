@@ -4,6 +4,10 @@ Refactored to extract validation, layout, and rendering utilities into
 separate modules to address God Class architectural debt (Issue #64).
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
+
 from charted.charts.axes import XAxis, YAxis
 from charted.constants import (
     AXIS_BORDER_COLOR,
@@ -11,7 +15,7 @@ from charted.constants import (
     DEFAULT_CHART_HEIGHT,
     DEFAULT_CHART_WIDTH,
 )
-from charted.html.element import ClipPath, Defs, G, Path, Rect, Svg, Text
+from charted.html.element import Child, ClipPath, Defs, G, Path, Rect, Svg, Text
 from charted.themes.core import Theme
 from charted.utils.color_manager import ColorManager
 from charted.utils.data_model import DataModel
@@ -30,6 +34,11 @@ from charted.utils.types import (
     Vector,
     Vector2D,
 )
+
+if TYPE_CHECKING:
+    from charted.charts.axes import _AxisParent
+    from charted.charts.scales import Scale
+    from charted.html.element import Title
 
 
 class Chart(SeriesLegend, Svg):
@@ -67,6 +76,13 @@ class Chart(SeriesLegend, Svg):
     y_stacked: bool = False
     render_axes: bool = True
     pad_x_labels: bool = True
+
+    # Instance attributes assigned in __init__ (declared here so mypy can infer
+    # their type at every read site; conditional assignment otherwise leaves the
+    # type undeterminable).
+    theme: Theme
+    _title: MeasuredText | None
+    _subtitle: MeasuredText | None
 
     # =========================================================================
     # Core Representation Methods
@@ -152,7 +168,7 @@ class Chart(SeriesLegend, Svg):
                 f.write(self.svg)
         elif ext == ".png":
             try:
-                import cairosvg
+                import cairosvg  # type: ignore[import-untyped]
             except ImportError:
                 raise ImportError(
                     "PNG export requires cairosvg. "
@@ -164,7 +180,7 @@ class Chart(SeriesLegend, Svg):
                 f"Unsupported file extension '{ext}'. Supported: .svg, .png"
             )
 
-    def style(self, **kwargs) -> "Chart":
+    def style(self, **kwargs: Any) -> "Chart":
         """Fluently apply theme overrides.
 
         Args:
@@ -184,7 +200,7 @@ class Chart(SeriesLegend, Svg):
         self.theme = self.theme.compose(override)
         return self
 
-    def to_config(self) -> dict:
+    def to_config(self) -> dict[str, Any]:
         """Serialize chart configuration to a dict.
 
         Returns a dict with all constructor parameters needed to
@@ -195,7 +211,7 @@ class Chart(SeriesLegend, Svg):
         """
         import dataclasses
 
-        cfg = {
+        cfg: dict[str, Any] = {
             "chart_type": self.__class__.__name__,
             "width": self._width,
             "height": self._height,
@@ -232,7 +248,7 @@ class Chart(SeriesLegend, Svg):
         return cfg
 
     @staticmethod
-    def _serialize_annotation(a):
+    def _serialize_annotation(a: Any) -> Any:
         """Serialize one annotation to a JSON-friendly dict.
 
         Tags the dict with its class name and strips private ``_ref_*`` fields
@@ -243,11 +259,15 @@ class Chart(SeriesLegend, Svg):
 
         if not dataclasses.is_dataclass(a):
             return a
-        data = {k: v for k, v in dataclasses.asdict(a).items() if not k.startswith("_")}
+        data = {
+            k: v
+            for k, v in dataclasses.asdict(cast("Any", a)).items()
+            if not k.startswith("_")
+        }
         return {"type": a.__class__.__name__, **data}
 
     @classmethod
-    def from_config(cls, config: dict, **overrides) -> "Chart":
+    def from_config(cls, config: dict[str, Any], **overrides: Any) -> "Chart":
         """Recreate a chart from a config dict.
 
         Merges ``overrides`` on top of ``config`` so agents can tweak
@@ -295,7 +315,7 @@ class Chart(SeriesLegend, Svg):
         return chart_cls(**filtered)
 
     @staticmethod
-    def _rebuild_annotations(annotations: list) -> list:
+    def _rebuild_annotations(annotations: list[Any]) -> list[Any]:
         """Reconstruct annotation objects from their serialized dict form.
 
         ``to_config()`` serializes each annotation as
@@ -322,7 +342,7 @@ class Chart(SeriesLegend, Svg):
         # Fields that are (x, y) / (min, max) pairs and must be tuples.
         tuple_fields = {"start", "end", "x_range", "y_range", "point"}
 
-        rebuilt: list = []
+        rebuilt: list[Any] = []
         for a in annotations:
             # Already an annotation object (not a serialized dict): keep as-is.
             if not isinstance(a, dict):
@@ -366,22 +386,22 @@ class Chart(SeriesLegend, Svg):
         title: str | None = None,
         subtitle: str | None = None,
         subtitle_leading: float = 8.0,
-        theme: Theme | str | dict | None = None,
+        theme: Theme | str | dict[str, Any] | None = None,
         chart_type: str | None = None,
         x_label: str | None = None,
         y_label: str | None = None,
         data_labels: list[str] | list[list[str]] | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list | None = None,
+        annotations: list[Any] | None = None,
         x_scale: object | None = None,
         y_scale: object | None = None,
-        reference_lines: list[dict] | None = None,
+        reference_lines: list[dict[str, Any]] | None = None,
         colors: list[str] | None = None,
         x_range: tuple[float, float] | None = None,
         y_range: tuple[float, float] | None = None,
         domain_padding: float | None = None,
-        value_labels: bool | str | dict | None = None,
+        value_labels: bool | str | dict[str, Any] | None = None,
         legend: str = "none",
         category_label_max_width: float | None = None,
         category_patterns: list[str] | bool | None = None,
@@ -416,8 +436,12 @@ class Chart(SeriesLegend, Svg):
 
         # Optional fixed scale domains / data-domain padding. All default to
         # None, which preserves the historical auto-fit-from-data behaviour.
-        self._x_range = tuple(x_range) if x_range is not None else None
-        self._y_range = tuple(y_range) if y_range is not None else None
+        self._x_range: tuple[float, float] | None = (
+            cast("tuple[float, float]", tuple(x_range)) if x_range is not None else None
+        )
+        self._y_range: tuple[float, float] | None = (
+            cast("tuple[float, float]", tuple(y_range)) if y_range is not None else None
+        )
         self._domain_padding = domain_padding
 
         # Record the requested scale specs (string or Scale instance) for
@@ -449,10 +473,12 @@ class Chart(SeriesLegend, Svg):
                 array_len = 0
             x_labels = DataModel.create_default_labels(array_len)
 
-        # Initialize DataModel for data validation and normalization
+        # Initialize DataModel for data validation and normalization. DataModel
+        # accepts and normalizes 1D Vector input at runtime; its declared type is
+        # Vector2D, so cast the possibly-1D locals to satisfy the checker.
         self.data_model = DataModel(
-            x_data=x_data,
-            y_data=y_data,
+            x_data=cast("Vector2D | None", x_data),
+            y_data=cast("Vector2D | None", y_data),
             x_labels=x_labels,
             y_labels=y_labels,
             zero_index=zero_index,
@@ -468,11 +494,11 @@ class Chart(SeriesLegend, Svg):
         self._data_labels = data_labels
         self._value_label_config = self._normalize_value_labels(value_labels)
         self._annotations = list(annotations) if annotations else []
-        self._h_lines = h_lines or []
-        self._v_lines = v_lines or []
+        self._h_lines: list[float] | None = h_lines or []
+        self._v_lines: list[float] | None = v_lines or []
 
         # Parse reference_lines convenience API into h_lines/v_lines + labels
-        self._reference_line_labels: list[dict] = []
+        self._reference_line_labels: list[dict[str, Any]] = []
         if reference_lines:
             from charted.utils.exceptions import ValidationError
 
@@ -579,7 +605,7 @@ class Chart(SeriesLegend, Svg):
         # Apply fixed-domain (x_range/y_range) or fractional domain_padding by
         # anchoring the data the axes derive their min/max from. None leaves the
         # axis data untouched, so the auto-fit domain is unchanged.
-        value_axis = self._BAR_VALUE_AXIS.get(chart_type)
+        value_axis = self._BAR_VALUE_AXIS.get(cast("str", chart_type))
         x_axis_data = self._anchor_axis_data(
             self.x_data,
             self._x_range,
@@ -598,9 +624,11 @@ class Chart(SeriesLegend, Svg):
         # existing single-weight renders are unchanged byte-for-byte.
         grid_config = self._build_grid_config()
 
-        # Initialize axes
+        # Initialize axes. Chart satisfies the _AxisParent layout contract
+        # structurally; the cast bridges its read-only property accessors to the
+        # protocol's plain-attribute declarations.
         self.x_axis = XAxis(
-            parent=self,
+            parent=cast("_AxisParent", self),
             data=x_axis_data,
             labels=x_labels,
             stacked=self.x_stacked,
@@ -609,18 +637,18 @@ class Chart(SeriesLegend, Svg):
                 if (x_data is not None and x_labels is not None)
                 else self.zero_index
             ),
-            config=grid_config,
+            config=cast("str | None", grid_config),
             pad_labels=self.pad_x_labels,
             scale=x_scale_inst,
         )
 
         self.y_axis = YAxis(
-            parent=self,
+            parent=cast("_AxisParent", self),
             data=y_axis_data,
             labels=y_labels,
             stacked=self.y_stacked,
             zero_index=self.zero_index,
-            config=grid_config,
+            config=cast("str | None", grid_config),
             scale=y_scale_inst,
         )
 
@@ -777,7 +805,12 @@ class Chart(SeriesLegend, Svg):
         for pattern in self._pattern_defs():
             defs.add_child(pattern)
 
-        children = [self.container, self.title, self.subtitle_element, defs]
+        children: list[Child | None] = [
+            self.container,
+            self.title,
+            self.subtitle_element,
+            defs,
+        ]
         if self.render_axes:
             children += [self.y_axis, self.x_axis, self.zero_line]
         children += [self.representation, self.legend]
@@ -818,7 +851,7 @@ class Chart(SeriesLegend, Svg):
         colors = getattr(self, "colors", None) or []
         return len(colors)
 
-    def _pattern_defs(self) -> list:
+    def _pattern_defs(self) -> list[Any]:
         """Build one ``<pattern>`` def per (category, pattern) the chart uses.
 
         Returns an empty list unless ``category_patterns`` was enabled, so the
@@ -832,7 +865,7 @@ class Chart(SeriesLegend, Svg):
         from charted.utils.patterns import build_pattern
 
         colors = getattr(self, "colors", None) or []
-        defs: list = []
+        defs: list[Any] = []
         for idx, color in enumerate(colors):
             name = cycle[idx % len(cycle)]
             defs.append(build_pattern(self._pattern_id(idx), name, color))
@@ -853,7 +886,7 @@ class Chart(SeriesLegend, Svg):
             return color
         return f"url(#{self._pattern_id(index)})"
 
-    def _filled_outline_attrs(self) -> dict:
+    def _filled_outline_attrs(self) -> dict[str, Any]:
         """Stroke attributes to apply to a filled shape, or ``{}`` when off.
 
         Reads the theme's ``filled_shape_outline``; when no outline colour is
@@ -883,9 +916,14 @@ class Chart(SeriesLegend, Svg):
     }
 
     @classmethod
-    def _reject_unsupported_scales(cls, chart_type, x_scale_inst, y_scale_inst) -> None:
+    def _reject_unsupported_scales(
+        cls,
+        chart_type: str | None,
+        x_scale_inst: Scale | None,
+        y_scale_inst: Scale | None,
+    ) -> None:
         """Raise ValueError for log/time scales on a bar/column value axis."""
-        value_axis = cls._BAR_VALUE_AXIS.get(chart_type)
+        value_axis = cls._BAR_VALUE_AXIS.get(cast("str", chart_type))
         if value_axis is None:
             return
         scale = x_scale_inst if value_axis == "x" else y_scale_inst
@@ -912,12 +950,12 @@ class Chart(SeriesLegend, Svg):
         """Convert date/datetime/ISO-string x-data into epoch seconds."""
         from charted.charts.scales import _to_epoch
 
-        def conv(seq):
+        def conv(seq: Vector) -> Vector:
             return [_to_epoch(v) for v in seq]
 
         if x_data and isinstance(x_data[0], list):
             return [conv(row) for row in x_data]
-        return conv(x_data)
+        return conv(cast("Vector", x_data))
 
     def _anchor_axis_data(
         self,
@@ -982,6 +1020,9 @@ class Chart(SeriesLegend, Svg):
             # the data alone so the axis keeps its own degenerate-domain logic.
             if span == 0:
                 return data
+            # When fixed_range is None the constructor guard guarantees
+            # _domain_padding is set; assert it for the type checker.
+            assert self._domain_padding is not None
             pad = span * self._domain_padding
             if zero_baseline:
                 # Keep the zero baseline pinned: only add headroom on the side
@@ -1012,7 +1053,7 @@ class Chart(SeriesLegend, Svg):
         # data reach lo/hi without altering the plotted points themselves.
         return [*[list(row) for row in data], [lo, hi]]
 
-    def _build_grid_config(self):
+    def _build_grid_config(self) -> str | dict[str, Any]:
         """Assemble the gridline config passed to each axis.
 
         Returns the plain grid colour string when the theme requests no
@@ -1030,7 +1071,7 @@ class Chart(SeriesLegend, Svg):
         if width is None and dasharray is None and divisions <= 0:
             return color
 
-        config = {
+        config: dict[str, Any] = {
             "stroke": color,
             "stroke_dasharray": dasharray if dasharray is not None else "None",
         }
@@ -1042,7 +1083,7 @@ class Chart(SeriesLegend, Svg):
             config["minor_stroke_width"] = theme.resolved_minor_grid_width
         return config
 
-    def _build_scale(self, spec: object | None, data: Vector2D):
+    def _build_scale(self, spec: object | None, data: Vector2D) -> Scale | None:
         """Construct a Scale instance for an axis from its data domain.
 
         Returns None for the default linear case so the axis keeps its
@@ -1059,7 +1100,7 @@ class Chart(SeriesLegend, Svg):
             domain_min, domain_max = min(flat), max(flat)
         if isinstance(spec, Scale):
             return spec
-        return make_scale(spec, domain_min, domain_max)
+        return make_scale(cast("str | Scale | None", spec), domain_min, domain_max)
 
     @property
     def x_scale(self) -> str:
@@ -1119,7 +1160,7 @@ class Chart(SeriesLegend, Svg):
         """Get plot area height from LayoutEngine."""
         return self.layout.plot_height
 
-    def get_base_transform(self) -> list:
+    def get_base_transform(self) -> list[str]:
         """Get base transformation from LayoutEngine."""
         return self.layout.get_base_transform()
 
@@ -1177,7 +1218,7 @@ class Chart(SeriesLegend, Svg):
         )
 
     @property
-    def title(self) -> MeasuredText | None:
+    def title(self) -> Text | None:
         if not self._title:
             return None
         return Text(
@@ -1307,7 +1348,7 @@ class Chart(SeriesLegend, Svg):
     # =========================================================================
 
     @property
-    def zero_line(self) -> Path:
+    def zero_line(self) -> Path | None:
         """Create zero line for charts with negative values."""
         from charted.utils.rendering import create_zero_line_path
 
@@ -1382,7 +1423,7 @@ class Chart(SeriesLegend, Svg):
         from charted.utils.rendering import create_legend
 
         # Pass legend config as dict or Theme object
-        legend_config = {
+        legend_config: dict[str, Any] = {
             "font_size": self.theme.legend_font_size,
             "position": self.theme.legend_position,
             "font_family": self.theme.legend_font_family,
@@ -1391,7 +1432,7 @@ class Chart(SeriesLegend, Svg):
         }
 
         return create_legend(
-            series_names=self.series_names,
+            series_names=cast("list[str]", self.series_names),
             colors=self.colors,
             theme_config=legend_config,
             plot_left=self.left_padding,
@@ -1404,7 +1445,7 @@ class Chart(SeriesLegend, Svg):
     # Introspection
     # =========================================================================
 
-    def describe(self) -> dict:
+    def describe(self) -> dict[str, Any]:
         """Return a structured dictionary of chart metadata.
 
         Useful for AI agents that need to reason about a chart they just
@@ -1498,7 +1539,7 @@ class Chart(SeriesLegend, Svg):
     # Reference Lines & Axis Labels
     # =========================================================================
 
-    def _collect_legacy_reference_lines(self) -> list:
+    def _collect_legacy_reference_lines(self) -> list[Any]:
         """Build the legacy ``h_lines`` / ``v_lines`` reference-line layer.
 
         These are expressed as dashed full-span ``LineAnnotation`` objects so
@@ -1509,14 +1550,14 @@ class Chart(SeriesLegend, Svg):
         """
         from charted.charts.annotations import LineAnnotation
 
-        annotations: list = []
+        annotations: list[Any] = []
         if self._h_lines:
             annotations.extend(LineAnnotation._h_line(v) for v in self._h_lines)
         if self._v_lines:
             annotations.extend(LineAnnotation._v_line(v) for v in self._v_lines)
         return annotations
 
-    def _collect_annotations(self) -> list:
+    def _collect_annotations(self) -> list[Any]:
         """Build the full annotation list for this chart.
 
         Legacy reference lines (``h_lines`` / ``v_lines``) come first, in their
@@ -1640,9 +1681,9 @@ class Chart(SeriesLegend, Svg):
 
         return g
 
-    def _render_axis_labels(self) -> list:
+    def _render_axis_labels(self) -> list[Text]:
         """Render x-axis and y-axis title labels."""
-        elements = []
+        elements: list[Text] = []
         font_size = self.theme.title_font_size - 2
         font_family = self.theme.title_font_family
         font_color = self.theme.resolved_axis_title_color
@@ -1721,7 +1762,7 @@ class Chart(SeriesLegend, Svg):
             return f"Series {series_idx + 1}: {value}"
         return str(value)
 
-    def _tooltip_value(self, series_idx: int, point_idx: int):
+    def _tooltip_value(self, series_idx: int, point_idx: int) -> float | str:
         """Return the raw data value for a point (overridable per chart)."""
         data = self.y_data
         if series_idx < len(data) and point_idx < len(data[series_idx]):
@@ -1731,7 +1772,7 @@ class Chart(SeriesLegend, Svg):
             return value
         return ""
 
-    def _tooltip_title(self, series_idx: int, point_idx: int):
+    def _tooltip_title(self, series_idx: int, point_idx: int) -> "Title | None":
         """Return a ``Title`` element for a mark, or None when tooltips off."""
         if not self._tooltips:
             return None
@@ -1744,7 +1785,9 @@ class Chart(SeriesLegend, Svg):
     # =========================================================================
 
     @staticmethod
-    def _normalize_value_labels(spec: bool | str | dict | None) -> dict | None:
+    def _normalize_value_labels(
+        spec: bool | str | dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
         """Coerce the ``value_labels`` argument into a config dict or None.
 
         Accepted forms:

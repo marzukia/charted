@@ -6,9 +6,47 @@ and address long function issues (Issue #70).
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Protocol, cast
+
 from charted.html.element import Circle, G, Path, Rect
 from charted.utils.color_manager import ColorManager
 from charted.utils.curves import curve_path
+
+if TYPE_CHECKING:
+    from charted.themes.core import Theme
+    from charted.utils.series_style import SeriesStyleConfig
+    from charted.utils.types import Vector2D
+
+
+class _LineHost(Protocol):
+    """Structural type for the line chart consumed by :class:`LineRenderer`.
+
+    Declared for the type checker only so the renderer can reference the chart's
+    attributes without importing the concrete (and, during this typing pass,
+    not-yet-typed) ``LineChart`` class.
+    """
+
+    theme: Theme
+    series_styles: list[SeriesStyleConfig] | None
+
+    @property
+    def plot_width(self) -> float: ...
+
+    @property
+    def x_offset(self) -> float: ...
+
+    @property
+    def x_count(self) -> int: ...
+
+    @property
+    def y_offsets(self) -> Vector2D: ...
+
+    @property
+    def y_values(self) -> Vector2D: ...
+
+    def get_base_transform(self) -> list[str]: ...
+
+    def _apply_stacking(self, y: float, y_offset: float) -> float: ...
 
 
 def round_coordinate(value: float, decimals: int = 1) -> float:
@@ -52,7 +90,7 @@ class LineRenderer:
     - Series styling (stroke, width, opacity, dash patterns)
     """
 
-    def __init__(self, chart):
+    def __init__(self, chart: _LineHost):
         """Initialize line renderer.
 
         Args:
@@ -140,7 +178,9 @@ class LineRenderer:
 
         # Extract style properties
         stroke = style.get("stroke") or color
-        stroke_width = style.get("stroke_width") or self.chart.theme.resolved_series_stroke_width
+        stroke_width = (
+            style.get("stroke_width") or self.chart.theme.resolved_series_stroke_width
+        )
         stroke_dasharray = style.get("stroke_dasharray")
         # Fall back to the chart's redundant dash cycle when this series has no
         # explicit dash of its own. No-op unless dash_cycle was enabled.
@@ -176,7 +216,14 @@ class LineRenderer:
             points.append((x, y))
 
             # Render marker if enabled (sits on the data point, not the curve)
-            marker = self._get_marker(x, y, style, stroke, marker_shape, marker_size)
+            marker = self._get_marker(
+                x,
+                y,
+                style,
+                cast("str", stroke),
+                cast("str", marker_shape),
+                cast("float", marker_size),
+            )
             if marker:
                 markers.append(marker)
 
@@ -202,7 +249,7 @@ class LineRenderer:
 
         g.add_children(series)
 
-    def _get_series_style(self, index: int) -> dict:
+    def _get_series_style(self, index: int) -> dict[str, object]:
         """Get effective style for a series, merging theme defaults with overrides.
 
         Args:
@@ -217,7 +264,7 @@ class LineRenderer:
         # Apply per-series override if available
         if self.chart.series_styles and index < len(self.chart.series_styles):
             override = self.chart.series_styles[index] or {}
-            style = {**base_style, **override}
+            style = {**base_style, **cast("dict[str, object]", override)}
         else:
             style = dict(base_style)
 
@@ -232,7 +279,7 @@ class LineRenderer:
         self,
         x: float,
         y: float,
-        style: dict,
+        style: dict[str, object],
         stroke: str,
         marker_shape: str,
         marker_size: float,

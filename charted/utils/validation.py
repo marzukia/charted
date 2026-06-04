@@ -3,6 +3,8 @@
 Extracted from Chart class to reduce coupling and improve testability.
 """
 
+from typing import cast
+
 from charted.utils.exceptions import (
     DataShapeError,
     InvalidValue,
@@ -11,7 +13,7 @@ from charted.utils.exceptions import (
 from charted.utils.types import Vector, Vector2D
 
 
-def validate_data(data: Vector | Vector2D | None) -> Vector2D:
+def validate_data(data: Vector | Vector2D | None) -> Vector2D | None:
     """Validate and normalize chart data.
 
     Args:
@@ -31,18 +33,20 @@ def validate_data(data: Vector | Vector2D | None) -> Vector2D:
 
     # Normalize to 2D
     if type(data[0]) is not list:
-        data = [data]
+        normalized: Vector2D = [cast("Vector", data)]
+    else:
+        normalized = data
 
-    max_length = max([len(i) for i in data])
+    max_length = max([len(i) for i in normalized])
 
-    if not all([len(i) == max_length for i in data]):
+    if not all([len(i) == max_length for i in normalized]):
         raise DataShapeError(
             expected=f"all series length {max_length}",
             actual="series lengths differ",
-            detail=f"Series lengths: {[len(i) for i in data]}",
+            detail=f"Series lengths: {[len(i) for i in normalized]}",
         )
 
-    return data
+    return normalized
 
 
 def validate_attribute_value(name: str, value: float) -> float:
@@ -81,7 +85,7 @@ def validate_padding(value: float, max_value: float = 1.0) -> float:
     return validate_attribute_value("padding", value)
 
 
-def validate_series_count(series_styles: list | None, target: int) -> int:
+def validate_series_count(series_styles: list[object] | None, target: int) -> int:
     """Validate and normalize series count.
 
     Args:

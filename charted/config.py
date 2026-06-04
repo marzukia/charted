@@ -2,11 +2,12 @@
 
 import os
 from pathlib import Path
+from typing import Any, cast
 
 try:
-    import tomllib
+    import tomllib  # type: ignore[import-not-found,unused-ignore]
 except ImportError:
-    import tomli as tomllib
+    import tomli as tomllib  # type: ignore[import-not-found]
 
 from .constants import (
     DEFAULT_CHART_HEIGHT,
@@ -40,9 +41,9 @@ def find_config(start_dir: str | None = None) -> Path | None:
     return None
 
 
-def load_config(config_path: str | Path | None = None) -> dict:
+def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
     """Load config from .chartedrc file, returning defaults if not found."""
-    defaults = {
+    defaults: dict[str, Any] = {
         "font": DEFAULT_FONT,
         "font_size": DEFAULT_FONT_SIZE,
         "title_font_size": DEFAULT_TITLE_FONT_SIZE,
@@ -85,7 +86,7 @@ def load_config(config_path: str | Path | None = None) -> dict:
     return defaults
 
 
-def get_chart_theme(config: dict, chart_type: str) -> dict | None:
+def get_chart_theme(config: dict[str, Any], chart_type: str) -> dict[str, Any] | None:
     """Get chart-type-specific theme overrides.
 
     Args:
@@ -96,10 +97,11 @@ def get_chart_theme(config: dict, chart_type: str) -> dict | None:
         Chart-specific theme overrides or None.
     """
     charts_config = config.get("charts", {})
-    return charts_config.get(chart_type, None)
+    result: dict[str, Any] | None = charts_config.get(chart_type, None)
+    return result
 
 
-def get_font(config: dict | None = None) -> Font:
+def get_font(config: dict[str, Any] | None = None) -> Font:
     """Create a Font instance from config.
 
     Args:
@@ -118,7 +120,7 @@ def get_font(config: dict | None = None) -> Font:
     )
 
 
-def get_title_font(config: dict | None = None) -> Font:
+def get_title_font(config: dict[str, Any] | None = None) -> Font:
     """Create a Font instance for titles from config.
 
     Args:
@@ -137,7 +139,7 @@ def get_title_font(config: dict | None = None) -> Font:
     )
 
 
-def get_bar_gap(config: dict | None = None) -> float:
+def get_bar_gap(config: dict[str, Any] | None = None) -> float:
     """Get bar gap setting from config.
 
     Args:
@@ -149,10 +151,10 @@ def get_bar_gap(config: dict | None = None) -> float:
     if config is None:
         config = load_config()
 
-    return config.get("bar", {}).get("bar_gap", 0.50)
+    return cast("float", config.get("bar", {}).get("bar_gap", 0.50))
 
 
-def get_column_gap(config: dict | None = None) -> float:
+def get_column_gap(config: dict[str, Any] | None = None) -> float:
     """Get column gap setting from config.
 
     Args:
@@ -164,10 +166,10 @@ def get_column_gap(config: dict | None = None) -> float:
     if config is None:
         config = load_config()
 
-    return config.get("column", {}).get("column_gap", 0.50)
+    return cast("float", config.get("column", {}).get("column_gap", 0.50))
 
 
-def get_pie_label_font_size(config: dict | None = None) -> int:
+def get_pie_label_font_size(config: dict[str, Any] | None = None) -> int:
     """Get pie label font size from config.
 
     Args:
@@ -179,7 +181,9 @@ def get_pie_label_font_size(config: dict | None = None) -> int:
     if config is None:
         config = load_config()
 
-    return config.get("pie", {}).get("label_font_size", PIE_LABEL_FONT_SIZE)
+    return cast(
+        "int", config.get("pie", {}).get("label_font_size", PIE_LABEL_FONT_SIZE)
+    )
 
 
 def get_font_definitions_dir() -> str:

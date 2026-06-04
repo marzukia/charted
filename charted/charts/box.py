@@ -5,6 +5,8 @@ Displays median, quartiles, and outliers for one or more data series.
 
 from __future__ import annotations
 
+from typing import Any
+
 from charted.charts.chart import Chart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path, Rect, Text
@@ -19,7 +21,7 @@ def _quartiles(data: list[float]) -> tuple[float, float, float, float, float]:
     if n == 0:
         return (0, 0, 0, 0, 0)
 
-    def median(arr) -> float:
+    def median(arr: list[float]) -> float:
         if not arr:
             return 0
         mid = len(arr) // 2
@@ -60,7 +62,7 @@ class BoxPlot(Chart):
         title: str | None = None,
         theme: Theme | None = None,
         series_names: list[str] | None = None,
-        value_labels: bool | str | dict | None = None,
+        value_labels: bool | str | dict[str, Any] | None = None,
         legend: str = "none",
     ):
         self._raw_data = data

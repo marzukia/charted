@@ -7,17 +7,19 @@ that scales to its own range and renders tick labels on the right.
 
 from __future__ import annotations
 
-from charted.charts.axes import YAxis
+from typing import Any, cast
+
+from charted.charts.axes import XAxis, YAxis, _AxisParent
 from charted.charts.chart import Chart
 from charted.charts.column import ColumnChart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
-from charted.utils.line_renderer import LineRenderer
-from charted.utils.series_style import SeriesStyleConfig
+from charted.utils.layout_engine import LayoutEngine
+from charted.utils.line_renderer import LineRenderer, _LineHost
 from charted.utils.transform import translate
-from charted.utils.types import Labels
+from charted.utils.types import Labels, SeriesStyleConfig, Vector2D
 
 _BAR_TYPES = {"bar", "column"}
 _LINE_TYPES = {"line", "area"}
@@ -33,80 +35,89 @@ class _SeriesProxy:
     coordinate system.
     """
 
-    def __init__(self, parent: "ComboChart", indices: list[int], y_axis):
+    x_axis: XAxis
+    y_axis: YAxis
+
+    def __init__(self, parent: "ComboChart", indices: list[int], y_axis: YAxis) -> None:
         self._parent = parent
         self._indices = indices
-        self.y_axis = y_axis
-        self.x_axis = parent.x_axis
-        self.theme = parent.theme
-        self.layout = parent.layout
-        self.series_styles = (
+        self.y_axis: YAxis = y_axis
+        self.x_axis: XAxis = parent.x_axis
+        self.theme: Theme = parent.theme
+        self.layout: LayoutEngine = parent.layout
+        self.series_styles: list[SeriesStyleConfig] | None = (
             [parent.series_styles[i] for i in indices] if parent.series_styles else None
         )
 
     # --- subset data ---
     @property
-    def y_values(self):
+    def y_values(self) -> Vector2D:
         return [self._parent._reproject_series(i) for i in self._indices]
 
     @property
-    def y_offsets(self):
+    def y_offsets(self) -> Vector2D:
         # Combo never stacks; offsets are zero.
         return [[0.0] * len(self._parent.series[i]["data"]) for i in self._indices]
 
     @property
-    def x_values(self):
+    def x_values(self) -> Vector2D:
         return [self._parent.x_values[0] for _ in self._indices]
 
     @property
-    def colors(self):
+    def colors(self) -> list[str]:
         return [self._parent.colors[i] for i in self._indices]
 
     # --- pass-through layout/geometry ---
     @property
-    def plot_width(self):
+    def plot_width(self) -> float:
         return self._parent.plot_width
 
     @property
-    def plot_height(self):
+    def plot_height(self) -> float:
         return self._parent.plot_height
 
     @property
-    def x_count(self):
+    def x_count(self) -> int:
         return self._parent.x_count
 
     @property
-    def x_width(self):
+    def x_width(self) -> float:
         return self._parent.x_width
 
     @property
-    def x_offset(self):
+    def x_offset(self) -> float:
         return self._parent.x_offset
 
     @property
-    def left_padding(self):
+    def left_padding(self) -> float:
         return self._parent.left_padding
 
     @property
-    def top_padding(self):
+    def top_padding(self) -> float:
         return self._parent.top_padding
 
-    def get_base_transform(self):
+    def get_base_transform(self) -> list[str]:
         return self._parent.get_base_transform()
 
-    def _apply_stacking(self, y, y_offset):
+    def _apply_stacking(self, y: float, y_offset: float) -> float:
         return y
 
     # attributes the renderers probe with getattr
-    y_stacked = False
-    markers = False
-    _data_labels = None
+    y_stacked: bool = False
+    markers: bool = False
+    _data_labels: list[str] | list[list[str]] | None = None
 
 
-class _ColumnProxy(_SeriesProxy, ColumnChart):
+# The type:ignore[misc] on the class line below is needed because ColumnChart
+# (via Chart) assigns x_axis/y_axis in __init__ without a class-level
+# annotation, so mypy cannot reconcile their type across this proxy's two
+# bases. _SeriesProxy supplies the concrete XAxis/YAxis annotations the proxy
+# actually uses; no annotation here resolves the indeterminate base-class types
+# without editing Chart.
+class _ColumnProxy(_SeriesProxy, ColumnChart):  # type: ignore[misc]
     """Column representation over a subset of combo series (side-by-side)."""
 
-    def __init__(self, parent: "ComboChart", indices: list[int], y_axis):
+    def __init__(self, parent: "ComboChart", indices: list[int], y_axis: YAxis) -> None:
         _SeriesProxy.__init__(self, parent, indices, y_axis)
         self.column_gap = getattr(parent, "column_gap", 0.2)
         self.y_stacked = False
@@ -150,7 +161,7 @@ class _ColumnProxy(_SeriesProxy, ColumnChart):
             if self.series_styles and series_idx < len(self.series_styles):
                 style = self.series_styles[series_idx] or {}
                 if style.get("fill"):
-                    fill = style["fill"]
+                    fill = cast("str", style["fill"])
 
             paths = []
             for x_idx, y in enumerate(y_values_series):
@@ -195,7 +206,7 @@ class ComboChart(Chart):
 
     def __init__(
         self,
-        series: list[dict],
+        series: list[dict[str, Any]],
         labels: Labels | None = None,
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
@@ -213,7 +224,7 @@ class ComboChart(Chart):
         if not series or len(series) < 2:
             raise ValueError("ComboChart requires at least two series.")
 
-        normalized = []
+        normalized: list[dict[str, Any]] = []
         for s in series:
             stype = s.get("type", "line")
             if stype not in _VALID_TYPES:
@@ -248,8 +259,9 @@ class ComboChart(Chart):
             self._primary_indices = list(self._secondary_indices)
             self._secondary_indices = []
 
-        names = [s["name"] for s in self.series]
-        if all(n is None for n in names):
+        series_names_list = [s["name"] for s in self.series]
+        names: list[Any] | None = series_names_list
+        if all(n is None for n in series_names_list):
             names = None
 
         super().__init__(
@@ -287,7 +299,7 @@ class ComboChart(Chart):
         if cached is None:
             secondary_data = [self.series[i]["data"] for i in self._secondary_indices]
             cached = YAxis(
-                parent=self,
+                parent=cast("_AxisParent", self),
                 data=secondary_data,
                 labels=None,
                 stacked=False,
@@ -343,8 +355,10 @@ class ComboChart(Chart):
 
         # Lines/areas reuse the line renderer over their subset.
         if line_indices:
-            proxy = _SeriesProxy(self, line_indices, self._axis_for(line_indices[0]))
-            renderer = LineRenderer(proxy)
+            line_proxy = _SeriesProxy(
+                self, line_indices, self._axis_for(line_indices[0])
+            )
+            renderer = LineRenderer(cast("_LineHost", line_proxy))
             g.add_child(renderer.render())
 
         # Secondary y-axis tick labels, rendered into the normal element tree so
@@ -356,7 +370,7 @@ class ComboChart(Chart):
 
     def _render_secondary_axis(self) -> G:
         """Render secondary y-axis tick labels anchored on the right side."""
-        axis = self.secondary_y_axis
+        axis = cast("YAxis", self.secondary_y_axis)
         right_x = self.left_padding + self.plot_width
         group = G(
             font_size=DEFAULT_FONT_SIZE,
@@ -379,7 +393,7 @@ class ComboChart(Chart):
             )
         return group
 
-    def describe(self) -> dict:
+    def describe(self) -> dict[str, Any]:
         meta = super().describe()
         meta["chart_type"] = "ComboChart"
         meta["series_count"] = len(self.series)
@@ -402,7 +416,7 @@ class ComboChart(Chart):
         meta["series"] = series_info
         return meta
 
-    def to_config(self) -> dict:
+    def to_config(self) -> dict[str, Any]:
         cfg = super().to_config()
         cfg["chart_type"] = "ComboChart"
         cfg["series"] = [dict(s) for s in self.series]

@@ -1,6 +1,7 @@
 import functools
 import math
 from collections import defaultdict
+from typing import cast
 
 from charted.fonts.wrapper import Font
 from charted.utils.defaults import DEFAULT_FONT, DEFAULT_FONT_SIZE
@@ -130,12 +131,14 @@ def common_denominators(a: float, b: float) -> Vector:
 
     a, b = a_int, b_int
     if a == 0:
-        return _divisors(b)
+        return cast("Vector", _divisors(b))
     elif b == 0:
-        return _divisors(a)
+        return cast("Vector", _divisors(a))
 
     smaller = int(min(a, b))
-    common_divisors = [i for i in _divisors(smaller) if a % i == 0 and b % i == 0]
+    common_divisors: Vector = [
+        i for i in _divisors(smaller) if a % i == 0 and b % i == 0
+    ]
 
     return common_divisors
 
@@ -164,7 +167,7 @@ def round_to_clean_number(value: float, round_down: bool = False) -> float:
     return rounded_value
 
 
-def nested_defaultdict() -> defaultdict:
+def nested_defaultdict() -> "defaultdict[object, object]":
     return defaultdict(nested_defaultdict)
 
 

@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 from ..charts import (
     AreaChart,
@@ -40,7 +41,7 @@ CHART_TYPES = {
 }
 
 
-def load_data(data_path: str, transpose: bool = False) -> dict:
+def load_data(data_path: str, transpose: bool = False) -> dict[str, Any]:
     """Load data from CSV or JSON file.
 
     Args:
@@ -60,14 +61,14 @@ def load_data(data_path: str, transpose: bool = False) -> dict:
 
     if suffix == ".json":
         with open(path) as f:
-            return json.load(f)
+            return cast("dict[str, Any]", json.load(f))
     elif suffix == ".csv":
         return _parse_csv(path, transpose=transpose)
     else:
         raise ValueError(f"Unsupported file format: {suffix}. Use .csv or .json")
 
 
-def _to_number(value: str):
+def _to_number(value: str) -> float | str:
     """Convert a CSV cell to a float, leaving non-numeric text untouched."""
     try:
         return float(value)
@@ -75,7 +76,7 @@ def _to_number(value: str):
         return value
 
 
-def _parse_csv(path: Path, transpose: bool = False) -> dict:
+def _parse_csv(path: Path, transpose: bool = False) -> dict[str, Any]:
     """Parse a CSV file into a chart-compatible data dict.
 
     Default layout (``transpose=False``): the first column is the x-axis
@@ -113,7 +114,7 @@ def _parse_csv(path: Path, transpose: bool = False) -> dict:
         return {"data": data_values, "labels": labels}
 
 
-def _parse_csv_transposed(path: Path) -> dict:
+def _parse_csv_transposed(path: Path) -> dict[str, Any]:
     """Parse a wide / series-per-row CSV (see _parse_csv for the layout)."""
     import csv
 
@@ -135,7 +136,7 @@ def _parse_csv_transposed(path: Path) -> dict:
         series_names.append(row[0])
         data_values.append([_to_number(cell) for cell in row[1:]])
 
-    result: dict = {"labels": labels, "series_names": series_names}
+    result: dict[str, Any] = {"labels": labels, "series_names": series_names}
     if len(data_values) == 1:
         result["data"] = data_values[0]
     else:
@@ -143,7 +144,7 @@ def _parse_csv_transposed(path: Path) -> dict:
     return result
 
 
-def _build_combo_kwargs(data: dict) -> dict:
+def _build_combo_kwargs(data: dict[str, Any]) -> dict[str, Any]:
     """Map loaded data into ComboChart's series-based keyword arguments.
 
     Accepts either a dict that already carries a ``series`` list (passed
@@ -196,7 +197,7 @@ def _build_combo_kwargs(data: dict) -> dict:
     return kwargs
 
 
-def create_command(args: argparse.Namespace):
+def create_command(args: argparse.Namespace) -> None:
     """Create a new chart."""
     chart_type = args.chart_type
     output_path = Path(args.output)

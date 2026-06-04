@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from charted.charts.chart import Chart
 from charted.config import get_bar_gap
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
-from charted.html.element import G, Path, Text
+from charted.html.element import Element, G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.exceptions import NoDataError
-from charted.utils.series_style import SeriesStyleConfig
-from charted.utils.types import Labels, Vector, Vector2D
+from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
 
 
 class BarChart(Chart):
@@ -42,8 +43,8 @@ class BarChart(Chart):
     def __init__(
         self,
         data: Vector | Vector2D,
-        labels: Labels = None,
-        bar_gap: float = None,
+        labels: Labels | None = None,
+        bar_gap: float | None = None,
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
@@ -59,10 +60,10 @@ class BarChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list | None = None,
-        reference_lines: list[dict] | None = None,
+        annotations: list[Any] | None = None,
+        reference_lines: list[dict[str, Any]] | None = None,
         colors: list[str] | None = None,
-        value_labels: bool | str | dict | None = None,
+        value_labels: bool | str | dict[str, Any] | None = None,
         legend: str = "none",
         category_label_max_width: float | None = None,
         category_patterns: list[str] | bool | None = None,
@@ -74,8 +75,9 @@ class BarChart(Chart):
         self.bar_gap = bar_gap
         self.x_stacked = x_stacked
 
+        x_data: Vector2D
         if not isinstance(data, list) or not data or isinstance(data[0], (int, float)):
-            x_data = [data]
+            x_data = cast("Vector2D", [data])
         else:
             x_data = data
 
@@ -84,6 +86,7 @@ class BarChart(Chart):
 
         num_bars = len(x_data[0]) if x_data else 0
         num_series = len(x_data) if x_data else 0
+        y_data: Vector2D
         if num_bars <= 1:
             y_data = [[0, 1] for _ in range(num_series)] if num_series > 0 else [[0, 1]]
         else:
@@ -125,11 +128,11 @@ class BarChart(Chart):
         # calculates from labels (32.0). We need to recreate the grid Path
         # with correct values.
         if self.y_axis and self.y_axis.config:
-            self.y_axis.children[0] = self.y_axis.grid_lines
+            self.y_axis.children[0] = cast("Element", self.y_axis.grid_lines)
             self.y_axis.children[1] = self.y_axis.axis_labels
 
         if self.x_axis and self.x_axis.config:
-            self.x_axis.children[0] = self.x_axis.grid_lines
+            self.x_axis.children[0] = cast("Element", self.x_axis.grid_lines)
             self.x_axis.children[1] = self.x_axis.axis_labels
 
     def _value_label_data(self) -> Vector2D:
@@ -140,7 +143,7 @@ class BarChart(Chart):
     def y_height(self) -> float:
         return self.plot_height / (self.y_count + (self.y_count + 1) * self.bar_gap)
 
-    def get_base_transform(self) -> list:
+    def get_base_transform(self) -> list[str]:
         return []
 
     @property
@@ -161,7 +164,7 @@ class BarChart(Chart):
         # leftward from x_offset) land at the correct zero-relative position.
         # Non-stacked uses absolute zero_x from the reprojection and doesn't
         # need this compensation.
-        dx = 0
+        dx: float = 0
         if self.x_stacked and self.x_axis.axis_dimension.min_value < 0:
             dx = self.x_axis.reproject(abs(self.x_axis.axis_dimension.min_value))
 
@@ -176,14 +179,18 @@ class BarChart(Chart):
             # value axis (x here, y in ColumnChart). x_offsets is pre-computed
             # and already reprojected by Chart.x_offsets setter.
             for series_idx, (x_values_series, x_offsets_series, color) in enumerate(
-                zip(self.x_values, self.x_offsets, self.colors)
+                zip(
+                    self.x_values,
+                    cast("Vector2D", self.x_offsets),
+                    self.colors,
+                )
             ):
                 # Apply fill override from series_styles
                 fill = color
                 if self.series_styles and series_idx < len(self.series_styles):
                     style = self.series_styles[series_idx] or {}
                     if style.get("fill"):
-                        fill = style["fill"]
+                        fill = cast("str", style["fill"])
 
                 paths = []
                 for bar_idx, (x, x_offset_val) in enumerate(
@@ -212,7 +219,7 @@ class BarChart(Chart):
                 if self.series_styles and series_idx < len(self.series_styles):
                     style = self.series_styles[series_idx] or {}
                     if style.get("fill"):
-                        fill = style["fill"]
+                        fill = cast("str", style["fill"])
 
                 has_fill_override = fill != color
                 per_bar = (
@@ -280,7 +287,9 @@ class BarChart(Chart):
                         # horizontally inside its own segment, which runs from
                         # the cumulative offset to offset+value.
                         slot_y = start_y + bar_idx * (slot_height + gap)
-                        x_offset_val = self.x_offsets[series_idx][bar_idx]
+                        x_offset_val = cast("Vector2D", self.x_offsets)[series_idx][
+                            bar_idx
+                        ]
                         seg_left = min(x_offset_val, x_offset_val + x)
                         seg_width = abs(x)
                         bars_g.add_child(

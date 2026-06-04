@@ -131,7 +131,7 @@ class LayoutEngine:
             Total top padding in pixels (base padding + title height if present).
         """
         v_pad = self.v_padding * self.height
-        offset = 0
+        offset: float = 0
 
         if self.title:
             offset += self.title.height * 1.5
@@ -207,8 +207,8 @@ class LayoutEngine:
 
         from .helpers import calculate_rotation_angle
 
-        rotation_angle = 0
-        width = 0
+        rotation_angle: float = 0
+        width: float = 0
 
         for label in self.x_labels:
             angle = calculate_rotation_angle(label.width, x_width)
@@ -218,7 +218,7 @@ class LayoutEngine:
 
         return (rotation_angle, width) if rotation_angle else None
 
-    def get_base_transform(self) -> list:
+    def get_base_transform(self) -> list[str]:
         """Get base transformation matrix for chart coordinates.
 
         Returns:

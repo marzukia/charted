@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from charted.charts.chart import Chart
 from charted.config import get_column_gap
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import G, Path
 from charted.themes.core import Theme
-from charted.utils.series_style import SeriesStyleConfig
 from charted.utils.transform import translate
-from charted.utils.types import Labels, Vector, Vector2D
+from charted.utils.types import Labels, SeriesStyleConfig, Vector, Vector2D
 
 
 class ColumnChart(Chart):
@@ -40,8 +41,8 @@ class ColumnChart(Chart):
     def __init__(
         self,
         data: Vector | Vector2D,
-        labels: Labels = None,
-        column_gap: float = None,
+        labels: Labels | None = None,
+        column_gap: float | None = None,
         width: float = DEFAULT_CHART_WIDTH,
         height: float = DEFAULT_CHART_HEIGHT,
         zero_index: bool = True,
@@ -57,12 +58,12 @@ class ColumnChart(Chart):
         y_label: str | None = None,
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
-        annotations: list | None = None,
+        annotations: list[Any] | None = None,
         x_scale: object | None = None,
         y_scale: object | None = None,
-        reference_lines: list[dict] | None = None,
+        reference_lines: list[dict[str, Any]] | None = None,
         colors: list[str] | None = None,
-        value_labels: bool | str | dict | None = None,
+        value_labels: bool | str | dict[str, Any] | None = None,
         legend: str = "none",
         category_patterns: list[str] | bool | None = None,
         domain_padding: float | None = None,
@@ -115,7 +116,7 @@ class ColumnChart(Chart):
 
     @property
     def representation(self) -> G:
-        dy = 0
+        dy: float = 0
         if self.y_axis.axis_dimension.min_value < 0:
             dy = self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
 
@@ -139,7 +140,7 @@ class ColumnChart(Chart):
                 if self.series_styles and series_idx < len(self.series_styles):
                     style = self.series_styles[series_idx] or {}
                     if style.get("fill"):
-                        fill = style["fill"]
+                        fill = cast("str", style["fill"])
                 draw_fill = (
                     self._category_fill(series_idx, fill) if fill == color else fill
                 )
@@ -173,7 +174,7 @@ class ColumnChart(Chart):
                 if self.series_styles and series_idx < len(self.series_styles):
                     style = self.series_styles[series_idx] or {}
                     if style.get("fill"):
-                        fill = style["fill"]
+                        fill = cast("str", style["fill"])
 
                 has_fill_override = fill != color
                 per_bar = (

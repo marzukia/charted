@@ -116,7 +116,7 @@ class DataModel:
     # =========================================================================
 
     @classmethod
-    def validate_data(cls, data: Vector | Vector2D | None) -> Vector2D:
+    def validate_data(cls, data: Vector | Vector2D | None) -> Vector2D | None:
         """Validate and normalize chart data.
 
         Args:
@@ -137,7 +137,7 @@ class DataModel:
 
         # Convert single series to 2D
         if not isinstance(data[0], list):
-            data = [data]  # type: ignore
+            data = [data]
 
         max_length = max([len(i) for i in data])
 
@@ -158,7 +158,7 @@ class DataModel:
                         "Infinite values are not allowed in chart data"
                     )
 
-        return data  # type: ignore
+        return data
 
     @classmethod
     def create_default_labels(cls, array_len: int) -> Labels:

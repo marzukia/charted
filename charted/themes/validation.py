@@ -4,10 +4,11 @@ This module provides functions to validate theme colors and generate
 warnings when contrast ratios don't meet accessibility standards.
 """
 
+from charted.themes.core import Theme
 from charted.utils.color_manager import ColorManager
 
 
-def validate_theme(theme) -> list[str]:
+def validate_theme(theme: Theme) -> list[str]:
     """Validate theme colors for WCAG contrast compliance.
 
     Checks:

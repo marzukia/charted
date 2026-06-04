@@ -3,6 +3,7 @@
 Extracted from Chart class to reduce coupling and improve testability.
 """
 
+from typing import Any
 from urllib.parse import quote
 
 from charted.html.element import G, Path, Rect, Text
@@ -246,7 +247,7 @@ def create_legend_entry(
 def create_legend(
     series_names: list[str],
     colors: list[str],
-    theme_config: dict,
+    theme_config: "Theme | dict[str, Any]",
     plot_left: float,
     plot_right: float,
     top_padding: float,
@@ -357,7 +358,7 @@ def create_legend(
 def create_pie_legend(
     series_names: list[str],
     colors: list[str],
-    theme_config: dict,
+    theme_config: "Theme | dict[str, Any]",
     chart_width: float,
     chart_height: float,
 ) -> G | None:

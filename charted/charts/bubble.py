@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from charted.charts.scatter import ScatterChart
 from charted.constants import DEFAULT_CHART_HEIGHT, DEFAULT_CHART_WIDTH
 from charted.html.element import Circle, G, Path, Text
@@ -103,7 +105,7 @@ class BubbleChart(ScatterChart):
         h_lines: list[float] | None = None,
         v_lines: list[float] | None = None,
         quadrant_labels: list[str] | None = None,
-        value_labels: bool | str | dict | None = None,
+        value_labels: bool | str | dict[str, Any] | None = None,
         legend: str = "none",
         domain_padding: float | None = None,
     ):
@@ -120,7 +122,7 @@ class BubbleChart(ScatterChart):
         # against every series length, not just the first.
         is_multi_series = bool(y_data) and isinstance(y_data[0], list)
         if is_multi_series:
-            series_lengths = [len(series) for series in y_data]
+            series_lengths = [len(cast("list[float]", series)) for series in y_data]
         else:
             series_lengths = [len(y_data)]
         for series_idx, point_count in enumerate(series_lengths):
@@ -290,10 +292,10 @@ class BubbleChart(ScatterChart):
         if self.max_radius <= 0:
             return {"x": 0.0, "y": 0.0}
 
-        def flat(data) -> list[float]:
+        def flat(data: Vector | Vector2D) -> list[float]:
             if data and isinstance(data[0], list):
                 return [v for row in data for v in row]
-            return list(data) if data else []
+            return list(cast("Vector", data)) if data else []
 
         # Rough plot-area estimates: title/axis chrome eats vertical space and
         # the value-axis gutter plus any reserved legend band eats horizontal
@@ -329,7 +331,13 @@ class BubbleChart(ScatterChart):
             "y": axis_fraction(flat(y_data), plot_h),
         }
 
-    def _anchor_axis_data(self, data, fixed_range, zero_baseline=False, stacked=False):
+    def _anchor_axis_data(
+        self,
+        data: Vector2D,
+        fixed_range: tuple[float, float] | None,
+        zero_baseline: bool = False,
+        stacked: bool = False,
+    ) -> Vector2D:
         """Apply the per-axis radius-aware pad before delegating to the base.
 
         When the caller passed an explicit ``domain_padding`` we leave the base
@@ -387,6 +395,7 @@ class BubbleChart(ScatterChart):
         return _lerp_color(base, bg, 0.7), base
 
     def _hue_color_at(self, value: float) -> str:
+        assert self.hue is not None
         lo = min(self.hue)
         hi = max(self.hue)
         t = 0.0 if hi == lo else (value - lo) / (hi - lo)
@@ -422,7 +431,7 @@ class BubbleChart(ScatterChart):
             if self.series_styles and series_idx < len(self.series_styles):
                 style = self.series_styles[series_idx] or {}
                 if style.get("fill"):
-                    fill = style["fill"]
+                    fill = cast("str", style["fill"])
 
             series = G(fill=fill)
             x_offset = self.x_offset
@@ -574,6 +583,7 @@ class BubbleChart(ScatterChart):
 
         bar_w = self._HUE_BAR_WIDTH
         bar_h = self._HUE_BAR_HEIGHT
+        assert self.hue is not None
         lo = min(self.hue)
         hi = max(self.hue)
 
@@ -614,7 +624,7 @@ class BubbleChart(ScatterChart):
                 )
             )
 
-    def to_config(self) -> dict:
+    def to_config(self) -> dict[str, Any]:
         cfg = super().to_config()
         cfg["sizes"] = list(self.sizes)
         cfg["min_radius"] = self.min_radius
