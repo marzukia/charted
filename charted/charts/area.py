@@ -50,6 +50,7 @@ class AreaChart(Chart):
     fill_opacity: float = 0.3
     pad_x_labels: bool = False
     curve: str = "linear"
+    y_stacked: bool = True
 
     def __init__(
         self,
@@ -66,6 +67,7 @@ class AreaChart(Chart):
         series_names: list[str] | None = None,
         series_styles: list[SeriesStyleConfig] | None = None,
         curve: str = "linear",
+        stacked: bool = True,
         x_scale: object | None = None,
         y_scale: object | None = None,
         x_label: str | None = None,
@@ -83,6 +85,10 @@ class AreaChart(Chart):
             )
         self.fill_opacity = fill_opacity
         self.curve = curve
+        # Set before super().__init__ so the base Chart anchors the y-domain to
+        # the stacked totals. Stacked is the sensible default for multi-series
+        # area; pass stacked=False for overlapping translucent areas.
+        self.y_stacked = stacked
         super().__init__(
             y_data=data,
             x_data=x_data,
