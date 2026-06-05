@@ -7,6 +7,7 @@ the class bases, so they continue to operate on the same ``self``.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from charted.utils.rendering import (
@@ -15,7 +16,11 @@ from charted.utils.rendering import (
 )
 
 if TYPE_CHECKING:
+    from charted.themes.core import Theme
     from charted.utils.types import MeasuredText
+
+# Bundled, redistributable font files available for @font-face embedding.
+_FONT_FILES_DIR = Path(__file__).resolve().parent.parent / "fonts" / "files"
 
 
 class ChartOutputMixin:
@@ -30,6 +35,7 @@ class ChartOutputMixin:
     if TYPE_CHECKING:
         _title: MeasuredText | None
         _tooltips: bool
+        theme: Theme
 
         @property
         def svg(self) -> str: ...
@@ -43,9 +49,47 @@ class ChartOutputMixin:
         """Return SVG string for Jupyter notebook display."""
         return self.svg
 
-    def to_svg(self) -> str:
-        """Get the SVG string representation of the chart."""
-        return self.svg
+    def to_svg(self, embed_fonts: bool = False) -> str:
+        """Get the SVG string representation of the chart.
+
+        Args:
+            embed_fonts: If True, inline an @font-face for each bundled font the
+                chart uses, so the SVG renders the exact font even where it is
+                not installed. Off by default to keep the SVG small.
+        """
+        svg = self.svg
+        return self._embed_font_faces(svg) if embed_fonts else svg
+
+    def _embed_font_faces(self, svg: str) -> str:
+        """Inline @font-face declarations for any bundled font the chart uses."""
+        import base64
+
+        theme = getattr(self, "theme", None)
+        families: list[str] = []
+        for attr in ("title_font_family", "legend_font_family"):
+            value = getattr(theme, attr, None)
+            if isinstance(value, str):
+                families.append(value.split(",")[0].strip())
+
+        faces: list[str] = []
+        seen: set[str] = set()
+        for family in families:
+            if family in seen:
+                continue
+            seen.add(family)
+            ttf = _FONT_FILES_DIR / f"{family}.ttf"
+            if ttf.exists():
+                encoded = base64.b64encode(ttf.read_bytes()).decode("ascii")
+                faces.append(
+                    f'@font-face{{font-family:"{family}";'
+                    f'src:url("data:font/ttf;base64,{encoded}") '
+                    f'format("truetype");}}'
+                )
+        if not faces:
+            return svg
+        style = "<style>" + "".join(faces) + "</style>"
+        idx = svg.find(">")
+        return svg if idx < 0 else svg[: idx + 1] + style + svg[idx + 1 :]
 
     def to_markdown(self, alt_text: str | None = None, width: str | None = None) -> str:
         """Generate markdown markup for the chart."""
@@ -95,7 +139,7 @@ class ChartOutputMixin:
 
         return f"data:image/svg+xml,{quote(self.svg)}"
 
-    def save(self, path: str, *, scale: int = 2) -> None:
+    def save(self, path: str, *, scale: int = 2, embed_fonts: bool = False) -> None:
         """Save the chart to a file.
 
         File format is detected from the extension:
@@ -108,6 +152,8 @@ class ChartOutputMixin:
         Args:
             path: Destination file path. Use a .svg or .png extension.
             scale: Resolution multiplier for PNG output (default 2x).
+            embed_fonts: If True, inline the chart's bundled font(s) as @font-face
+                so the output renders the exact font without it installed.
 
         Raises:
             ImportError: If saving as PNG and the png extra is not installed.
@@ -116,10 +162,11 @@ class ChartOutputMixin:
         import os
 
         ext = os.path.splitext(path)[1].lower()
+        svg = self.to_svg(embed_fonts=embed_fonts)
 
         if ext == ".svg":
             with open(path, "w") as f:
-                f.write(self.svg)
+                f.write(svg)
         elif ext == ".png":
             try:
                 import cairosvg  # type: ignore[import-untyped]
@@ -128,7 +175,7 @@ class ChartOutputMixin:
                     "PNG export requires the optional png extra. "
                     'Install it with: pip install "charted[png]"'
                 ) from None
-            cairosvg.svg2png(bytestring=self.svg.encode(), write_to=path, scale=scale)
+            cairosvg.svg2png(bytestring=svg.encode(), write_to=path, scale=scale)
         else:
             raise ValueError(
                 f"Unsupported file extension '{ext}'. Supported: .svg, .png"
