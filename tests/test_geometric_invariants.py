@@ -770,17 +770,15 @@ def test_clean_failure_no_unexpected_exception(values: list[float], name: str) -
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "GEOMETRY BUG: LineChart with an all-negative series projects the data "
-        "path above the top of the viewBox. Repro: LineChart([-2.0, -3.0, -1.0], "
-        "labels=['a','b','c'], width=500, height=500) -> line path bbox top y ~= "
-        "-200 (viewBox top is 0). Mixed-sign and all-positive series render "
-        "correctly; AreaChart clamps and is unaffected."
-    ),
-)
-def test_known_bug_line_all_negative_overflows_top() -> None:
+def test_line_all_negative_stays_in_frame() -> None:
+    """Regression: an all-negative LineChart series stays inside the viewBox.
+
+    Previously the projection left the rendered domain at e.g. [-3, -1] with no
+    zero baseline, so the data path was lifted above the top of the frame
+    (path bbox top y ~= -200 on a 500x500 canvas). calculate_axis_dimensions
+    now clamps an all-negative domain's max up to zero (mirroring the existing
+    min-to-zero clamp), so the zero baseline is back inside the plot.
+    """
     svg = str(
         LineChart(
             [-2.0, -3.0, -1.0], labels=["a", "b", "c"], width=500, height=500
@@ -789,37 +787,27 @@ def test_known_bug_line_all_negative_overflows_top() -> None:
     _assert_in_frame(svg)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "GEOMETRY BUG: horizontal BarChart with an all-negative series places "
-        "both its zero gridline and the bar rect far to the right of the plot. "
-        "Repro: BarChart([-2.0], labels=[''], width=500, height=500) -> gridline "
-        "path 'M900 0 v450' at x~=925 (viewBox is 500 wide); BarChart([-16.0], "
-        "labels=['a']) -> bar rect x-extent 475..1802 vs plot right edge 475. "
-        "With [-1e9] the gridline is at x~=4.5e11. Same projection fault as the "
-        "LineChart case. ColumnChart and mixed-sign data are unaffected."
-    ),
-)
-def test_known_bug_bar_all_negative_gridline_overflows() -> None:
+def test_bar_all_negative_gridline_in_frame() -> None:
+    """Regression: an all-negative horizontal BarChart stays inside the viewBox.
+
+    Previously the rendered domain stayed at e.g. [-3, -1] (no zero baseline),
+    so the zero gridline and the bar rect projected far to the right of the
+    plot (gridline at x~=925 on a 500-wide canvas, x~=4.5e11 for [-1e9]). The
+    all-negative max-to-zero clamp in calculate_axis_dimensions keeps both the
+    gridline and the bar inside the frame.
+    """
     svg = str(BarChart([-2.0], labels=[""], width=500, height=500).to_svg())
     _assert_in_frame(svg)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "GEOMETRY BUG: ScatterChart with an all-negative series on either axis "
-        "projects geometry far outside the plot. Repro (x): "
-        "ScatterChart([-16.0], [0.0], width=500, height=500) -> marker circle "
-        "at x~=1724 (viewBox is 500 wide). Repro (y): ScatterChart([0.0], "
-        "[-2.0], width=500, height=500) -> gridline path 'M0 -450' above the "
-        "frame. Third member of the all-negative projection family (LineChart "
-        "top overflow, BarChart gridline overflow); mixed-sign and "
-        "all-positive series render correctly."
-    ),
-)
-def test_known_bug_scatter_all_negative_x_out_of_frame() -> None:
+def test_scatter_all_negative_axis_in_frame() -> None:
+    """Regression: an all-negative ScatterChart axis stays inside the viewBox.
+
+    Previously an all-negative x or y series left the domain with no zero
+    baseline, projecting the marker (x~=1724) or the zero gridline (y=-450)
+    outside the frame. The all-negative clamp in calculate_axis_dimensions
+    fixes both axes; this checks the x case (the y case is symmetric).
+    """
     svg = str(ScatterChart([-16.0], [0.0], width=500, height=500).to_svg())
     _assert_in_frame(svg)
 
