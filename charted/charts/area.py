@@ -5,6 +5,7 @@ Shows one or more series as filled regions under the line.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 from charted.charts.chart import Chart
@@ -22,6 +23,73 @@ from charted.utils.types import (
 
 if TYPE_CHECKING:
     from charted.charts.chart import _Annotation
+
+
+def _fmt(value: float) -> str:
+    """Format a coordinate the way curve_path does (trailing .0 preserved)."""
+    return f"{value:g}" if value != int(value) else f"{int(value)}"
+
+
+def _clamp_path_y(path: str, lo: float, hi: float) -> str:
+    """Clamp every y coordinate of an absolute SVG path string to ``[lo, hi]``.
+
+    Handles the M/L/C/H/V commands emitted by ``curve_path``. The x values and
+    command structure are left untouched. When no y exceeds the bounds the
+    output is identical to the input, so in-bounds curves stay byte-for-byte
+    unchanged. Returns the original string verbatim if nothing was clamped.
+    """
+
+    def clamp(y: float) -> float:
+        return max(lo, min(hi, y))
+
+    out: list[str] = []
+    changed = False
+    # Split into (command, args) groups; curve_path only emits M/L/C/H/V.
+    for cmd, args in re.findall(r"([MLCHV])([^MLCHVZ]*)", path):
+        nums = re.findall(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", args)
+        vals = [float(n) for n in nums]
+        if cmd in ("M", "L"):
+            # x y pairs
+            new_vals = []
+            for k in range(0, len(vals), 2):
+                cy = clamp(vals[k + 1])
+                changed = changed or cy != vals[k + 1]
+                new_vals.extend([vals[k], cy])
+            out.append(cmd + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals)))
+        elif cmd == "C":
+            # x1 y1 x2 y2 x y (every odd index is a y)
+            new_vals = []
+            for idx, v in enumerate(vals):
+                if idx % 2 == 1:
+                    cy = clamp(v)
+                    changed = changed or cy != v
+                    new_vals.append(cy)
+                else:
+                    new_vals.append(v)
+            out.append(cmd + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals)))
+        elif cmd == "V":
+            new_vals = []
+            for idx, v in enumerate(vals):
+                cy = clamp(v)
+                changed = changed or cy != v
+                new_vals.append(cy)
+            out.append(cmd + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals)))
+        else:  # H: x only, no y
+            out.append(cmd + args.strip())
+    if not changed:
+        return path
+    return " ".join(s for s in out)
+
+
+def _match_token(originals: list[str], idx: int, value: float) -> str:
+    """Render ``value`` reusing the original token text when it is unchanged.
+
+    Keeps untouched coordinates byte-identical to ``curve_path``'s output and
+    only reformats the ones the clamp actually moved.
+    """
+    if idx < len(originals) and float(originals[idx]) == value:
+        return originals[idx]
+    return _fmt(value)
 
 
 class AreaChart(Chart):
@@ -136,26 +204,40 @@ class AreaChart(Chart):
         else:
             x_positions = [plot_w / 2]
 
+        # The filled polygon must stay within the plot box: clamp every vertex
+        # to [plot_top, plot_bottom] so a value sitting at (or interpolating
+        # toward) the axis minimum can't bleed below the floor into the x-label
+        # row, nor exceed the top edge. The clamp is a no-op for points already
+        # inside the plot, so normal charts render byte-for-byte identically.
+        plot_top = pad_y
+        plot_bottom = pad_y + plot_h
         for i, (y_vals, y_offs) in enumerate(zip(self.y_values, self.y_offsets)):
             color = self.colors[i]
             points = []
             for j in range(len(y_vals)):
                 x = pad_x + x_positions[j]
                 y = y_vals[j] + y_offs[j] if self.y_stacked else y_vals[j]
-                points.append((x, pad_y + plot_h - y))
+                py = pad_y + plot_h - y
+                py = max(plot_top, min(plot_bottom, py))
+                points.append((x, py))
 
             if not points:
                 continue
 
             if self.curve == "linear":
-                # Preserve the exact historical linear path output.
+                # Preserve the exact historical linear path output. Vertices are
+                # already clamped above, so the linear boundary cannot bleed.
                 top = [f"M{points[0][0]} {points[0][1]}"]
                 for px, py in points[1:]:
                     top.append(f"L{px} {py}")
                 top_d = " ".join(top)
             else:
-                # Smooth/step the top boundary through the same points.
-                top_d = curve_path(self.curve, points)
+                # Smooth/step the top boundary through the (clamped) points.
+                # Smooth curves derive cubic control points from the vertices and
+                # can still overshoot past the plot edge between them, so clamp
+                # the y of every coordinate in the generated path. This stays a
+                # no-op (byte-identical) when nothing overshoots.
+                top_d = _clamp_path_y(curve_path(self.curve, points), plot_top, plot_bottom)
 
             baseline = pad_y + plot_h
             d = " ".join(
