@@ -412,8 +412,12 @@ class PieChart(Chart):
         # When the shared placement legend is active (legend='right'|'bottom'
         # |'top'), the base class renders a single consistent box in a reserved
         # band, so skip the legacy split legend here. With legend='none' (the
-        # default) keep the historical dual-column split legend unchanged.
-        if getattr(self, "_legend_placement", "none") == "none":
+        # default) draw the dual-column split legend only when at least one slice
+        # is too small to carry its label inside the pie. If every slice is
+        # labelled directly, the legend just repeats what's already on the chart,
+        # so skip it.
+        any_overspill = any(not s["fits_inside"] for s in slices)
+        if getattr(self, "_legend_placement", "none") == "none" and any_overspill:
             legend = create_pie_legend(
                 series_names=labels,
                 colors=self.colors,
