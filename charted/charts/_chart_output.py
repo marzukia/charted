@@ -100,14 +100,17 @@ class ChartOutputMixin:
 
         File format is detected from the extension:
         - .svg: writes raw SVG markup
-        - .png: rasterizes via cairosvg (must be installed separately)
+        - .png: rasterizes to PNG (needs the png extra: pip install "charted[png]")
+
+        Charts export to PNG directly; you do not need to rasterize the SVG
+        yourself. Example: ``chart.save("chart.png")``.
 
         Args:
-            path: Destination file path.
+            path: Destination file path. Use a .svg or .png extension.
             scale: Resolution multiplier for PNG output (default 2x).
 
         Raises:
-            ImportError: If saving as PNG and cairosvg is not installed.
+            ImportError: If saving as PNG and the png extra is not installed.
             ValueError: If the file extension is not supported.
         """
         import os
@@ -122,8 +125,8 @@ class ChartOutputMixin:
                 import cairosvg  # type: ignore[import-untyped]
             except ImportError:
                 raise ImportError(
-                    "PNG export requires cairosvg. "
-                    "Install it with: pip install cairosvg"
+                    "PNG export requires the optional png extra. "
+                    'Install it with: pip install "charted[png]"'
                 ) from None
             cairosvg.svg2png(bytestring=self.svg.encode(), write_to=path, scale=scale)
         else:
