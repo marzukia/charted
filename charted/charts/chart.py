@@ -8,6 +8,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol, cast
 
+from charted.charts._chart_config import ChartConfigMixin
+from charted.charts._chart_output import ChartOutputMixin
+from charted.charts._chart_patterns import ChartPatternMixin
+from charted.charts._chart_tooltips import ChartTooltipMixin
 from charted.charts.axes import XAxis, YAxis
 from charted.constants import (
     AXIS_BORDER_COLOR,
@@ -20,10 +24,6 @@ from charted.themes.core import Theme
 from charted.utils.color_manager import ColorManager
 from charted.utils.data_model import DataModel
 from charted.utils.layout_engine import LayoutEngine
-from charted.utils.rendering import (
-    generate_html_wrapper,
-    generate_markdown_image,
-)
 from charted.utils.series_legend import SeriesLegend
 from charted.utils.theme_manager import ThemeManager
 from charted.utils.transform import translate
@@ -41,8 +41,7 @@ from charted.utils.types import (
 if TYPE_CHECKING:
     from charted.charts.axes import _AxisParent
     from charted.charts.scales import Scale
-    from charted.html.element import Element, Title
-    from charted.utils.patterns import Pattern
+    from charted.html.element import Element
 
 
 class _Annotation(Protocol):
@@ -56,7 +55,14 @@ class _Annotation(Protocol):
     def render(self, chart: Chart) -> Element: ...
 
 
-class Chart(SeriesLegend, Svg):
+class Chart(
+    ChartPatternMixin,
+    ChartConfigMixin,
+    ChartTooltipMixin,
+    ChartOutputMixin,
+    SeriesLegend,
+    Svg,
+):
     """Base class for all SVG chart types.
 
     Provides common functionality for chart rendering including
@@ -99,102 +105,6 @@ class Chart(SeriesLegend, Svg):
     _title: MeasuredText | None
     _subtitle: MeasuredText | None
 
-    # =========================================================================
-    # Core Representation Methods
-    # =========================================================================
-
-    def _repr_svg_(self) -> str:
-        """Return SVG string for Jupyter notebook display."""
-        return self.svg
-
-    def to_svg(self) -> str:
-        """Get the SVG string representation of the chart."""
-        return self.svg
-
-    def to_markdown(self, alt_text: str | None = None, width: str | None = None) -> str:
-        """Generate markdown markup for the chart."""
-        title_text = self._title.text if self._title else None
-        return generate_markdown_image(self.svg, alt_text, title_text, width)
-
-    def to_html(
-        self, style: str = "display: inline-block;", tooltips: bool = False
-    ) -> str:
-        """Return standalone HTML with embedded SVG.
-
-        Args:
-            style: CSS style for the container div.
-            tooltips: If True, attach a native SVG ``<title>`` to each data
-                mark so browsers show a built-in hover tooltip (no
-                JavaScript). File output via ``to_svg()``/``save()`` is never
-                affected.
-
-        Returns:
-            HTML string with the SVG embedded in a div.
-        """
-        if not tooltips:
-            return generate_html_wrapper(self.svg, style)
-
-        # Regenerate the data-mark representation with <title> children, then
-        # restore the inert state so to_svg()/save() stay unchanged.
-        self._tooltips = True
-        try:
-            self._build_children()
-            svg = self.html
-        finally:
-            self._tooltips = False
-            self._build_children()
-        return generate_html_wrapper(svg, style)
-
-    def _repr_html_(self) -> str:
-        """Return HTML wrapper for the chart."""
-        return self.to_html()
-
-    def to_base64(self) -> str:
-        """Return the SVG as a data URI for inline embedding.
-
-        Returns:
-            Data URL string (e.g. 'data:image/svg+xml,<encoded-svg>').
-        """
-        from urllib.parse import quote
-
-        return f"data:image/svg+xml,{quote(self.svg)}"
-
-    def save(self, path: str, *, scale: int = 2) -> None:
-        """Save the chart to a file.
-
-        File format is detected from the extension:
-        - .svg: writes raw SVG markup
-        - .png: rasterizes via cairosvg (must be installed separately)
-
-        Args:
-            path: Destination file path.
-            scale: Resolution multiplier for PNG output (default 2x).
-
-        Raises:
-            ImportError: If saving as PNG and cairosvg is not installed.
-            ValueError: If the file extension is not supported.
-        """
-        import os
-
-        ext = os.path.splitext(path)[1].lower()
-
-        if ext == ".svg":
-            with open(path, "w") as f:
-                f.write(self.svg)
-        elif ext == ".png":
-            try:
-                import cairosvg  # type: ignore[import-untyped]
-            except ImportError:
-                raise ImportError(
-                    "PNG export requires cairosvg. "
-                    "Install it with: pip install cairosvg"
-                ) from None
-            cairosvg.svg2png(bytestring=self.svg.encode(), write_to=path, scale=scale)
-        else:
-            raise ValueError(
-                f"Unsupported file extension '{ext}'. Supported: .svg, .png"
-            )
-
     def style(self, **kwargs: object) -> "Chart":
         """Fluently apply theme overrides.
 
@@ -217,174 +127,6 @@ class Chart(SeriesLegend, Svg):
         override = Theme(**overrides)  # type: ignore[arg-type]
         self.theme = self.theme.compose(override)
         return self
-
-    def to_config(self) -> dict[str, object]:
-        """Serialize chart configuration to a dict.
-
-        Returns a dict with all constructor parameters needed to
-        recreate the chart, plus theme info.
-
-        Returns:
-            Dict suitable for JSON serialization or agent workflows.
-        """
-        import dataclasses
-
-        cfg: dict[str, object] = {
-            "chart_type": self.__class__.__name__,
-            "width": self._width,
-            "height": self._height,
-            "title": self._title.text if self._title else None,
-            "labels": [
-                label.text if hasattr(label, "text") else str(label)
-                for label in (self.x_labels or [])
-            ],
-            "series_names": self.series_names,
-            "x_stacked": self.x_stacked,
-            "zero_index": self.zero_index,
-            "x_scale": self.x_scale,
-            "y_scale": self.y_scale,
-        }
-        if self.data_model:
-            cfg["x_data"] = self.data_model.x_data
-            cfg["y_data"] = self.data_model.y_data
-        if self.series_styles:
-            cfg["series_styles"] = [
-                dataclasses.asdict(s) if dataclasses.is_dataclass(s) else s
-                for s in self.series_styles
-            ]
-        if self._h_lines:
-            cfg["h_lines"] = list(self._h_lines)
-        if self._v_lines:
-            cfg["v_lines"] = list(self._v_lines)
-        if self._annotations:
-            cfg["annotations"] = [
-                self._serialize_annotation(a) for a in self._annotations
-            ]
-        # Line/area charts carry a curve-interpolation setting.
-        if hasattr(self, "curve"):
-            cfg["curve"] = self.curve
-        return cfg
-
-    @staticmethod
-    def _serialize_annotation(a: object) -> object:
-        """Serialize one annotation to a JSON-friendly dict.
-
-        Tags the dict with its class name and strips private ``_ref_*`` fields
-        (used only for legacy reference-line markup) so they neither leak nor
-        break reconstruction in ``from_config``.
-        """
-        import dataclasses
-
-        if not dataclasses.is_dataclass(a) or isinstance(a, type):
-            return a
-        data = {k: v for k, v in dataclasses.asdict(a).items() if not k.startswith("_")}
-        return {"type": a.__class__.__name__, **data}
-
-    @classmethod
-    def from_config(cls, config: dict[str, object], **overrides: object) -> "Chart":
-        """Recreate a chart from a config dict.
-
-        Merges ``overrides`` on top of ``config`` so agents can tweak
-        individual parameters without rebuilding the whole dict.
-
-        Args:
-            config: Dict returned by ``to_config()``.
-            **overrides: Override any config key.
-
-        Returns:
-            Chart instance of the appropriate subclass.
-        """
-        import inspect
-
-        from charted.charts import _CHART_CLASSES
-
-        merged = dict(config)
-        merged.update(overrides)
-
-        # Reconstruct annotation objects from their serialized dict form.
-        # to_config() emits each annotation as {"type": <ClassName>, **asdict(a)}.
-        raw_annotations = merged.get("annotations")
-        if isinstance(raw_annotations, list):
-            merged["annotations"] = cls._rebuild_annotations(raw_annotations)
-
-        chart_type = merged.pop("chart_type", None)
-        cls_map = _CHART_CLASSES()
-        chart_cls = cls_map.get(chart_type, cls) if isinstance(chart_type, str) else cls
-        if chart_cls is None:
-            chart_cls = cls
-
-        # Only pass keys the target chart class accepts
-        sig = inspect.signature(chart_cls.__init__)
-        valid_params = set(sig.parameters.keys()) - {"self"}
-        filtered = {k: v for k, v in merged.items() if k in valid_params}
-
-        # Map common aliases: y_data -> data, x_data -> x_data
-        if "data" in valid_params and "data" not in filtered:
-            if "y_data" in merged:
-                filtered["data"] = merged["y_data"]
-            elif "x_data" in merged:
-                filtered["data"] = merged["x_data"]
-        if "y_data" in valid_params and "y_data" not in filtered and "data" in merged:
-            filtered["y_data"] = merged["data"]
-
-        # ``filtered`` is a deserialised config whose values are statically
-        # ``object``; they are dispatched into the resolved subclass constructor
-        # at runtime after being filtered to that constructor's parameters.
-        return chart_cls(**filtered)  # type: ignore[arg-type]
-
-    @staticmethod
-    def _rebuild_annotations(annotations: list[object]) -> list[object]:
-        """Reconstruct annotation objects from their serialized dict form.
-
-        ``to_config()`` serializes each annotation as
-        ``{"type": <ClassName>, **dataclasses.asdict(a)}``. This rebuilds the
-        concrete annotation object by dispatching on the ``"type"`` field.
-
-        Handles the round-trip quirks:
-        - Private ``_ref_*`` fields are stripped so they neither leak into a
-          public reconstruction nor break the dataclass constructor.
-        - JSON turns tuples into lists, so point/range fields are coerced back
-          to tuples.
-        """
-        from charted.charts.annotations import (
-            BoxAnnotation,
-            LabelAnnotation,
-            LineAnnotation,
-        )
-
-        type_map = {
-            "LineAnnotation": LineAnnotation,
-            "BoxAnnotation": BoxAnnotation,
-            "LabelAnnotation": LabelAnnotation,
-        }
-        # Fields that are (x, y) / (min, max) pairs and must be tuples.
-        tuple_fields = {"start", "end", "x_range", "y_range", "point"}
-
-        rebuilt: list[object] = []
-        for a in annotations:
-            # Already an annotation object (not a serialized dict): keep as-is.
-            if not isinstance(a, dict):
-                rebuilt.append(a)
-                continue
-
-            data: dict[str, object] = {str(k): v for k, v in a.items()}
-            type_name = data.pop("type", None)
-            ann_cls = type_map.get(type_name) if isinstance(type_name, str) else None
-            if ann_cls is None:
-                # Unknown type: leave the raw dict untouched rather than guess.
-                rebuilt.append(a)
-                continue
-
-            # Strip private fields so they don't leak or break reconstruction.
-            data = {k: v for k, v in data.items() if not k.startswith("_")}
-            # Coerce JSON lists back to tuples for coordinate pairs.
-            for key in tuple_fields:
-                value = data.get(key)
-                if isinstance(value, list):
-                    data[key] = tuple(value)
-
-            rebuilt.append(ann_cls(**data))
-        return rebuilt
 
     # =========================================================================
     # Initialization
@@ -860,66 +602,6 @@ class Chart(SeriesLegend, Svg):
             children.extend(axis_labels)
         self.children = []
         self.add_children(*children)
-
-    # =========================================================================
-    # Colourblind-safe redundancy: contrasting outlines + pattern fills
-    # =========================================================================
-
-    def _pattern_color_count(self) -> int:
-        """Number of distinct category colours that may need a pattern tile."""
-        colors = getattr(self, "colors", None) or []
-        return len(colors)
-
-    def _pattern_defs(self) -> list[Pattern]:
-        """Build one ``<pattern>`` def per (category, pattern) the chart uses.
-
-        Returns an empty list unless ``category_patterns`` was enabled, so the
-        default ``<defs>`` block is byte-for-byte unchanged. One pattern is
-        emitted per colour index, drawn in that index's fill colour, so a hatch
-        keeps the underlying category colour while adding a texture channel.
-        """
-        cycle = getattr(self, "_category_patterns", None)
-        if not cycle:
-            return []
-        from charted.utils.patterns import build_pattern
-
-        colors = getattr(self, "colors", None) or []
-        defs: list[Pattern] = []
-        for idx, color in enumerate(colors):
-            name = cycle[idx % len(cycle)]
-            defs.append(build_pattern(self._pattern_id(idx), name, color))
-        return defs
-
-    def _pattern_id(self, index: int) -> str:
-        """Stable id for the pattern tile of category ``index``."""
-        return f"chart-pattern-{id(self) & 0xFFFFFF:x}-{index}"
-
-    def _category_fill(self, index: int, color: str) -> str:
-        """Return the fill for category ``index``: a pattern url or the colour.
-
-        With patterns disabled (the default) this returns ``color`` unchanged,
-        preserving existing renders. With patterns enabled it returns a
-        ``url(#...)`` reference to the matching pattern tile.
-        """
-        if not getattr(self, "_category_patterns", None):
-            return color
-        return f"url(#{self._pattern_id(index)})"
-
-    def _filled_outline_attrs(self) -> dict[str, object]:
-        """Stroke attributes to apply to a filled shape, or ``{}`` when off.
-
-        Reads the theme's ``filled_shape_outline``; when no outline colour is
-        configured (the default and the light/dark presets) this returns an
-        empty dict so filled shapes stay unstroked exactly as before. The
-        high-contrast preset returns a 1px black outline.
-        """
-        theme = getattr(self, "theme", None)
-        if theme is None:
-            return {}
-        stroke, width = theme.filled_shape_outline
-        if stroke is None:
-            return {}
-        return {"stroke": stroke, "stroke_width": width}
 
     # =========================================================================
     # Scale Helpers
@@ -1742,62 +1424,6 @@ class Chart(SeriesLegend, Svg):
             )
 
         return elements
-
-    # =========================================================================
-    # Tooltips (opt-in, HTML-only native <title> hover labels)
-    # =========================================================================
-
-    def _tooltip_label(self, series_idx: int, point_idx: int) -> str:
-        """Build the tooltip text for one data point.
-
-        Format is ``"<label>: <value>"`` when a category label is available,
-        otherwise just the value. The series name is prefixed when there is
-        more than one series so multi-series marks stay distinguishable.
-        """
-        value = self._tooltip_value(series_idx, point_idx)
-        label = None
-        if self.x_labels and point_idx < len(self.x_labels):
-            lbl = self.x_labels[point_idx]
-            label = lbl.text if hasattr(lbl, "text") else str(lbl)
-
-        series_name = None
-        if self.series_names and series_idx < len(self.series_names):
-            series_name = self.series_names[series_idx]
-
-        multi_series = len(self.y_data) > 1
-
-        if label is not None:
-            if multi_series:
-                prefix = (
-                    series_name
-                    if series_name is not None
-                    else f"Series {series_idx + 1}"
-                )
-                return f"{prefix} - {label}: {value}"
-            return f"{label}: {value}"
-        if series_name is not None:
-            return f"{series_name}: {value}"
-        if multi_series:
-            return f"Series {series_idx + 1}: {value}"
-        return str(value)
-
-    def _tooltip_value(self, series_idx: int, point_idx: int) -> float | str:
-        """Return the raw data value for a point (overridable per chart)."""
-        data = self.y_data
-        if series_idx < len(data) and point_idx < len(data[series_idx]):
-            value = data[series_idx][point_idx]
-            if isinstance(value, float) and value.is_integer():
-                return int(value)
-            return value
-        return ""
-
-    def _tooltip_title(self, series_idx: int, point_idx: int) -> "Title | None":
-        """Return a ``Title`` element for a mark, or None when tooltips off."""
-        if not self._tooltips:
-            return None
-        from charted.html.element import Title
-
-        return Title(self._tooltip_label(series_idx, point_idx))
 
     # =========================================================================
     # Value labels (opt-in, formatted on-element data annotations)
