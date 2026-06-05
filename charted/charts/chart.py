@@ -102,6 +102,9 @@ class Chart(
     y_stacked: bool = False
     render_axes: bool = True
     pad_x_labels: bool = True
+    # Radial charts (radar, polar) draw data as a centred circle rather than
+    # filling the rectangular plot, so a corner legend never sits over the data.
+    _radial_plot: bool = False
 
     # Instance attributes assigned in __init__ (declared here so mypy can infer
     # their type at every read site; conditional assignment otherwise leaves the
@@ -390,6 +393,25 @@ class Chart(
         # existing single-weight renders are unchanged byte-for-byte.
         grid_config = self._build_grid_config()
 
+        # The y-axis tick labels (numeric ticks like "200,000") are derived from
+        # the scale and are not in data_model.y_labels for value-axis charts, so
+        # the layout's left_padding was sized without them. Build a throwaway
+        # y-axis to measure them and size the gutter BEFORE the real axes are
+        # built, because each axis bakes the gutter into its gridline and label
+        # positions at construction. Without this, wide numeric ticks clip off
+        # the left edge and the gridlines sit left of the plot.
+        _probe_y_axis = YAxis(
+            parent=cast("_AxisParent", self),
+            data=y_axis_data,
+            labels=y_labels,
+            stacked=self.y_stacked,
+            zero_index=self.zero_index,
+            config=grid_config,
+            scale=y_scale_inst,
+        )
+        if _probe_y_axis.labels:
+            self.layout.y_labels = _probe_y_axis.labels
+
         # Initialize axes. Chart satisfies the _AxisParent layout contract
         # structurally; the cast bridges its read-only property accessors to the
         # protocol's plain-attribute declarations.
@@ -417,6 +439,7 @@ class Chart(
             config=grid_config,
             scale=y_scale_inst,
         )
+
 
         # Initialize internal offsets and values directly (properties are read-only)
         # For ordinal charts (no x_data), generate default x-values [0, 1, 2, ...]
@@ -949,6 +972,10 @@ class Chart(
             plot_right=self.left_padding + self.plot_width,
             top_padding=self.top_padding,
             plot_height=self.plot_height,
+            # Radial charts (radar, polar) draw their data as a centred circle,
+            # so a corner legend never overlaps it and needs no backdrop even
+            # though it falls inside the rectangular plot bounds.
+            draw_background=not self._radial_plot,
         )
 
     @property

@@ -252,6 +252,7 @@ def create_legend(
     plot_right: float,
     top_padding: float,
     plot_height: float = 0,
+    draw_background: bool = True,
 ) -> G | None:
     """Create complete legend element.
 
@@ -274,14 +275,14 @@ def create_legend(
     if isinstance(theme_config, Theme):
         font_size = getattr(theme_config, "legend_font_size", 12)
         legend_padding = 0.15
-        font_family = getattr(theme_config, "legend_font_family", "Arial")
+        font_family = getattr(theme_config, "legend_font_family", "DejaVu Sans")
         font_color = getattr(theme_config, "legend_font_color", "#444444")
         position = getattr(theme_config, "legend_position", "topright")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = cast("float", theme_config.get("font_size", 12))
         legend_padding = cast("float", theme_config.get("legend_padding", 0.15))
-        font_family = cast("str", theme_config.get("font_family", "Arial"))
+        font_family = cast("str", theme_config.get("font_family", "DejaVu Sans"))
         font_color = cast("str", theme_config.get("font_color", "#444444"))
         position = cast("str", theme_config.get("position", "topright"))
         background_color = cast("str", theme_config.get("background_color", "#ffffff"))
@@ -318,18 +319,30 @@ def create_legend(
     # Create legend container
     legend = G()
 
-    # Add background (centered at y0)
-    legend.add_child(
-        create_legend_background(
-            x0,
-            y0_center,
-            legend_width,
-            legend_height,
-            legend_padding,
-            background_color=legend_bg,
-            stroke_color=stroke_color,
-        )
+    # The backdrop only earns its keep when the legend overlaps plotted data and
+    # needs the contrast. Draw it only when the legend box sits inside the plot
+    # rectangle; legends parked in a corner outside the data (radar, etc.) look
+    # cleaner without a box.
+    bg_left = x0 - legend_width * legend_padding / 2
+    bg_right = bg_left + legend_width * (1 + legend_padding)
+    inside_plot = (
+        bg_left >= plot_left
+        and bg_right <= plot_right
+        and bg_top_actual >= top_padding
+        and bg_bottom_actual <= top_padding + plot_height
     )
+    if inside_plot and draw_background:
+        legend.add_child(
+            create_legend_background(
+                x0,
+                y0_center,
+                legend_width,
+                legend_height,
+                legend_padding,
+                background_color=legend_bg,
+                stroke_color=stroke_color,
+            )
+        )
 
     # Add entries (vertically centered in background)
     # Row gap only between entries, not after the last one
@@ -384,17 +397,12 @@ def create_pie_legend(
     # Handle both dict and Theme object
     if isinstance(theme_config, Theme):
         font_size = getattr(theme_config, "legend_font_size", 12)
-        font_family = getattr(theme_config, "legend_font_family", "Arial")
+        font_family = getattr(theme_config, "legend_font_family", "DejaVu Sans")
         font_color = getattr(theme_config, "legend_font_color", "#444444")
-        background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = cast("float", theme_config.get("font_size", 12))
-        font_family = cast("str", theme_config.get("font_family", "Arial"))
+        font_family = cast("str", theme_config.get("font_family", "DejaVu Sans"))
         font_color = cast("str", theme_config.get("font_color", "#444444"))
-        background_color = cast("str", theme_config.get("background_color", "#ffffff"))
-
-    # Derive legend-specific colors from the background
-    legend_bg = _derive_legend_background(background_color)
 
     # Calculate entry dimensions
     legend_entries = [
@@ -428,30 +436,9 @@ def create_pie_legend(
     # Create legend container
     legend = G()
 
-    # Add background rectangles (no border/stroke)
-    if left_count > 0:
-        left_bg = Rect(
-            x=left_x,
-            y=left_bg_top,
-            width=col_width + 12,
-            height=left_height + 8,
-            fill=legend_bg,
-            fill_opacity=0.85,
-            rx=3,
-        )
-        legend.add_child(left_bg)
-
-    if right_count > 0:
-        right_bg = Rect(
-            x=right_x,
-            y=right_bg_top,
-            width=col_width + 12,
-            height=right_height + 8,
-            fill=legend_bg,
-            fill_opacity=0.85,
-            rx=3,
-        )
-        legend.add_child(right_bg)
+    # The pie's split legend sits in the side margins, outside the plot circle,
+    # so it draws no background box. A backdrop is only worth it for in-plot
+    # legends that overlap data and need the contrast.
 
     # Add entries to left column
     for i in range(left_count):

@@ -59,7 +59,18 @@ class Element(object):
             string += " "
             attributes_array = []
             for k, v in self.kwargs.items():
-                attributes_array.append(f'{k.replace("_", "-")}="{_escape_attr(v)}"')
+                value = v
+                # Carry a generic fallback so a viewer that lacks the named
+                # font degrades to a sane family rather than the browser's
+                # default serif. Skip when the caller already supplied a stack.
+                if k == "font_family" and isinstance(v, str) and "," not in v:
+                    generic = (
+                        "monospace"
+                        if ("mono" in v.lower() or "code" in v.lower())
+                        else "sans-serif"
+                    )
+                    value = f"{v}, {generic}"
+                attributes_array.append(f'{k.replace("_", "-")}="{_escape_attr(value)}"')
             string += " ".join(attributes_array)
         return string
 
