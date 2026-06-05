@@ -108,13 +108,7 @@ class _SeriesProxy:
     _data_labels: list[str] | list[list[str]] | None = None
 
 
-# The type:ignore[misc] on the class line below is needed because ColumnChart
-# (via Chart) assigns x_axis/y_axis in __init__ without a class-level
-# annotation, so mypy cannot reconcile their type across this proxy's two
-# bases. _SeriesProxy supplies the concrete XAxis/YAxis annotations the proxy
-# actually uses; no annotation here resolves the indeterminate base-class types
-# without editing Chart.
-class _ColumnProxy(_SeriesProxy, ColumnChart):  # type: ignore[misc]
+class _ColumnProxy(_SeriesProxy, ColumnChart):
     """Column representation over a subset of combo series (side-by-side)."""
 
     def __init__(self, parent: "ComboChart", indices: list[int], y_axis: YAxis) -> None:
