@@ -92,6 +92,17 @@ class Axis(G):
         self.config = config
         self.add_children(self.grid_lines, self.axis_labels)
 
+    def rebuild(self) -> None:
+        """Re-render grid lines and tick labels from the current label state.
+
+        ``grid_lines`` and ``axis_labels`` are built eagerly at construction, so
+        any later mutation of ``_labels`` (e.g. category-label wrapping or
+        truncation) would otherwise leave stale child elements. Call this after
+        replacing ``_labels`` to regenerate the rendered children.
+        """
+        self.children = []
+        self.add_children(self.grid_lines, self.axis_labels)
+
     def _init_with_scale(
         self,
         data: Vector2D | None,
@@ -558,16 +569,33 @@ class XAxis(Axis):
         # middle so labels stop overlapping into a smear.
         stride = self._label_stride(len(all_labels))
         last_index = len(all_labels) - 1
+        left_pad = self.parent.left_padding
+        chart_width = getattr(self.parent, "width", None)
         for index, (x, label) in enumerate(zip(coordinates, all_labels)):
             if stride > 1 and index not in (0, last_index) and index % stride != 0:
                 continue
             x = x + dx
-            transformations = [translate(-label.width / 2, 0)]
             if rotation_angle > 0:
                 transformations = [
                     translate(label.width / len(label.text) * -1, 0),
                     rotate(rotation_angle, x, y),
                 ]
+            else:
+                # Centre the label on its tick. Clamp the horizontal shift so an
+                # edge label (a wide first/last category) cannot spill off the
+                # left or right of the canvas. The label group is already
+                # translated right by ``left_padding``; absolute left/right edges
+                # are therefore ``left_pad + x + shift`` and ``+ label.width``.
+                shift = -label.width / 2
+                if chart_width is not None:
+                    abs_left = left_pad + x + shift
+                    if abs_left < 0:
+                        shift -= abs_left
+                    abs_right = left_pad + x + shift + label.width
+                    overflow = abs_right - chart_width
+                    if overflow > 0:
+                        shift -= overflow
+                transformations = [translate(shift, 0)]
             text = Text(
                 x=x,
                 y=y,

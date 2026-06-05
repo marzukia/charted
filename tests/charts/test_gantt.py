@@ -97,7 +97,7 @@ class TestGanttChartRendering:
         svg = chart.svg
         # Orthogonal dashed connector lines plus a filled triangular arrowhead
         # (closed path, "Z") render for each dependency.
-        assert "stroke-dasharray=\"5,3\"" in svg
+        assert 'stroke-dasharray="5,3"' in svg
         assert "Z" in svg
 
     def test_today_line(self):
@@ -251,3 +251,31 @@ class TestGanttChartLayout:
         assert chart._get_end_for_task(0) == 3
         assert chart._get_start_for_task(2) == 2
         assert chart._get_end_for_task(3) == 8
+
+
+class TestGanttLongLabels:
+    """Long task labels wrap and keep the plot area sane."""
+
+    LONG = [
+        "An extremely long gantt task label that goes on and on for many chars yes",
+        "Short task",
+        "Another quite long task description label here that overflows the gutter",
+    ]
+
+    def test_long_labels_bound_left_gutter(self):
+        chart = GanttChart(
+            data=[(0, 5), (2, 8), (4, 10)], labels=self.LONG, width=700, height=400
+        )
+        # The wrapped labels keep the gutter under half the chart width.
+        assert chart.left_padding < chart.width / 2
+        assert chart.plot_width > chart.width * 0.4
+
+    def test_long_labels_wrap(self):
+        chart = GanttChart(
+            data=[(0, 5), (2, 8), (4, 10)], labels=self.LONG, width=700, height=400
+        )
+        assert "<tspan" in chart.svg
+
+    def test_short_labels_unchanged(self):
+        chart = GanttChart(data=[(0, 5), (2, 8)], labels=["A", "B"], width=700)
+        assert "<tspan" not in chart.svg
