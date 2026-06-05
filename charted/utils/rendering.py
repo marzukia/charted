@@ -386,15 +386,10 @@ def create_pie_legend(
         font_size = getattr(theme_config, "legend_font_size", 12)
         font_family = getattr(theme_config, "legend_font_family", "DejaVu Sans")
         font_color = getattr(theme_config, "legend_font_color", "#444444")
-        background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = cast("float", theme_config.get("font_size", 12))
         font_family = cast("str", theme_config.get("font_family", "DejaVu Sans"))
         font_color = cast("str", theme_config.get("font_color", "#444444"))
-        background_color = cast("str", theme_config.get("background_color", "#ffffff"))
-
-    # Derive legend-specific colors from the background
-    legend_bg = _derive_legend_background(background_color)
 
     # Calculate entry dimensions
     legend_entries = [
@@ -428,30 +423,9 @@ def create_pie_legend(
     # Create legend container
     legend = G()
 
-    # Add background rectangles (no border/stroke)
-    if left_count > 0:
-        left_bg = Rect(
-            x=left_x,
-            y=left_bg_top,
-            width=col_width + 12,
-            height=left_height + 8,
-            fill=legend_bg,
-            fill_opacity=0.85,
-            rx=3,
-        )
-        legend.add_child(left_bg)
-
-    if right_count > 0:
-        right_bg = Rect(
-            x=right_x,
-            y=right_bg_top,
-            width=col_width + 12,
-            height=right_height + 8,
-            fill=legend_bg,
-            fill_opacity=0.85,
-            rx=3,
-        )
-        legend.add_child(right_bg)
+    # The pie's split legend sits in the side margins, outside the plot circle,
+    # so it draws no background box. A backdrop is only worth it for in-plot
+    # legends that overlap data and need the contrast.
 
     # Add entries to left column
     for i in range(left_count):
