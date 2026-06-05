@@ -464,9 +464,13 @@ class XAxis(Axis):
         if count <= 10:
             return 1
 
-        # Width-aware path: how many labels can fit without overlapping. Each
-        # label needs roughly its own width plus a small gap. Use the widest
-        # label so nothing collides at the tightest point.
+        # Cap the drawn-label count to the same target the gridline thinning
+        # uses, so labels stay sparse and line up with the thinned grid instead
+        # of smearing at a denser stride than the lines they sit under.
+        stride = max(1, math.ceil(count / self._GRID_TARGET_LINES))
+
+        # Width-aware path: if the widest label still wouldn't fit at this
+        # stride, thin further so nothing overlaps at the tightest point.
         plot_width = getattr(self.parent, "plot_width", None)
         if plot_width:
             widths = [getattr(label, "width", 0) for label in self._labels]
@@ -475,14 +479,8 @@ class XAxis(Axis):
                 slot = max_width + 4
                 max_fit = max(1, int(plot_width // slot))
                 if count > max_fit:
-                    return math.ceil(count / max_fit)
-                return 1
+                    stride = max(stride, math.ceil(count / max_fit))
 
-        # Width unavailable: halve repeatedly like the YAxis grid until the
-        # drawn label count drops to ~10 or fewer.
-        stride = 1
-        while count / stride > 10:
-            stride *= 2
         return stride
 
     # Past this many per-category vertical gridlines the plot fills with a grey
