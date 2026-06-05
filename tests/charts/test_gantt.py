@@ -47,6 +47,26 @@ class TestGanttChartInit:
         with pytest.raises(ValueError, match="Each task must be"):
             GanttChart(data=[[1, 2, 3]], labels=["A"])
 
+    def test_reversed_task_raises(self):
+        """A task whose end precedes its start raises a clear error."""
+        with pytest.raises(ValueError, match="end before start"):
+            GanttChart(data=[(8, 3)], labels=["backwards"])
+
+    def test_reversed_task_names_offender(self):
+        """The error names the offending task tuple."""
+        with pytest.raises(ValueError, match=r"\(8, 3\)"):
+            GanttChart(data=[(0, 5), (8, 3)], labels=["ok", "bad"])
+
+    def test_reversed_date_task_raises(self):
+        """Reversed date ranges are caught on the time axis too."""
+        with pytest.raises(ValueError, match="end before start"):
+            GanttChart(data=[("2026-03-01", "2026-01-01")], labels=["bad"])
+
+    def test_equal_start_end_allowed(self):
+        """A zero-length (start == end) task is still valid."""
+        chart = GanttChart(data=[(5, 5), (3, 8)], labels=["instant", "normal"])
+        assert chart.to_svg()
+
     def test_default_labels(self):
         """Auto-generated labels when none provided."""
         chart = GanttChart(
