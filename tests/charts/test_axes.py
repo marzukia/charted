@@ -58,14 +58,27 @@ class TestXAxisHappyPath:
         assert len(labels) > 0
 
     def test_thousands_separator(self):
-        """Large numeric tick labels are grouped with thousands separators."""
+        """Mid-range numeric tick labels are grouped with thousands separators.
+
+        Values at or above 1e6 switch to scientific notation, so this checks a
+        range whose ticks land in the grouped-but-not-extreme band.
+        """
         parent = MockParent()
-        data = [[0, 1000000]]
+        data = [[0, 500000]]
         axis = YAxis(parent=parent, data=data)
         texts = [label.text for label in axis.labels]
-        assert "1,000,000" in texts
+        assert "500,000" in texts
         # Small values stay ungrouped.
         assert not any("," in t and len(t.replace(",", "")) <= 3 for t in texts)
+
+    def test_extreme_magnitude_scientific_notation(self):
+        """Huge tick values render in scientific notation, not long grouped strings."""
+        parent = MockParent()
+        data = [[0, 1_000_000_000]]
+        axis = YAxis(parent=parent, data=data)
+        texts = [label.text for label in axis.labels]
+        assert "1e9" in texts
+        assert not any("," in t for t in texts)
 
 
 class TestYAxisHappyPath:

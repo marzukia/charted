@@ -45,6 +45,25 @@ class TestFormatValue:
         with pytest.raises(ValueError):
             format_value(1, "binary")
 
+    def test_extreme_magnitudes_use_scientific_notation(self):
+        # Huge numbers (>= 1e6) collapse to a compact exponent.
+        assert format_value(1_000_000_000, "number") == "1e9"
+        assert format_value(999_999_999, "number") == "1e9"
+        assert format_value(1_500_000_000, "number") == "1.5e9"
+        assert format_value(1_000_000, "number") == "1e6"
+        # Tiny non-zero decimals (< 1e-3) become sci-notation rather than 0.
+        assert format_value(0.0002, "number") == "2e-4"
+        assert format_value(0.00015, "number") == "1.5e-4"
+        # Prefix/suffix still wrap the result.
+        assert format_value(2e9, "number", prefix="~", suffix="x") == "~2e9x"
+
+    def test_normal_range_unchanged_by_sci_notation(self):
+        # Values between the thresholds keep grouped formatting unchanged.
+        assert format_value(999_999, "number") == "999,999"
+        assert format_value(0.001, "number") == "0"  # rounds at default precision
+        assert format_value(0, "number") == "0"
+        assert format_value(123_456, "number") == "123,456"
+
 
 class TestValueLabelsWiring:
     def test_column_value_labels_appear(self):
