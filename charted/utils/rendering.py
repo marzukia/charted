@@ -252,6 +252,7 @@ def create_legend(
     plot_right: float,
     top_padding: float,
     plot_height: float = 0,
+    draw_background: bool = True,
 ) -> G | None:
     """Create complete legend element.
 
@@ -318,18 +319,30 @@ def create_legend(
     # Create legend container
     legend = G()
 
-    # Add background (centered at y0)
-    legend.add_child(
-        create_legend_background(
-            x0,
-            y0_center,
-            legend_width,
-            legend_height,
-            legend_padding,
-            background_color=legend_bg,
-            stroke_color=stroke_color,
-        )
+    # The backdrop only earns its keep when the legend overlaps plotted data and
+    # needs the contrast. Draw it only when the legend box sits inside the plot
+    # rectangle; legends parked in a corner outside the data (radar, etc.) look
+    # cleaner without a box.
+    bg_left = x0 - legend_width * legend_padding / 2
+    bg_right = bg_left + legend_width * (1 + legend_padding)
+    inside_plot = (
+        bg_left >= plot_left
+        and bg_right <= plot_right
+        and bg_top_actual >= top_padding
+        and bg_bottom_actual <= top_padding + plot_height
     )
+    if inside_plot and draw_background:
+        legend.add_child(
+            create_legend_background(
+                x0,
+                y0_center,
+                legend_width,
+                legend_height,
+                legend_padding,
+                background_color=legend_bg,
+                stroke_color=stroke_color,
+            )
+        )
 
     # Add entries (vertically centered in background)
     # Row gap only between entries, not after the last one
