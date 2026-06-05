@@ -219,7 +219,12 @@ class BarChart(Chart):
                 )
                 bars_g.add_child(Path(d=paths, fill=draw_fill, **outline))
         else:
-            zero_x = self.x_axis.zero
+            # Anchor the bars at the zero line, but clamp it into the plot. When
+            # the data is all-negative (or all-positive), zero falls outside the
+            # domain and reproject(0) lands beyond the plot edge, so bars would
+            # hang off the frame. Clamping to [0, plot_width] anchors them at the
+            # near edge (the domain max for all-negative data) instead.
+            zero_x = max(0.0, min(self.x_axis.zero, self.plot_width))
             for series_idx, (x_values_series, color) in enumerate(
                 zip(self.x_values, self.colors)
             ):

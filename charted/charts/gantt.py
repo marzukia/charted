@@ -30,6 +30,26 @@ def _is_time_value(value: object) -> bool:
     return isinstance(value, (date, datetime, str))
 
 
+def _end_before_start(start: TimeValue, end: TimeValue) -> bool:
+    """True when a task's end falls strictly before its start.
+
+    Handles both the numeric axis (plain ``<``) and the date/time axis by
+    comparing epoch seconds. Mixed or unparseable values are treated as
+    "not reversed" so the existing axis machinery raises its own error.
+    """
+    if _is_time_value(start) or _is_time_value(end):
+        from charted.charts.scales import _to_epoch
+
+        try:
+            return _to_epoch(end) < _to_epoch(start)
+        except Exception:
+            return False
+    try:
+        return cast(float, end) < cast(float, start)
+    except TypeError:
+        return False
+
+
 class GanttChart(Chart):
     """Gantt chart for scheduling and project timeline visualization.
 
@@ -114,6 +134,12 @@ class GanttChart(Chart):
             for task in series:
                 if not isinstance(task, tuple) or len(task) != 2:
                     raise ValueError("Each task must be a (start, end) tuple.")
+                start, end = task
+                if _end_before_start(start, end):
+                    raise ValueError(
+                        f"Task {task!r} has end before start; "
+                        "a task's end must not be before its start."
+                    )
 
         self._raw_data = flat_data
         self._num_series = len(flat_data)

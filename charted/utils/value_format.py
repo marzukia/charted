@@ -14,7 +14,45 @@ on its own.
 
 from __future__ import annotations
 
+import math
+
 VALID_FORMATS = ("number", "percent", "currency")
+
+# Magnitude thresholds for switching to scientific notation. Values at or above
+# the large threshold (e.g. 1,000,000,000) or below the small threshold and
+# non-zero (e.g. 0.0002) become unwieldy as grouped decimals: huge numbers
+# collide on dense axes, tiny ones round to "0". Anything between the two
+# thresholds keeps the historical grouped-decimal formatting byte-for-byte.
+_SCI_LARGE = 1e6
+_SCI_SMALL = 1e-3
+
+
+def _to_scientific(value: float) -> str:
+    """Render ``value`` in compact scientific notation, e.g. ``1.5e9``.
+
+    The mantissa is rounded to two decimals and trailing zeros are trimmed, so
+    round magnitudes collapse to a bare ``1e9`` / ``2e-4`` rather than
+    ``1.00e9``. A mantissa that rounds up to 10 carries into the exponent so
+    ``999999999`` formats as ``1e9`` rather than ``10e8``.
+    """
+    if value == 0:
+        return "0"
+    negative = value < 0
+    magnitude = abs(value)
+    exponent = math.floor(math.log10(magnitude))
+    mantissa = round(magnitude / (10**exponent), 2)
+    if mantissa >= 10:
+        mantissa /= 10
+        exponent += 1
+    mantissa_str = f"{mantissa:.2f}".rstrip("0").rstrip(".")
+    out = f"{mantissa_str}e{exponent}"
+    return f"-{out}" if negative else out
+
+
+def _is_extreme_magnitude(value: float) -> bool:
+    """True when ``value`` is large or small enough to warrant sci-notation."""
+    magnitude = abs(value)
+    return magnitude != 0 and (magnitude >= _SCI_LARGE or magnitude < _SCI_SMALL)
 
 
 def _group(int_part: str, sep: str) -> str:
@@ -71,6 +109,15 @@ def format_value(
         num = float(value)
     except (TypeError, ValueError):
         return str(value)
+
+    # Switch extreme magnitudes to scientific notation for the plain number
+    # format (axis ticks and on-element value labels). Currency and percent
+    # keep their grouped formatting: a percentage is already a small,
+    # human-scale number after scaling, and currency rarely wants an exponent.
+    # Normal-range numbers fall through untouched so existing baselines stay
+    # byte-identical.
+    if fmt == "number" and _is_extreme_magnitude(num):
+        return f"{prefix}{_to_scientific(num)}{suffix}"
 
     scaled = num * 100 if (fmt == "percent" and percent_scale) else num
 

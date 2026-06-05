@@ -47,6 +47,26 @@ class TestGanttChartInit:
         with pytest.raises(ValueError, match="Each task must be"):
             GanttChart(data=[[1, 2, 3]], labels=["A"])
 
+    def test_reversed_task_raises(self):
+        """A task whose end precedes its start raises a clear error."""
+        with pytest.raises(ValueError, match="end before start"):
+            GanttChart(data=[(8, 3)], labels=["backwards"])
+
+    def test_reversed_task_names_offender(self):
+        """The error names the offending task tuple."""
+        with pytest.raises(ValueError, match=r"\(8, 3\)"):
+            GanttChart(data=[(0, 5), (8, 3)], labels=["ok", "bad"])
+
+    def test_reversed_date_task_raises(self):
+        """Reversed date ranges are caught on the time axis too."""
+        with pytest.raises(ValueError, match="end before start"):
+            GanttChart(data=[("2026-03-01", "2026-01-01")], labels=["bad"])
+
+    def test_equal_start_end_allowed(self):
+        """A zero-length (start == end) task is still valid."""
+        chart = GanttChart(data=[(5, 5), (3, 8)], labels=["instant", "normal"])
+        assert chart.to_svg()
+
     def test_default_labels(self):
         """Auto-generated labels when none provided."""
         chart = GanttChart(
@@ -97,7 +117,7 @@ class TestGanttChartRendering:
         svg = chart.svg
         # Orthogonal dashed connector lines plus a filled triangular arrowhead
         # (closed path, "Z") render for each dependency.
-        assert "stroke-dasharray=\"5,3\"" in svg
+        assert 'stroke-dasharray="5,3"' in svg
         assert "Z" in svg
 
     def test_today_line(self):
@@ -251,3 +271,31 @@ class TestGanttChartLayout:
         assert chart._get_end_for_task(0) == 3
         assert chart._get_start_for_task(2) == 2
         assert chart._get_end_for_task(3) == 8
+
+
+class TestGanttLongLabels:
+    """Long task labels wrap and keep the plot area sane."""
+
+    LONG = [
+        "An extremely long gantt task label that goes on and on for many chars yes",
+        "Short task",
+        "Another quite long task description label here that overflows the gutter",
+    ]
+
+    def test_long_labels_bound_left_gutter(self):
+        chart = GanttChart(
+            data=[(0, 5), (2, 8), (4, 10)], labels=self.LONG, width=700, height=400
+        )
+        # The wrapped labels keep the gutter under half the chart width.
+        assert chart.left_padding < chart.width / 2
+        assert chart.plot_width > chart.width * 0.4
+
+    def test_long_labels_wrap(self):
+        chart = GanttChart(
+            data=[(0, 5), (2, 8), (4, 10)], labels=self.LONG, width=700, height=400
+        )
+        assert "<tspan" in chart.svg
+
+    def test_short_labels_unchanged(self):
+        chart = GanttChart(data=[(0, 5), (2, 8)], labels=["A", "B"], width=700)
+        assert "<tspan" not in chart.svg

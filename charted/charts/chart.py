@@ -440,6 +440,12 @@ class Chart(
             scale=y_scale_inst,
         )
 
+        # Bound long category labels (wrap y-axis / truncate x-axis) before any
+        # data points are projected. This caps the label gutter so the plot area
+        # cannot be pushed off-canvas, and must run *before* the value
+        # projections below because those depend on plot_width / plot_height,
+        # which change once the bounded labels shrink the padding.
+        self._apply_category_label_wrapping()
 
         # Initialize internal offsets and values directly (properties are read-only)
         # For ordinal charts (no x_data), generate default x-values [0, 1, 2, ...]
@@ -538,38 +544,79 @@ class Chart(
         # file output (to_svg/save); toggled on only by to_html(tooltips=True).
         self._tooltips = False
 
-        # Wrap long category (y-axis) labels onto multiple lines so the label
-        # gutter stays bounded instead of consuming the plot. No-op unless
-        # category_label_max_width was set and a label actually overflows.
-        self._apply_category_label_wrapping()
-
         self._build_children()
 
     def _apply_category_label_wrapping(self) -> None:
-        """Wrap y-axis category labels to ``category_label_max_width``.
+        """Bound the size of long category labels so they cannot eat the plot.
 
-        Replaces the measured y-axis labels (used for left-padding) and the
-        y-axis' own render labels with wrapped MeasuredText so the full text is
-        shown across multiple lines instead of truncated or allowed to expand
-        the gutter without bound. Does nothing when no cap is set, there are no
-        y-axis labels, or nothing overflows.
+        Y-axis category labels (horizontal bar charts) are *wrapped* onto
+        multiple lines, capping the left gutter while preserving the full text.
+        X-axis category labels (column/gantt charts) are single-line and rotate
+        to fit, so they are *truncated* with an ellipsis instead; this caps the
+        rotated label band so it cannot push the plot area off-canvas.
+
+        An explicit ``category_label_max_width`` controls the cap directly. When
+        none is given, a sane default derived from the chart size is applied so
+        a single 60-80 character label degrades gracefully by default. Short
+        labels that already fit are left byte-for-byte unchanged.
         """
-        cap = self._category_label_max_width
-        if cap is None or not self.data_model.y_labels:
-            return
+        explicit = self._category_label_max_width
+        changed = False
 
-        from charted.utils.helpers import wrap_text_to_width
+        # Wrap y-axis categories (cap the left gutter). Default cap: a third of
+        # the chart width, so the gutter never dominates the plot.
+        if self.data_model.y_labels:
+            cap = explicit if explicit is not None else self.width / 3.0
+            if cap > 0:
+                from charted.utils.helpers import wrap_text_to_width
 
-        wrapped = [
-            wrap_text_to_width(label.text, cap) for label in self.data_model.y_labels
-        ]
-        if not any(w.lines for w in wrapped):
-            return
+                wrapped = [
+                    wrap_text_to_width(label.text, cap)
+                    for label in self.data_model.y_labels
+                ]
+                if any(w.lines for w in wrapped):
+                    self.data_model._y_labels = wrapped
+                    self.layout.y_labels = wrapped
+                    if getattr(self, "y_axis", None) is not None:
+                        self.y_axis._labels = wrapped
+                    changed = True
 
-        self.data_model._y_labels = wrapped
-        self.layout.y_labels = wrapped
-        if getattr(self, "y_axis", None) is not None:
-            self.y_axis._labels = wrapped
+        # Truncate x-axis categories (cap the rotated label band). Default cap:
+        # 45% of the chart height, which keeps the worst-case rotated diagonal
+        # comfortably inside the canvas. Only ordinal category labels are
+        # touched (no explicit numeric x_data), so value-axis ticks are safe.
+        if (
+            self.data_model.x_labels
+            and not self.data_model.x_data
+            and getattr(self, "x_axis", None) is not None
+        ):
+            x_cap = explicit if explicit is not None else self.height * 0.45
+            if x_cap > 0:
+                from charted.utils.helpers import truncate_text_to_width
+
+                truncated = [
+                    truncate_text_to_width(label.text, x_cap)
+                    for label in self.data_model.x_labels
+                ]
+                if any(
+                    t.text != orig.text
+                    for t, orig in zip(truncated, self.data_model.x_labels)
+                ):
+                    self.data_model._x_labels = truncated
+                    self.layout.x_labels = truncated
+                    self.x_axis._labels = truncated
+                    changed = True
+
+        # Bounding a label changes the padding and therefore the plot geometry.
+        # Both axes built their grid lines and tick labels eagerly at
+        # construction (from the pre-bounding geometry), so rebuild both so the
+        # rendered children reflect the corrected plot_width / plot_height, not
+        # just the axis whose own labels were rewritten.
+        if changed:
+            if getattr(self, "y_axis", None) is not None:
+                self.y_axis.rebuild()
+            if getattr(self, "x_axis", None) is not None:
+                self.x_axis.rebuild()
 
     def _build_children(self) -> None:
         """Assemble the chart's SVG child elements.
