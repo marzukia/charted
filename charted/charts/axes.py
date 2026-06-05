@@ -211,6 +211,54 @@ class Axis(G):
 
         return AxisDimension(min_value, max_value, count)
 
+    # The largest number of gridline/tick entries the value axis will build for
+    # a denominator before we reject it as too fine and fall back to a
+    # nice-number step. The downstream halving loops thin this to <=10, so the
+    # cap only needs to stay well clear of the pathological millions-of-ticks
+    # region. ~50 is comfortably above any real layout and bounds memory.
+    _MAX_RAW_TICKS = 50
+    _TARGET_TICKS = 10
+
+    @classmethod
+    def _grid_step(
+        cls, value_range: float, denominators: Vector
+    ) -> float:
+        """Pick a tick step that does not explode the gridline list.
+
+        ``calculate_axis_values`` historically walked the common divisors of the
+        two endpoint magnitudes (largest first) and used the first step whose
+        list had more than 5 entries. For mismatched magnitudes (e.g. domain
+        (-1.0, 1e9)) the only common divisor is 1, which forces ~1e9 entries and
+        a MemoryError. When the finest available divisor would still produce
+        more than ``_MAX_RAW_TICKS`` entries, fall back to a clean ("nice")
+        number step computed from ``value_range / _TARGET_TICKS`` instead.
+        """
+        chosen: float | None = None
+        for denominator in reversed(denominators):
+            if denominator <= 0:
+                continue
+            if int(value_range / denominator) + 1 > 5:
+                chosen = denominator
+                break
+            chosen = denominator
+        if chosen is None or int(value_range / chosen) > cls._MAX_RAW_TICKS:
+            if value_range > 0:
+                nice = round_to_clean_number(value_range / cls._TARGET_TICKS)
+                if nice > 0:
+                    return nice
+            # Degenerate domain (no usable divisor and no range): a single tick.
+            return chosen if chosen is not None else 1.0
+        return chosen
+
+    @classmethod
+    def _grid_values(
+        cls, min_value: float, value_range: float, denominators: Vector
+    ) -> list[float]:
+        """Build the descending gridline-value list with a bounded tick step."""
+        step = cls._grid_step(value_range, denominators)
+        count = int(value_range / step)
+        return [min_value + (i * step) for i in reversed(range(count + 1))]
+
     @classmethod
     def calculate_axis_values(
         cls,
@@ -253,15 +301,9 @@ class Axis(G):
         if max_value > 0 and max_value < 1:
             max_value = 1
 
-        # Generate all potential grid line positions (full range)
-        all_values = []
-        for denominator in reversed(denominators):
-            count = int(value_range / denominator)
-            all_values = [
-                min_value + (i * denominator) for i in reversed(range(count + 1))
-            ]
-            if len(all_values) > 5:
-                break
+        # Generate all potential grid line positions (full range), with a tick
+        # step bounded so a mismatched-magnitude domain cannot explode the list.
+        all_values = cls._grid_values(min_value, value_range, denominators)
 
         # Preserve original axis range for grid lines
         original_min = all_values[-1]
@@ -380,20 +422,16 @@ class Axis(G):
                 zero_index=axis_values.zero_index,
             )
         )
-        # Store grid line values separately (full range, not filtered)
+        # Store grid line values separately (full range, not filtered). Reuse
+        # the same bounded-step helper as calculate_axis_values so a
+        # mismatched-magnitude domain cannot explode this list either.
         all_denominators = common_denominators(
             self.axis_dimension.min_value, self.axis_dimension.max_value
         )
         value_range = self.axis_dimension.max_value - self.axis_dimension.min_value
-        self._grid_line_values = []
-        for denominator in reversed(all_denominators):
-            count = int(value_range / denominator)
-            self._grid_line_values = [
-                self.axis_dimension.min_value + (i * denominator)
-                for i in reversed(range(count + 1))
-            ]
-            if len(self._grid_line_values) > 5:
-                break
+        self._grid_line_values = self._grid_values(
+            self.axis_dimension.min_value, value_range, all_denominators
+        )
         # Reduce grid lines if too many
         while len(self._grid_line_values) > 10 and 0 not in self._grid_line_values:
             self._grid_line_values = [
@@ -566,6 +604,47 @@ class XAxis(Axis):
         # Minor lines first so the heavier major lines render on top.
         return G().add_children(minor_path, major_path)
 
+    @staticmethod
+    def _non_overlapping_indices(
+        coordinates: list[float],
+        labels: list[MeasuredText],
+        dx: float,
+    ) -> set[int]:
+        """Pick label indices whose centred boxes do not overlap their neighbour.
+
+        Walks the labels in left-to-right order and keeps an index only when its
+        centred box clears the previously kept label's box. The first and last
+        labels are always retained: if the final label collides with the last
+        kept middle label, that middle one is dropped instead so the axis range
+        stays labelled. Rotated axes are not centred this way, so callers only
+        rely on this for the horizontal case; it is a no-op when nothing
+        collides, leaving fitting axes byte-for-byte unchanged.
+        """
+        n = len(labels)
+        if n <= 1:
+            return set(range(n))
+        order = sorted(range(n), key=lambda i: coordinates[i])
+
+        def box(i: int) -> tuple[float, float]:
+            centre = coordinates[i] + dx
+            half = labels[i].width / 2
+            return centre - half, centre + half
+
+        kept: list[int] = [order[0]]
+        last_right = box(order[0])[1]
+        for i in order[1:-1]:
+            left, right = box(i)
+            if left >= last_right - 1.0:
+                kept.append(i)
+                last_right = right
+        if len(order) > 1:
+            last = order[-1]
+            left, right = box(last)
+            while len(kept) > 1 and box(kept[-1])[1] > left + 1.0:
+                kept.pop()
+            kept.append(last)
+        return set(kept)
+
     @property
     def axis_labels(self) -> G:
         theme = getattr(self.parent, "theme", None)
@@ -604,10 +683,24 @@ class XAxis(Axis):
         # middle so labels stop overlapping into a smear.
         stride = self._label_stride(len(all_labels))
         last_index = len(all_labels) - 1
+        # Width-aware overlap pass. Value-axis numeric labels (e.g. a
+        # mismatched-magnitude domain like (-4e8, 1e9)) are not ordinal, so the
+        # count-based stride leaves them all in place even when adjacent wide
+        # labels collide. Drop the indices whose centred box would overlap the
+        # previous kept label; this only ever removes labels, so an axis whose
+        # labels already fit keeps every one and renders byte-for-byte the same.
+        # The centred-box overlap model only describes horizontal labels; rotated
+        # labels pivot off their tick and are handled by the rotation angle, so
+        # only drop overlaps when the axis is not rotated.
+        keep: set[int] | None = None
+        if rotation_angle <= 0:
+            keep = self._non_overlapping_indices(coordinates, all_labels, dx)
         left_pad = self.parent.left_padding
         chart_width = getattr(self.parent, "width", None)
         for index, (x, label) in enumerate(zip(coordinates, all_labels)):
             if stride > 1 and index not in (0, last_index) and index % stride != 0:
+                continue
+            if keep is not None and index not in keep:
                 continue
             x = x + dx
             if rotation_angle > 0:
