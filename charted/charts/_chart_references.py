@@ -14,6 +14,7 @@ from charted.html.element import G, Text
 if TYPE_CHECKING:
     from charted.charts.chart import Chart, _Annotation
     from charted.themes.core import Theme
+    from charted.utils.layout_engine import LayoutEngine
     from charted.utils.types import ReferenceLineDict
 
 
@@ -36,6 +37,7 @@ class ChartReferenceLayerMixin:
         _y_label: str | None
         _height: float
         theme: Theme
+        layout: LayoutEngine
 
         @property
         def left_padding(self) -> float: ...
@@ -216,9 +218,16 @@ class ChartReferenceLayerMixin:
             )
 
         if self._y_label:
-            # Centered along the y-axis, rotated -90 degrees
-            # Position outside (to the left of) the tick labels
-            x = font_size
+            # Centered along the y-axis, rotated -90 degrees, and tucked just
+            # left of the tick labels rather than pinned to the canvas edge. The
+            # tick labels are right-anchored ending at left_padding - 6, so a
+            # wide gutter (big numbers) would otherwise leave the title floating
+            # far away from the axis.
+            tick_w = max(
+                (label.width for label in self.layout.y_labels), default=0.0
+            )
+            ticks_left = self.left_padding - 6 - tick_w
+            x = max(font_size, ticks_left - font_size)
             y = self.top_padding + self.plot_height / 2
             elements.append(
                 Text(
