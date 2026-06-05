@@ -83,3 +83,61 @@ class TestColumnChartSadPath:
         html = chart.html
         assert "svg" in html.lower()
         assert "NaN" not in html
+
+
+class TestColumnLongCategoryLabels:
+    """Long x-axis category labels degrade gracefully (truncate) by default."""
+
+    LONG = [
+        "This is an extremely long category label that goes on and on for many chars",
+        "Another quite long category label that should overflow the gutter badly here",
+        "Short",
+    ]
+
+    def test_long_labels_do_not_collapse_plot(self):
+        # Without bounding, long rotated x-labels inflate bottom padding until
+        # the plot height goes negative. The default cap must keep it positive.
+        chart = ColumnChart(data=[10, 20, 15], labels=self.LONG, width=600, height=400)
+        assert chart.plot_height > chart.height * 0.5
+
+    def test_long_labels_truncated_with_ellipsis(self):
+        chart = ColumnChart(data=[10, 20, 15], labels=self.LONG, width=600, height=400)
+        rendered = [label.text for label in chart.x_axis.labels]
+        assert any("…" in text for text in rendered)
+        # The short label is untouched.
+        assert "Short" in rendered
+
+    def test_short_labels_unchanged(self):
+        chart = ColumnChart(data=[1, 2, 3], labels=["a", "b", "c"])
+        rendered = [label.text for label in chart.x_axis.labels if label.text.strip()]
+        assert rendered == ["a", "b", "c"]
+
+    def test_edge_label_stays_in_viewbox(self):
+        # The leftmost category label is centred on the first column; a wide one
+        # must be clamped so it does not spill off the left of the canvas.
+        chart = ColumnChart(data=[10, 20, 15], labels=self.LONG, width=600, height=400)
+        import re
+        import xml.etree.ElementTree as ET
+
+        root = ET.fromstring(chart.svg)
+        vb = [
+            float(x) for x in re.split(r"[\s,]+", (root.get("viewBox") or "").strip())
+        ]
+        width = vb[2]
+        ns = "{http://www.w3.org/2000/svg}"
+        # Find the x-axis label group (translated by left_padding) and check that
+        # no label's anchor lands left of the canvas.
+        for g in root.iter(f"{ns}g"):
+            tf = g.get("transform") or ""
+            m = re.match(r"translate\(\s*([\d.]+)", tf)
+            if not m:
+                continue
+            gx = float(m.group(1))
+            for text in g.findall(f"{ns}text"):
+                tx = float(text.get("x", 0))
+                inner = text.get("transform") or ""
+                shift_m = re.search(r"translate\(\s*(-?[\d.]+)", inner)
+                shift = float(shift_m.group(1)) if shift_m else 0.0
+                abs_x = gx + tx + shift
+                assert abs_x >= -0.5, f"label anchor {abs_x} off the left edge"
+                assert abs_x <= width + 0.5

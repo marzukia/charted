@@ -124,6 +124,15 @@ class ColumnChart(Chart):
         return True
 
     @property
+    def _value_label_baseline_shift(self) -> float:
+        # Mirror the vertical shift applied to the representation group so value
+        # labels map to the correct absolute viewBox y. When the data dips below
+        # zero, the group is translated up by reproject(abs(min_value)).
+        if self.y_axis.axis_dimension.min_value < 0:
+            return self.y_axis.reproject(abs(self.y_axis.axis_dimension.min_value))
+        return 0.0
+
+    @property
     def representation(self) -> G:
         dy: float = 0
         if self.y_axis.axis_dimension.min_value < 0:

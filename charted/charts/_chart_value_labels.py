@@ -46,6 +46,12 @@ class ChartValueLabelMixin:
         def plot_height(self) -> float: ...
 
         @property
+        def top_padding(self) -> float: ...
+
+        @property
+        def height(self) -> float: ...
+
+        @property
         def y_data(self) -> Vector2D: ...
 
         @property
@@ -136,6 +142,89 @@ class ChartValueLabelMixin:
     def _data_labels_use_contrast(self) -> bool:
         return False
 
+    @property
+    def _value_label_baseline_shift(self) -> float:
+        """Local-y pixels between the value-axis zero line and ``plot`` bottom.
+
+        Data labels render inside the chart ``representation`` group, which
+        bar/column charts shift up by ``reproject(abs(min_value))`` so the zero
+        line sits above the plot floor when there are negative values. The
+        value-label placement needs that shift to map a local ``ty`` to an
+        absolute viewBox coordinate. Charts without such a shift (scatter,
+        bubble, line) leave it at zero.
+        """
+        return 0.0
+
+    def _local_to_abs_y(self, ty: float) -> float:
+        """Map a local label ``ty`` to its absolute viewBox y.
+
+        Data labels render in the chart ``representation`` group. Its base
+        transform maps local ``(x, y)`` to absolute
+        ``(left_padding + x, top_padding + plot_height - y)``; bar/column charts
+        additionally shift the group up by ``_value_label_baseline_shift`` when
+        the data goes negative. Larger ``ty`` is higher on screen, so a larger
+        ``ty`` yields a smaller absolute y.
+        """
+        return (
+            self.top_padding
+            + self.plot_height
+            - (ty + self._value_label_baseline_shift)
+        )
+
+    def _clamp_value_label_y(self, ty: float, font_size: float) -> float:
+        """Clamp local ``ty`` so the label's text box stays inside the viewBox.
+
+        cairosvg PNG export ignores the viewBox, but inline SVG in a browser
+        clips to it, so a label that looks fine in a PNG can vanish inline. This
+        keeps the whole glyph box within ``[0, height]`` for both renderers.
+        """
+        half = font_size / 2 + 1.0
+        abs_y = self._local_to_abs_y(ty)
+        top = half
+        bottom = self.height - half
+        if abs_y < top:
+            abs_y = top
+        elif abs_y > bottom:
+            abs_y = bottom
+        else:
+            return ty
+        # Invert the mapping to recover the clamped local ty.
+        return (
+            self.top_padding
+            + self.plot_height
+            - self._value_label_baseline_shift
+            - abs_y
+        )
+
+    def _place_bar_value_label(
+        self, y: float, value: float, font_size: float, label_offset: float
+    ) -> tuple[float, bool]:
+        """Choose the local ``ty`` for a bar/column value label.
+
+        Returns ``(ty, inside)`` where ``inside`` is True when the label had to
+        be placed inside the bar to avoid clipping the viewBox. The default is
+        the conventional just-outside placement: above a positive bar's top,
+        below a negative bar's bottom. Centring on the bar is handled by the
+        caller's ``x``.
+        """
+        half = font_size / 2 + 1.0
+        if value >= 0:
+            outside = y + label_offset  # above the bar top
+            inside = y - label_offset  # just under the bar top, within the bar
+            # "outside" is higher on screen -> smaller absolute y. If its box
+            # would clip the top edge, fall back inside the bar.
+            if self._local_to_abs_y(outside) - half < 0:
+                return inside, True
+            return outside, False
+        else:
+            outside = y - label_offset  # below the bar bottom
+            inside = y + label_offset  # just above the bar bottom, within the bar
+            # "outside" is lower on screen -> larger absolute y. If its box would
+            # clip the bottom edge, fall back inside the bar.
+            if self._local_to_abs_y(outside) + half > self.height:
+                return inside, True
+            return outside, False
+
     def _render_data_labels(self) -> G | None:
         """Render data labels on data points.
 
@@ -188,32 +277,48 @@ class ChartValueLabelMixin:
                 x = x_vals[i] + self.x_offset + self._data_label_x_offset
                 y = self._apply_stacking(y_vals[i], y_offs[i])
                 label_offset = font_size + 4
-                if y_vals[i] < 0:
-                    ty = y + label_offset + font_size
-                else:
-                    ty = y - label_offset
                 anchor = "middle"
-                # Clamp labels that would go off-chart vertically
-                if ty < font_size:
-                    ty = y + label_offset + font_size
-                if ty > self.plot_height - font_size:
-                    ty = y - label_offset
-                # Detect if label is inside the bar/column area
-                inside = self._data_labels_use_contrast and (
-                    (y_vals[i] >= 0 and 0 < ty < y) or (y_vals[i] < 0 and y < ty < 0)
-                )
-                # Nudge label away from grid lines for breathing room
-                grid_margin = font_size * 0.6
-                if hasattr(self, "y_axis"):
-                    for tick_y in self.y_axis.coordinates:
-                        if abs(ty - tick_y) < grid_margin:
-                            ty = (
-                                tick_y - grid_margin
-                                if ty > tick_y
-                                else tick_y + grid_margin
-                            )
-                            break
-                # Use contrast-aware color when label is inside a colored area
+
+                if self._data_labels_use_contrast:
+                    # Bar/column charts: prefer the conventional just-outside-the
+                    # -bar placement (above a positive bar's top, below a
+                    # negative bar's bottom). Only drop the label inside the bar
+                    # when placing it outside would push it past the viewBox edge
+                    # (e.g. the tallest bar pinned to the top of the plot).
+                    ty, inside = self._place_bar_value_label(
+                        y, y_vals[i], font_size, label_offset
+                    )
+                else:
+                    # Point charts (scatter/bubble/line): label sits above the
+                    # point, flipping below only when that would clip the top.
+                    if y_vals[i] < 0:
+                        ty = y + label_offset + font_size
+                    else:
+                        ty = y - label_offset
+                    inside = False
+                    # Nudge away from grid lines for breathing room. Bar charts
+                    # skip this: the just-outside placement already clears the
+                    # bar edge and a nudge would reopen the clipping it avoids.
+                    grid_margin = font_size * 0.6
+                    if hasattr(self, "y_axis"):
+                        for tick_y in self.y_axis.coordinates:
+                            if abs(ty - tick_y) < grid_margin:
+                                ty = (
+                                    tick_y - grid_margin
+                                    if ty > tick_y
+                                    else tick_y + grid_margin
+                                )
+                                break
+
+                # Final guard: clamp the local ty so the label's text box stays
+                # inside the viewBox even after the baseline shift, so inline SVG
+                # (which clips to the viewBox, unlike cairosvg PNG export) never
+                # drops a label.
+                ty = self._clamp_value_label_y(ty, font_size)
+
+                # Outside-bar labels read against the chart background, so use the
+                # background-contrasting data-label colour (white on dark themes).
+                # Inside-bar labels read against the bar fill, so contrast that.
                 fill = font_color
                 if inside and series_color:
                     fill = get_contrast_color(series_color)
