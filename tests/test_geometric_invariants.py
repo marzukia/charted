@@ -721,23 +721,18 @@ def test_scatter_all_negative_axis_in_frame() -> None:
     _assert_in_frame(svg)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "CLEAN-FAILURE BUG: an empty-string axis label crashes the rotated "
-        "x-axis with an uncaught ZeroDivisionError instead of rendering or "
-        "raising a charted error. axes.py:608 computes "
-        "'label.width / len(label.text)' which divides by len('')==0 once the "
-        "axis is dense enough to rotate labels. Repro: "
-        "ColumnChart([5.0]*20, labels=['abcdef']*10 + ['']*10, width=500, "
-        "height=500). Affects ColumnChart and LineChart (rotated bottom axis); "
-        "BarChart (horizontal) is unaffected."
-    ),
-    raises=ZeroDivisionError,
-)
-def test_known_bug_empty_label_zero_division() -> None:
+def test_empty_label_does_not_crash_rotated_axis() -> None:
+    """Regression: an empty-string axis label no longer crashes a rotated axis.
+
+    A dense ordinal axis rotates its labels and shifted each one left by
+    ``label.width / len(label.text)``. An empty label made that ``len('')==0``,
+    raising an uncaught ZeroDivisionError. The shift is now guarded (an empty
+    label has zero width and nothing to shift). Repro: ColumnChart with a mix
+    of populated and empty labels dense enough to trigger rotation.
+    """
     labels = ["abcdef"] * 10 + [""] * 10
-    ColumnChart([5.0] * 20, labels=labels, width=500, height=500).to_svg()
+    svg = str(ColumnChart([5.0] * 20, labels=labels, width=500, height=500).to_svg())
+    _assert_well_formed(svg)
 
 
 def _text_in_frame_violations(svg: str, tol: float = 1.0) -> list[str]:

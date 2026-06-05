@@ -704,8 +704,13 @@ class XAxis(Axis):
                 continue
             x = x + dx
             if rotation_angle > 0:
+                # Shift the rotated label left by roughly one character width so
+                # it pivots from its right edge. An empty label has no
+                # characters (and zero width), so there is nothing to shift:
+                # guard the division to avoid a ZeroDivisionError on len('').
+                char_shift = label.width / len(label.text) if label.text else 0.0
                 transformations = [
-                    translate(label.width / len(label.text) * -1, 0),
+                    translate(char_shift * -1, 0),
                     rotate(rotation_angle, x, y),
                 ]
             else:
