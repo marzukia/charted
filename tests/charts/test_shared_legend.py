@@ -118,14 +118,16 @@ class TestPieLegend:
 
     def test_pie_single_box_skips_split_legend(self):
         """With a placement legend, the dual-column split box is not drawn."""
-        split = PieChart(data=[25, 35, 40], labels=["A", "B", "C"])
-        single = PieChart(
-            data=[25, 35, 40], labels=["A", "B", "C"], legend="right"
-        )
-        # The legacy split legend lives inside representation() and draws
-        # column-background rects (with rounded rx=3 corners). The shared box
+        # A dense pie overspills (the tiny slices can't be labelled on-chart),
+        # so the default no-placement case draws the legacy split legend; the
+        # placement legend moves it out of representation entirely.
+        labels = [f"Cat {i}" for i in range(12)]
+        data = [30, 20, 15, 10, 8, 5, 4, 3, 2, 1, 1, 1]
+        split = PieChart(data=data, labels=labels)
+        single = PieChart(data=data, labels=labels, legend="right")
+        # The legacy split legend lives inside representation(); the shared box
         # moves the legend out of representation entirely.
         assert split.representation.html.lower().count("<rect") > 0
         assert single.representation.html.lower().count("<rect") == 0
         # The single shared box draws exactly one swatch per slice.
-        assert single.legend.html.lower().count("<rect") == 3
+        assert single.legend.html.lower().count("<rect") == 12
