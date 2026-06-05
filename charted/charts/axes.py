@@ -605,30 +605,77 @@ class XAxis(Axis):
         return G().add_children(minor_path, major_path)
 
     @staticmethod
+    def _rotated_x_span(
+        coordinate: float,
+        label: MeasuredText,
+        rotation_angle: float,
+    ) -> tuple[float, float]:
+        """Return a rotated label's projected ``(left, right)`` x-extent.
+
+        Rotated tick labels pivot about their tick at ``(coordinate, plot_height)``
+        and are shifted left by one character width first (so they pivot off the
+        right edge), exactly as :attr:`axis_labels` renders them. The box grows
+        upward from the baseline by the label height. Projecting the four rotated
+        corners onto the x axis gives the horizontal footprint the next label has
+        to clear. This mirrors the absolute geometry the geometric-invariant tests
+        recompute from the rendered SVG, so the drop decision matches what is
+        actually painted.
+        """
+        char_shift = label.width / len(label.text) if label.text else 0.0
+        # Box corners in the rotation pivot's frame (pivot at x=0). The text is
+        # start-anchored at ``-char_shift`` and the baseline sits at the pivot, so
+        # the box rises to ``-height``.
+        left_x = -char_shift
+        right_x = -char_shift + label.width
+        top_y = -label.height
+        bottom_y = 0.0
+        rad = math.radians(rotation_angle)
+        cos, sin = math.cos(rad), math.sin(rad)
+        # SVG rotate maps (px, py) -> (px*cos - py*sin, ...); we only need the
+        # x component to bound the horizontal footprint.
+        xs = [
+            px * cos - py * sin
+            for px in (left_x, right_x)
+            for py in (top_y, bottom_y)
+        ]
+        return coordinate + min(xs), coordinate + max(xs)
+
+    @classmethod
     def _non_overlapping_indices(
+        cls,
         coordinates: list[float],
         labels: list[MeasuredText],
         dx: float,
+        rotation_angle: float = 0.0,
     ) -> set[int]:
-        """Pick label indices whose centred boxes do not overlap their neighbour.
+        """Pick label indices whose boxes do not overlap their kept neighbour.
 
         Walks the labels in left-to-right order and keeps an index only when its
-        centred box clears the previously kept label's box. The first and last
-        labels are always retained: if the final label collides with the last
+        x-footprint clears the previously kept label's. For an unrotated axis the
+        footprint is the centred label box; for a rotated axis it is the rotated
+        label's projected x-extent (see :meth:`_rotated_x_span`). The first and
+        last labels are always retained: if the final label collides with the last
         kept middle label, that middle one is dropped instead so the axis range
-        stays labelled. Rotated axes are not centred this way, so callers only
-        rely on this for the horizontal case; it is a no-op when nothing
-        collides, leaving fitting axes byte-for-byte unchanged.
+        stays labelled. The pass only ever removes labels, so an axis whose labels
+        already fit keeps every one and renders byte-for-byte the same.
         """
         n = len(labels)
         if n <= 1:
             return set(range(n))
         order = sorted(range(n), key=lambda i: coordinates[i])
 
-        def box(i: int) -> tuple[float, float]:
-            centre = coordinates[i] + dx
-            half = labels[i].width / 2
-            return centre - half, centre + half
+        if rotation_angle > 0:
+
+            def box(i: int) -> tuple[float, float]:
+                return cls._rotated_x_span(
+                    coordinates[i] + dx, labels[i], rotation_angle
+                )
+        else:
+
+            def box(i: int) -> tuple[float, float]:
+                centre = coordinates[i] + dx
+                half = labels[i].width / 2
+                return centre - half, centre + half
 
         kept: list[int] = [order[0]]
         last_right = box(order[0])[1]
@@ -686,21 +733,21 @@ class XAxis(Axis):
         # Width-aware overlap pass. Value-axis numeric labels (e.g. a
         # mismatched-magnitude domain like (-4e8, 1e9)) are not ordinal, so the
         # count-based stride leaves them all in place even when adjacent wide
-        # labels collide. Drop the indices whose centred box would overlap the
+        # labels collide. Drop the indices whose footprint would overlap the
         # previous kept label; this only ever removes labels, so an axis whose
         # labels already fit keeps every one and renders byte-for-byte the same.
-        # The centred-box overlap model only describes horizontal labels; rotated
-        # labels pivot off their tick and are handled by the rotation angle, so
-        # only drop overlaps when the axis is not rotated.
-        keep: set[int] | None = None
-        if rotation_angle <= 0:
-            keep = self._non_overlapping_indices(coordinates, all_labels, dx)
+        # Horizontal axes use the centred label box; rotated axes use the rotated
+        # label's projected x-extent, since a steep rotation still leaves a wide
+        # label spanning enough of the x axis to collide with its neighbour.
+        keep = self._non_overlapping_indices(
+            coordinates, all_labels, dx, rotation_angle
+        )
         left_pad = self.parent.left_padding
         chart_width = getattr(self.parent, "width", None)
         for index, (x, label) in enumerate(zip(coordinates, all_labels)):
             if stride > 1 and index not in (0, last_index) and index % stride != 0:
                 continue
-            if keep is not None and index not in keep:
+            if index not in keep:
                 continue
             x = x + dx
             if rotation_angle > 0:
