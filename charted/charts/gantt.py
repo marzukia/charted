@@ -206,7 +206,7 @@ class GanttChart(Chart):
 
         bars_g = G(opacity="0.8")
         duration_g = G(
-            font_family="Arial",
+            font_family="DejaVu Sans",
             font_size=11,
             fill=self.theme.resolved_label_color,
         )

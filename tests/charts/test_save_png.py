@@ -59,7 +59,7 @@ class TestSavePNG:
     def test_save_png_raises_import_error_without_cairosvg(self, chart, tmp_path):
         path = tmp_path / "chart.png"
         with patch.dict("sys.modules", {"cairosvg": None}):
-            with pytest.raises(ImportError, match="pip install cairosvg"):
+            with pytest.raises(ImportError, match="png extra"):
                 chart.save(str(path))
 
     def test_save_png_scale_parameter(self, chart, tmp_path):

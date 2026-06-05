@@ -38,11 +38,11 @@ class Font:
 
         if not font_path.exists():
             # Fallback to Arial if requested font not found
-            if self.family != "Arial":
+            if self.family != "DejaVu Sans":
                 import warnings
 
                 warnings.warn(f"Font '{self.family}' not found, falling back to Arial")
-                return self._load_definitions_fallback("Arial")
+                return self._load_definitions_fallback("DejaVu Sans")
             return {}
 
         try:

@@ -59,6 +59,7 @@ class RadarChart(Chart):
     """
 
     render_axes = False  # Radar charts use polar grid, not Cartesian axes
+    _radial_plot = True  # Circular data; corner legends never overlap it
 
     def __init__(
         self,

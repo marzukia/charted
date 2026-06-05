@@ -487,14 +487,15 @@ class XAxis(Axis):
             dx = self.reproject(abs(min_v))
 
         coordinates = list(self.coordinates)
-        # Non-linear scales (time/log) own their tick positions, which land on
-        # clean calendar/decade boundaries and rarely reach the right edge of
-        # the plot. Linear axes always draw a gridline at the max value (the
-        # right border), so add one here too when the last tick falls short.
-        if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
-            plot_width = self.parent.plot_width
-            if not coordinates or abs((coordinates[-1] + dx) - plot_width) > 0.5:
-                coordinates.append(plot_width - dx)
+        # Close the grid on the right: draw a gridline at the plot boundary when
+        # the last tick falls short of it. Category axes already place a tick at
+        # the edge, so nothing is added. Value axes with domain padding leave a
+        # gap (scatter a little, bubble a lot since it pads for marker radii),
+        # and time/log scales land on clean boundaries inside the plot; all of
+        # them otherwise leave the right side looking open.
+        plot_width = self.parent.plot_width
+        if not coordinates or abs((coordinates[-1] + dx) - plot_width) > 0.5:
+            coordinates.append(plot_width - dx)
 
         transform = translate(
             x=self.parent.left_padding,

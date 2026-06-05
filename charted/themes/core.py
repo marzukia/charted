@@ -276,11 +276,11 @@ class Theme:
     minor_grid_width: Optional[float] = None
     legend_position: str = "topright"
     legend_font_size: int = 11
-    legend_font_family: str = "Arial"
+    legend_font_family: str = "DejaVu Sans"
     legend_font_color: str = "#444444"
     title_color: str = "#444444"
     title_font_size: int = 16
-    title_font_family: str = "Arial"
+    title_font_family: str = "DejaVu Sans"
     background_color: str = "#FFFFFF"
     h_padding: float = 0.05
     v_padding: float = 0.05
