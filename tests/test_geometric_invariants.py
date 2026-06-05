@@ -26,11 +26,11 @@ Calibration notes
 The render-level invariants (3-5) are checked at *realistic* canvas sizes
 (>= 400 px, charted's default is 500x500) with non-empty labels. Text-label
 containment is excluded from the in-frame check: charted does not clip long
-labels, an open item in its own TODO.md (#45). Four genuine bugs surfaced
-during calibration are documented and pinned by the ``test_known_bug_*`` cases
-at the end of this module (all-negative LineChart and BarChart projection, an
-empty-label ZeroDivisionError, and small-canvas bottom-label overflow) rather
-than silently weakening the main invariants. We do NOT fix charted here.
+labels, an open item in its own TODO.md (#45). Several genuine bugs surfaced
+during calibration (all-negative projection, mixed-magnitude tick explosion,
+an empty-label ZeroDivisionError, small-canvas bottom-label overflow); they
+have since been fixed and are guarded by the regression cases at the end of
+this module.
 """
 
 from __future__ import annotations
@@ -746,18 +746,16 @@ def _text_in_frame_violations(svg: str, tol: float = 1.0) -> list[str]:
     return out
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "GEOMETRY/LAYOUT BUG: on small canvases (height < ~400px) charted's "
-        "fixed bottom-axis margin does not shrink, so the bottom value-axis "
-        "tick labels overflow the viewBox by a few pixels. Repro: "
-        "BarChart([5,10,15], labels=['a','b','c'], width=320, height=240) -> "
-        "bottom tick-label baseline lands at absolute y=246 (viewBox bottom is "
-        "240). Related to TODO.md #45 (long-label overflow)."
-    ),
-)
-def test_known_bug_small_canvas_bottom_labels_overflow() -> None:
+def test_small_canvas_bottom_labels_stay_in_frame() -> None:
+    """Regression: small-canvas bottom tick labels stay inside the viewBox.
+
+    The bottom-axis margin used to be a flat fraction of the height, so on a
+    short canvas it shrank below the DEFAULT_PADDING gap the tick labels are
+    drawn at and the bottom labels spilled past the viewBox (baseline at y=246
+    on a 240px-tall chart). bottom_padding now reserves at least DEFAULT_PADDING
+    for the tick-label band, keeping them framed. Larger canvases (the 500px
+    baseline fixtures) already exceed that, so their layout is unchanged.
+    """
     values: list[float] = [5.0, 10.0, 15.0]
     svg = str(BarChart(values, labels=["a", "b", "c"], width=320, height=240).to_svg())
     violations = _text_in_frame_violations(svg)

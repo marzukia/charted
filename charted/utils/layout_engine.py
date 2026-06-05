@@ -160,6 +160,21 @@ class LayoutEngine:
         """
         base = self.v_padding * self.height
 
+        # Bottom-axis tick labels (the category labels of a column chart and the
+        # numeric value-axis labels of a horizontal bar chart) are drawn
+        # DEFAULT_PADDING below the plot bottom, so their baseline sits at
+        # (height - bottom_padding + DEFAULT_PADDING). When the fractional
+        # v_padding band is thinner than DEFAULT_PADDING (small canvases, roughly
+        # height < 360px) that baseline drops below the viewBox and the labels
+        # overflow the bottom edge by a few pixels. The horizontal bar chart's
+        # value labels are not carried in x_labels, so reserve the band
+        # unconditionally. Larger canvases already have a v_padding band >=
+        # DEFAULT_PADDING, so their layout (including every 500px baseline
+        # fixture) is byte-for-byte unchanged.
+        from ..constants import DEFAULT_PADDING
+
+        base = max(base, DEFAULT_PADDING)
+
         # Reserve a band below the plot for a bottom-placed legend. The legend
         # is drawn at the chart's bottom edge, so the band must clear the
         # x-axis tick labels. Those labels sit DEFAULT_PADDING below the plot
