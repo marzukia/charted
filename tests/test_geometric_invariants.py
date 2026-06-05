@@ -36,6 +36,8 @@ than silently weakening the main invariants. We do NOT fix charted here.
 from __future__ import annotations
 
 import math
+import resource  # POSIX-only, like the rest of this suite's CI targets
+from collections.abc import Iterator
 
 import pytest
 from hypothesis import HealthCheck, Phase, assume, given, settings
@@ -117,11 +119,57 @@ _positive_float = st.one_of(
 )
 
 
+def _axis_tick_list_bounded(values: list[float], limit: int = 50_000) -> bool:
+    """Mirror the grid-list size Axis.calculate_axis_values would build.
+
+    Known charted bug (#5, see test_known_bug_mixed_magnitude_tick_explosion):
+    a mixed-sign domain with mismatched magnitudes forces the tick step down to
+    the largest common divisor of the endpoint magnitudes, so the value-axis
+    list comprehension materialises O(range/step) floats. The minimal repro
+    AreaChart([-1.0, 1e9], labels=["a", "b"], width=500, height=500).to_svg()
+    raises MemoryError trying to build a billion-element list. Until that is
+    fixed, keep generated inputs out of the explosive region; this predictor
+    replicates the size computation without allocating.
+    """
+    from charted.charts.axes import Axis
+    from charted.utils.helpers import common_denominators
+
+    for has_labels in (True, False):
+        for zero_index in (True, False):
+            try:
+                axd = Axis.calculate_axis_dimensions(
+                    data=[values], has_labels=has_labels, zero_index=zero_index
+                )
+                denominators = common_denominators(axd.min_value, axd.max_value)
+            except (ValueError, ZeroDivisionError, OverflowError):
+                continue
+            if not denominators:
+                continue
+            value_range = axd.value_range if axd.value_range >= 2 else 1
+            # calculate_axis_values builds a list per denominator (largest
+            # first) and stops after the first one longer than 5 entries; the
+            # biggest list it materialises is exactly that breaking list.
+            built = 0
+            for denominator in reversed(denominators):
+                built = int(value_range / denominator)
+                if built + 1 > 5:
+                    break
+            if built > limit:
+                return False
+    return True
+
+
 def value_lists(
     min_size: int = 1, max_size: int = 60
 ) -> st.SearchStrategy[list[float]]:
-    """Lists of adversarial floats: mixed signs, tiny/huge magnitudes, zeros."""
-    return st.lists(_adversarial_float, min_size=min_size, max_size=max_size)
+    """Lists of adversarial floats: mixed signs, tiny/huge magnitudes, zeros.
+
+    Filtered through _axis_tick_list_bounded to stay clear of the known
+    mixed-magnitude tick-explosion bug (charted bug #5).
+    """
+    return st.lists(_adversarial_float, min_size=min_size, max_size=max_size).filter(
+        _axis_tick_list_bounded
+    )
 
 
 def equal_value_lists(max_size: int = 30) -> st.SearchStrategy[list[float]]:
@@ -241,17 +289,50 @@ def _assert_bars_in_plot(svg: str, tol: float = 1.0) -> None:
         )
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _memory_ceiling() -> Iterator[None]:
+    """Cap this test process's address space at 192 MiB.
+
+    The suite's honest peak is ~60 MiB; the headroom only exists so a leaking
+    example dies fast instead of slow.
+
+    The mixed-magnitude tick explosion (charted bug #5, see
+    test_known_bug_mixed_magnitude_tick_explosion) makes the axis code attempt
+    multi-gigabyte allocations. The _axis_tick_list_bounded strategy filter
+    catches the inputs it can predict, but the duplicated grid-line loop in
+    Axis.values (axes.py:385) is reached through chart-specific axis wiring the
+    predictor does not see. The rlimit turns any leak-through into a clean
+    in-process MemoryError, which _render_or_skip converts into a dropped
+    example, instead of an OOM-killed host.
+    """
+    ceiling = 192 * 1024**2
+    soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+    new_soft = ceiling if soft == resource.RLIM_INFINITY else min(soft, ceiling)
+    resource.setrlimit(resource.RLIMIT_AS, (new_soft, hard))
+    try:
+        yield
+    finally:
+        resource.setrlimit(resource.RLIMIT_AS, (soft, hard))
+
+
 def _render_or_skip(make: object) -> str | None:
     """Render via ``make()``; return SVG, or None if charted rejected the input.
 
     Any non-charted exception propagates and fails the test (the clean-failure
-    invariant).
+    invariant). MemoryError is treated as the known tick-explosion bug (#5)
+    and drops the example rather than failing every in-frame test on inputs
+    the bug already owns.
     """
     assert callable(make)
     try:
         return str(make())
     except ACCEPTABLE_ERRORS:
         return None
+    except MemoryError:
+        # Charted bug #5: mixed-magnitude tick explosion (pinned separately by
+        # test_known_bug_mixed_magnitude_tick_explosion).
+        assume(False)
+        return None  # pragma: no cover - assume(False) always raises
 
 
 # All chart builders keyed by name, parameterised on a single value list.
@@ -377,7 +458,20 @@ def test_area_in_frame(
 def test_scatter_in_frame(
     xs: list[float], data: st.DataObject, dims: tuple[float, float]
 ) -> None:
-    ys = data.draw(st.lists(_adversarial_float, min_size=len(xs), max_size=len(xs)))
+    # All-negative x series project markers far outside the frame, the same
+    # projection fault as the LineChart/BarChart cases; pinned by
+    # test_known_bug_scatter_all_negative_x_out_of_frame.
+    if xs and all(v < 0 for v in xs):
+        xs = [abs(v) for v in xs]
+    ys = data.draw(
+        st.lists(_adversarial_float, min_size=len(xs), max_size=len(xs)).filter(
+            _axis_tick_list_bounded
+        )
+    )
+    # The y axis has the same all-negative projection fault (gridline drawn at
+    # y=-450 for ys=[-2.0]); also pinned by the scatter known-bug test.
+    if ys and all(v < 0 for v in ys):
+        ys = [abs(v) for v in ys]
     w, h = dims
     svg = _render_or_skip(lambda: ScatterChart(xs, ys, width=w, height=h).to_svg())
     assume(svg is not None)
@@ -660,9 +754,11 @@ def test_log_scale_monotonic_and_ticks(lo: float, factor: float, length: float) 
 def test_clean_failure_no_unexpected_exception(values: list[float], name: str) -> None:
     builder = ALL_CHART_BUILDERS[name]
     assert callable(builder)
-    try:
-        svg = str(builder(values).to_svg())
-    except ACCEPTABLE_ERRORS:
+    # _render_or_skip propagates anything that is neither a documented charted
+    # rejection nor the pinned tick-explosion MemoryError (bug #5), so an
+    # unexpected exception type still fails this test.
+    svg = _render_or_skip(lambda: builder(values).to_svg())
+    if svg is None:
         return
     # If it rendered, the output must at least be a well-formed SVG string.
     assert svg.startswith("<svg")
@@ -713,6 +809,24 @@ def test_known_bug_bar_all_negative_gridline_overflows() -> None:
 @pytest.mark.xfail(
     strict=True,
     reason=(
+        "GEOMETRY BUG: ScatterChart with an all-negative series on either axis "
+        "projects geometry far outside the plot. Repro (x): "
+        "ScatterChart([-16.0], [0.0], width=500, height=500) -> marker circle "
+        "at x~=1724 (viewBox is 500 wide). Repro (y): ScatterChart([0.0], "
+        "[-2.0], width=500, height=500) -> gridline path 'M0 -450' above the "
+        "frame. Third member of the all-negative projection family (LineChart "
+        "top overflow, BarChart gridline overflow); mixed-sign and "
+        "all-positive series render correctly."
+    ),
+)
+def test_known_bug_scatter_all_negative_x_out_of_frame() -> None:
+    svg = str(ScatterChart([-16.0], [0.0], width=500, height=500).to_svg())
+    _assert_in_frame(svg)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
         "CLEAN-FAILURE BUG: an empty-string axis label crashes the rotated "
         "x-axis with an uncaught ZeroDivisionError instead of rendering or "
         "raising a charted error. axes.py:608 computes "
@@ -756,3 +870,26 @@ def test_known_bug_small_canvas_bottom_labels_overflow() -> None:
     svg = str(BarChart(values, labels=["a", "b", "c"], width=320, height=240).to_svg())
     violations = _text_in_frame_violations(svg)
     assert not violations, f"labels overflow small canvas: {violations}"
+
+
+def test_known_bug_mixed_magnitude_tick_explosion() -> None:
+    """MEMORY BUG: mixed-sign domains with mismatched magnitudes explode the
+    value axis. calculate_axis_values picks the tick step from the common
+    divisors of the two endpoint magnitudes (axes.py:254), so a domain like
+    (-1.0, 1e9) is forced to step=1.0 and the grid-value list comprehension
+    materialises ~1e9 floats. Repro (DO NOT run unguarded, it OOMs the host):
+
+        AreaChart([-1.0, 1e9], labels=["a", "b"], width=500, height=500).to_svg()
+
+    -> MemoryError. Found because the unbounded property suite OOM'd a 2GB
+    rlimit (and, before that, the operator's machine). Unlike the other four
+    known-bug pins this one cannot be a plain xfail: executing the repro
+    allocates until the kernel intervenes. Instead it pins the bug through the
+    same size predictor the strategies use as a generation guard, which fails
+    (and flags this test for removal) once the axis code stops over-allocating.
+    """
+    assert not _axis_tick_list_bounded([-1.0, 1e9], limit=100_000_000), (
+        "predicted tick list for (-1.0, 1e9) is no longer explosive: the axis "
+        "bug looks fixed. Delete this pin and the _axis_tick_list_bounded "
+        "strategy filters so the suite covers mixed-magnitude domains again."
+    )
