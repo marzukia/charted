@@ -423,6 +423,12 @@ class XAxis(Axis):
     def reproject(self, value: float) -> float:
         if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
             return self.scale.reproject(value, self.parent.plot_width)
+        # A single data point collapses the x-domain to a single value
+        # (min == max), so the linear projection would pin it at x=0 (the left
+        # frame, where it hides under the y-axis). Centre it horizontally
+        # instead. Multi-point axes always span a real range and are unaffected.
+        if self.axis_dimension.max_value == self.axis_dimension.min_value:
+            return self.parent.plot_width / 2
         return self._reproject(
             value,
             self.axis_dimension.max_value,
@@ -479,6 +485,30 @@ class XAxis(Axis):
             stride *= 2
         return stride
 
+    # Past this many per-category vertical gridlines the plot fills with a grey
+    # haze. Thin them to roughly this many evenly-spaced lines instead.
+    _GRID_DENSITY_CAP = 25
+    _GRID_TARGET_LINES = 12
+
+    def _thin_grid_coordinates(self, coordinates: list[float]) -> list[float]:
+        """Drop vertical gridlines on dense ordinal axes to avoid a grey haze.
+
+        A category axis draws one gridline per category. With a few hundred
+        categories that becomes a solid block of grey. Once the count passes
+        ``_GRID_DENSITY_CAP`` keep an evenly-spaced subset (about
+        ``_GRID_TARGET_LINES`` lines, always including the first and last) so the
+        grid stays legible. Low-cardinality axes are returned unchanged, so
+        normal charts keep byte-identical grids.
+        """
+        n = len(coordinates)
+        if n <= self._GRID_DENSITY_CAP:
+            return coordinates
+        stride = math.ceil(n / self._GRID_TARGET_LINES)
+        kept = [c for i, c in enumerate(coordinates) if i % stride == 0]
+        if coordinates and coordinates[-1] != kept[-1]:
+            kept.append(coordinates[-1])
+        return kept
+
     @property
     def grid_lines(self) -> Element | None:
         if not self.config:
@@ -497,7 +527,7 @@ class XAxis(Axis):
         if self.stacked and min_v < 0:
             dx = self.reproject(abs(min_v))
 
-        coordinates = list(self.coordinates)
+        coordinates = self._thin_grid_coordinates(list(self.coordinates))
         # Close the grid on the right: draw a gridline at the plot boundary when
         # the last tick falls short of it. Category axes already place a tick at
         # the edge, so nothing is added. Value axes with domain padding leave a
