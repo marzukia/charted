@@ -385,6 +385,25 @@ class Chart(
         # existing single-weight renders are unchanged byte-for-byte.
         grid_config = self._build_grid_config()
 
+        # The y-axis tick labels (numeric ticks like "200,000") are derived from
+        # the scale and are not in data_model.y_labels for value-axis charts, so
+        # the layout's left_padding was sized without them. Build a throwaway
+        # y-axis to measure them and size the gutter BEFORE the real axes are
+        # built, because each axis bakes the gutter into its gridline and label
+        # positions at construction. Without this, wide numeric ticks clip off
+        # the left edge and the gridlines sit left of the plot.
+        _probe_y_axis = YAxis(
+            parent=cast("_AxisParent", self),
+            data=y_axis_data,
+            labels=y_labels,
+            stacked=self.y_stacked,
+            zero_index=self.zero_index,
+            config=grid_config,
+            scale=y_scale_inst,
+        )
+        if _probe_y_axis.labels:
+            self.layout.y_labels = _probe_y_axis.labels
+
         # Initialize axes. Chart satisfies the _AxisParent layout contract
         # structurally; the cast bridges its read-only property accessors to the
         # protocol's plain-attribute declarations.
@@ -412,6 +431,7 @@ class Chart(
             config=grid_config,
             scale=y_scale_inst,
         )
+
 
         # Initialize internal offsets and values directly (properties are read-only)
         # For ordinal charts (no x_data), generate default x-values [0, 1, 2, ...]

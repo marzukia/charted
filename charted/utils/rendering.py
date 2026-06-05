@@ -274,14 +274,14 @@ def create_legend(
     if isinstance(theme_config, Theme):
         font_size = getattr(theme_config, "legend_font_size", 12)
         legend_padding = 0.15
-        font_family = getattr(theme_config, "legend_font_family", "Arial")
+        font_family = getattr(theme_config, "legend_font_family", "DejaVu Sans")
         font_color = getattr(theme_config, "legend_font_color", "#444444")
         position = getattr(theme_config, "legend_position", "topright")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = cast("float", theme_config.get("font_size", 12))
         legend_padding = cast("float", theme_config.get("legend_padding", 0.15))
-        font_family = cast("str", theme_config.get("font_family", "Arial"))
+        font_family = cast("str", theme_config.get("font_family", "DejaVu Sans"))
         font_color = cast("str", theme_config.get("font_color", "#444444"))
         position = cast("str", theme_config.get("position", "topright"))
         background_color = cast("str", theme_config.get("background_color", "#ffffff"))
@@ -384,12 +384,12 @@ def create_pie_legend(
     # Handle both dict and Theme object
     if isinstance(theme_config, Theme):
         font_size = getattr(theme_config, "legend_font_size", 12)
-        font_family = getattr(theme_config, "legend_font_family", "Arial")
+        font_family = getattr(theme_config, "legend_font_family", "DejaVu Sans")
         font_color = getattr(theme_config, "legend_font_color", "#444444")
         background_color = getattr(theme_config, "background_color", "#ffffff")
     else:
         font_size = cast("float", theme_config.get("font_size", 12))
-        font_family = cast("str", theme_config.get("font_family", "Arial"))
+        font_family = cast("str", theme_config.get("font_family", "DejaVu Sans"))
         font_color = cast("str", theme_config.get("font_color", "#444444"))
         background_color = cast("str", theme_config.get("background_color", "#ffffff"))
 

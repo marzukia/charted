@@ -62,7 +62,7 @@ THEME_SCHEMA: JSONSchema = {
         },
         "title_font_family": {
             "type": "string",
-            "default": "Arial",
+            "default": "DejaVu Sans",
             "description": "Font family for title",
         },
         "background_color": {
@@ -130,7 +130,7 @@ def validate_theme_dict(theme_dict: Mapping[str, object]) -> tuple[bool, list[st
         "grid_color": ("string", "#CCCCCC"),
         "title_color": ("string", "#444444"),
         "background_color": ("string", "#FFFFFF"),
-        "title_font_family": ("string", "Arial"),
+        "title_font_family": ("string", "DejaVu Sans"),
         "legend_position": ("string", "topright"),
     }
 

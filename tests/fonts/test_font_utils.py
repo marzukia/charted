@@ -68,7 +68,7 @@ class TestFontLoadingHappyPath:
         from charted.utils import defaults
 
         assert hasattr(defaults, "DEFAULT_FONT")
-        assert defaults.DEFAULT_FONT in ("Helvetica", "Arial", "JetBrains Mono")
+        assert defaults.DEFAULT_FONT in ("Helvetica", "Arial", "JetBrains Mono", "DejaVu Sans")
 
 
 class TestFontMeasurementSadPath:
