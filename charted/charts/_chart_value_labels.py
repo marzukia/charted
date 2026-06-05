@@ -208,20 +208,26 @@ class ChartValueLabelMixin:
         caller's ``x``.
         """
         half = font_size / 2 + 1.0
+        # Keep the outside label within the plot area, not just the viewBox. A
+        # bar that reaches the very top/bottom of the plot would otherwise push
+        # its outside label into the title band or the x-axis label row and
+        # collide; in that case place it inside the bar instead.
+        plot_top = self.top_padding
+        plot_bottom = self.top_padding + self.plot_height
         if value >= 0:
             outside = y + label_offset  # above the bar top
             inside = y - label_offset  # just under the bar top, within the bar
             # "outside" is higher on screen -> smaller absolute y. If its box
-            # would clip the top edge, fall back inside the bar.
-            if self._local_to_abs_y(outside) - half < 0:
+            # would leave the top of the plot, fall back inside the bar.
+            if self._local_to_abs_y(outside) - half < plot_top:
                 return inside, True
             return outside, False
         else:
             outside = y - label_offset  # below the bar bottom
             inside = y + label_offset  # just above the bar bottom, within the bar
             # "outside" is lower on screen -> larger absolute y. If its box would
-            # clip the bottom edge, fall back inside the bar.
-            if self._local_to_abs_y(outside) + half > self.height:
+            # leave the bottom of the plot, fall back inside the bar.
+            if self._local_to_abs_y(outside) + half > plot_bottom:
                 return inside, True
             return outside, False
 
