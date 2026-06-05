@@ -16,6 +16,8 @@
   "area_curve_cardinal.png": "6a2f19b071350a59851bf9ad5fa9a90ac89dafe24c844adccbad99d5844d08ba",
   "pie.png": "a1cc8a37fc84d9ea3731b76899610e9ca42f935c37431c44c595690bbf03fdb0",
   "pie_doughnut.png": "33f64df8d61add4072bfb096f1c702e520ff54b45f11508fffb0f2ffc7876b61",
+  "pie_dense_12_slices.png": "df1ae2c11dd4d32957f7c1d11c0176fcbc461febcf82b7549fcb78ef34c34643",
+  "pie_dense_15_slices.png": "0f57048526180e0b450e6a5ecb0419791868998e6f48b33d04ab83ce29a15b89",
   "scatter_basic.png": "e244a3ab555eb513ee0a334a12a4fa96abd6be5ab42fbde37fd3e386396f669f",
   "scatter_multi.png": "e81e7360316d4971d91e0ae44f9c16abf8b9761703ba30ba61590c0bf418c4f9",
   "gantt_basic.png": "09bc5b4155d22002247cc504d40c1384183e00379e9e813f607970de87ab45c8",

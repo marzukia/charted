@@ -117,6 +117,18 @@ CHARTS = {
     "pie_doughnut": PieChart(
         data=[30, 40, 30], labels=["A", "B", "C"], inner_radius=0.5
     ),
+    "pie_dense_12_slices": PieChart(
+        data=[25, 18, 15, 12, 8, 6, 5, 4, 3, 2, 1, 1],
+        labels=[
+            "Electronics", "Clothing", "Food", "Housing", "Transport",
+            "Healthcare", "Education", "Entertainment", "Travel", "Savings",
+            "Insurance", "Miscellaneous",
+        ],
+    ),
+    "pie_dense_15_slices": PieChart(
+        data=[16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 2, 1, 1],
+        labels=[f"Category {i}" for i in range(1, 16)],
+    ),
     # Scatter charts
     "scatter_basic": ScatterChart(x_data=[1, 2, 3], y_data=[1, 2, 3]),
     "scatter_multi": ScatterChart(
