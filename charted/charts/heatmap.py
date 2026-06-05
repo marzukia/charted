@@ -265,6 +265,28 @@ class HeatmapChart(Chart):
     def draw_cell_height(self) -> float:
         return self.cell_height - self.cell_gap_y
 
+    def _value_labels_fit(self) -> bool:
+        """Whether per-cell value labels can be drawn legibly.
+
+        On dense grids the cells shrink and the formatted numbers collapse
+        into an unreadable smear because adjacent labels are wider than their
+        cells. Hide them once a cell can no longer hold its widest formatted
+        value: the drawable cell must be at least one font-size tall and wide
+        enough for the longest label string. Normal small heatmaps (3x3, 4x2,
+        etc.) keep their values because their cells stay comfortably larger
+        than the rendered text.
+        """
+        min_height = float(self._label_font_size)
+        if self.draw_cell_height < min_height:
+            return False
+        longest = max(
+            (len(format(v, self.value_format)) for row in self._matrix for v in row),
+            default=1,
+        )
+        # ~0.6em per character at the label font size.
+        min_width = longest * self._label_font_size * 0.6
+        return self.draw_cell_width >= min_width
+
     def _resolve_color_scale(
         self, color_scale: "ColorScale | str | list[str] | None"
     ) -> ColorScale | None:
@@ -304,6 +326,7 @@ class HeatmapChart(Chart):
         font_family = self.theme.title_font_family
 
         label_font_size = self._label_font_size
+        show_values = self.show_values and self._value_labels_fit()
         for row_idx in range(self._n_rows):
             for col_idx in range(self._n_cols):
                 value = self._matrix[row_idx][col_idx]
@@ -325,7 +348,7 @@ class HeatmapChart(Chart):
                 )
                 result.add_child(cell)
 
-                if self.show_values:
+                if show_values:
                     text_x = x + self.draw_cell_width / 2
                     text_y = y + self.draw_cell_height / 2
                     formatted = format(value, self.value_format)

@@ -108,10 +108,19 @@ class TestBarCategoryLabelWrapping:
         "Q3",
     ]
 
-    def test_no_wrapping_by_default(self):
-        """Without a cap, labels stay single-line (no tspans), unchanged."""
-        chart = BarChart(data=[10, 20, 30], labels=self.LONG_LABELS)
+    def test_short_labels_not_wrapped_by_default(self):
+        """Labels that fit the default gutter stay single-line (no tspans)."""
+        chart = BarChart(data=[10, 20, 30], labels=["Q1", "Q2", "Q3"])
         assert "<tspan" not in chart.svg
+
+    def test_long_labels_wrap_by_default(self):
+        """Without an explicit cap, overflowing labels wrap so the gutter stays
+        bounded instead of consuming the plot area."""
+        chart = BarChart(data=[10, 20, 30], labels=self.LONG_LABELS)
+        # The default cap is a fraction of the chart width, so a label far wider
+        # than that is wrapped onto multiple lines (full words preserved).
+        assert "<tspan" in chart.svg
+        assert chart.left_padding < chart.width / 2
 
     def test_long_labels_wrap_to_tspans(self):
         """A width cap wraps overflowing labels into multiple tspan lines."""
@@ -123,7 +132,13 @@ class TestBarCategoryLabelWrapping:
         svg = chart.svg
         assert "<tspan" in svg
         # Full words preserved, nothing truncated/abbreviated.
-        for word in ("International", "Marketing", "Department", "Research", "Division"):
+        for word in (
+            "International",
+            "Marketing",
+            "Department",
+            "Research",
+            "Division",
+        ):
             assert word in svg
 
     def test_short_label_not_wrapped(self):
@@ -156,6 +171,8 @@ class TestBarCategoryLabelWrapping:
 
         measured = wrap_text_to_width("Supercalifragilisticexpialidocious", 40)
         assert measured.text == "Supercalifragilisticexpialidocious"
-        assert measured.lines is None or "".join(measured.lines).replace(
-            " ", ""
-        ) == "Supercalifragilisticexpialidocious"
+        assert (
+            measured.lines is None
+            or "".join(measured.lines).replace(" ", "")
+            == "Supercalifragilisticexpialidocious"
+        )

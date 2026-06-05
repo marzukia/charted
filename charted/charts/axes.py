@@ -92,6 +92,17 @@ class Axis(G):
         self.config = config
         self.add_children(self.grid_lines, self.axis_labels)
 
+    def rebuild(self) -> None:
+        """Re-render grid lines and tick labels from the current label state.
+
+        ``grid_lines`` and ``axis_labels`` are built eagerly at construction, so
+        any later mutation of ``_labels`` (e.g. category-label wrapping or
+        truncation) would otherwise leave stale child elements. Call this after
+        replacing ``_labels`` to regenerate the rendered children.
+        """
+        self.children = []
+        self.add_children(self.grid_lines, self.axis_labels)
+
     def _init_with_scale(
         self,
         data: Vector2D | None,
@@ -183,6 +194,13 @@ class Axis(G):
 
         if zero_index and min_value > 0:
             min_value = 0
+        # Symmetric clamp for an all-negative domain: pull the top of the range
+        # up to zero so the rendered domain still contains the zero baseline.
+        # Without this the domain is e.g. [-3, -1], and projecting the zero
+        # line / bar baseline lands at (0 - -3) / 2 = 1.5x the plot length,
+        # pushing gridlines, bars, markers and the line path outside the frame.
+        if zero_index and max_value < 0:
+            max_value = 0
 
         if not has_labels:
             if min_value < 0:
@@ -192,6 +210,54 @@ class Axis(G):
             max_value = round_to_clean_number(max_value)
 
         return AxisDimension(min_value, max_value, count)
+
+    # The largest number of gridline/tick entries the value axis will build for
+    # a denominator before we reject it as too fine and fall back to a
+    # nice-number step. The downstream halving loops thin this to <=10, so the
+    # cap only needs to stay well clear of the pathological millions-of-ticks
+    # region. ~50 is comfortably above any real layout and bounds memory.
+    _MAX_RAW_TICKS = 50
+    _TARGET_TICKS = 10
+
+    @classmethod
+    def _grid_step(
+        cls, value_range: float, denominators: Vector
+    ) -> float:
+        """Pick a tick step that does not explode the gridline list.
+
+        ``calculate_axis_values`` historically walked the common divisors of the
+        two endpoint magnitudes (largest first) and used the first step whose
+        list had more than 5 entries. For mismatched magnitudes (e.g. domain
+        (-1.0, 1e9)) the only common divisor is 1, which forces ~1e9 entries and
+        a MemoryError. When the finest available divisor would still produce
+        more than ``_MAX_RAW_TICKS`` entries, fall back to a clean ("nice")
+        number step computed from ``value_range / _TARGET_TICKS`` instead.
+        """
+        chosen: float | None = None
+        for denominator in reversed(denominators):
+            if denominator <= 0:
+                continue
+            if int(value_range / denominator) + 1 > 5:
+                chosen = denominator
+                break
+            chosen = denominator
+        if chosen is None or int(value_range / chosen) > cls._MAX_RAW_TICKS:
+            if value_range > 0:
+                nice = round_to_clean_number(value_range / cls._TARGET_TICKS)
+                if nice > 0:
+                    return nice
+            # Degenerate domain (no usable divisor and no range): a single tick.
+            return chosen if chosen is not None else 1.0
+        return chosen
+
+    @classmethod
+    def _grid_values(
+        cls, min_value: float, value_range: float, denominators: Vector
+    ) -> list[float]:
+        """Build the descending gridline-value list with a bounded tick step."""
+        step = cls._grid_step(value_range, denominators)
+        count = int(value_range / step)
+        return [min_value + (i * step) for i in reversed(range(count + 1))]
 
     @classmethod
     def calculate_axis_values(
@@ -235,15 +301,9 @@ class Axis(G):
         if max_value > 0 and max_value < 1:
             max_value = 1
 
-        # Generate all potential grid line positions (full range)
-        all_values = []
-        for denominator in reversed(denominators):
-            count = int(value_range / denominator)
-            all_values = [
-                min_value + (i * denominator) for i in reversed(range(count + 1))
-            ]
-            if len(all_values) > 5:
-                break
+        # Generate all potential grid line positions (full range), with a tick
+        # step bounded so a mismatched-magnitude domain cannot explode the list.
+        all_values = cls._grid_values(min_value, value_range, denominators)
 
         # Preserve original axis range for grid lines
         original_min = all_values[-1]
@@ -362,20 +422,16 @@ class Axis(G):
                 zero_index=axis_values.zero_index,
             )
         )
-        # Store grid line values separately (full range, not filtered)
+        # Store grid line values separately (full range, not filtered). Reuse
+        # the same bounded-step helper as calculate_axis_values so a
+        # mismatched-magnitude domain cannot explode this list either.
         all_denominators = common_denominators(
             self.axis_dimension.min_value, self.axis_dimension.max_value
         )
         value_range = self.axis_dimension.max_value - self.axis_dimension.min_value
-        self._grid_line_values = []
-        for denominator in reversed(all_denominators):
-            count = int(value_range / denominator)
-            self._grid_line_values = [
-                self.axis_dimension.min_value + (i * denominator)
-                for i in reversed(range(count + 1))
-            ]
-            if len(self._grid_line_values) > 5:
-                break
+        self._grid_line_values = self._grid_values(
+            self.axis_dimension.min_value, value_range, all_denominators
+        )
         # Reduce grid lines if too many
         while len(self._grid_line_values) > 10 and 0 not in self._grid_line_values:
             self._grid_line_values = [
@@ -412,6 +468,12 @@ class XAxis(Axis):
     def reproject(self, value: float) -> float:
         if self.scale is not None and getattr(self.scale, "name", "linear") != "linear":
             return self.scale.reproject(value, self.parent.plot_width)
+        # A single data point collapses the x-domain to a single value
+        # (min == max), so the linear projection would pin it at x=0 (the left
+        # frame, where it hides under the y-axis). Centre it horizontally
+        # instead. Multi-point axes always span a real range and are unaffected.
+        if self.axis_dimension.max_value == self.axis_dimension.min_value:
+            return self.parent.plot_width / 2
         return self._reproject(
             value,
             self.axis_dimension.max_value,
@@ -447,9 +509,13 @@ class XAxis(Axis):
         if count <= 10:
             return 1
 
-        # Width-aware path: how many labels can fit without overlapping. Each
-        # label needs roughly its own width plus a small gap. Use the widest
-        # label so nothing collides at the tightest point.
+        # Cap the drawn-label count to the same target the gridline thinning
+        # uses, so labels stay sparse and line up with the thinned grid instead
+        # of smearing at a denser stride than the lines they sit under.
+        stride = max(1, math.ceil(count / self._GRID_TARGET_LINES))
+
+        # Width-aware path: if the widest label still wouldn't fit at this
+        # stride, thin further so nothing overlaps at the tightest point.
         plot_width = getattr(self.parent, "plot_width", None)
         if plot_width:
             widths = [getattr(label, "width", 0) for label in self._labels]
@@ -458,15 +524,33 @@ class XAxis(Axis):
                 slot = max_width + 4
                 max_fit = max(1, int(plot_width // slot))
                 if count > max_fit:
-                    return math.ceil(count / max_fit)
-                return 1
+                    stride = max(stride, math.ceil(count / max_fit))
 
-        # Width unavailable: halve repeatedly like the YAxis grid until the
-        # drawn label count drops to ~10 or fewer.
-        stride = 1
-        while count / stride > 10:
-            stride *= 2
         return stride
+
+    # Past this many per-category vertical gridlines the plot fills with a grey
+    # haze. Thin them to roughly this many evenly-spaced lines instead.
+    _GRID_DENSITY_CAP = 25
+    _GRID_TARGET_LINES = 12
+
+    def _thin_grid_coordinates(self, coordinates: list[float]) -> list[float]:
+        """Drop vertical gridlines on dense ordinal axes to avoid a grey haze.
+
+        A category axis draws one gridline per category. With a few hundred
+        categories that becomes a solid block of grey. Once the count passes
+        ``_GRID_DENSITY_CAP`` keep an evenly-spaced subset (about
+        ``_GRID_TARGET_LINES`` lines, always including the first and last) so the
+        grid stays legible. Low-cardinality axes are returned unchanged, so
+        normal charts keep byte-identical grids.
+        """
+        n = len(coordinates)
+        if n <= self._GRID_DENSITY_CAP:
+            return coordinates
+        stride = math.ceil(n / self._GRID_TARGET_LINES)
+        kept = [c for i, c in enumerate(coordinates) if i % stride == 0]
+        if coordinates and coordinates[-1] != kept[-1]:
+            kept.append(coordinates[-1])
+        return kept
 
     @property
     def grid_lines(self) -> Element | None:
@@ -486,7 +570,7 @@ class XAxis(Axis):
         if self.stacked and min_v < 0:
             dx = self.reproject(abs(min_v))
 
-        coordinates = list(self.coordinates)
+        coordinates = self._thin_grid_coordinates(list(self.coordinates))
         # Close the grid on the right: draw a gridline at the plot boundary when
         # the last tick falls short of it. Category axes already place a tick at
         # the edge, so nothing is added. Value axes with domain padding leave a
@@ -519,6 +603,94 @@ class XAxis(Axis):
         minor_path = Path(**minor_attrs, d=minor_d, transform=transform)
         # Minor lines first so the heavier major lines render on top.
         return G().add_children(minor_path, major_path)
+
+    @staticmethod
+    def _rotated_x_span(
+        coordinate: float,
+        label: MeasuredText,
+        rotation_angle: float,
+    ) -> tuple[float, float]:
+        """Return a rotated label's projected ``(left, right)`` x-extent.
+
+        Rotated tick labels pivot about their tick at ``(coordinate, plot_height)``
+        and are shifted left by one character width first (so they pivot off the
+        right edge), exactly as :attr:`axis_labels` renders them. The box grows
+        upward from the baseline by the label height. Projecting the four rotated
+        corners onto the x axis gives the horizontal footprint the next label has
+        to clear. This mirrors the absolute geometry the geometric-invariant tests
+        recompute from the rendered SVG, so the drop decision matches what is
+        actually painted.
+        """
+        char_shift = label.width / len(label.text) if label.text else 0.0
+        # Box corners in the rotation pivot's frame (pivot at x=0). The text is
+        # start-anchored at ``-char_shift`` and the baseline sits at the pivot, so
+        # the box rises to ``-height``.
+        left_x = -char_shift
+        right_x = -char_shift + label.width
+        top_y = -label.height
+        bottom_y = 0.0
+        rad = math.radians(rotation_angle)
+        cos, sin = math.cos(rad), math.sin(rad)
+        # SVG rotate maps (px, py) -> (px*cos - py*sin, ...); we only need the
+        # x component to bound the horizontal footprint.
+        xs = [
+            px * cos - py * sin
+            for px in (left_x, right_x)
+            for py in (top_y, bottom_y)
+        ]
+        return coordinate + min(xs), coordinate + max(xs)
+
+    @classmethod
+    def _non_overlapping_indices(
+        cls,
+        coordinates: list[float],
+        labels: list[MeasuredText],
+        dx: float,
+        rotation_angle: float = 0.0,
+    ) -> set[int]:
+        """Pick label indices whose boxes do not overlap their kept neighbour.
+
+        Walks the labels in left-to-right order and keeps an index only when its
+        x-footprint clears the previously kept label's. For an unrotated axis the
+        footprint is the centred label box; for a rotated axis it is the rotated
+        label's projected x-extent (see :meth:`_rotated_x_span`). The first and
+        last labels are always retained: if the final label collides with the last
+        kept middle label, that middle one is dropped instead so the axis range
+        stays labelled. The pass only ever removes labels, so an axis whose labels
+        already fit keeps every one and renders byte-for-byte the same.
+        """
+        n = len(labels)
+        if n <= 1:
+            return set(range(n))
+        order = sorted(range(n), key=lambda i: coordinates[i])
+
+        if rotation_angle > 0:
+
+            def box(i: int) -> tuple[float, float]:
+                return cls._rotated_x_span(
+                    coordinates[i] + dx, labels[i], rotation_angle
+                )
+        else:
+
+            def box(i: int) -> tuple[float, float]:
+                centre = coordinates[i] + dx
+                half = labels[i].width / 2
+                return centre - half, centre + half
+
+        kept: list[int] = [order[0]]
+        last_right = box(order[0])[1]
+        for i in order[1:-1]:
+            left, right = box(i)
+            if left >= last_right - 1.0:
+                kept.append(i)
+                last_right = right
+        if len(order) > 1:
+            last = order[-1]
+            left, right = box(last)
+            while len(kept) > 1 and box(kept[-1])[1] > left + 1.0:
+                kept.pop()
+            kept.append(last)
+        return set(kept)
 
     @property
     def axis_labels(self) -> G:
@@ -558,16 +730,52 @@ class XAxis(Axis):
         # middle so labels stop overlapping into a smear.
         stride = self._label_stride(len(all_labels))
         last_index = len(all_labels) - 1
+        # Width-aware overlap pass. Value-axis numeric labels (e.g. a
+        # mismatched-magnitude domain like (-4e8, 1e9)) are not ordinal, so the
+        # count-based stride leaves them all in place even when adjacent wide
+        # labels collide. Drop the indices whose footprint would overlap the
+        # previous kept label; this only ever removes labels, so an axis whose
+        # labels already fit keeps every one and renders byte-for-byte the same.
+        # Horizontal axes use the centred label box; rotated axes use the rotated
+        # label's projected x-extent, since a steep rotation still leaves a wide
+        # label spanning enough of the x axis to collide with its neighbour.
+        keep = self._non_overlapping_indices(
+            coordinates, all_labels, dx, rotation_angle
+        )
+        left_pad = self.parent.left_padding
+        chart_width = getattr(self.parent, "width", None)
         for index, (x, label) in enumerate(zip(coordinates, all_labels)):
             if stride > 1 and index not in (0, last_index) and index % stride != 0:
                 continue
+            if index not in keep:
+                continue
             x = x + dx
-            transformations = [translate(-label.width / 2, 0)]
             if rotation_angle > 0:
+                # Shift the rotated label left by roughly one character width so
+                # it pivots from its right edge. An empty label has no
+                # characters (and zero width), so there is nothing to shift:
+                # guard the division to avoid a ZeroDivisionError on len('').
+                char_shift = label.width / len(label.text) if label.text else 0.0
                 transformations = [
-                    translate(label.width / len(label.text) * -1, 0),
+                    translate(char_shift * -1, 0),
                     rotate(rotation_angle, x, y),
                 ]
+            else:
+                # Centre the label on its tick. Clamp the horizontal shift so an
+                # edge label (a wide first/last category) cannot spill off the
+                # left or right of the canvas. The label group is already
+                # translated right by ``left_padding``; absolute left/right edges
+                # are therefore ``left_pad + x + shift`` and ``+ label.width``.
+                shift = -label.width / 2
+                if chart_width is not None:
+                    abs_left = left_pad + x + shift
+                    if abs_left < 0:
+                        shift -= abs_left
+                    abs_right = left_pad + x + shift + label.width
+                    overflow = abs_right - chart_width
+                    if overflow > 0:
+                        shift -= overflow
+                transformations = [translate(shift, 0)]
             text = Text(
                 x=x,
                 y=y,

@@ -194,6 +194,23 @@ LineChart(
 ---
 
 ```python
+# Line: log scale (opt-in) for data spanning orders of magnitude.
+# Pass y_scale="log" (or x_scale="log"); a LogScale instance also works.
+LineChart(
+    title="Requests/sec (log scale)",
+    data=[[1, 8, 60, 450, 3200, 25000]],
+    labels=["t0", "t1", "t2", "t3", "t4", "t5"],
+    series_names=["rps"],
+    y_scale="log",
+    width=700, height=400,
+).save("line_log.svg")
+```
+
+![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/line_log.svg)
+
+---
+
+```python
 # Scatter: multi-series cluster analysis
 import random
 from charted.charts import ScatterChart

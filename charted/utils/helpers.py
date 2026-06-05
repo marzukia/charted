@@ -77,16 +77,57 @@ def wrap_text_to_width(
     return MeasuredText(text, width, height, lines=lines)
 
 
+def truncate_text_to_width(
+    text: str,
+    max_width: float,
+    font: str = DEFAULT_FONT,
+    font_size: int = DEFAULT_FONT_SIZE,
+) -> MeasuredText:
+    """Truncate a label with an ellipsis so it fits within ``max_width``.
+
+    Used for single-line axis labels (e.g. rotated x-axis categories) that
+    cannot wrap. Drops trailing characters and appends ``"…"`` until the
+    measured width fits. A non-positive ``max_width`` or text that already fits
+    is returned unchanged. Returns a MeasuredText measuring the truncated
+    string.
+    """
+    text = str(text)
+    single = calculate_text_dimensions(text, font=font, font_size=font_size)
+    if max_width <= 0 or single.width <= max_width:
+        return single
+
+    ellipsis = "…"
+    # Binary search the longest prefix whose "<prefix>…" fits within max_width.
+    lo, hi = 0, len(text)
+    best = ""
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        candidate = text[:mid].rstrip() + ellipsis
+        if (
+            calculate_text_dimensions(candidate, font=font, font_size=font_size).width
+            <= max_width
+        ):
+            best = candidate
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    if not best:
+        best = ellipsis
+    return calculate_text_dimensions(best, font=font, font_size=font_size)
+
+
 def calculate_rotation_angle(
     total_label_width: float,
     total_permissible_width: float,
 ) -> float | None:
-    if total_label_width <= total_permissible_width:
+    if total_label_width <= 0 or total_label_width <= total_permissible_width:
         return 0
 
-    ratio = total_permissible_width / total_label_width
-    if ratio > 1.0 or ratio < 0.0:
-        raise ValueError("Invalid ratio: it should be between 0 and 1.")
+    # Clamp the ratio into [0, 1]. A non-positive permissible width (labels
+    # wider than the whole available gutter, e.g. very long category names that
+    # eat the layout) would otherwise fall outside acos's domain. Clamping
+    # rotates the labels toward vertical instead of crashing the render.
+    ratio = max(0.0, min(1.0, total_permissible_width / total_label_width))
 
     rotation_angle_radians = math.acos(ratio)
     rotation_angle_degrees = math.degrees(rotation_angle_radians)

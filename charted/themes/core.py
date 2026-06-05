@@ -687,6 +687,19 @@ class Theme:
         return palette.get_color(index)
 
 
+def _is_dark_color(hex_color: str) -> bool:
+    """True when a hex colour is dark enough (relative luminance below 0.5) that
+    default-dark text composited over it would be hard to read."""
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    try:
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:
+        return False
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5
+
+
 def _wrap_theme_init() -> None:
     """Wrap Theme.__init__ to record which fields a caller explicitly passed.
 
@@ -719,6 +732,17 @@ def _wrap_theme_init() -> None:
                 )
             except TypeError:
                 provided = frozenset()
+        # When a dark background is set without explicit text colours, swap in
+        # light defaults BEFORE the dataclass validates (its WCAG legend check
+        # runs in __post_init__). Tick labels, gridlines, and axis titles derive
+        # from root_color, so a default-black root_color renders dark-on-dark;
+        # the legend has its own colour that would also fail contrast on dark.
+        # These injected defaults are not added to ``provided``, so ``compose()``
+        # still treats them as derived, not user-set.
+        bg = kwargs.get("background_color")
+        if isinstance(bg, str) and _is_dark_color(bg):
+            kwargs.setdefault("root_color", "#FFFFFF")
+            kwargs.setdefault("legend_font_color", "#E6E6E6")
         # Dynamic passthrough to the real dataclass ``__init__``; ``*args`` /
         # ``**kwargs`` carry heterogeneous per-field values that cannot be
         # statically matched to the generated typed parameters.

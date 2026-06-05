@@ -1,8 +1,16 @@
 """Test suite for axis rendering (XAxis, YAxis)."""
 
+import math
+
 import pytest
 
 from charted.charts.axes import XAxis, YAxis
+from charted.utils.types import MeasuredText
+
+
+def _mt(text: str, width: float, height: float = 9.0) -> MeasuredText:
+    """Build a MeasuredText with explicit dimensions for overlap tests."""
+    return MeasuredText(text=text, width=width, height=height)
 
 
 class MockParent:
@@ -58,14 +66,27 @@ class TestXAxisHappyPath:
         assert len(labels) > 0
 
     def test_thousands_separator(self):
-        """Large numeric tick labels are grouped with thousands separators."""
+        """Mid-range numeric tick labels are grouped with thousands separators.
+
+        Values at or above 1e6 switch to scientific notation, so this checks a
+        range whose ticks land in the grouped-but-not-extreme band.
+        """
         parent = MockParent()
-        data = [[0, 1000000]]
+        data = [[0, 500000]]
         axis = YAxis(parent=parent, data=data)
         texts = [label.text for label in axis.labels]
-        assert "1,000,000" in texts
+        assert "500,000" in texts
         # Small values stay ungrouped.
         assert not any("," in t and len(t.replace(",", "")) <= 3 for t in texts)
+
+    def test_extreme_magnitude_scientific_notation(self):
+        """Huge tick values render in scientific notation, not long grouped strings."""
+        parent = MockParent()
+        data = [[0, 1_000_000_000]]
+        axis = YAxis(parent=parent, data=data)
+        texts = [label.text for label in axis.labels]
+        assert "1e9" in texts
+        assert not any("," in t for t in texts)
 
 
 class TestYAxisHappyPath:
@@ -202,3 +223,104 @@ class TestYAxisSadPath:
         labels = axis.labels
         # Labels should be formatted
         assert len(labels) > 0
+
+
+class TestNonOverlappingIndices:
+    """Direct unit tests for ``XAxis._non_overlapping_indices``.
+
+    This pass decides which tick labels survive a width-aware overlap drop.
+    A silent bug here would quietly remove labels users need, so the kept set
+    is pinned directly rather than only through the geometric-invariant suite.
+    """
+
+    def test_fitting_labels_keep_every_index(self):
+        """Well-spaced labels never collide, so all are kept."""
+        coords = [0.0, 50.0, 100.0, 150.0]
+        labels = [_mt("a", 10.0) for _ in coords]
+        keep = XAxis._non_overlapping_indices(coords, labels, dx=0.0)
+        assert keep == {0, 1, 2, 3}
+
+    def test_single_and_empty(self):
+        """Zero or one label is always fully kept (no neighbour to clear)."""
+        assert XAxis._non_overlapping_indices([], [], dx=0.0) == set()
+        assert XAxis._non_overlapping_indices([5.0], [_mt("a", 99.0)], dx=0.0) == {0}
+
+    def test_colliding_middles_drop_to_minimal_set(self):
+        """Wide labels packed tightly keep first, last, and minimal middles.
+
+        Boxes are centred half-widths: at width 40 on a 20px pitch every
+        neighbour overlaps, so the greedy pass keeps index 0, the first middle
+        that clears it (2), and the forced final (4).
+        """
+        coords = [0.0, 20.0, 40.0, 60.0, 80.0]
+        labels = [_mt(str(i), 40.0) for i in range(5)]
+        keep = XAxis._non_overlapping_indices(coords, labels, dx=0.0)
+        assert keep == {0, 2, 4}
+
+    def test_first_and_last_always_retained(self):
+        """Even with everything colliding, the axis range stays labelled."""
+        coords = [0.0, 5.0, 10.0, 15.0]
+        labels = [_mt(str(i), 80.0) for i in range(4)]
+        keep = XAxis._non_overlapping_indices(coords, labels, dx=0.0)
+        assert 0 in keep
+        assert 3 in keep
+
+    def test_chain_collision_drops_only_the_blocker(self):
+        """A final label colliding with the last middle pops just that middle.
+
+        Coords/widths are chosen so the greedy pass keeps {0, 1, 2} and then the
+        forced final (3) overlaps only the last kept middle (2). The pass must
+        drop index 2 and keep index 1, not cascade further.
+        """
+        coords = [0.0, 30.0, 55.0, 60.0]
+        labels = [_mt(str(i), 20.0) for i in range(4)]
+        keep = XAxis._non_overlapping_indices(coords, labels, dx=0.0)
+        assert keep == {0, 1, 3}
+
+    def test_dx_shift_does_not_change_relative_overlap(self):
+        """A uniform dx offset shifts every box equally; the kept set is stable."""
+        coords = [0.0, 20.0, 40.0, 60.0, 80.0]
+        labels = [_mt(str(i), 40.0) for i in range(5)]
+        base = XAxis._non_overlapping_indices(coords, labels, dx=0.0)
+        shifted = XAxis._non_overlapping_indices(coords, labels, dx=17.0)
+        assert base == shifted == {0, 2, 4}
+
+    def test_rotated_span_projects_full_footprint(self):
+        """The rotated x-span matches the projected corners of the tilted box."""
+        label = _mt("AB", 20.0, height=10.0)
+        left, right = XAxis._rotated_x_span(100.0, label, rotation_angle=30.0)
+        char_shift = label.width / len(label.text)  # 10.0
+        rad = math.radians(30.0)
+        cos, sin = math.cos(rad), math.sin(rad)
+        xs = [
+            px * cos - py * sin
+            for px in (-char_shift, -char_shift + label.width)
+            for py in (-label.height, 0.0)
+        ]
+        assert left == pytest.approx(100.0 + min(xs))
+        assert right == pytest.approx(100.0 + max(xs))
+
+    def test_rotated_fitting_labels_keep_every_index(self):
+        """Rotated labels that clear their neighbour are all kept."""
+        coords = [0.0, 200.0, 400.0]
+        labels = [_mt("x", 8.0, height=9.0) for _ in coords]
+        keep = XAxis._non_overlapping_indices(
+            coords, labels, dx=0.0, rotation_angle=45.0
+        )
+        assert keep == {0, 1, 2}
+
+    def test_rotated_colliding_labels_drop(self):
+        """Steeply rotated wide labels on a tight pitch collide and are thinned.
+
+        At 60 degrees the projected footprint of each 60px-wide label spans well
+        past the 30px pitch, so the pass keeps first, last, and a minimal middle
+        rather than the overlapping full set.
+        """
+        coords = [0.0, 30.0, 60.0, 90.0, 120.0]
+        labels = [_mt("wide" + str(i), 60.0, height=12.0) for i in range(5)]
+        keep = XAxis._non_overlapping_indices(
+            coords, labels, dx=0.0, rotation_angle=60.0
+        )
+        assert keep != {0, 1, 2, 3, 4}
+        assert 0 in keep and 4 in keep
+        assert len(keep) < 5
