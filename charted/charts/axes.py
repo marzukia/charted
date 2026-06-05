@@ -194,6 +194,13 @@ class Axis(G):
 
         if zero_index and min_value > 0:
             min_value = 0
+        # Symmetric clamp for an all-negative domain: pull the top of the range
+        # up to zero so the rendered domain still contains the zero baseline.
+        # Without this the domain is e.g. [-3, -1], and projecting the zero
+        # line / bar baseline lands at (0 - -3) / 2 = 1.5x the plot length,
+        # pushing gridlines, bars, markers and the line path outside the frame.
+        if zero_index and max_value < 0:
+            max_value = 0
 
         if not has_labels:
             if min_value < 0:
