@@ -50,42 +50,64 @@ class _PlacedLabel:
 def _spread_labels(
     centres: list[float], line_h: float, y0: float, y1: float
 ) -> list[float]:
-    """Nudge a sorted column of label centres so their boxes stop overlapping.
+    """Nudge a sorted column of label centres so their boxes stay on-canvas.
 
     ``centres`` must be sorted ascending. Each label box is ``line_h`` tall and
     centred on its value, so two labels collide when their centres are closer
-    than ``line_h``. We enforce a minimum ``line_h`` gap between consecutive
-    centres with the same two-pass sweep the node layout uses: push down to
-    open gaps and clear the top, then pull up to clear the bottom. When the
-    column is too tall to fit every label, the bottom-up pass wins and the
-    stack is packed flush from ``y1`` upward (labels still cannot leave the
-    canvas, they just sit gap-to-gap).
+    than ``line_h``. The label centres are constrained to ``[y0 + half,
+    y1 - half]`` so no box edge leaves ``[y0, y1]``.
+
+    When the column fits (``n * line_h <= y1 - y0``) we enforce a minimum
+    ``line_h`` gap between consecutive centres with a two-pass sweep: push down
+    to open gaps and clear the top, then pull up to clear the bottom and
+    re-clamp the top so the whole stack sits inside ``[y0, y1]`` with no
+    overlaps.
+
+    When the column is oversubscribed (``n * line_h > y1 - y0``) no gap large
+    enough exists, so we distribute the centres evenly across the available
+    span. The labels then touch or overlap, but every box stays on-canvas;
+    on-canvas-but-tight beats off-canvas-invisible at that node count.
     """
     n = len(centres)
     if n <= 1:
         return list(centres)
 
-    out = list(centres)
     half = line_h / 2.0
+    floor = y0 + half
+    ceil = y1 - half
+
+    # Oversubscribed: the stack is taller than the canvas, so no arrangement
+    # keeps a full line_h gap and stays in bounds. Spread evenly across
+    # [floor, ceil] instead; boxes overlap but none leaves the canvas.
+    if n * line_h > (y1 - y0):
+        step = (ceil - floor) / (n - 1)
+        return [floor + i * step for i in range(n)]
+
+    out = list(centres)
 
     # Top-down: each centre at least line_h below the previous, and the first
     # no higher than the top edge allows.
-    floor = y0 + half
     for i in range(n):
         lo = floor if i == 0 else out[i - 1] + line_h
         if out[i] < lo:
             out[i] = lo
 
     # Bottom-up: pull the stack up so the last label clears y1, propagating the
-    # minimum gap upward. This both contains the column and, when it overflows,
-    # packs the labels flush instead of letting them spill past the canvas.
-    ceil = y1 - half
+    # minimum gap upward to contain the column.
     if out[-1] > ceil:
         out[-1] = ceil
     for i in range(n - 2, -1, -1):
         hi = out[i + 1] - line_h
         if out[i] > hi:
             out[i] = hi
+
+    # Re-clamp the top: the bottom-up pass can push out[0] above floor (off the
+    # top edge). Since the column fits, nudging the stack back down by the
+    # overshoot keeps every gap and lands the whole stack inside [floor, ceil].
+    if out[0] < floor:
+        shift = floor - out[0]
+        for i in range(n):
+            out[i] += shift
     return out
 
 
@@ -415,9 +437,11 @@ class SankeyChart(Chart):
         no two label boxes overlap: a column may pack node centres tighter than
         a text line is tall, which would otherwise smear the labels together.
 
-        The nudge keeps the original vertical order, uses the font's measured
-        line height for the spacing, and clamps the whole stack inside
-        ``[y0, y1]`` so labels never run off the canvas.
+        The nudge keeps the original vertical order and uses the font's
+        measured line height for the spacing. Every label box is kept inside
+        ``[y0, y1]`` so labels never run off the canvas. On an oversubscribed
+        column (more labels than vertical room) the boxes may overlap, but they
+        still stay on-canvas rather than spilling past the edges.
         """
         label_pad = 6.0
         midline = (x0 + x1) / 2.0
