@@ -31,6 +31,7 @@ def main(args: Sequence[str] | None = None) -> None:
             "heatmap",
             "gantt",
             "combo",
+            "sankey",
         ],
     )
     create_parser.add_argument("output", help="Output SVG file path")
@@ -82,6 +83,7 @@ def main(args: Sequence[str] | None = None) -> None:
             "heatmap",
             "gantt",
             "combo",
+            "sankey",
         ],
         help="Override chart type inferred from filename",
     )

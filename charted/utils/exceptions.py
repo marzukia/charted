@@ -89,7 +89,7 @@ class UnknownChartTypeError(ChartedError):
             f"Unknown chart type: '{chart_type}'. "
             "Available types: BarChart, ColumnChart, LineChart, ScatterChart, "
             "PieChart, AreaChart, RadarChart, BoxPlot, Histogram, HeatmapChart, "
-            "GanttChart, BubbleChart, ComboChart, PolarAreaChart. "
+            "GanttChart, BubbleChart, ComboChart, PolarAreaChart, SankeyChart. "
             "Use charted.auto(data) to auto-detect."
         )
 
