@@ -255,7 +255,15 @@ python -m charted batch input_dir/ output_dir/ --chart-type line
 python -m charted --help
 ```
 
-Supported chart types in CLI: `bar`, `column`, `line`, `pie`, `radar`, `scatter`.
+Supported chart types in CLI: `bar`, `column`, `line`, `pie`, `radar`, `scatter`, `sankey`.
+
+Sankey takes a node/link graph rather than the standard `data`/`labels` shape.
+From the CLI, pass a JSON file with top-level `nodes` and `links`:
+
+```sh
+python -m charted create sankey out.svg -d flows.json
+# flows.json: {"nodes": ["A","B","C"], "links": [["A","B",10], ["B","C",10]]}
+```
 
 ## Development
 

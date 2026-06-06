@@ -23,6 +23,7 @@ from .charts import (
     PieChart,
     PolarAreaChart,
     RadarChart,
+    SankeyChart,
     ScatterChart,
 )
 from .charts.annotations import (
@@ -90,6 +91,7 @@ __all__ = [
     "RadarChart",
     "RenderError",
     "resolve_palette",
+    "SankeyChart",
     "ScatterChart",
     "SeriesStyle",
     "Theme",

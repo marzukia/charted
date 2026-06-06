@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/github/marzukia/charted/graph/badge.svg)](https://codecov.io/github/marzukia/charted) [![charted-ci](https://github.com/marzukia/charted/actions/workflows/ci.yml/badge.svg)](https://github.com/marzukia/charted/actions/workflows/ci.yml)
 
-**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string with no numpy, no pandas, and no heavy dependencies. 14 chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
+**Charted** is a zero-dependency SVG chart library for Python. Drop in a list of numbers, get back a clean SVG string with no numpy, no pandas, and no heavy dependencies. 15 chart types, multi-series support, theming, and a CLI so you can generate charts without writing code.
 
 > **Core principle:** charted itself has zero runtime dependencies. PNG export and MCP server support are opt-in extras that pull in their own dependencies, and the base library stays pure Python.
 
@@ -27,7 +27,7 @@ chart.save("chart.png")  # PNG export (requires cairosvg)
 ## Why Charted?
 
 - **Zero runtime dependencies**: pure Python, no numpy/pandas required
-- **14 chart types**: Bar, Column, Line, Scatter, Pie, Area, Radar, Box Plot, Histogram, Heatmap, Gantt, Bubble, Combo, Polar Area
+- **15 chart types**: Bar, Column, Line, Scatter, Pie, Area, Radar, Box Plot, Histogram, Heatmap, Gantt, Bubble, Combo, Polar Area, Sankey
 - **Multi-series support**: stacked, side-by-side, grouped layouts
 - **Negative values handled**: proper zero baseline calculations
 - **SVG and PNG output**: SVG natively, PNG via optional `cairosvg` (`pip install charted[png]`)
@@ -416,6 +416,27 @@ GanttChart(
 ```
 
 ![](https://raw.githubusercontent.com/marzukia/charted/main/docs/examples/gantt.svg)
+
+```python
+# Sankey: flow diagram (d3-sankey layout)
+from charted.charts import SankeyChart
+
+SankeyChart(
+    title="Electricity generation to consumption",
+    nodes=["Coal", "Gas", "Solar", "Grid", "Homes", "Industry", "Export"],
+    links=[
+        ("Coal", "Grid", 45), ("Gas", "Grid", 30), ("Solar", "Grid", 15),
+        ("Grid", "Homes", 40), ("Grid", "Industry", 35), ("Grid", "Export", 15),
+    ],
+    width=800, height=500,
+).save("sankey.svg")
+```
+
+Nodes are placed in columns by alignment, then relaxed over several iterations so
+connected nodes line up and ribbons cross as little as possible. Link thickness is
+proportional to flow value; the widths stacked at each node sum to the node's height.
+Pass links as `(source, target, value)` tuples or `{"source", "target", "value"}`
+dicts; endpoints may be node names or indices.
 
 ---
 

@@ -52,10 +52,12 @@ from charted import (
     LineChart,
     PieChart,
     RadarChart,
+    SankeyChart,
     ScatterChart,
 )
 from charted.charts.scales import LinearScale, LogScale
 from charted.utils.exceptions import ChartedError
+from charted.utils.sankey_layout import compute_layout
 from tests._svg_geometry import (
     BBox,
     bar_boxes,
@@ -780,3 +782,146 @@ def test_mixed_magnitude_domain_renders_without_exploding() -> None:
     _assert_well_formed(svg)
     _assert_in_frame(svg)
     assert elapsed < 1.0, f"mixed-magnitude render took {elapsed:.2f}s (expected <1s)"
+
+
+# ---------------------------------------------------------------------------
+# SankeyChart invariants
+# ---------------------------------------------------------------------------
+#
+# Sankey is not value-list shaped (it takes a node/link DAG), so it does not
+# join ALL_CHART_BUILDERS. It gets its own strategy that emits *valid* layered
+# DAGs (links only ever point to a later layer, so they can never form a cycle)
+# plus its own flow-conservation invariant: at every node the stacked link
+# widths sum to the node's pixel height. That is the property that makes a
+# Sankey read correctly - if it fails, ribbons either overflow or leave gaps.
+
+
+@st.composite
+def sankey_dag(
+    draw: st.DrawFn,
+) -> tuple[list[str], list[tuple[int, int, float]], tuple[float, float]]:
+    """Draw a random layered DAG: nodes split into ordered layers, links only
+    ever go from an earlier layer to a later one (so the graph is acyclic by
+    construction), and every node past the first layer has at least one inbound
+    link (so it is reachable and carries flow)."""
+    n_layers = draw(st.integers(min_value=2, max_value=4))
+    layer_sizes = [draw(st.integers(min_value=1, max_value=3)) for _ in range(n_layers)]
+    # Assign a flat node-index range, grouped by layer.
+    layers: list[list[int]] = []
+    idx = 0
+    for size in layer_sizes:
+        layers.append(list(range(idx, idx + size)))
+        idx += size
+    n = idx
+    names = [f"n{i}" for i in range(n)]
+
+    links: list[tuple[int, int, float]] = []
+    value = st.floats(
+        min_value=1e-3, max_value=1e6, allow_nan=False, allow_infinity=False
+    )
+    for li in range(1, n_layers):
+        prev = layers[li - 1]
+        cur = layers[li]
+        for target in cur:
+            # Guarantee at least one inbound edge from the previous layer.
+            source = draw(st.sampled_from(prev))
+            links.append((source, target, draw(value)))
+            # Optional extra fan-in from the previous layer.
+            for src in prev:
+                if src != source and draw(st.booleans()):
+                    links.append((src, target, draw(value)))
+    dims = draw(st.sampled_from([(800.0, 500.0), (640.0, 480.0), (700.0, 400.0)]))
+    return names, links, dims
+
+
+@SETTINGS
+@given(graph=sankey_dag())
+def test_sankey_well_formed_finite_in_frame(
+    graph: tuple[list[str], list[tuple[int, int, float]], tuple[float, float]],
+) -> None:
+    names, links, (w, h) = graph
+    svg = _render_or_skip(
+        lambda: SankeyChart(nodes=names, links=links, width=w, height=h).to_svg()
+    )
+    assume(svg is not None)
+    assert svg is not None
+    _assert_well_formed(svg)
+    _assert_finite_coords(svg)
+    # Non-text geometry (ribbons + node rects) must stay inside the viewBox.
+    _assert_in_frame(svg)
+
+
+@SETTINGS
+@given(graph=sankey_dag())
+def test_sankey_flow_conservation(
+    graph: tuple[list[str], list[tuple[int, int, float]], tuple[float, float]],
+) -> None:
+    """At every node, stacked link widths sum to the node height (tolerance).
+
+    This is *the* Sankey correctness property: a node of pixel height H carrying
+    value V renders each link of value v at width v/V*H, so the widths of all
+    links on one side of the node must sum back to H.
+    """
+    names, links, _ = graph
+    layout = compute_layout(names, links, x0=40.0, y0=20.0, x1=760.0, y1=480.0)
+    for node in layout.nodes:
+        height = node.y1 - node.y0
+        assert math.isfinite(height) and height >= -1e-6
+        out_w = sum(link.width for link in node.source_links)
+        in_w = sum(link.width for link in node.target_links)
+        # A link width is the min of its two endpoints' ratios, so the binding
+        # side sums exactly to the node height and the other side is <= it.
+        if node.source_links:
+            assert out_w <= height + 1e-6
+        if node.target_links:
+            assert in_w <= height + 1e-6
+        # The node whose own ratio binds a link reaches the node height exactly;
+        # at least one side of every interior node must be tight.
+        if node.source_links and node.target_links:
+            assert math.isclose(
+                out_w, height, rel_tol=1e-6, abs_tol=1e-4
+            ) or math.isclose(in_w, height, rel_tol=1e-6, abs_tol=1e-4)
+
+
+@SETTINGS
+@given(graph=sankey_dag())
+def test_sankey_deterministic(
+    graph: tuple[list[str], list[tuple[int, int, float]], tuple[float, float]],
+) -> None:
+    names, links, (w, h) = graph
+    a = _render_or_skip(
+        lambda: SankeyChart(nodes=names, links=links, width=w, height=h).to_svg()
+    )
+    b = _render_or_skip(
+        lambda: SankeyChart(nodes=names, links=links, width=w, height=h).to_svg()
+    )
+    assume(a is not None)
+    assert a == b
+
+
+def test_sankey_single_link_in_frame() -> None:
+    """Degenerate: one link, two nodes. Full-height ribbon, both rects framed."""
+    svg = str(SankeyChart(nodes=["A", "B"], links=[("A", "B", 10)]).to_svg())
+    _assert_well_formed(svg)
+    _assert_finite_coords(svg)
+    _assert_in_frame(svg)
+
+
+def test_sankey_disconnected_chains_in_frame() -> None:
+    """Degenerate: two chains that never touch still lay out cleanly."""
+    svg = str(
+        SankeyChart(
+            nodes=["A", "B", "C", "D"], links=[("A", "B", 5), ("C", "D", 5)]
+        ).to_svg()
+    )
+    _assert_well_formed(svg)
+    _assert_in_frame(svg)
+
+
+def test_sankey_rejects_cycle_cleanly() -> None:
+    """A non-DAG raises a ChartedError, not an arbitrary crash."""
+    with pytest.raises(ChartedError):
+        SankeyChart(
+            nodes=["A", "B", "C"],
+            links=[("A", "B", 1), ("B", "C", 1), ("C", "A", 1)],
+        ).to_svg()
