@@ -45,5 +45,6 @@
   "bubble_basic.svg": "99dcb5475c6adfe3a6be57d1488120508d9ee829cbacb6a5fad6b87a2b38c8bb",
   "polar_area_basic.svg": "28ef01b5192747c9477e9e1e4597b1051c52638ae2c9f7aa1a3e3621d34a0546",
   "combo_basic.svg": "8bff0168c8628573befee24bf5b1ef085de78d77c637341ac123e8a98ab1f54e",
-  "combo_secondary_axis.svg": "2ef1a2edc6cb16aea9f67e71942f3766110f60bd0831db1aef7cae9881245336"
+  "combo_secondary_axis.svg": "2ef1a2edc6cb16aea9f67e71942f3766110f60bd0831db1aef7cae9881245336",
+  "sankey_basic.svg": "b627899ef8f5e6f1b7ff8cf434bba7dd301d4f906a1d0655bbfb4d36144636f5"
 }

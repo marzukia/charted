@@ -47,6 +47,7 @@ from charted.charts.histogram import Histogram
 from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
 from charted.charts.polar_area import PolarAreaChart
+from charted.charts.sankey import SankeyChart
 from charted.charts.scatter import ScatterChart
 
 # ============================================================
@@ -418,6 +419,19 @@ def test_scatter_chart_empty_data():
 # ============================================================
 # Gantt Chart Visual Regression Tests
 # ============================================================
+
+
+def test_sankey_chart_basic():
+    """Visual regression test for basic SankeyChart (SVG structure)."""
+    chart = SankeyChart(
+        nodes=["A", "B", "C", "D"],
+        links=[("A", "C", 8), ("A", "D", 4), ("B", "C", 3), ("B", "D", 5)],
+        title="Sankey",
+    )
+    baseline_path = BASELINES_DIR / "sankey_basic.svg"
+    with open(baseline_path, "r") as f:
+        baseline_svg = f.read()
+    assert svgs_equal(chart.html, baseline_svg)
 
 
 def test_gantt_chart_basic():

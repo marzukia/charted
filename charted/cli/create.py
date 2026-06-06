@@ -20,6 +20,7 @@ from ..charts import (
     PieChart,
     PolarAreaChart,
     RadarChart,
+    SankeyChart,
     ScatterChart,
 )
 from ..utils.types import ChartDataDict, ComboSeriesDict
@@ -38,6 +39,7 @@ CHART_TYPES = {
     "pie": PieChart,
     "polar_area": PolarAreaChart,
     "radar": RadarChart,
+    "sankey": SankeyChart,
     "scatter": ScatterChart,
 }
 
