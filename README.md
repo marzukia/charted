@@ -436,7 +436,38 @@ Nodes are placed in columns by alignment, then relaxed over several iterations s
 connected nodes line up and ribbons cross as little as possible. Link thickness is
 proportional to flow value; the widths stacked at each node sum to the node's height.
 Pass links as `(source, target, value)` tuples or `{"source", "target", "value"}`
-dicts; endpoints may be node names or indices.
+dicts; endpoints may be node names or indices. Node labels in a dense column are
+nudged apart vertically so they stay readable instead of overlapping.
+
+The `alignment` option controls how nodes are assigned to columns: `justify`
+(default, like d3-sankey) pushes every sink to the final column; `left` keeps each
+node at its own depth; `right` aligns by distance from the sink; `center` is `left`
+with sources pinned to the first column.
+
+**For funnel / drop-off data, use `alignment="left"`.** Funnels have dropout sinks
+at many different depths (failed-filter, didn't-respond, cancelled, and so on). Under
+the default `justify` those are all yanked into one tall final column, which crushes
+the funnel shape. `left` lets each dropout terminate at its natural stage, so the
+chart reads as a true funnel staircase:
+
+```python
+# Funnel: recruitment drop-off, left-aligned so dropouts sit at their depth
+SankeyChart(
+    title="Recruitment funnel",
+    nodes=[
+        "Applied", "Passed screen", "Failed screen",
+        "Interviewed", "Rejected", "Offered", "Declined", "Hired",
+    ],
+    links=[
+        ("Applied", "Passed screen", 320), ("Applied", "Failed screen", 680),
+        ("Passed screen", "Interviewed", 140), ("Passed screen", "Rejected", 180),
+        ("Interviewed", "Offered", 60), ("Interviewed", "Rejected", 80),
+        ("Offered", "Hired", 45), ("Offered", "Declined", 15),
+    ],
+    alignment="left",
+    width=900, height=400,
+).save("funnel.svg")
+```
 
 ---
 

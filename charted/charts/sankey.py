@@ -9,6 +9,7 @@ See :mod:`charted.utils.sankey_layout` for the algorithm.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import cast
 
 from charted.charts.chart import Chart
@@ -21,6 +22,7 @@ from charted.utils.sankey_layout import (
     DEFAULT_ITERATIONS,
     DEFAULT_NODE_PADDING,
     DEFAULT_NODE_WIDTH,
+    SankeyLayout,
     SankeyLink,
     SankeyNode,
     compute_layout,
@@ -33,6 +35,58 @@ SANKEY_HEIGHT = 500
 
 # Link/Node triple may be given as a tuple or a {source,target,value} dict.
 LinkInput = tuple[object, object, float] | dict[str, object]
+
+
+@dataclass
+class _PlacedLabel:
+    """A node label resolved to its final anchor point and alignment."""
+
+    x: float
+    y: float
+    text: str
+    anchor: str
+
+
+def _spread_labels(
+    centres: list[float], line_h: float, y0: float, y1: float
+) -> list[float]:
+    """Nudge a sorted column of label centres so their boxes stop overlapping.
+
+    ``centres`` must be sorted ascending. Each label box is ``line_h`` tall and
+    centred on its value, so two labels collide when their centres are closer
+    than ``line_h``. We enforce a minimum ``line_h`` gap between consecutive
+    centres with the same two-pass sweep the node layout uses: push down to
+    open gaps and clear the top, then pull up to clear the bottom. When the
+    column is too tall to fit every label, the bottom-up pass wins and the
+    stack is packed flush from ``y1`` upward (labels still cannot leave the
+    canvas, they just sit gap-to-gap).
+    """
+    n = len(centres)
+    if n <= 1:
+        return list(centres)
+
+    out = list(centres)
+    half = line_h / 2.0
+
+    # Top-down: each centre at least line_h below the previous, and the first
+    # no higher than the top edge allows.
+    floor = y0 + half
+    for i in range(n):
+        lo = floor if i == 0 else out[i - 1] + line_h
+        if out[i] < lo:
+            out[i] = lo
+
+    # Bottom-up: pull the stack up so the last label clears y1, propagating the
+    # minimum gap upward. This both contains the column and, when it overflows,
+    # packs the labels flush instead of letting them spill past the canvas.
+    ceil = y1 - half
+    if out[-1] > ceil:
+        out[-1] = ceil
+    for i in range(n - 2, -1, -1):
+        hi = out[i + 1] - line_h
+        if out[i] > hi:
+            out[i] = hi
+    return out
 
 
 class SankeyChart(Chart):
@@ -54,8 +108,19 @@ class SankeyChart(Chart):
         node_width: Width of each node rectangle in pixels.
         node_padding: Minimum vertical gap between nodes in a column.
         iterations: Number of layout relaxation passes (d3 default 6).
-        alignment: Column alignment: ``justify`` / ``left`` / ``right`` /
-            ``center``.
+        alignment: How nodes are assigned to columns. One of:
+
+            * ``justify`` (default, matching d3-sankey): sink nodes (no
+              outbound flow) are pushed to the final column, so every terminal
+              node lines up on the right edge.
+            * ``left``: every node sits at its own depth from the source. Use
+              this for **funnel / drop-off data**, where dropout sinks appear at
+              many different depths: ``left`` lets each one terminate at its
+              natural stage instead of being yanked to the last column, which
+              reads as a true funnel staircase. Under ``justify`` the same data
+              squashes all the dropouts into one tall final column.
+            * ``right``: nodes align to the right by distance from the sink.
+            * ``center``: like ``left`` but sources stay at depth 0.
         link_opacity: Ribbon fill opacity (0-1); slight transparency so
             overlaps read.
         show_values: Append each node's total flow to its label.
@@ -295,8 +360,6 @@ class SankeyChart(Chart):
             result.add_child(path)
 
         # Node rectangles.
-        label_color = self.theme.resolved_label_color
-        midline = (x0 + x1) / 2.0
         for node in layout.nodes:
             color = self._node_color(node)
             rect = Rect(
@@ -312,30 +375,83 @@ class SankeyChart(Chart):
                 )
             result.add_child(rect)
 
-            # Label: to the right of nodes on the left half, to the left of
-            # nodes on the right half (d3 convention), so labels point outward.
-            name = names[node.index]
-            cy = (node.y0 + node.y1) / 2.0
-            if node.x0 < midline:
-                lx = node.x1 + label_pad
-                anchor = "start"
-            else:
-                lx = node.x0 - label_pad
-                anchor = "end"
+        # Labels, with vertical collision avoidance per column. On dense
+        # columns the node centres sit closer than a line of text is tall, so
+        # placing every label at its node's centre piles them into an
+        # unreadable mush. We measure each label's real height, then nudge the
+        # labels in each column apart just enough to stop their boxes
+        # overlapping (a relaxation sweep, like the node layout itself).
+        for placed in self._place_labels(layout, names, x0, x1, y0, y1, font_size):
             result.add_child(
                 Text(
-                    x=f"{lx:.3f}",
-                    y=f"{cy:.3f}",
-                    text=name,
-                    fill=label_color,
+                    x=f"{placed.x:.3f}",
+                    y=f"{placed.y:.3f}",
+                    text=placed.text,
+                    fill=self.theme.resolved_label_color,
                     font_size=font_size,
                     font_family=self.theme.title_font_family,
-                    text_anchor=anchor,
+                    text_anchor=placed.anchor,
                     dominant_baseline="middle",
                 )
             )
 
         return result
+
+    def _place_labels(
+        self,
+        layout: SankeyLayout,
+        names: list[str],
+        x0: float,
+        x1: float,
+        y0: float,
+        y1: float,
+        font_size: float,
+    ) -> list[_PlacedLabel]:
+        """Position node labels, nudging overlapping ones apart vertically.
+
+        Each label starts at its node's vertical centre and flanks the node on
+        the outward side (right of left-half nodes, left of right-half nodes,
+        the d3 convention). Within a column we then relax the label centres so
+        no two label boxes overlap: a column may pack node centres tighter than
+        a text line is tall, which would otherwise smear the labels together.
+
+        The nudge keeps the original vertical order, uses the font's measured
+        line height for the spacing, and clamps the whole stack inside
+        ``[y0, y1]`` so labels never run off the canvas.
+        """
+        label_pad = 6.0
+        midline = (x0 + x1) / 2.0
+
+        # Measured line height for the label font; the same value for every
+        # label since they share size and family. Fall back to the font size if
+        # the measurer reports nothing (never zero, so boxes always have area).
+        line_h = calculate_text_dimensions("Ag", font_size=int(font_size)).height
+        if line_h <= 0:
+            line_h = font_size
+
+        # Group nodes by column so each column relaxes independently.
+        columns: dict[int, list[SankeyNode]] = {}
+        for node in layout.nodes:
+            columns.setdefault(node.layer, []).append(node)
+
+        placed: list[_PlacedLabel] = []
+        for col_nodes in columns.values():
+            col_nodes.sort(key=lambda nd: (nd.y0 + nd.y1) / 2.0)
+            centres = [(nd.y0 + nd.y1) / 2.0 for nd in col_nodes]
+            centres = _spread_labels(centres, line_h, y0, y1)
+            for node, cy in zip(col_nodes, centres):
+                if node.x0 < midline:
+                    lx = node.x1 + label_pad
+                    anchor = "start"
+                else:
+                    lx = node.x0 - label_pad
+                    anchor = "end"
+                placed.append(
+                    _PlacedLabel(
+                        x=lx, y=cy, text=names[node.index], anchor=anchor
+                    )
+                )
+        return placed
 
     def _display_names(self) -> list[str]:
         """Node labels, optionally annotated with each node's total flow."""
