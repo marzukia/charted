@@ -53,6 +53,7 @@ from charted.charts.line import LineChart
 from charted.charts.pie import PieChart
 from charted.charts.polar_area import PolarAreaChart
 from charted.charts.radar import RadarChart
+from charted.charts.sankey import SankeyChart
 from charted.charts.scatter import ScatterChart
 
 BASELINES_DIR = ROOT / "tests" / "baselines"
@@ -120,9 +121,18 @@ CHARTS = {
     "pie_dense_12_slices": PieChart(
         data=[25, 18, 15, 12, 8, 6, 5, 4, 3, 2, 1, 1],
         labels=[
-            "Electronics", "Clothing", "Food", "Housing", "Transport",
-            "Healthcare", "Education", "Entertainment", "Travel", "Savings",
-            "Insurance", "Miscellaneous",
+            "Electronics",
+            "Clothing",
+            "Food",
+            "Housing",
+            "Transport",
+            "Healthcare",
+            "Education",
+            "Entertainment",
+            "Travel",
+            "Savings",
+            "Insurance",
+            "Miscellaneous",
         ],
     ),
     "pie_dense_15_slices": PieChart(
@@ -301,6 +311,12 @@ CHARTS = {
             },
         ],
         labels=["Jan", "Feb", "Mar"],
+    ),
+    # Sankey diagram
+    "sankey_basic": SankeyChart(
+        nodes=["A", "B", "C", "D"],
+        links=[("A", "C", 8), ("A", "D", 4), ("B", "C", 3), ("B", "D", 5)],
+        title="Sankey",
     ),
 }
 
