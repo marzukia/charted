@@ -14,6 +14,7 @@ from .line import LineChart
 from .pie import PieChart
 from .polar_area import PolarAreaChart
 from .radar import RadarChart
+from .sankey import SankeyChart
 from .scatter import ScatterChart
 
 __all__ = [
@@ -31,6 +32,7 @@ __all__ = [
     "PieChart",
     "PolarAreaChart",
     "RadarChart",
+    "SankeyChart",
     "ScatterChart",
 ]
 
@@ -54,5 +56,6 @@ def _CHART_CLASSES() -> dict[str, type[Chart]]:
         "PieChart": PieChart,
         "PolarAreaChart": PolarAreaChart,
         "RadarChart": RadarChart,
+        "SankeyChart": SankeyChart,
         "ScatterChart": ScatterChart,
     }
