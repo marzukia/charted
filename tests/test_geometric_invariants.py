@@ -834,6 +834,128 @@ def sankey_dag(
     return names, links, dims
 
 
+@st.composite
+def dense_sankey_dag(
+    draw: st.DrawFn,
+) -> tuple[list[str], list[tuple[int, int, float]], tuple[float, float]]:
+    """Like :func:`sankey_dag` but biased toward *many* nodes per column on a
+    *normal*-width canvas, so labels are forced close enough together to test
+    the column label-collision avoidance (fix for the dense-funnel mush). Many
+    sinks per column at a width where the labels cannot all sit at their node
+    centres is exactly the case that smears labels without the spreading pass.
+    """
+    n_layers = draw(st.integers(min_value=2, max_value=4))
+    layer_sizes = [draw(st.integers(min_value=3, max_value=7)) for _ in range(n_layers)]
+    layers: list[list[int]] = []
+    idx = 0
+    for size in layer_sizes:
+        layers.append(list(range(idx, idx + size)))
+        idx += size
+    n = idx
+    # Multi-character names so label boxes have real width/height, like the
+    # recruitment-funnel node names that triggered the bug.
+    names = [f"node-{i:02d}" for i in range(n)]
+
+    links: list[tuple[int, int, float]] = []
+    value = st.floats(
+        min_value=1.0, max_value=1e4, allow_nan=False, allow_infinity=False
+    )
+    for li in range(1, n_layers):
+        prev = layers[li - 1]
+        cur = layers[li]
+        for target in cur:
+            source = draw(st.sampled_from(prev))
+            links.append((source, target, draw(value)))
+            for src in prev:
+                if src != source and draw(st.booleans()):
+                    links.append((src, target, draw(value)))
+    # Normal widths, shortish heights: the brief's "23-node funnel at ~1000px"
+    # legibility bar, scaled down for the small generated graphs.
+    dims = draw(st.sampled_from([(900.0, 360.0), (1000.0, 400.0), (800.0, 320.0)]))
+    return names, links, dims
+
+
+def _sankey_label_boxes(svg: str) -> list[BBox]:
+    """Absolute bboxes of the node labels in a rendered Sankey.
+
+    Node labels are the text elements charted draws with
+    ``dominant-baseline="middle"`` (the title and any axis text do not use it),
+    so this isolates them without depending on their string content.
+    """
+    parsed = parse_svg(svg)
+    boxes: list[BBox] = []
+    for t in parsed.texts():
+        if t.attrib.get("dominant-baseline") != "middle":
+            continue
+        if not (t.text and t.text.strip()):
+            continue
+        boxes.append(t.bbox())
+    return boxes
+
+
+@SETTINGS
+@given(graph=dense_sankey_dag())
+def test_sankey_labels_do_not_overlap(
+    graph: tuple[list[str], list[tuple[int, int, float]], tuple[float, float]],
+) -> None:
+    """No two node-label boxes overlap on a dense Sankey.
+
+    This is the regression guard for the label-collision fix: dense columns
+    pack node centres closer than a text line is tall, so without the
+    per-column label-spreading pass the labels overlap into an unreadable mush.
+    Labels flank their nodes on the column's outward side, so for the inputs
+    this strategy generates (short node names on wide canvases) labels in
+    *different* columns do not share horizontal extent; the contract under test
+    is that within each column the boxes are pushed vertically apart.
+    """
+    names, links, (w, h) = graph
+    svg = _render_or_skip(
+        lambda: SankeyChart(nodes=names, links=links, width=w, height=h).to_svg()
+    )
+    assume(svg is not None)
+    assert svg is not None
+    boxes = _sankey_label_boxes(svg)
+    for i in range(len(boxes)):
+        for j in range(i + 1, len(boxes)):
+            assert not boxes_overlap(boxes[i], boxes[j], tol=0.5), (
+                f"sankey labels overlap: {boxes[i]} vs {boxes[j]}"
+            )
+
+
+@pytest.mark.parametrize("n_sinks,height", [(12, 140.0), (16, 160.0), (17, 180.0)])
+def test_sankey_oversubscribed_column_labels_stay_in_frame(
+    n_sinks: int, height: float
+) -> None:
+    """Oversubscribed column labels stay on-canvas (no top/bottom overflow).
+
+    Regression guard for the off-canvas label bug: many sinks funnelling into
+    one column on a short canvas stack more labels than there is vertical room
+    (``n * line_h > y1 - y0``). The old two-pass spread anchored the bottom and
+    propagated upward without re-clamping the top, so the top labels slid off
+    the canvas (reproduced as a label at y=-93 on a 16-sink / 140px chart).
+
+    The labels overlap at this density - that is unavoidable and not what this
+    checks. What it asserts is that every label box stays within the viewBox's
+    top and bottom edges. (Horizontal overflow from long labels is a separate,
+    documented open item, so only the vertical bounds are checked here.)
+    """
+    names = ["src"] + [f"sink-{i:02d}" for i in range(n_sinks)]
+    links = [("src", f"sink-{i:02d}", 1.0) for i in range(n_sinks)]
+    svg = SankeyChart(
+        nodes=names, links=links, width=400.0, height=height
+    ).to_svg()
+    parsed = parse_svg(svg)
+    _vx0, vy0, _vx1, vy1 = parsed.viewbox
+    boxes = _sankey_label_boxes(svg)
+    assert boxes, "expected node labels to be rendered"
+    for box in boxes:
+        _bx0, by0, _bx1, by1 = box
+        assert by0 >= vy0 - 1.0 and by1 <= vy1 + 1.0, (
+            f"label box {box} escapes viewBox vertically "
+            f"[{vy0}, {vy1}]"
+        )
+
+
 @SETTINGS
 @given(graph=sankey_dag())
 def test_sankey_well_formed_finite_in_frame(
