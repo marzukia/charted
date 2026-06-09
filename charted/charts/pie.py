@@ -10,7 +10,6 @@ from charted.html.element import G, Path, Text
 from charted.themes.core import Theme
 from charted.utils.colors import complementary_color, get_contrast_color
 from charted.utils.defaults import DEFAULT_COLORS
-from charted.utils.rendering import create_pie_legend
 from charted.utils.types import (
     Labels,
     SeriesStyleConfig,
@@ -189,6 +188,173 @@ class PieChart(Chart):
             return swatch + gap + max_w + pad * 2
         return font_size + 6 + pad
 
+    # ------------------------------------------------------------------
+    # Default (legend='none') band legend, drawn below the pie circle
+    # ------------------------------------------------------------------
+
+    # Layout constants for the band legend below the pie.
+    _DEFAULT_LEGEND_MARGIN = 10.0  # left/right margin inside the band
+    _DEFAULT_LEGEND_ITEM_GAP = 16.0  # gap between entries on a row
+    _DEFAULT_LEGEND_SWATCH_GAP = 6.0  # gap between a swatch and its text
+    _DEFAULT_LEGEND_ROW_PAD = 6.0  # vertical padding between rows
+    _DEFAULT_LEGEND_BAND_PAD = 10.0  # padding above/below the whole band
+
+    def _default_legend_font_size(self) -> float:
+        legend_cfg = getattr(self.theme, "legend_font_size", None)
+        return float(legend_cfg) if legend_cfg else 12.0
+
+    def _default_legend_entry_width(self, label: str, font_size: float) -> float:
+        """Pixel width of one ``swatch + gap + text`` legend entry."""
+        from charted.utils.helpers import calculate_text_dimensions
+
+        text_w = calculate_text_dimensions(label, font_size=font_size).width
+        return font_size + self._DEFAULT_LEGEND_SWATCH_GAP + text_w
+
+    def _default_legend_label(self, label: object, value: float, total: float) -> str:
+        """The display string for a slice (label plus any percentage/value)."""
+        base = label.text if hasattr(label, "text") else str(label)
+        if self.show_percentages:
+            pct = (value / total) * 100
+            return f"{base} ({pct:.1f}%)"
+        if self._pie_value_labels:
+            from charted.utils.value_format import format_value
+
+            cfg = self._pie_value_labels
+            opts = cast(
+                "ValueLabelOptions", {k: v for k, v in cfg.items() if k != "format"}
+            )
+            fmt = cfg["format"]
+            raw = (value / total) if fmt == "percent" else value
+            return f"{base} ({format_value(raw, fmt, **opts)})"
+        return base
+
+    def _default_legend_rows(self, labels: Labels) -> list[list[int]] | None:
+        """Pack legend entries into rows for the band below the pie.
+
+        Returns a list of rows (each a list of slice indices) or ``None`` when
+        the default legend should not be drawn. The legend is drawn only when a
+        slice cannot carry its label inside the circle; otherwise every slice is
+        already labelled directly and a legend would just repeat it.
+        """
+        data = self._pie_data
+        if not data:
+            return None
+
+        # Mirror the inside-fit test from the geometry pass so the legend appears
+        # exactly when at least one slice overspills. The no-band radius is used
+        # as an upper bound: reserving the band only shrinks the circle, so a
+        # slice that overspills the larger radius also overspills the smaller
+        # one. This keeps the "legend shown?" decision stable.
+        font_size = get_pie_label_font_size()
+        radius = min(self.width, self.height) / 2 * 0.8
+        inside_label_r = (
+            radius * (1 + self.inner_radius) / 2
+            if self.inner_radius > 0
+            else radius * 0.6
+        )
+        total = sum(data)
+        any_overspill = False
+        for value, label in zip(data, labels):
+            slice_pct = (value / total) * 100
+            arc_length = inside_label_r * math.radians((value / total) * 360)
+            display = self._default_legend_label(label, value, total)
+            text_width_est = len(display) * font_size * 0.55
+            if not self._label_fits_inside(slice_pct, text_width_est, arc_length):
+                any_overspill = True
+                break
+        if not any_overspill:
+            return None
+
+        # Pack entries into rows that fit the available width.
+        legend_font = self._default_legend_font_size()
+        names = [
+            label.text if hasattr(label, "text") else str(label) for label in labels
+        ]
+        avail = self.width - 2 * self._DEFAULT_LEGEND_MARGIN
+        rows: list[list[int]] = []
+        row: list[int] = []
+        row_w = 0.0
+        for idx, name in enumerate(names):
+            w = self._default_legend_entry_width(name, legend_font)
+            add = w if not row else self._DEFAULT_LEGEND_ITEM_GAP + w
+            if row and row_w + add > avail:
+                rows.append(row)
+                row, row_w = [idx], w
+            else:
+                row.append(idx)
+                row_w += add
+        if row:
+            rows.append(row)
+        return rows
+
+    def _default_legend_band_height(self, rows: list[list[int]]) -> float:
+        """Total vertical band reserved below the pie for ``rows`` legend rows."""
+        font_size = self._default_legend_font_size()
+        row_h = font_size + self._DEFAULT_LEGEND_ROW_PAD
+        return len(rows) * row_h + 2 * self._DEFAULT_LEGEND_BAND_PAD
+
+    def _render_default_legend(
+        self, rows: list[list[int]], labels: Labels, band: float
+    ) -> G:
+        """Render the band legend in the reserved strip at the bottom edge.
+
+        The strip spans the full chart width below the pie circle, so swatches
+        and text never overlap the wedges. Entries are centred on each row.
+        """
+        from charted.html.element import Rect
+        from charted.utils.helpers import calculate_text_dimensions
+
+        font_size = self._default_legend_font_size()
+        font_family = getattr(self.theme, "legend_font_family", "DejaVu Sans")
+        font_color = getattr(self.theme, "legend_font_color", "#444444")
+        swatch = font_size
+        gap = self._DEFAULT_LEGEND_SWATCH_GAP
+        item_gap = self._DEFAULT_LEGEND_ITEM_GAP
+        row_h = font_size + self._DEFAULT_LEGEND_ROW_PAD
+        colors = self.colors
+
+        names = [
+            label.text if hasattr(label, "text") else str(label) for label in labels
+        ]
+
+        g = G()
+        # First row's vertical centre sits inside the reserved band.
+        band_top = self.height - band
+        for r, row in enumerate(rows):
+            widths = [
+                swatch
+                + gap
+                + calculate_text_dimensions(names[i], font_size=font_size).width
+                for i in row
+            ]
+            total_w = sum(widths) + item_gap * (len(row) - 1)
+            x = (self.width - total_w) / 2
+            cy = band_top + self._DEFAULT_LEGEND_BAND_PAD + r * row_h + row_h / 2
+            for i, w in zip(row, widths):
+                color = colors[i % len(colors)] if colors else "#000000"
+                g.add_child(
+                    Rect(
+                        x=x,
+                        y=cy - swatch / 2,
+                        width=swatch,
+                        height=swatch,
+                        fill=color,
+                    )
+                )
+                g.add_child(
+                    Text(
+                        x=x + swatch + gap,
+                        y=cy + font_size * 0.35,
+                        text=names[i],
+                        fill=font_color,
+                        font_size=font_size,
+                        font_family=font_family,
+                        text_anchor="start",
+                    )
+                )
+                x += w + item_gap
+        return g
+
     def _generate_colors_from_data(
         self, data: Vector, base: list[str] | None = None
     ) -> None:
@@ -334,11 +500,6 @@ class PieChart(Chart):
         """Render the pie chart."""
         result = G()
 
-        # Calculate center and radius
-        cx = self.width / 2
-        cy = self.height / 2
-        radius = min(self.width, self.height) / 2 * 0.8
-
         # Get data and labels (use stored values, not x_data which is synthetic)
         data = self._pie_data
         labels = self._pie_labels or [str(i) for i in range(len(data))]
@@ -346,6 +507,26 @@ class PieChart(Chart):
         total = sum(data)
         font_size = get_pie_label_font_size()
         current_angle = self.start_angle
+
+        # When the chart uses the default (legend='none') labelling, a legend is
+        # drawn only when some slice cannot carry its label inside the pie. That
+        # legend sits in a band reserved *below* the circle so it never overlaps
+        # the wedges, so the band height must be known before the geometry is
+        # laid out. ``legend_rows`` is None when no legend is needed.
+        legend_band = 0.0
+        legend_rows: list[list[int]] | None = None
+        if getattr(self, "_legend_placement", "none") == "none":
+            legend_rows = self._default_legend_rows(labels)
+            if legend_rows is not None:
+                legend_band = self._default_legend_band_height(legend_rows)
+
+        # Calculate center and radius. The circle is centred in the space left
+        # above any reserved legend band so its bounding box never intrudes on
+        # the band (and the band never overlaps the pie).
+        cx = self.width / 2
+        cy = (self.height - legend_band) / 2
+        radius = min(self.width, self.height - legend_band) / 2 * 0.8
+        radius = max(radius, 1.0)
 
         # --- First pass: compute slice geometry and classify labels ---
         slices: list[_PieSlice] = []  # geometry for each slice
@@ -411,22 +592,15 @@ class PieChart(Chart):
         # --- Second pass: legend ---
         # When the shared placement legend is active (legend='right'|'bottom'
         # |'top'), the base class renders a single consistent box in a reserved
-        # band, so skip the legacy split legend here. With legend='none' (the
-        # default) draw the dual-column split legend only when at least one slice
-        # is too small to carry its label inside the pie. If every slice is
-        # labelled directly, the legend just repeats what's already on the chart,
-        # so skip it.
-        any_overspill = any(not s["fits_inside"] for s in slices)
-        if getattr(self, "_legend_placement", "none") == "none" and any_overspill:
-            legend = create_pie_legend(
-                series_names=labels,
-                colors=self.colors,
-                theme_config=self.theme,
-                chart_width=self.width,
-                chart_height=self.height,
+        # band, so skip the default legend here. With legend='none' (the
+        # default) draw a legend in the reserved band below the pie only when at
+        # least one slice is too small to carry its label inside the circle. If
+        # every slice is labelled directly the legend would just repeat what is
+        # already on the chart, so it is skipped.
+        if legend_rows is not None:
+            result.add_child(
+                self._render_default_legend(legend_rows, labels, legend_band)
             )
-            if legend:
-                result.add_child(legend)
 
         # --- Render slices ---
         for s in slices:
@@ -499,12 +673,19 @@ class PieChart(Chart):
         # of being silently dropped.
         #
         # Only do this when a placement legend ('right'/'bottom') is active.
-        # With legend='none' (the default) the legacy dual-column split legend
-        # already names every slice in columns flanking the pie, so outside
-        # leader labels are redundant and collide with that legend's columns.
+        # With legend='none' (the default) the band legend below the pie already
+        # names every slice, so outside leader labels are redundant.
         if getattr(self, "_legend_placement", "none") != "none":
             outside = [s for s in slices if not s["fits_inside"]]
             self._render_outside_labels(result, outside, cx, cy, radius, font_size)
+
+        # When the default band legend is drawn it names every slice already, so
+        # the in-slice centroid labels would duplicate those entries (and only
+        # the slices that happen to fit would get the extra label, which reads as
+        # an inconsistent double-label). Render the legend OR the in-slice labels,
+        # never both.
+        if legend_rows is not None:
+            return result
 
         for s in slices:
             if not s["fits_inside"]:
