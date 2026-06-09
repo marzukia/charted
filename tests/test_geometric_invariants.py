@@ -64,7 +64,9 @@ from tests._svg_geometry import (
     bbox_inside_box,
     bbox_inside_viewbox,
     boxes_overlap,
+    legend_swatch_and_text_boxes,
     parse_svg,
+    pie_circle_box,
     plot_area_box,
     x_axis_tick_label_boxes,
 )
@@ -237,6 +239,41 @@ def _assert_no_label_overlap(svg: str, tol: float = 1.0) -> None:
             assert not boxes_overlap(boxes[i], boxes[j], tol=tol), (
                 f"x-axis tick labels overlap: {boxes[i]} vs {boxes[j]}"
             )
+
+
+def _assert_pie_legend_clear_of_circle(svg: str, tol: float = 1.0) -> None:
+    """Assert no pie legend swatch/label overlaps the pie's circle.
+
+    The pie legend must sit in a band outside the circle's bounding box. This
+    guards against two related regressions: a legend column laid out inside the
+    circle's footprint, and an in-slice centroid label duplicating a legend
+    entry (the duplicate text overlaps a wedge and so overlaps the circle box).
+    Skipped when the chart drew no wedge path (single full-circle slice) or no
+    legend at all.
+    """
+    parsed = parse_svg(svg)
+    circle = pie_circle_box(parsed)
+    if circle is None:
+        return
+    for box in legend_swatch_and_text_boxes(parsed):
+        assert not boxes_overlap(circle, box, tol=tol), (
+            f"pie legend element {box} overlaps the pie circle {circle}"
+        )
+
+
+def _assert_each_label_once(svg: str, labels: list[str]) -> None:
+    """Assert every category label string appears exactly once in the SVG text.
+
+    Locks the double-label fix: a slice must not be named by both a legend entry
+    and an in-slice centroid label.
+    """
+    parsed = parse_svg(svg)
+    rendered = [t.text for t in parsed.texts() if t.text and t.text.strip()]
+    for label in labels:
+        matches = [t for t in rendered if t == label]
+        assert len(matches) == 1, (
+            f"label {label!r} rendered {len(matches)} times (expected 1): {rendered}"
+        )
 
 
 def _assert_bars_in_plot(svg: str, tol: float = 1.0) -> None:
@@ -441,6 +478,84 @@ def test_pie_in_frame(
     assume(svg is not None)
     assert svg is not None
     _assert_in_frame(svg)
+
+
+# ---------------------------------------------------------------------------
+# Invariant: pie legend stays clear of the pie circle (and labels appear once)
+# ---------------------------------------------------------------------------
+#
+# The pie's default legend (legend='none') is drawn only when a slice is too
+# small to carry its label inside the circle. Until this was fixed, that legend
+# was laid out at the chart's vertical mid-height with overflow entries wrapped
+# into a right-hand column that fell *inside* the circle's footprint, painting
+# swatches and text over the wedges; and one slice was additionally given an
+# in-slice centroid label, duplicating its legend entry. Both faults need long,
+# multi-word labels and 3+ categories to surface, which the no-label pie builder
+# in ALL_CHART_BUILDERS never exercises. These tests pin both: the legend band
+# sits outside the circle and every label is rendered exactly once.
+
+# Long, multi-word labels that overflow their slices and so force the legend.
+_LONG_PIE_LABEL_POOL: tuple[str, ...] = (
+    "Property, plant & equipment",
+    "Financial assets at fair value",
+    "Other assets and receivables",
+    "Cash and cash equivalents",
+    "Intangible assets and goodwill",
+    "Deferred tax and provisions",
+)
+
+
+@st.composite
+def long_labeled_pie(
+    draw: st.DrawFn,
+) -> tuple[list[float], list[str], tuple[float, float]]:
+    """Draw a 3+ category pie with long multi-word labels (forces the legend)."""
+    n = draw(st.integers(min_value=3, max_value=len(_LONG_PIE_LABEL_POOL)))
+    values = draw(
+        st.lists(
+            st.floats(min_value=1.0, max_value=1e4, allow_nan=False),
+            min_size=n,
+            max_size=n,
+        )
+    )
+    labels = list(_LONG_PIE_LABEL_POOL[:n])
+    dims = draw(st.sampled_from([(760.0, 460.0), (700.0, 500.0), (640.0, 480.0)]))
+    return values, labels, dims
+
+
+@SETTINGS
+@given(data=long_labeled_pie())
+def test_pie_legend_clear_of_circle(
+    data: tuple[list[float], list[str], tuple[float, float]],
+) -> None:
+    values, labels, (w, h) = data
+    svg = _render_or_skip(
+        lambda: PieChart(values, labels=labels, width=w, height=h).to_svg()
+    )
+    assume(svg is not None)
+    assert svg is not None
+    _assert_pie_legend_clear_of_circle(svg)
+    _assert_each_label_once(svg, labels)
+
+
+def test_pie_long_labels_legend_below_circle_regression() -> None:
+    """Regression: a 3-category pie with long labels keeps its legend off the pie.
+
+    Repro from a real 760x460 financial pie: the legend used to wrap its third
+    entry into a right column inside the circle (x~525, the circle spanned
+    x~196..564), and the 45% slice carried both a legend entry and an in-slice
+    centroid label. The legend now occupies a reserved band below the circle and
+    every slice is named once.
+    """
+    values = [50.0, 45.0, 5.0]
+    labels = [
+        "Property, plant & equipment (50%)",
+        "Financial assets (45%)",
+        "Other assets (5%)",
+    ]
+    svg = str(PieChart(values, labels=labels, width=760, height=460).to_svg())
+    _assert_pie_legend_clear_of_circle(svg)
+    _assert_each_label_once(svg, labels)
 
 
 # ---------------------------------------------------------------------------
