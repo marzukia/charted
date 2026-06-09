@@ -599,6 +599,78 @@ def x_axis_tick_label_boxes(parsed: ParsedSvg) -> list[BBox]:
     return multi[bottom_key]
 
 
+_PIE_WEDGE_RE = re.compile(
+    r"M\s*(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)\s*"  # M cx cy (slice apex = centre)
+    r"L\s*(?:-?[\d.eE+-]+)\s+(?:-?[\d.eE+-]+)\s*"  # L to first edge point
+    r"A\s*(-?[\d.eE+-]+)\s"  # A r ... (outer radius)
+)
+
+
+def pie_circle_box(parsed: ParsedSvg) -> BBox | None:
+    """Return the analytic bounding box of the pie's outer circle, if present.
+
+    A pie wedge path is ``M cx cy L x1 y1 A r r ... Z``; every wedge shares the
+    same centre and outer radius, so the circle is ``(cx-r, cy-r, cx+r, cy+r)``.
+    Using the analytic circle (rather than the parsed wedge path bbox, which only
+    samples the arc endpoints) gives the true footprint the legend must avoid.
+    Returns ``None`` when no wedge path is found (e.g. a single full-circle
+    slice, which is drawn as a different path shape).
+    """
+    best: BBox | None = None
+    for el in parsed.paths():
+        fill = el.attrib.get("fill", "")
+        if not fill or fill.lower() == "none":
+            continue
+        m = _PIE_WEDGE_RE.match(el.attrib.get("d", "").strip())
+        if not m:
+            continue
+        cx, cy, r = float(m.group(1)), float(m.group(2)), abs(float(m.group(3)))
+        corners = [
+            (cx - r, cy - r),
+            (cx + r, cy - r),
+            (cx + r, cy + r),
+            (cx - r, cy + r),
+        ]
+        box = _local_bbox(corners, el.matrix)
+        if best is None:
+            best = box
+        else:
+            best = (
+                min(best[0], box[0]),
+                min(best[1], box[1]),
+                max(best[2], box[2]),
+                max(best[3], box[3]),
+            )
+    return best
+
+
+def legend_swatch_and_text_boxes(parsed: ParsedSvg) -> list[BBox]:
+    """Return bboxes of legend swatches (square ``<rect>``) and their text.
+
+    A pie legend entry is a small square ``<rect>`` colour chip plus a ``<text>``
+    label. The chips are the only square, non-canvas rects a pie emits (it draws
+    no bars and its only other rect is the full-canvas background), so we collect
+    every square rect plus every non-empty text element. The full-canvas
+    background rect is excluded.
+    """
+    out: list[BBox] = []
+    vb = parsed.viewbox
+    for el in parsed.rects():
+        box = el.bbox()
+        if _is_canvas(box, vb):
+            continue
+        w = box[2] - box[0]
+        h = box[3] - box[1]
+        if w > 0 and h > 0 and abs(w - h) <= 1.0:  # square colour chip
+            out.append(box)
+    for el in parsed.texts():
+        if el.text and el.text.strip():
+            box = el.bbox()
+            if not _is_canvas(box, vb):
+                out.append(box)
+    return out
+
+
 _RECT_SUBPATH_RE = re.compile(
     r"M\s*(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)\s*"
     r"h\s*(-?[\d.eE+-]+)\s*"
