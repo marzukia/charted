@@ -24,6 +24,55 @@ chart.save("chart.png")  # PNG export (requires cairosvg)
 
 ---
 
+## Integration
+
+Run the MCP server with no install using `uvx`:
+
+```sh
+uvx --from charted[mcp] charted-mcp
+```
+
+This fetches charted with the MCP extra into a throwaway environment and starts
+the server over stdio, so an agent can generate charts without you adding charted
+to a project or virtualenv.
+
+### Client config
+
+| Client | Setup |
+|--------|-------|
+| Claude Code | `claude mcp add charted -- uvx --from charted[mcp] charted-mcp` |
+| Cursor, Cline, other clients | Add the JSON below to the client's MCP server config |
+
+```json
+{
+  "mcpServers": {
+    "charted": {
+      "command": "uvx",
+      "args": ["--from", "charted[mcp]", "charted-mcp"]
+    }
+  }
+}
+```
+
+The server exposes `create_chart`, `list_chart_types`, `list_themes`, and
+`chart_from_csv`. See the [MCP Server](#mcp-server-ai-agent-integration) section
+below for tool details and the `pip install` path.
+
+### Claude Skill
+
+Install the chart Skill in one line:
+
+```sh
+claude skill install charted
+```
+
+### Chart gallery
+
+The [Quick Tour](#quick-tour) renders every chart type with the code that
+produced it. The same examples live in `docs/examples/`.
+
+---
+
 ## Why Charted?
 
 - **Zero runtime dependencies**: pure Python, no numpy/pandas required
