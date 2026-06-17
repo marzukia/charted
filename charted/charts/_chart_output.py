@@ -238,7 +238,7 @@ class ChartOutputMixin:
                 f.write(svg)
         elif ext == ".png":
             try:
-                import cairosvg  # type: ignore[import-untyped]
+                import cairosvg
             except ImportError:
                 raise ImportError(
                     "PNG export requires the optional png extra. "
