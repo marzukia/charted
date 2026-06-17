@@ -434,12 +434,12 @@ def build_html(results: dict[str, list[Result]]) -> str:
     parts.append('<details open><summary>Errored cases ({})</summary><ul>'.format(len(error_cases)))
     for t, r in error_cases:
         first_line = r.error.splitlines()[0] if r.error else ""
-        parts.append(f'<li><b>{esc(t)}</b> — {esc(r.desc)}: <span class="err">{esc(first_line)}</span></li>')
+        parts.append(f'<li><b>{esc(t)}</b> ({esc(r.desc)}): <span class="err">{esc(first_line)}</span></li>')
     parts.append('</ul></details>')
 
     parts.append('<details><summary>Possible visual overflow (text outside viewBox) ({})</summary><ul>'.format(len(overflow_cases)))
     for t, r in overflow_cases:
-        parts.append(f'<li><b>{esc(t)}</b> — {esc(r.desc)}: <span class="warn">{esc("; ".join(r.overflow[:3]))}</span></li>')
+        parts.append(f'<li><b>{esc(t)}</b> ({esc(r.desc)}): <span class="warn">{esc("; ".join(r.overflow[:3]))}</span></li>')
     parts.append('</ul></details></div>')
 
     # nav

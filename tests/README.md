@@ -1,6 +1,6 @@
 # Charted Test Suite
 
-Comprehensive testing documentation for the charted library.
+Testing documentation for the charted library.
 
 ## Overview
 
@@ -252,7 +252,6 @@ uv run pytest tests/benchmarks/ --benchmark-min-rounds=1
 
 - [Mutation Testing Guide](../notes/mutation-testing.md)
 - [Fuzz Testing Guide](../notes/fuzz-testing.md)
-- [Testing Strategy](../TESTING_STRATEGY.md)
 - [Hypothesis Documentation](https://hypothesis.readthedocs.io/)
 
 ## Contributing

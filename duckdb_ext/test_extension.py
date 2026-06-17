@@ -107,7 +107,7 @@ def test_all_chart_types():
             assert "<svg" in svg, f"{chart_type}: no <svg> in output"
             print(f"  PASS: {chart_type}")
         except Exception as e:
-            print(f"  FAIL: {chart_type} — {e}")
+            print(f"  FAIL: {chart_type}: {e}")
 
 
 def test_extract_data_from_result():
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             print(f"  PASS: {test.__name__}")
             passed += 1
         except Exception as e:
-            print(f"  FAIL: {test.__name__} — {e}")
+            print(f"  FAIL: {test.__name__}: {e}")
             failed += 1
 
     print("\nChart type coverage:")
