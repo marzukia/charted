@@ -16,7 +16,7 @@ Usage:
 
     con = load()
 
-    # Python helper — runs the query, generates the chart
+    # Python helper: runs the query, generates the chart
     from charted.duckdb_ext.extension import charted_query
     charted_query(con, 'SELECT quarter, revenue FROM sales',
                   chart_type='bar', title='Sales', output='/tmp/chart.svg')
@@ -142,7 +142,7 @@ def _build_chart(
         for series in data:
             chart_data.extend(series)
         series_names_arg = None
-    # BoxPlot expects Vector2D — each inner list is one distribution
+    # BoxPlot expects Vector2D: each inner list is one distribution
     elif chart_type_lower == "box":
         # If we have labels, group by label; otherwise each series is a group
         if labels and len(data) == 1:
@@ -213,7 +213,7 @@ def _build_chart(
 
 
 # =============================================================================
-# Python API — the primary interface
+# Python API: the primary interface
 # =============================================================================
 
 
@@ -290,7 +290,7 @@ def charted_svg(
 
 
 # =============================================================================
-# SQL UDFs — work with pre-aggregated array data passed from SQL
+# SQL UDFs: work with pre-aggregated array data passed from SQL
 # =============================================================================
 
 
