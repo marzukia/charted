@@ -670,11 +670,16 @@ Charted includes an MCP server so AI agents (Claude Code, Cursor, etc.) can gene
 # Register with Claude Code
 claude mcp add charted -- charted-mcp
 
-# Or run standalone
+# Or run standalone (no install step)
+uvx --from 'charted[mcp]' charted-mcp
+
+# Or after installing the extra
 charted-mcp
 ```
 
-Exposes tools: `create_chart`, `list_chart_types`, `list_themes`, `chart_from_csv`. Requires `pip install charted[mcp]`.
+Exposes tools: `create_chart`, `list_chart_types`, `list_themes`, `chart_from_csv`. Requires `pip install 'charted[mcp]'`.
+
+`create_chart` and `chart_from_csv` take an `output_format` of `svg`, `html`, `data_url`, or `png`. With `output_format="png"` the tool returns a rasterized PNG image, so an agent can show the chart inline in a chat UI instead of relaying raw SVG markup. The `mcp` extra includes `cairosvg`, so PNG output works out of the box with the `uvx` command above. PNG rasterization needs cairo's system libraries; on Debian/Ubuntu install them with `apt install libcairo2`.
 
 ---
 
