@@ -139,6 +139,75 @@ class ChartOutputMixin:
 
         return f"data:image/svg+xml,{quote(self.svg)}"
 
+    def to_png_bytes(self, *, scale: int = 2, embed_fonts: bool = False) -> bytes:
+        """Rasterize the chart to PNG and return the raw bytes.
+
+        Args:
+            scale: Resolution multiplier for the PNG output (default 2x).
+            embed_fonts: If True, inline the chart's bundled font(s) as
+                @font-face so the output renders the exact font without it
+                installed.
+
+        Returns:
+            PNG image data as bytes.
+
+        Raises:
+            ImportError: If the png extra (cairosvg) is not installed.
+        """
+        try:
+            import cairosvg  # type: ignore[import-untyped]
+        except ImportError:
+            raise ImportError(
+                "PNG export requires the optional png extra. "
+                'Install it with: pip install "charted[png]"'
+            ) from None
+
+        svg = self.to_svg(embed_fonts=embed_fonts)
+        png: bytes = cairosvg.svg2png(bytestring=svg.encode(), scale=scale)
+        return png
+
+    def to_png_base64(self, *, scale: int = 2, embed_fonts: bool = False) -> str:
+        """Rasterize the chart to PNG and return base64-encoded bytes.
+
+        The returned string is the raw base64 payload with no data URL
+        prefix. Use :meth:`to_png_data_url` for an embeddable data URL.
+
+        Args:
+            scale: Resolution multiplier for the PNG output (default 2x).
+            embed_fonts: If True, inline the chart's bundled font(s).
+
+        Returns:
+            Base64-encoded PNG bytes as an ASCII string.
+
+        Raises:
+            ImportError: If the png extra (cairosvg) is not installed.
+        """
+        import base64
+
+        return base64.b64encode(
+            self.to_png_bytes(scale=scale, embed_fonts=embed_fonts)
+        ).decode("ascii")
+
+    def to_png_data_url(self, *, scale: int = 2, embed_fonts: bool = False) -> str:
+        """Rasterize the chart to a PNG data URL for inline embedding.
+
+        Unlike :meth:`to_base64`, which returns an SVG data URL, this returns
+        a base64 PNG data URL that renders in any chat UI or browser without a
+        separate SVG renderer.
+
+        Args:
+            scale: Resolution multiplier for the PNG output (default 2x).
+            embed_fonts: If True, inline the chart's bundled font(s).
+
+        Returns:
+            Data URL string ('data:image/png;base64,...').
+
+        Raises:
+            ImportError: If the png extra (cairosvg) is not installed.
+        """
+        b64 = self.to_png_base64(scale=scale, embed_fonts=embed_fonts)
+        return f"data:image/png;base64,{b64}"
+
     def save(self, path: str, *, scale: int = 2, embed_fonts: bool = False) -> None:
         """Save the chart to a file.
 
