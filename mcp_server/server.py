@@ -10,7 +10,7 @@ import json
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import ImageContent, TextContent, Tool
 
 from mcp_server.tools import (
     handle_chart_from_csv,
@@ -29,8 +29,8 @@ async def list_tools() -> list[Tool]:
         Tool(
             name="create_chart",
             description=(
-                "Create an SVG chart from data. Returns SVG string, "
-                "HTML wrapper, or data URL."
+                "Create a chart from data. Returns an SVG string, HTML "
+                "wrapper, SVG data URL, or a PNG image (output_format='png')."
             ),
             inputSchema={
                 "type": "object",
@@ -38,9 +38,9 @@ async def list_tools() -> list[Tool]:
                     "chart_type": {
                         "type": "string",
                         "enum": [
-                            "bar", "column", "line", "scatter", "pie",
-                            "radar", "area", "box", "histogram", "heatmap",
-                            "gantt", "auto",
+                            "bar", "column", "line", "scatter", "bubble",
+                            "pie", "polar_area", "radar", "area", "box",
+                            "histogram", "heatmap", "gantt", "combo", "auto",
                         ],
                         "description": "Chart type. 'auto' picks the best type from data shape.",
                     },
@@ -78,9 +78,18 @@ async def list_tools() -> list[Tool]:
                     },
                     "output_format": {
                         "type": "string",
-                        "enum": ["svg", "html", "data_url"],
+                        "enum": ["svg", "html", "data_url", "png"],
                         "default": "svg",
-                        "description": "Output format.",
+                        "description": (
+                            "Output format. 'png' returns a rasterized PNG "
+                            "image (needs charted[png]); use it when the "
+                            "caller needs a picture rather than SVG markup."
+                        ),
+                    },
+                    "scale": {
+                        "type": "number",
+                        "default": 2,
+                        "description": "Resolution multiplier for 'png' output.",
                     },
                     "save_path": {
                         "type": "string",
@@ -121,9 +130,9 @@ async def list_tools() -> list[Tool]:
                     "chart_type": {
                         "type": "string",
                         "enum": [
-                            "bar", "column", "line", "scatter", "pie",
-                            "radar", "area", "box", "histogram", "heatmap",
-                            "auto",
+                            "bar", "column", "line", "scatter", "bubble",
+                            "pie", "polar_area", "radar", "area", "box",
+                            "histogram", "heatmap", "gantt", "combo", "auto",
                         ],
                         "default": "auto",
                         "description": "Chart type.",
@@ -141,8 +150,13 @@ async def list_tools() -> list[Tool]:
                     "theme": {"type": ["string", "object"]},
                     "output_format": {
                         "type": "string",
-                        "enum": ["svg", "html", "data_url"],
+                        "enum": ["svg", "html", "data_url", "png"],
                         "default": "svg",
+                    },
+                    "scale": {
+                        "type": "number",
+                        "default": 2,
+                        "description": "Resolution multiplier for 'png' output.",
                     },
                     "save_path": {"type": "string"},
                 },
@@ -152,11 +166,25 @@ async def list_tools() -> list[Tool]:
     ]
 
 
+def _png_data_url_to_image(data_url: str) -> ImageContent:
+    """Convert a 'data:image/png;base64,...' URL into an MCP ImageContent.
+
+    Chat UIs render ImageContent inline, so a PNG request comes back as a
+    picture the agent can show, not as raw markup.
+    """
+    prefix = "data:image/png;base64,"
+    b64 = data_url[len(prefix):] if data_url.startswith(prefix) else data_url
+    return ImageContent(type="image", data=b64, mimeType="image/png")
+
+
 @app.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+async def call_tool(
+    name: str, arguments: dict
+) -> list[TextContent | ImageContent]:
     """Dispatch a tool call to the appropriate handler."""
     try:
         if name == "create_chart":
+            output_format = arguments.get("output_format", "svg")
             result = handle_create_chart(
                 chart_type=arguments["chart_type"],
                 data=arguments["data"],
@@ -166,9 +194,12 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 width=arguments.get("width"),
                 height=arguments.get("height"),
                 theme=arguments.get("theme"),
-                output_format=arguments.get("output_format", "svg"),
+                output_format=output_format,
                 save_path=arguments.get("save_path"),
+                scale=int(arguments.get("scale", 2)),
             )
+            if output_format == "png":
+                return [_png_data_url_to_image(result)]
             return [TextContent(type="text", text=result)]
 
         elif name == "list_chart_types":
@@ -180,6 +211,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
         elif name == "chart_from_csv":
+            output_format = arguments.get("output_format", "svg")
             result = handle_chart_from_csv(
                 csv_data=arguments["csv_data"],
                 chart_type=arguments.get("chart_type", "auto"),
@@ -187,9 +219,12 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 y_columns=arguments.get("y_columns"),
                 title=arguments.get("title"),
                 theme=arguments.get("theme"),
-                output_format=arguments.get("output_format", "svg"),
+                output_format=output_format,
                 save_path=arguments.get("save_path"),
+                scale=int(arguments.get("scale", 2)),
             )
+            if output_format == "png":
+                return [_png_data_url_to_image(result)]
             return [TextContent(type="text", text=result)]
 
         else:

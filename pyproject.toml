@@ -66,7 +66,9 @@ docs = [
     "sphinx-design>=0.6.0",
     "myst-parser>=3.0.0",
 ]
-mcp = ["mcp>=1.0"]
+# The MCP server can return rasterized PNG images, so it pulls in the
+# png extra (cairosvg). The core library stays zero-dependency.
+mcp = ["mcp>=1.0", "cairosvg>=2.7.0"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
