@@ -61,6 +61,7 @@ def handle_create_chart(
     output_format: str = "svg",
     save_path: str | None = None,
     sizes: list[float] | None = None,
+    scale: int = 2,
 ) -> str:
     """Create a chart and return it in the requested format.
 
@@ -73,7 +74,8 @@ def handle_create_chart(
         width: Chart width in pixels.
         height: Chart height in pixels.
         theme: Theme preset name or config dict.
-        output_format: One of "svg", "html", "data_url".
+        output_format: One of "svg", "html", "data_url", "png".
+        scale: Resolution multiplier for "png" output (default 2x).
         save_path: Optional file path to save the chart.
 
     Returns:
@@ -150,6 +152,8 @@ def handle_create_chart(
         return chart.to_html()
     elif output_format == "data_url":
         return chart.to_base64()
+    elif output_format in ("png", "png_data_url"):
+        return chart.to_png_data_url(scale=scale)
     else:
         return chart.to_svg()
 
@@ -201,6 +205,7 @@ def handle_chart_from_csv(
     theme: str | dict | None = None,
     output_format: str = "svg",
     save_path: str | None = None,
+    scale: int = 2,
 ) -> str:
     """Generate a chart from CSV text data.
 
@@ -279,4 +284,5 @@ def handle_chart_from_csv(
         theme=theme,
         output_format=output_format,
         save_path=save_path,
+        scale=scale,
     )
