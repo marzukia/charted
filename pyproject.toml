@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "charted"
-version = "1.1.2"
+version = "1.2.0"
 description = "Charted is a zero dependency SVG chart generator that aims to provide a simple interface for generating beautiful and customisable graphs. This project is inspired by chart libraries like mermaid.js."
 authors = [{ name = "Andryo Marzuki", email = "andryo@mrzk.io" }]
 readme = "README.md"
@@ -19,10 +19,23 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Multimedia :: Graphics",
     "Topic :: Multimedia :: Graphics :: Presentation",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-keywords = ["svg", "chart", "graph", "visualization", "zero-dependency"]
+keywords = [
+    "svg",
+    "chart",
+    "graph",
+    "visualization",
+    "dataviz",
+    "png",
+    "zero-dependency",
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+]
 dependencies = []
 
 [project.urls]
@@ -68,7 +81,7 @@ docs = [
 ]
 # The MCP server can return rasterized PNG images, so it pulls in the
 # png extra (cairosvg). The core library stays zero-dependency.
-mcp = ["mcp>=1.0", "cairosvg>=2.7.0"]
+mcp = ["mcp>=1.0,<2", "cairosvg>=2.7.0"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

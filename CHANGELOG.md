@@ -5,6 +5,58 @@ All notable changes to Charted will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-06-17
+
+### Added
+- MCP server (`charted-mcp` console script) that exposes chart generation to
+  AI agents over stdio. Tools: `create_chart`, `chart_from_csv`,
+  `list_chart_types`, `list_themes`.
+- `create_chart` and `chart_from_csv` accept `output_format="png"`, returning a
+  rasterized PNG as MCP image content (needs the `png` extra). A `scale`
+  argument controls the resolution multiplier.
+- Claude skill under `skill/charted/` (SKILL.md plus runnable examples) so the
+  MCP server can be installed as an agent skill.
+- `mcp` optional extra: `pip install charted[mcp]` installs the MCP SDK and
+  cairosvg. The core library stays zero-dependency.
+- Packaging metadata for discovery: MCP/dataviz keywords, the Python 3.14
+  classifier, and the `Topic :: Multimedia :: Graphics` classifier.
+
+### Changed
+- The `mcp` extra pins the MCP SDK to the 1.x line (`mcp>=1.0,<2`) so a future
+  2.0 release cannot silently break the server.
+
+## [1.1.2] - 2026-06-10
+
+### Fixed
+- Extreme-data and log-scale rendering: bound the axis tick step so
+  mismatched-magnitude domains do not exhaust memory, clamp all-negative and
+  all-positive domains to include the zero baseline, and keep floor/ceiling
+  value labels inside the plot area.
+- Dark-theme text contrast and y-axis title placement.
+- Property-based geometric-invariant suite added; axis label overlap-drop
+  extended to rotated axes; empty axis labels guarded against division errors.
+- SankeyChart: clamp oversubscribed label stacks on-canvas and fix label
+  collisions.
+- Pie chart default legend kept clear of the pie without double-labelling.
+
+### Added
+- Sankey chart type (d3-sankey layout engine, CLI and registry wiring, unit
+  tests and SVG baseline).
+
+## [1.1.1] - 2026-06-06
+
+### Changed
+- mypy runs in strict mode across the `charted` package, with explicit `Any`
+  banned (`disallow_any_explicit`).
+- `chart.py` god class split via mixin extraction (render and scale clusters).
+
+### Added
+- Python 3.14 added to the CI test matrix.
+
+### Fixed
+- Layout and font bug fixes, bundled font definitions, and legend polish.
+- Clear install hints for the optional extras.
+
 ## [1.1.0] - 2026-06-04
 
 ### Added
