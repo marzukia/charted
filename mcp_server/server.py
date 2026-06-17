@@ -111,7 +111,7 @@ async def list_tools() -> list[Tool]:
                         "description": (
                             "Visual theme. Pass a preset name ('light', 'dark', "
                             "'high-contrast') or a palette name ('viridis', "
-                            "'plasma', 'ocean', etc.) as a string, or a config "
+                            "'inferno', 'ocean', etc.) as a string, or a config "
                             "object such as {'colors': 'viridis', "
                             "'background_color': '#1a1a2e'}. Use "
                             "list_themes to see all available options."
@@ -125,7 +125,7 @@ async def list_tools() -> list[Tool]:
                             "Format for the returned chart. 'svg' returns raw "
                             "SVG markup (default, zero extra dependencies). "
                             "'html' wraps the SVG in a minimal HTML page. "
-                            "'data_url' returns a base64 SVG data URL suitable "
+                            "'data_url' returns an SVG data URL suitable "
                             "for use in an img src attribute. 'png' rasterizes "
                             "the chart to a PNG image (requires charted[png]) and "
                             "returns it as inline image content visible in chat UIs."
@@ -248,7 +248,7 @@ async def list_tools() -> list[Tool]:
                         "description": (
                             "Visual theme. Pass a preset name ('light', 'dark', "
                             "'high-contrast') or a palette name ('viridis', "
-                            "'plasma', etc.) as a string, or a config object. "
+                            "'inferno', etc.) as a string, or a config object. "
                             "Use list_themes to see all options."
                         ),
                     },
@@ -258,7 +258,7 @@ async def list_tools() -> list[Tool]:
                         "default": "svg",
                         "description": (
                             "Format for the returned chart: 'svg' (default), "
-                            "'html', 'data_url' (base64 SVG), or 'png' "
+                            "'html', 'data_url' (SVG data URL), or 'png' "
                             "(rasterized image, requires charted[png])."
                         ),
                     },
