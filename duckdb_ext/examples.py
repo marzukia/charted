@@ -69,13 +69,13 @@ def main():
 
     print("=== Python API: charted_query() ===\n")
 
-    # 1. Bar chart — single series
+    # 1. Bar chart: single series
     path = charted_query(con, 'SELECT quarter, revenue FROM sales',
                          chart_type='bar', title='Quarterly Revenue',
                          output=f'{output_dir}/bar_revenue.svg')
     print(f"  Bar (single):    {path}")
 
-    # 2. Bar chart — multi-series
+    # 2. Bar chart: multi-series
     path = charted_query(con, 'SELECT quarter, revenue, costs, profit FROM sales',
                          chart_type='bar', title='Revenue vs Costs vs Profit',
                          output=f'{output_dir}/bar_multi.svg')

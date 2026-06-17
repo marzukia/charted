@@ -38,7 +38,7 @@
 - [x] **Added visual regression tests**: 20 tests for themes and edge cases
 - [x] **Added fuzz testing setup**: atheris scripts for CSV/JSON parsers
 - [x] **Added accessibility tests**: 13 tests for WCAG compliance
-- [x] **Added test documentation**: Comprehensive README.md and helper utilities
+- [x] **Added test documentation**: full README.md and helper utilities
 - [x] **Created test helpers**: conftest.py fixtures, chart_builders.py, svg_assertions.py
 - [x] **Created TESTING_IMPROVEMENTS_PR.md** for PR description
 - [x] **Verified all tests pass**: 681 tests passing (91% coverage)
@@ -275,8 +275,6 @@ def test_validation_rejects_invalid(text):
 
 ## 📚 References
 
-- [TESTING_STRATEGY.md](../TESTING_STRATEGY.md) - Full testing strategy document
-- [TESTING_IMPROVEMENTS_PR.md](../TESTING_IMPROVEMENTS_PR.md) - PR description
 - [AGENTS.md](../AGENTS.md) - Baseline protection policy
 - [Hypothesis Documentation](https://hypothesis.readthedocs.io/) - Property-based testing guide
 - [pytest-hypothesis](https://pypi.org/project/pytest-hypothesis/) - Plugin integration

@@ -1,7 +1,7 @@
 Themes API
 ==========
 
-charted includes a comprehensive theme system with 3 built-in themes and full custom theme support.
+charted includes a theme system with 3 built-in themes and full custom theme support.
 
 Built-in Themes
 ---------------

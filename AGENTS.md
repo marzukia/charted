@@ -1,4 +1,4 @@
-# AGENTS.md — Charted (Python SVG Chart Library)
+# AGENTS.md: Charted (Python SVG Chart Library)
 
 ## Quick API Reference
 
@@ -19,7 +19,7 @@ ColumnChart(data=[10, 20, 30], labels=["A", "B", "C"])
 # Line
 LineChart(data=[[10, 20, 30]], labels=["Jan", "Feb", "Mar"])
 
-# Scatter — NOTE: uses x_data/y_data, NOT data=
+# Scatter (note: uses x_data/y_data, NOT data=)
 ScatterChart(x_data=[1, 2, 3], y_data=[10, 20, 30])
 
 # Pie
@@ -31,13 +31,13 @@ RadarChart(data=[85, 90, 75, 88, 92], labels=["Spd", "Str", "Def", "Tech", "Sta"
 # Area
 AreaChart(data=[10, 20, 15, 25], labels=["Q1", "Q2", "Q3", "Q4"])
 
-# Box Plot — each item in data is a raw distribution list
+# Box Plot: each item in data is a raw distribution list
 BoxPlot(data=[[1,2,3,4,5,6,7], [2,4,6,8,10]], labels=["A", "B"])
 
-# Histogram — single flat list, bins param
+# Histogram: single flat list, bins param
 Histogram(data=[1.2, 2.3, 2.5, 3.1, 4.0], bins=5)
 
-# Heatmap — 2D matrix
+# Heatmap: 2D matrix
 HeatmapChart(data=[[1,2,3],[4,5,6],[7,8,9]], labels=["R1","R2","R3"])
 
 # Gantt
@@ -223,7 +223,7 @@ from duckdb_ext.extension import charted_query, load
 
 con = load()  # returns a duckdb connection with UDFs registered
 
-# Python helper — runs query, generates chart
+# Python helper: runs query, generates chart
 charted_query(
     con,
     "SELECT quarter, revenue FROM sales",
