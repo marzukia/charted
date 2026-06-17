@@ -408,7 +408,6 @@ Documentation
    :maxdepth: 2
    :caption: Resources
 
-   feature_parity_roadmap
    CHANGELOG <https://github.com/marzukia/charted/blob/main/CHANGELOG.md>
 
 ================================================================================

@@ -1,14 +1,14 @@
 # Theming Guide
 
-Customize the appearance of your charts with Charted's powerful theming system.
+Customize the appearance of your charts with Charted's theming system.
 
 ## Built-in Themes
 
 Charted includes 3 built-in themes:
 
-- **light** — Clean white background with dark text (default)
-- **dark** — Dark background with light text
-- **high-contrast** — Maximum contrast for accessibility
+- **light**: Clean white background with dark text (default)
+- **dark**: Dark background with light text
+- **high-contrast**: Maximum contrast for accessibility
 
 ```python
 from charted import BarChart
