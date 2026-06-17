@@ -1,0 +1,10 @@
+# charted MCP server: generate SVG/PNG/HTML charts from data via the Model Context Protocol.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction:
+    |-
+    (config) => ({ command: 'uvx', args: ['--from', 'charted[mcp]', 'charted-mcp'] })
+  exampleConfig: {}
