@@ -1,0 +1,31 @@
+name: charted-mcp-smoke
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mcp-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install charted with the mcp and png extras
+        run: uv pip install --system '.[mcp,png]'
+
+      - name: Run the headless MCP handshake smoke test
+        run: python scripts/mcp_smoke_test.py
