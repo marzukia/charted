@@ -195,7 +195,7 @@ CHARTS = {
         ],
         labels=["Series A", "Series B", "Series C"],
     ),
-    # Histogram — use module-level seed so each call advances state
+    # Histogram: use module-level seed so each call advances state
     "histogram_basic": Histogram(
         data=[_HIST_RNG.gauss(50, 15) for _ in range(200)],
     ),
