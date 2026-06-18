@@ -476,6 +476,13 @@ chart.save(f"{OUT}/gallery_boxplot.svg")
 print("gallery_boxplot.svg ok")
 
 # ─── GALLERY 15: SankeyChart — website conversion funnel ──────────────────────────────────
+# Each intermediate node has explicit drop-off links to "Bounced" so in-flow == out-flow
+# at every node; without them the outflow ribbons are thinner than the inflow ribbons
+# (flow-conservation violation).  Balanced per-node counts:
+#   Organic Search: 4500 in  → 1800 signup + 2700 bounced
+#   Paid Ads:       2200 in  → 1100 signup + 1100 bounced
+#   Referral:       1300 in  →  650 signup +  650 bounced
+#   Signup:         3550 in  → 2800 trial  +  750 bounced
 sankey_nodes = [
     "Website",
     "Organic Search",
@@ -485,15 +492,20 @@ sankey_nodes = [
     "Trial",
     "Paid Plan",
     "Churned",
+    "Bounced",
 ]
 sankey_links = [
     ("Website", "Organic Search", 4500),
     ("Website", "Paid Ads", 2200),
     ("Website", "Referral", 1300),
     ("Organic Search", "Signup", 1800),
+    ("Organic Search", "Bounced", 2700),
     ("Paid Ads", "Signup", 1100),
+    ("Paid Ads", "Bounced", 1100),
     ("Referral", "Signup", 650),
+    ("Referral", "Bounced", 650),
     ("Signup", "Trial", 2800),
+    ("Signup", "Bounced", 750),
     ("Trial", "Paid Plan", 980),
     ("Trial", "Churned", 1820),
 ]
@@ -779,18 +791,23 @@ chart.save(f"{LIGHT_OUT}/gallery_light_boxplot.svg")
 print("gallery_light_boxplot.svg ok")
 
 # 15: SankeyChart — website conversion funnel
+# Balanced with explicit drop-off links (see dark gallery comment above).
 sankey_nodes = [
     "Website", "Organic Search", "Paid Ads", "Referral",
-    "Signup", "Trial", "Paid Plan", "Churned",
+    "Signup", "Trial", "Paid Plan", "Churned", "Bounced",
 ]
 sankey_links = [
     ("Website", "Organic Search", 4500),
     ("Website", "Paid Ads", 2200),
     ("Website", "Referral", 1300),
     ("Organic Search", "Signup", 1800),
+    ("Organic Search", "Bounced", 2700),
     ("Paid Ads", "Signup", 1100),
+    ("Paid Ads", "Bounced", 1100),
     ("Referral", "Signup", 650),
+    ("Referral", "Bounced", 650),
     ("Signup", "Trial", 2800),
+    ("Signup", "Bounced", 750),
     ("Trial", "Paid Plan", 980),
     ("Trial", "Churned", 1820),
 ]
