@@ -239,14 +239,29 @@ class AreaChart(Chart):
                 # no-op (byte-identical) when nothing overshoots.
                 top_d = _clamp_path_y(curve_path(self.curve, points), plot_top, plot_bottom)
 
-            baseline = pad_y + plot_h
-            d = " ".join(
-                [
-                    top_d,
-                    f"L{points[-1][0]} {baseline}",
-                    f"L{points[0][0]} {baseline}z",
-                ]
-            )
+            if self.y_stacked:
+                # For stacked areas, close the band by tracing back along the
+                # bottom edge (the stacked offset) rather than the plot floor.
+                # Without this every band extends down to the x-axis baseline,
+                # so the last (topmost) series covers everything beneath it.
+                bottom_points = []
+                for j in range(len(y_offs)):
+                    bx = pad_x + x_positions[j]
+                    by = pad_y + plot_h - y_offs[j]
+                    by = max(plot_top, min(plot_bottom, by))
+                    bottom_points.append((bx, by))
+                # Close: right-end of top, then bottom edge right-to-left, close.
+                bottom_segs = [f"L{bx} {by}" for bx, by in reversed(bottom_points)]
+                d = " ".join([top_d] + bottom_segs + ["z"])
+            else:
+                baseline = pad_y + plot_h
+                d = " ".join(
+                    [
+                        top_d,
+                        f"L{points[-1][0]} {baseline}",
+                        f"L{points[0][0]} {baseline}z",
+                    ]
+                )
 
             g.add_child(
                 Path(

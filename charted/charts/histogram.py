@@ -43,6 +43,10 @@ def _compute_bins(data: list[float], n_bins: int) -> tuple[list[float], list[str
 
 
 class Histogram(Chart):
+    # Category-axis padding adds blank labels that fool the overlap filter into
+    # keeping only the blank endpoints. Disable it so real bin labels render.
+    pad_x_labels: bool = False
+
     """Histogram showing value distribution across bins.
 
     Args:
@@ -83,12 +87,20 @@ class Histogram(Chart):
         n_bins = bins if bins is not None else _auto_bins(data)
         bin_counts, bin_labels = _compute_bins(data, n_bins)
 
+        # _compute_bins returns n_bins+1 edge labels (left edges + final right
+        # edge). The chart has n_bins bars, so only the first n_bins labels
+        # (one per bar, the left edge of each bin) should be passed as x_labels.
+        # Passing all n_bins+1 labels makes x_count = n_bins+1 but y_count =
+        # n_bins, leaving the last label position empty and the axis rendering
+        # as blank spaces.
+        bar_labels = bin_labels[:n_bins]
+
         # Store before super().__init__ so representation can access it
         self._bin_counts = bin_counts
 
         super().__init__(
             y_data=[bin_counts],
-            x_labels=labels or bin_labels,
+            x_labels=labels or bar_labels,
             width=width,
             height=height,
             title=title,
@@ -113,12 +125,15 @@ class Histogram(Chart):
 
         g = G()
         plot_h = self.plot_height
-        x_offset = self.x_offset
-        x_vals = self.x_values[0]
+        plot_w = self.plot_width
         pad_x = self.left_padding
         pad_y = self.top_padding
 
-        bar_w = x_offset
+        n = len(self._bin_counts)
+        # Bars fill the entire plot width with no inter-bar gap.  Direct
+        # division avoids the ordinal x_offset shift that would push the last
+        # bar outside the plot when pad_x_labels=False.
+        bar_w = plot_w / n if n > 0 else 0
 
         value_labels = self._build_value_labels()
         label_row = value_labels[0] if value_labels else None
@@ -128,7 +143,7 @@ class Histogram(Chart):
         placed: list[tuple[float, float]] = []
 
         for i, (y_val, y_off) in enumerate(zip(self.y_values[0], self.y_offsets[0])):
-            x = pad_x + x_vals[i] + x_offset
+            x = pad_x + i * bar_w
             h = y_val + y_off if self.y_stacked else y_val
             g.add_child(
                 Rect(
