@@ -111,6 +111,25 @@ img { max-width: 100%; height: auto; display: block; }
   line-height: 1.1;
   letter-spacing: -0.03em;
   color: #1a2530;
+  min-height: 2.2em; /* reserve two lines so the rotator never bounces the sub/CTA */
+}
+
+/* Hero headline rotator: payload word + caret cycle the three anchor colors. */
+.hero-rotator { color: inherit; }
+.hero-rotator .hr-tail { color: #5fab9e; } /* default; JS sets the live anchor */
+.hero-rotator .hr-caret {
+  display: inline-block;
+  width: 0.085em;
+  min-width: 3px;
+  height: 0.86em;
+  margin-left: 0.06em;
+  vertical-align: -0.04em;
+  background: #5fab9e;
+  animation: hrBlink 1s steps(1) infinite;
+}
+@keyframes hrBlink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .hero-rotator .hr-caret { animation: none; }
 }
 
 .hero-sub {
@@ -520,6 +539,12 @@ img { max-width: 100%; height: auto; display: block; }
   }
 
   .hero { padding: 3rem 0 2.5rem; }
+
+  /* Rotator: JS fits the font so the longest phrase sits on one line; nowrap +
+     min-width:0 keep it there without blowing the column out of the viewport. */
+  .hero-text { min-width: 0; }
+  .hero-headline { min-height: 1.25em; overflow: hidden; }
+  .hero-rotator { white-space: nowrap; }
 
   .demo-pair,
   .demo-pair:nth-child(even) {
