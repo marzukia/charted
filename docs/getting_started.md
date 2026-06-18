@@ -4,9 +4,27 @@ A 5-minute guide to creating beautiful SVG charts with zero dependencies.
 
 ## Installation
 
+**Library (use in your code):**
+
+```bash
+uv add charted
+```
+
+Or with pip:
+
 ```bash
 pip install charted
 ```
+
+**CLI or MCP server (standalone tool, no project install needed):**
+
+```bash
+uvx charted ...
+# or
+pipx install charted
+```
+
+> Note: packages installed via `uvx`/`pipx` run in isolation and cannot be imported into your project. Use `uv add` or `pip install` for library use.
 
 ## Quick Start
 
