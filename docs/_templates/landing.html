@@ -44,7 +44,7 @@
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-text">
-      <h1 class="hero-headline">Charts worth&nbsp;publishing.</h1>
+      <h1 class="hero-headline" aria-label="Charts worth publishing."><span class="hero-rotator" aria-hidden="true">Charts worth&nbsp;publishing.</span></h1>
       <p class="hero-sub">Zero-dependency SVG charting for Python. No numpy, no pandas, no matplotlib. Pure stdlib. 15 chart types.</p>
       <div class="hero-install">
         <code class="install-pill">uv add charted</code>
@@ -447,6 +447,91 @@ var io = new IntersectionObserver(function(entries) {
   });
 }, { threshold: 0.08 });
 document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
+
+// Hero headline rotator: typewriter-cycles the tagline, tinting the last word
+// and caret through charted's three anchor colors (teal, orange, red): the same
+// trio used for keyword/number/string in the code demos and chart series.
+// Progressive enhancement: without JS the canonical "Charts worth publishing."
+// stays put, and the h1's aria-label keeps that as the accessible name.
+(function () {
+  var host = document.querySelector('.hero-rotator');
+  if (!host) return;
+
+  var phrases = [
+    'Charts worth publishing.',
+    'Charts worth shipping.',
+    'Charts that move the needle.',
+    'Charts with product-market fit.',
+    'Charts worth a Series A.',
+    'Charts your investors deserve.',
+    'Reinventing the wheel for some reason.'
+  ];
+  var anchors = ['#5fab9e', '#f58b51', '#db504a']; // teal, orange, red
+
+  // Split a phrase into "all but last word" + "last word" (the tinted payload).
+  function split(p) {
+    var b = p.lastIndexOf(' ') + 1;
+    return { headTxt: p.slice(0, b), tailTxt: p.slice(b) };
+  }
+
+  host.textContent = '';
+  var head = document.createElement('span');
+  var tail = document.createElement('span'); tail.className = 'hr-tail';
+  host.appendChild(head); host.appendChild(tail);
+
+  // Reduced motion: no animation. Show the canonical tagline with the payload
+  // word statically tinted, and skip the caret entirely.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var s0 = split(phrases[0]);
+    head.textContent = s0.headTxt;
+    tail.textContent = s0.tailTxt;
+    tail.style.color = anchors[0];
+    return;
+  }
+
+  document.body.classList.add('js-rotator');
+  var caret = document.createElement('span'); caret.className = 'hr-caret';
+  host.appendChild(caret);
+  var headline = host.closest('.hero-headline');
+
+  // Mobile: shrink the headline so the LONGEST phrase fits one line, then nowrap
+  // (CSS) so no phrase ever wraps and the layout never reflows as it types.
+  function fit() {
+    if (window.innerWidth > 768) { headline.style.fontSize = ''; return; }
+    var cs = getComputedStyle(headline);
+    var probe = document.createElement('span');
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;' +
+      'left:-9999px;top:0;font-size:100px;font-weight:' + cs.fontWeight +
+      ';font-family:' + cs.fontFamily + ';letter-spacing:' + cs.letterSpacing;
+    document.body.appendChild(probe);
+    var widest = 0;
+    for (var i = 0; i < phrases.length; i++) { probe.textContent = phrases[i]; widest = Math.max(widest, probe.offsetWidth); }
+    document.body.removeChild(probe);
+    var avail = host.parentElement.clientWidth;        // constrained column width
+    var size = Math.max(16, Math.min(38, (avail / (widest / 100)) * 0.98));
+    headline.style.fontSize = size + 'px';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  var typeMs = 55, deleteMs = 30, holdMs = 1100, gapMs = 240;
+  var w = 0, i = 0, deleting = false;
+  function tick() {
+    var p = phrases[w], b = p.lastIndexOf(' ') + 1, color = anchors[w % anchors.length];
+    if (i <= b) { head.textContent = p.slice(0, i); tail.textContent = ''; }
+    else { head.textContent = p.slice(0, b); tail.textContent = p.slice(b, i); }
+    tail.style.color = color;
+    caret.style.background = color;
+    if (!deleting) {
+      if (i < p.length) { i++; setTimeout(tick, typeMs); }
+      else { deleting = true; setTimeout(tick, holdMs); }
+    } else {
+      if (i > 0) { i--; setTimeout(tick, deleteMs); }
+      else { deleting = false; w = (w + 1) % phrases.length; setTimeout(tick, gapMs); }
+    }
+  }
+  tick();
+})();
 </script>
 </body>
 </html>
