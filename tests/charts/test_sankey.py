@@ -268,3 +268,119 @@ class TestDegenerateInputs:
             links=[("Hub", "X", 5), ("Hub", "Y", 5)],
         )
         assert "<svg" in chart.to_svg()
+
+
+# --- gallery funnel: flow conservation regression --------------------------------
+
+
+class TestGalleryFunnelConservation:
+    """Regression guard: the gallery 'Website Conversion Funnel' data must be
+    balanced at every intermediate node so outflow ribbons match inflow heights.
+
+    Organic Search, Paid Ads and Referral each had ~50% of inbound traffic with
+    no explicit drop-off link, making outflow ribbons visually half the height
+    of inflows. Signup similarly lost 750 visitors with no bounce link. The fix
+    adds explicit 'Bounced' drop-off sinks so every mid-node has in == out.
+    """
+
+    NODES = [
+        'Website',
+        'Organic Search',
+        'Paid Ads',
+        'Referral',
+        'Signup',
+        'Trial',
+        'Paid Plan',
+        'Churned',
+        'Bounced',
+    ]
+
+    # Balanced funnel: each intermediate node's in-flow == out-flow.
+    # Website sends 8000 total:  4500 organic + 2200 paid + 1300 referral
+    # Organic Search (in=4500): 1800 -> Signup, 2700 -> Bounced
+    # Paid Ads       (in=2200): 1100 -> Signup, 1100 -> Bounced
+    # Referral       (in=1300):  650 -> Signup,  650 -> Bounced
+    # Signup         (in=3550): 2800 -> Trial,   750 -> Bounced
+    # Trial          (in=2800):  980 -> Paid Plan, 1820 -> Churned
+    LINKS = [
+        ('Website', 'Organic Search', 4500),
+        ('Website', 'Paid Ads', 2200),
+        ('Website', 'Referral', 1300),
+        ('Organic Search', 'Signup', 1800),
+        ('Organic Search', 'Bounced', 2700),
+        ('Paid Ads', 'Signup', 1100),
+        ('Paid Ads', 'Bounced', 1100),
+        ('Referral', 'Signup', 650),
+        ('Referral', 'Bounced', 650),
+        ('Signup', 'Trial', 2800),
+        ('Signup', 'Bounced', 750),
+        ('Trial', 'Paid Plan', 980),
+        ('Trial', 'Churned', 1820),
+    ]
+
+    def _layout(self):
+        from charted.utils.sankey_layout import compute_layout
+
+        node_idx = {n: i for i, n in enumerate(self.NODES)}
+        raw = [(node_idx[s], node_idx[t], v) for s, t, v in self.LINKS]
+        return compute_layout(
+            self.NODES,
+            raw,
+            x0=50.0,
+            y0=20.0,
+            x1=530.0,
+            y1=340.0,
+            node_width=24,
+            node_padding=8,
+            iterations=6,
+            alignment='justify',
+        )
+
+    def test_intermediate_nodes_conserve_flow(self):
+        """Every node with both inbound and outbound links must have
+        sum(in ribbon widths) == sum(out ribbon widths) == node height.
+        This is the flow-conservation invariant: no visual gaps."""
+        layout = self._layout()
+        for node in layout.nodes:
+            in_links = [lnk for lnk in layout.links if lnk.target is node]
+            out_links = [lnk for lnk in layout.links if lnk.source is node]
+            if not (in_links and out_links):
+                continue
+            in_sum = sum(lnk.width for lnk in in_links)
+            out_sum = sum(lnk.width for lnk in out_links)
+            assert math.isclose(in_sum, out_sum, rel_tol=1e-4, abs_tol=0.5), (
+                f'{node.name}: in_ribbons={in_sum:.2f} != out_ribbons={out_sum:.2f}'
+            )
+
+    def test_intermediate_nodes_ribbons_fill_node_height(self):
+        """Both inbound and outbound ribbons must together span the full node
+        height with no leftover gap."""
+        layout = self._layout()
+        for node in layout.nodes:
+            height = node.y1 - node.y0
+            in_links = [lnk for lnk in layout.links if lnk.target is node]
+            out_links = [lnk for lnk in layout.links if lnk.source is node]
+            if in_links:
+                in_sum = sum(lnk.width for lnk in in_links)
+                assert math.isclose(in_sum, height, rel_tol=1e-4, abs_tol=0.5), (
+                    f'{node.name}: in_ribbons={in_sum:.2f} != node_height={height:.2f}'
+                )
+            if out_links:
+                out_sum = sum(lnk.width for lnk in out_links)
+                assert math.isclose(out_sum, height, rel_tol=1e-4, abs_tol=0.5), (
+                    f'{node.name}: out_ribbons={out_sum:.2f} != node_height={height:.2f}'
+                )
+
+    def test_gallery_sankey_chart_renders(self):
+        """Smoke test: the balanced gallery funnel renders without error."""
+        chart = SankeyChart(
+            nodes=self.NODES,
+            links=self.LINKS,
+            title='Website Conversion Funnel',
+            width=580,
+            height=360,
+        )
+        svg = chart.to_svg()
+        assert '<svg' in svg
+        assert 'Bounced' in svg
+        assert 'Signup' in svg
