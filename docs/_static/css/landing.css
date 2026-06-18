@@ -320,56 +320,52 @@ img { max-width: 100%; height: auto; display: block; }
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  gap: 2rem 2.5rem;
   margin-top: 3rem;
 }
 
+/* Gallery cards are immersive — no white panels, charts sit directly on the
+   dark band. A hairline border-bottom separates each card from its neighbours
+   without introducing a white box. */
 .gallery-card {
-  background: #fff;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.28);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 1.5rem;
 }
 
-.gallery-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.38);
+.gallery-card:hover .gallery-chart img {
+  opacity: 0.92;
 }
 
 .gallery-chart {
-  padding: 0.75rem;
-  background: #fff;
   flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
-.gallery-chart img { width: 100%; border-radius: 4px; }
+.gallery-chart img { width: 100%; display: block; }
 
 .gallery-meta {
-  padding: 0.75rem 1rem 1rem;
-  border-top: 1px solid #f0f3f5;
+  padding: 0.75rem 0 0;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .chart-type {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: #2e4756;
-  background: #edf6f4;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
+  color: #5fab9e;
+  letter-spacing: 0.02em;
   width: fit-content;
 }
 
 .gallery-meta p {
-  font-size: 0.8rem;
-  color: #5a7385;
+  font-size: 0.82rem;
+  color: #7a9aaa;
   line-height: 1.5;
   flex: 1;
 }
@@ -378,9 +374,11 @@ img { max-width: 100%; height: auto; display: block; }
   font-size: 0.78rem;
   font-weight: 500;
   color: #5fab9e;
+  opacity: 0.7;
+  transition: opacity 0.15s;
 }
 
-.gallery-meta a:hover { color: #2e4756; }
+.gallery-meta a:hover { opacity: 1; color: #5fab9e; }
 
 /* ── FEATURES ─────────────────────────────────────────────────────────────── */
 .features {
@@ -494,13 +492,16 @@ img { max-width: 100%; height: auto; display: block; }
 .footer-copy a { color: #5fab9e; }
 
 /* ── SCROLL REVEAL ────────────────────────────────────────────────────────── */
-.reveal {
+/* Only suppress opacity when JS is running (body.js-reveal class added by
+   the inline script). Without JS, items are fully visible — no hidden charts
+   for static renders or crawlers. */
+.js-reveal .reveal {
   opacity: 0;
   transform: translateY(16px);
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-.reveal.visible {
+.js-reveal .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }

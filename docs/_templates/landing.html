@@ -412,6 +412,10 @@ function copyInstall(btn) {
   });
 }
 
+// Gate scroll-reveal on JS: add body class so .js-reveal .reveal rules apply.
+// Without this class items are fully visible (static render, search bots, etc).
+document.body.classList.add('js-reveal');
+
 var io = new IntersectionObserver(function(entries) {
   entries.forEach(function(e) {
     if (e.isIntersecting) {
