@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath("."))
 from charted.charts import (
     ColumnChart, BarChart, LineChart, ScatterChart, PieChart,
     RadarChart, AreaChart, BubbleChart, ComboChart, HeatmapChart,
-    GanttChart, Histogram, PolarAreaChart, BoxPlot,
+    GanttChart, Histogram, PolarAreaChart, BoxPlot, SankeyChart,
 )
 
 OUT = "docs/_static/landing"
@@ -83,7 +83,7 @@ chart = AreaChart(
     width=820, height=420,
     stacked=False,
     fill_opacity=1.0,
-    theme=t(colors=["#f7dd72", "#db504a", "#5fab9e"]),
+    theme=t(colors=["#f7dd72", "#db504a", "#5fab9e"], h_padding=0.12),
 )
 chart.save(f"{OUT}/hero.svg")
 print("hero.svg ok")
@@ -307,7 +307,9 @@ chart = GanttChart(
     dependencies=[(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6)],
     show_today_line=True,
     x_position=7.5,
-    theme=dt(),
+    # Override grid_color (today-line + borders) and arrow_color for legibility
+    # on the dark #0f1a20 background.
+    theme=dt(grid_color="#7a9aaa", arrow_color="#7a9aaa"),
 )
 chart.save(f"{OUT}/gallery_gantt.svg")
 print("gallery_gantt.svg ok")
@@ -356,5 +358,34 @@ chart = BoxPlot(
 )
 chart.save(f"{OUT}/gallery_boxplot.svg")
 print("gallery_boxplot.svg ok")
+
+# ─── GALLERY 15: SankeyChart — website conversion funnel ──────────────────────────────────
+sankey_nodes = [
+    "Website", "Organic Search", "Paid Ads", "Referral",
+    "Signup", "Trial", "Paid Plan", "Churned",
+]
+sankey_links = [
+    ("Website",        "Organic Search", 4500),
+    ("Website",        "Paid Ads",       2200),
+    ("Website",        "Referral",       1300),
+    ("Organic Search", "Signup",         1800),
+    ("Paid Ads",       "Signup",         1100),
+    ("Referral",       "Signup",          650),
+    ("Signup",         "Trial",          2800),
+    ("Trial",          "Paid Plan",       980),
+    ("Trial",          "Churned",        1820),
+]
+chart = SankeyChart(
+    nodes=sankey_nodes,
+    links=sankey_links,
+    title="Website Conversion Funnel",
+    width=580,
+    height=360,
+    link_opacity=0.45,
+    show_values=False,
+    theme=dt(),
+)
+chart.save(f"{OUT}/gallery_sankey.svg")
+print("gallery_sankey.svg ok")
 
 print(f"\nAll charts saved to {OUT}/")
