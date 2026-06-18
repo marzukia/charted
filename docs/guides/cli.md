@@ -4,6 +4,22 @@ Create charts from the command line without writing Python code.
 
 ## Installation
 
+To run the CLI as a standalone tool (recommended, no project install needed):
+
+```bash
+uvx charted ...
+# or
+pipx install charted
+```
+
+To use the CLI inside a uv project:
+
+```bash
+uv add charted
+```
+
+Or with pip:
+
 ```bash
 pip install charted
 ```
@@ -158,6 +174,5 @@ charts:
 ```yaml
 - name: Generate Charts
   run: |
-    pip install charted
-    python -m charted batch ./data ./docs/images
+    uvx charted batch ./data ./docs/images
 ```
