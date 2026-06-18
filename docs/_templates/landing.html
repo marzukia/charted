@@ -511,8 +511,26 @@ document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
     var size = Math.max(16, Math.min(38, (avail / (widest / 100)) * 0.98));
     headline.style.fontSize = size + 'px';
   }
-  window.addEventListener('resize', fit);
-  fit();
+
+  // Reserve the height of the TALLEST phrase at the current width, so the
+  // headline box never grows/collapses as phrases of different line counts
+  // cycle in and out (no vertical bump of the sub/CTA below it).
+  function reserveHeight() {
+    headline.style.minHeight = '';
+    var ph = head.textContent, pt = tail.textContent, tallest = 0;
+    for (var k = 0; k < phrases.length; k++) {
+      var b = phrases[k].lastIndexOf(' ') + 1;
+      head.textContent = phrases[k].slice(0, b);
+      tail.textContent = phrases[k].slice(b);
+      if (headline.offsetHeight > tallest) tallest = headline.offsetHeight;
+    }
+    head.textContent = ph; tail.textContent = pt;
+    headline.style.minHeight = tallest + 'px';
+  }
+
+  function relayout() { fit(); reserveHeight(); }
+  window.addEventListener('resize', relayout);
+  relayout();
 
   var typeMs = 55, deleteMs = 30, holdMs = 1100, gapMs = 240;
   var w = 0, i = 0, deleting = false;
