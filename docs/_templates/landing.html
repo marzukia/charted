@@ -3,8 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>charted — Charts worth publishing</title>
+  <title>charted: Charts worth publishing</title>
   <meta name="description" content="Zero-dependency SVG charting for Python. 15 chart types. No numpy, no pandas, no matplotlib. Pure stdlib." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://charted.mrzk.io/" />
+  <meta property="og:title" content="charted: Charts worth publishing" />
+  <meta property="og:description" content="Zero-dependency SVG charts for Python. 15 chart types, no numpy, no pandas, no matplotlib." />
+  <meta property="og:image" content="https://charted.mrzk.io/_static/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="charted: Charts worth publishing" />
+  <meta name="twitter:description" content="Zero-dependency SVG charts for Python. 15 chart types, no numpy, no pandas, no matplotlib." />
+  <meta name="twitter:image" content="https://charted.mrzk.io/_static/og-image.png" />
   <link rel="icon" href="{{ pathto('_static/images/charted-icon.svg', 1) }}" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,7 +45,7 @@
   <div class="hero-inner">
     <div class="hero-text">
       <h1 class="hero-headline">Charts worth&nbsp;publishing.</h1>
-      <p class="hero-sub">Zero-dependency SVG charting for Python. No numpy, no pandas, no matplotlib — pure stdlib, 15 chart types.</p>
+      <p class="hero-sub">Zero-dependency SVG charting for Python. No numpy, no pandas, no matplotlib. Pure stdlib. 15 chart types.</p>
       <div class="hero-install">
         <code class="install-pill">pip install charted</code>
         <button class="copy-btn" onclick="copyInstall(this)" aria-label="Copy install command">
@@ -155,7 +166,7 @@ chart.save(<span class="st">"combo.svg"</span>)</code></pre>
         </div>
         <div class="gallery-meta">
           <span class="chart-type">BarChart</span>
-          <p>Horizontal bars — great for long category labels.</p>
+          <p>Horizontal bars, great for long category labels.</p>
           <a href="{{ pathto('charts/bar', 1) }}">View docs &rarr;</a>
         </div>
       </div>
@@ -221,7 +232,7 @@ chart.save(<span class="st">"combo.svg"</span>)</code></pre>
         </div>
         <div class="gallery-meta">
           <span class="chart-type">RadarChart</span>
-          <p>Multi-axis profiles — compare entities across dimensions.</p>
+          <p>Multi-axis profiles for comparing entities across dimensions.</p>
           <a href="{{ pathto('charts/radar', 1) }}">View docs &rarr;</a>
         </div>
       </div>
@@ -276,7 +287,7 @@ chart.save(<span class="st">"combo.svg"</span>)</code></pre>
         </div>
         <div class="gallery-meta">
           <span class="chart-type">PolarAreaChart</span>
-          <p>Radial magnitude — equal angles, radius encodes value.</p>
+          <p>Radial magnitude: equal angles, radius encodes value.</p>
           <a href="{{ pathto('charts/polar_area', 1) }}">View docs &rarr;</a>
         </div>
       </div>
@@ -298,7 +309,7 @@ chart.save(<span class="st">"combo.svg"</span>)</code></pre>
         </div>
         <div class="gallery-meta">
           <span class="chart-type">SankeyChart</span>
-          <p>Flow diagrams — nodes connected by proportional ribbons.</p>
+          <p>Flow diagrams with nodes connected by proportional ribbons.</p>
           <a href="{{ pathto('gallery', 1) }}">View docs &rarr;</a>
         </div>
       </div>

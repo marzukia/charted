@@ -39,20 +39,33 @@ html_static_path = ["_static"]
 html_title = "charted"
 html_logo = "_static/images/charted-icon.svg"
 html_favicon = "_static/images/charted-icon.svg"
+html_baseurl = "https://charted.mrzk.io/"
 
 html_theme_options = {
     "sidebar_hide_name": False,
     "light_css_variables": {
-        "color-brand-primary": "#2e4756",
-        "color-brand-content": "#5fab9e",
-        "color-brand-visited": "#db504a",
-        "color-admonition-title": "#2e4756",
-        "color-admonition-background": "#f7dd7220",
+        "color-brand-primary":   "#2e4756",
+        "color-brand-content":   "#5fab9e",
+        "color-brand-visited":   "#db504a",
+        "color-background-primary":   "#ffffff",
+        "color-background-secondary": "#f3f5f7",
+        "color-background-hover":     "#edf0f2",
+        "color-sidebar-background-primary":   "#fafafa",
+        "color-sidebar-background-secondary": "#f3f5f7",
+        "color-admonition-title":             "#2e4756",
+        "color-admonition-background":        "#f7dd7220",
     },
     "dark_css_variables": {
-        "color-brand-primary": "#5fab9e",
-        "color-brand-content": "#f7dd72",
-        "color-brand-visited": "#f58b51",
+        "color-brand-primary":   "#5fab9e",
+        "color-brand-content":   "#f7dd72",
+        "color-brand-visited":   "#f58b51",
+        "color-background-primary":   "#0f1a20",
+        "color-background-secondary": "#162028",
+        "color-background-hover":     "#1e2d37",
+        "color-sidebar-background-primary":   "#0f1a20",
+        "color-sidebar-background-secondary": "#162028",
+        "color-admonition-title":             "#5fab9e",
+        "color-admonition-background":        "#5fab9e14",
     },
     "footer_icons": [
         {
