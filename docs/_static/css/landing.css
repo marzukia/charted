@@ -214,6 +214,7 @@ img { max-width: 100%; height: auto; display: block; }
   box-shadow: 0 4px 32px rgba(46, 71, 86, 0.10);
   border: 1px solid #edf0f2;
   background: #fff;
+  padding-bottom: 1.5rem;
 }
 
 .hero-chart img { width: 100%; }
@@ -304,6 +305,7 @@ img { max-width: 100%; height: auto; display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-bottom: 1.25rem;
 }
 
 .demo-chart img { width: 100%; }

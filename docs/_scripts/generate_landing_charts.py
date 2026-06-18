@@ -402,13 +402,24 @@ print("gallery_heatmap.svg ok")
 # ─── GALLERY 11: GanttChart — product launch timeline ────────────────────────
 chart = GanttChart(
     title="Product Launch Timeline: Q3–Q4 2026",
-    data=[(0, 3), (1, 5), (2, 7), (4, 9), (6, 10), (8, 11), (9, 12)],
+    # ISO date strings so the time-scale x-axis renders meaningful month
+    # labels (2026-07 … 2026-12) instead of raw integer offsets (0 … 12).
+    # Each unit = 2 weeks from 2026-07-01; today-line is mid-October 2026.
+    data=[
+        ("2026-07-01", "2026-08-12"),
+        ("2026-07-15", "2026-09-09"),
+        ("2026-07-29", "2026-10-07"),
+        ("2026-08-26", "2026-11-04"),
+        ("2026-09-23", "2026-11-18"),
+        ("2026-10-21", "2026-12-02"),
+        ("2026-11-04", "2026-12-16"),
+    ],
     labels=["Discovery", "Design", "Engineering", "Alpha", "Beta", "QA", "Launch"],
     width=580,
     height=360,
     dependencies=[(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6)],
     show_today_line=True,
-    x_position=7.5,
+    x_position="2026-10-14",
     # Override grid_color (today-line + borders) and arrow_color for legibility
     # on the dark #0f1a20 background.
     theme=dt(grid_color="#7a9aaa", arrow_color="#7a9aaa"),
