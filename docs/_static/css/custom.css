@@ -535,3 +535,96 @@ dl.field-list > dt {
   h1 { font-size: 1.6rem; }
   h2 { font-size: 1.2rem; }
 }
+
+/* ── GALLERY LIGHT (docs/gallery.rst) ──────────────────────────────────────── */
+/* The dark .charted-gallery-band above is for the landing page via landing.html */
+/* This light set is for the Furo docs page — white bg, ink text, brand accents. */
+.charted-gallery-light {
+  border-radius: 8px;
+  padding: 2rem 0;
+  margin: 1.5rem 0;
+}
+
+.gallery-light-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.gallery-light-header h2 {
+  font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #2e4756;
+  border: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+
+.gallery-light-header p {
+  font-size: 0.95rem;
+  color: #5a7080;
+  max-width: 52ch;
+  margin: 0 auto;
+}
+
+.charted-gallery-card-light {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e8edf0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  cursor: default;
+}
+
+.charted-gallery-card-light:hover {
+  box-shadow: 0 4px 16px rgba(46, 71, 86, 0.10);
+}
+
+.charted-gallery-card-light .charted-gallery-img-wrap {
+  background: #f4f7f8;
+  border-radius: 0;
+}
+
+.charted-gallery-card-light .charted-gallery-img-wrap img {
+  width: 100%;
+  display: block;
+  transition: opacity 0.2s;
+}
+
+.charted-gallery-card-light:hover .charted-gallery-img-wrap img {
+  opacity: 0.90;
+}
+
+.charted-gallery-meta-light {
+  padding: 0.8rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.charted-gallery-type-light {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.73rem;
+  font-weight: 500;
+  color: #5fab9e;
+  letter-spacing: 0.025em;
+}
+
+.charted-gallery-meta-light p {
+  font-size: 0.8rem;
+  color: #5a7080;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.charted-gallery-meta-light a {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #5fab9e;
+  opacity: 0.70;
+  transition: opacity 0.15s;
+  text-decoration: none;
+}
+
+.charted-gallery-meta-light a:hover { opacity: 1; }

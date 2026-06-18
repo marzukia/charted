@@ -6,173 +6,173 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
 .. raw:: html
 
-   <div class="charted-gallery-band">
-     <div class="gallery-header">
+   <div class="charted-gallery-light">
+     <div class="gallery-light-header">
        <h2>15 chart types. All dogfooded.</h2>
        <p>Each chart below was rendered by charted from real-ish data. Pick a type, follow the link to its full docs.</p>
      </div>
      <div class="charted-gallery-grid">
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_column.svg" alt="Column Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_column.svg" alt="Column Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">ColumnChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">ColumnChart</span>
            <p>Vertical bars for time series and segment comparisons.</p>
            <a href="charts/column.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_bar.svg" alt="Bar Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_bar.svg" alt="Bar Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">BarChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">BarChart</span>
            <p>Horizontal bars, great for long category labels.</p>
            <a href="charts/bar.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_line.svg" alt="Line Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_line.svg" alt="Line Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">LineChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">LineChart</span>
            <p>Trends over time with XY mode and log scale support.</p>
            <a href="charts/line.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_area.svg" alt="Area Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_area.svg" alt="Area Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">AreaChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">AreaChart</span>
            <p>Filled area for cumulative and volume data.</p>
            <a href="charts/area.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_scatter.svg" alt="Scatter Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_scatter.svg" alt="Scatter Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">ScatterChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">ScatterChart</span>
            <p>Correlations and cluster distributions at a glance.</p>
            <a href="charts/scatter.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_bubble.svg" alt="Bubble Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_bubble.svg" alt="Bubble Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">BubbleChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">BubbleChart</span>
            <p>Three variables at once: x, y, and bubble size.</p>
            <a href="charts/bubble.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_pie.svg" alt="Pie Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_pie.svg" alt="Pie Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">PieChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">PieChart</span>
            <p>Proportional data with optional doughnut mode.</p>
            <a href="charts/pie.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_radar.svg" alt="Radar Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_radar.svg" alt="Radar Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">RadarChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">RadarChart</span>
            <p>Multi-axis profiles for comparing entities across dimensions.</p>
            <a href="charts/radar.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_combo.svg" alt="Combo Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_combo.svg" alt="Combo Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">ComboChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">ComboChart</span>
            <p>Mix bars, columns, lines, and areas on shared axes.</p>
            <a href="charts/combo.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_heatmap.svg" alt="Heatmap" loading="lazy" />
+           <img src="_static/landing/gallery_light_heatmap.svg" alt="Heatmap" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">HeatmapChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">HeatmapChart</span>
            <p>Color-encoded matrices for density and correlation.</p>
            <a href="charts/heatmap.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_gantt.svg" alt="Gantt Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_gantt.svg" alt="Gantt Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">GanttChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">GanttChart</span>
            <p>Project timelines with task bars and dependency arrows.</p>
            <a href="charts/gantt.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_histogram.svg" alt="Histogram" loading="lazy" />
+           <img src="_static/landing/gallery_light_histogram.svg" alt="Histogram" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">Histogram</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">Histogram</span>
            <p>Distribution analysis with configurable bin counts.</p>
            <a href="charts/histogram.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_polar.svg" alt="Polar Area Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_polar.svg" alt="Polar Area Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">PolarAreaChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">PolarAreaChart</span>
            <p>Radial magnitude: equal angles, radius encodes value.</p>
            <a href="charts/polar_area.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_boxplot.svg" alt="Box Plot" loading="lazy" />
+           <img src="_static/landing/gallery_light_boxplot.svg" alt="Box Plot" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">BoxPlot</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">BoxPlot</span>
            <p>Quartiles, IQR, and outliers for statistical distributions.</p>
            <a href="charts/boxplot.html">View docs &rarr;</a>
          </div>
        </div>
 
-       <div class="charted-gallery-card">
+       <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_sankey.svg" alt="Sankey Chart" loading="lazy" />
+           <img src="_static/landing/gallery_light_sankey.svg" alt="Sankey Chart" loading="lazy" />
          </div>
-         <div class="charted-gallery-meta">
-           <span class="charted-gallery-type">SankeyChart</span>
+         <div class="charted-gallery-meta-light">
+           <span class="charted-gallery-type-light">SankeyChart</span>
            <p>Flow diagrams with nodes connected by proportional ribbons.</p>
            <a href="gallery.html">View docs &rarr;</a>
          </div>
