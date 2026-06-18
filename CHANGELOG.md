@@ -5,6 +5,23 @@ All notable changes to Charted will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-06-18
+
+### Fixed
+- AreaChart stacked rendering: the top cumulative series was drawing over the
+  lower bands, making a stacked area appear as a single colour. Bands now
+  render correctly with each layer visible.
+- Histogram x-axis: tick labels were missing and bars were positioned ordinally
+  instead of spanning their exact bin width. Bars now cover their precise bin
+  range and align to the edge ticks.
+- X-axis tick labels clipped at the bottom edge of charts: the layout now
+  reserves the full tick-label band. Gantt and time-scale charts also register
+  their x-axis labels for layout so labels are never cut off.
+
+### Docs
+- Redesigned the charted.mrzk.io landing page and documentation theme, rebuilt
+  the gallery with all 15 chart types, and added a social preview (OG) image.
+
 ## [1.2.0] - 2026-06-17
 
 ### Added
