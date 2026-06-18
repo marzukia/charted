@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>charted — Charts worth publishing</title>
+  <meta name="description" content="Zero-dependency SVG charting for Python. 15 chart types. No numpy, no pandas, no matplotlib. Pure stdlib." />
+  <link rel="icon" href="{{ pathto('_static/images/charted-icon.svg', 1) }}" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ pathto('_static/css/landing.css', 1) }}" />
+</head>
+<body>
+
+<!-- TOP NAV -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="topbar-brand" href="#">
+      <img src="{{ pathto('_static/images/charted-icon.svg', 1) }}" alt="charted icon" class="topbar-icon" />
+      <span class="topbar-wordmark">charted</span>
+    </a>
+    <nav class="topbar-links">
+      <a href="{{ pathto('quickstart', 1) }}">Docs</a>
+      <a href="{{ pathto('gallery', 1) }}">Gallery</a>
+      <a href="https://github.com/marzukia/charted" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://pypi.org/project/charted/" target="_blank" rel="noopener">PyPI</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <h1 class="hero-headline">Charts worth&nbsp;publishing.</h1>
+      <p class="hero-sub">Zero-dependency SVG charting for Python. No numpy, no pandas, no matplotlib — pure stdlib, 15 chart types.</p>
+      <div class="hero-install">
+        <code class="install-pill">pip install charted</code>
+        <button class="copy-btn" onclick="copyInstall(this)" aria-label="Copy install command">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="5" y="5" width="9" height="9" rx="1.5"/>
+            <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H2.5A1.5 1.5 0 0 0 1 3.5v7A1.5 1.5 0 0 0 2.5 12H4"/>
+          </svg>
+        </button>
+      </div>
+      <div class="hero-ctas">
+        <a class="btn-primary" href="{{ pathto('quickstart', 1) }}">Read the docs</a>
+        <a class="btn-ghost" href="https://github.com/marzukia/charted" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <div class="hero-chips">
+        <span class="chip">15 chart types</span>
+        <span class="chip">0 dependencies</span>
+        <span class="chip">SVG &middot; PNG &middot; HTML</span>
+        <span class="chip">MCP server</span>
+      </div>
+    </div>
+    <div class="hero-chart fade-in">
+      <img src="{{ pathto('_static/landing/hero.svg', 1) }}" alt="Monthly Active Users by Plan" loading="eager" />
+    </div>
+  </div>
+</section>
+
+<!-- THREE LINES OF CODE -->
+<section class="code-demos">
+  <div class="section-inner">
+    <h2 class="section-title">Three lines of code.</h2>
+    <p class="section-sub">The entire API is a constructor and a method. Pass data. Get a chart.</p>
+
+    <div class="demo-grid">
+
+      <div class="demo-pair reveal">
+        <div class="demo-code">
+<pre><code><span class="kw">from</span> charted <span class="kw">import</span> BarChart
+
+chart = BarChart(
+    title=<span class="st">"Revenue by Region ($M)"</span>,
+    data=[<span class="nm">4.2</span>, <span class="nm">7.8</span>, <span class="nm">6.1</span>, <span class="nm">9.3</span>, <span class="nm">5.5</span>, <span class="nm">8.7</span>],
+    labels=[<span class="st">"APAC"</span>, <span class="st">"North Am"</span>, <span class="st">"Europe"</span>,
+            <span class="st">"LatAm"</span>, <span class="st">"MEA"</span>, <span class="st">"ANZ"</span>],
+)
+chart.save(<span class="st">"chart.svg"</span>)</code></pre>
+        </div>
+        <div class="demo-chart">
+          <img src="{{ pathto('_static/landing/demo_bar.svg', 1) }}" alt="Bar chart output" loading="lazy" />
+        </div>
+      </div>
+
+      <div class="demo-pair reveal">
+        <div class="demo-code">
+<pre><code><span class="kw">from</span> charted <span class="kw">import</span> LineChart
+
+chart = LineChart(
+    title=<span class="st">"API Latency Percentiles (ms)"</span>,
+    data=[p50, p95, p99],
+    labels=months,
+    series_names=[<span class="st">"p50"</span>, <span class="st">"p95"</span>, <span class="st">"p99"</span>],
+)
+chart.save(<span class="st">"latency.svg"</span>)</code></pre>
+        </div>
+        <div class="demo-chart">
+          <img src="{{ pathto('_static/landing/demo_line.svg', 1) }}" alt="Line chart output" loading="lazy" />
+        </div>
+      </div>
+
+      <div class="demo-pair reveal">
+        <div class="demo-code">
+<pre><code><span class="kw">from</span> charted <span class="kw">import</span> ComboChart
+
+chart = ComboChart(
+    title=<span class="st">"Revenue vs Net Margin"</span>,
+    series=[
+        {<span class="st">"data"</span>: revenue, <span class="st">"type"</span>: <span class="st">"column"</span>},
+        {<span class="st">"data"</span>: margin,  <span class="st">"type"</span>: <span class="st">"line"</span>,
+         <span class="st">"axis"</span>: <span class="st">"secondary"</span>},
+    ],
+    labels=quarters,
+)
+chart.save(<span class="st">"combo.svg"</span>)</code></pre>
+        </div>
+        <div class="demo-chart">
+          <img src="{{ pathto('_static/landing/demo_combo.svg', 1) }}" alt="Combo chart output" loading="lazy" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="gallery-band">
+  <div class="section-inner">
+    <h2 class="section-title gallery-title">Every chart type. Dogfooded.</h2>
+    <p class="section-sub gallery-sub">Every chart below was rendered by charted itself from real-ish datasets. No screenshots. No stubs.</p>
+
+    <div class="gallery-grid">
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_column.svg', 1) }}" alt="Column Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">ColumnChart</span>
+          <p>Vertical bars for time series and segment comparisons.</p>
+          <a href="{{ pathto('charts/column', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_bar.svg', 1) }}" alt="Bar Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">BarChart</span>
+          <p>Horizontal bars — great for long category labels.</p>
+          <a href="{{ pathto('charts/bar', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_line.svg', 1) }}" alt="Line Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">LineChart</span>
+          <p>Trends over time with XY mode and log scale support.</p>
+          <a href="{{ pathto('charts/line', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_area.svg', 1) }}" alt="Area Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">AreaChart</span>
+          <p>Filled area for cumulative and volume data.</p>
+          <a href="{{ pathto('charts/area', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_scatter.svg', 1) }}" alt="Scatter Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">ScatterChart</span>
+          <p>Correlations and cluster distributions.</p>
+          <a href="{{ pathto('charts/scatter', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_bubble.svg', 1) }}" alt="Bubble Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">BubbleChart</span>
+          <p>Three variables at once: x, y, and bubble size.</p>
+          <a href="{{ pathto('charts/bubble', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_pie.svg', 1) }}" alt="Pie Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">PieChart</span>
+          <p>Proportional data; supports doughnut mode.</p>
+          <a href="{{ pathto('charts/pie', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_radar.svg', 1) }}" alt="Radar Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">RadarChart</span>
+          <p>Multi-axis profiles — compare entities across dimensions.</p>
+          <a href="{{ pathto('charts/radar', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_combo.svg', 1) }}" alt="Combo Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">ComboChart</span>
+          <p>Mix bars, columns, lines, and areas on shared axes.</p>
+          <a href="{{ pathto('charts/combo', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_heatmap.svg', 1) }}" alt="Heatmap" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">HeatmapChart</span>
+          <p>Color-encoded matrices for density and correlation.</p>
+          <a href="{{ pathto('charts/heatmap', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_gantt.svg', 1) }}" alt="Gantt Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">GanttChart</span>
+          <p>Project timelines with dependency arrows.</p>
+          <a href="{{ pathto('charts/gantt', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_histogram.svg', 1) }}" alt="Histogram" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">Histogram</span>
+          <p>Distribution analysis with configurable binning.</p>
+          <a href="{{ pathto('charts/histogram', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_polar.svg', 1) }}" alt="Polar Area Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">PolarAreaChart</span>
+          <p>Radial magnitude — equal angles, radius encodes value.</p>
+          <a href="{{ pathto('charts/polar_area', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_boxplot.svg', 1) }}" alt="Box Plot" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">BoxPlot</span>
+          <p>Quartiles, IQR, and outliers for statistical distributions.</p>
+          <a href="{{ pathto('charts/boxplot', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+      <div class="gallery-card reveal">
+        <div class="gallery-chart">
+          <img src="{{ pathto('_static/landing/gallery_sankey.svg', 1) }}" alt="Sankey Chart" loading="lazy" />
+        </div>
+        <div class="gallery-meta">
+          <span class="chart-type">SankeyChart</span>
+          <p>Flow diagrams — nodes connected by proportional ribbons.</p>
+          <a href="{{ pathto('gallery', 1) }}">View docs &rarr;</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="section-inner">
+    <h2 class="section-title">Built for serious work.</h2>
+    <div class="features-grid">
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="10" cy="10" r="8"/><path d="M7 10l2 2 4-4"/>
+        </svg>
+        <div>
+          <strong>Zero runtime dependencies</strong>
+          <p>Pure Python stdlib. No numpy, pandas, or matplotlib. pip install and you're done.</p>
+        </div>
+      </div>
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 5h14M3 10h14M3 15h14"/><circle cx="16" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="4" cy="15" r="2" fill="currentColor" stroke="none"/>
+        </svg>
+        <div>
+          <strong>Theme system</strong>
+          <p>Built-in light, dark, high-contrast presets. Full custom palette and font overrides. Per-series styling.</p>
+        </div>
+      </div>
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/>
+        </svg>
+        <div>
+          <strong>Multi-series layouts</strong>
+          <p>Stacked, side-by-side, and grouped. Negative values handled with proper zero baselines.</p>
+        </div>
+      </div>
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/>
+        </svg>
+        <div>
+          <strong>MCP server</strong>
+          <p><code>charted-mcp</code> renders charts straight into AI chats. Listed on awesome-mcp-servers. Run with <code>uvx</code>.</p>
+        </div>
+      </div>
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 14l4-4 3 3 5-6"/><rect x="2" y="2" width="16" height="16" rx="2"/>
+        </svg>
+        <div>
+          <strong>Jupyter inline</strong>
+          <p>Charts render in notebook cells automatically. No extra configuration needed.</p>
+        </div>
+      </div>
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 10h4l3-7 4 14 3-7h3"/>
+        </svg>
+        <div>
+          <strong>CLI included</strong>
+          <p>Generate charts from CSV or JSON without writing Python. Batch-process entire directories.</p>
+        </div>
+      </div>
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 4l5 5-5 5M10 14h6"/>
+        </svg>
+        <div>
+          <strong>SVG &middot; PNG &middot; HTML &middot; data-URL</strong>
+          <p>Save to any format. PNG via optional cairosvg. Embed as data-URLs in markdown or HTML.</p>
+        </div>
+      </div>
+
+      <div class="feature-item reveal">
+        <svg class="feature-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M5 10l3 3 7-7"/><circle cx="10" cy="10" r="8"/>
+        </svg>
+        <div>
+          <strong>CSV/JSON loading</strong>
+          <p>Built-in parsers, no pandas required. Wide and long CSV both supported via <code>--transpose</code>.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER CTA -->
+<footer class="footer-cta">
+  <div class="section-inner footer-inner">
+    <div class="footer-top">
+      <h2>Start in 30 seconds.</h2>
+      <code class="install-pill install-pill--dark">pip install charted</code>
+    </div>
+    <nav class="footer-links">
+      <a href="{{ pathto('quickstart', 1) }}">Docs</a>
+      <a href="{{ pathto('gallery', 1) }}">Gallery</a>
+      <a href="https://github.com/marzukia/charted" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://pypi.org/project/charted/" target="_blank" rel="noopener">PyPI</a>
+      <a href="https://github.com/marzukia/charted/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+    </nav>
+    <p class="footer-copy">MIT License &middot; Built by <a href="https://mrzk.io" target="_blank" rel="noopener">Andryo Marzuki</a></p>
+  </div>
+</footer>
+
+<script>
+function copyInstall(btn) {
+  navigator.clipboard.writeText('pip install charted').then(function() {
+    btn.classList.add('copied');
+    setTimeout(function() { btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+// Gate scroll-reveal on JS: add body class so .js-reveal .reveal rules apply.
+// Without this class items are fully visible (static render, search bots, etc).
+document.body.classList.add('js-reveal');
+
+var io = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
+</script>
+</body>
+</html>

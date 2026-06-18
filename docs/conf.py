@@ -93,3 +93,11 @@ napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = True
+
+# Landing page: replace root index with custom full-bleed template.
+# html_additional_pages renders landing.html (from _templates/) as index.html,
+# bypassing Furo chrome. All other pages continue to use Furo normally.
+# The toctree in index.rst still gets processed by Sphinx so nav/search works.
+html_additional_pages = {
+    'index': 'landing.html',
+}
