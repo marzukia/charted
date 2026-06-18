@@ -440,6 +440,15 @@ class Chart(
             scale=y_scale_inst,
         )
 
+        # For value-axis x-charts (Gantt, time-scale, scatter) the tick labels
+        # are computed by the scale and live on x_axis.labels, but
+        # data_model.x_labels is None so layout.x_labels stays empty. Back-fill
+        # the layout here so bottom_padding can reserve enough room for the tick
+        # label band. Only fills when the layout's list is empty (ordinal charts
+        # already populated it from data_model).
+        if not self.layout.x_labels and self.x_axis.labels:
+            self.layout.x_labels = list(self.x_axis.labels)
+
         # Bound long category labels (wrap y-axis / truncate x-axis) before any
         # data points are projected. This caps the label gutter so the plot area
         # cannot be pushed off-canvas, and must run *before* the value

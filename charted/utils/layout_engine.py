@@ -160,34 +160,39 @@ class LayoutEngine:
         """
         base = self.v_padding * self.height
 
-        # Bottom-axis tick labels (the category labels of a column chart and the
-        # numeric value-axis labels of a horizontal bar chart) are drawn
-        # DEFAULT_PADDING below the plot bottom, so their baseline sits at
-        # (height - bottom_padding + DEFAULT_PADDING). When the fractional
-        # v_padding band is thinner than DEFAULT_PADDING (small canvases, roughly
-        # height < 360px) that baseline drops below the viewBox and the labels
-        # overflow the bottom edge by a few pixels. The horizontal bar chart's
-        # value labels are not carried in x_labels, so reserve the band
-        # unconditionally. Larger canvases already have a v_padding band >=
-        # DEFAULT_PADDING, so their layout (including every 500px baseline
-        # fixture) is byte-for-byte unchanged.
+        # The x-axis tick-label group is translated by DEFAULT_PADDING below the
+        # plot bottom and the label text sits at y = plot_height within that
+        # group. The label baseline therefore lands at:
+        #   absolute_y = height - bottom_padding + DEFAULT_PADDING
+        # For the full label band (baseline + descenders) to clear the viewBox
+        # bottom edge with breathing room, bottom_padding must cover:
+        #   DEFAULT_PADDING (the gap between plot and labels)
+        #   + max_x_label_height (the full glyph bounding box, ascent+descent)
+        # Without this, on small canvases (height < 360 px) the baseline hits
+        # the viewBox edge exactly and descenders clip.  On the standard 500 px
+        # canvas the margin is only ~3 px, which browsers render as visually
+        # tight.  The horizontal bar chart's value labels are not in x_labels,
+        # so reserve at least DEFAULT_PADDING unconditionally and add the label
+        # height only when x_labels are present.
         from ..constants import DEFAULT_PADDING
 
         base = max(base, DEFAULT_PADDING)
 
+        if self.x_labels:
+            # Use the measured label height (font metrics, includes descent).
+            # Fall back to DEFAULT_FONT_SIZE when height metadata is absent.
+            from .defaults import DEFAULT_FONT_SIZE
+
+            max_label_height = max(
+                (lab.height if hasattr(lab, "height") and lab.height else DEFAULT_FONT_SIZE)
+                for lab in self.x_labels
+            )
+            base = max(base, DEFAULT_PADDING + max_label_height)
+
         # Reserve a band below the plot for a bottom-placed legend. The legend
         # is drawn at the chart's bottom edge, so the band must clear the
-        # x-axis tick labels. Those labels sit DEFAULT_PADDING below the plot
-        # plus their own font height; guarantee the base padding covers that
-        # before the legend band is appended, otherwise a thin v_padding lets
-        # the labels spill into the legend row.
+        # x-axis tick labels (already accounted for above).
         if self.legend_position == "bottom":
-            if self.x_labels:
-                from ..constants import DEFAULT_PADDING
-                from .defaults import DEFAULT_FONT_SIZE
-
-                tick_label_band = DEFAULT_PADDING + DEFAULT_FONT_SIZE
-                base = max(base, tick_label_band)
             base += self._legend_band
 
         # Extra space for x-axis title label (rendered below tick labels)
