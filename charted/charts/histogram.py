@@ -47,12 +47,17 @@ class Histogram(Chart):
     # keeping only the blank endpoints. Disable it so real bin labels render.
     pad_x_labels: bool = False
 
+    # The x-axis carries n+1 bin-edge labels but y_data has only n counts.
+    # Skip the generic label-length cross-check so DataModel does not raise
+    # LabelMismatchError; the histogram validates its own label geometry.
+    _skip_label_length_validation: bool = True
+
     """Histogram showing value distribution across bins.
 
     Args:
         data: Single list of values to bin.
         bins: Number of bins (auto-calculated if None).
-        labels: Optional x-axis labels.
+        labels: Optional x-axis labels (n+1 edge labels).
         width, height: Chart dimensions in pixels.
         title: Optional chart title.
         theme: Optional theme configuration.
@@ -87,20 +92,23 @@ class Histogram(Chart):
         n_bins = bins if bins is not None else _auto_bins(data)
         bin_counts, bin_labels = _compute_bins(data, n_bins)
 
-        # _compute_bins returns n_bins+1 edge labels (left edges + final right
-        # edge). The chart has n_bins bars, so only the first n_bins labels
-        # (one per bar, the left edge of each bin) should be passed as x_labels.
-        # Passing all n_bins+1 labels makes x_count = n_bins+1 but y_count =
-        # n_bins, leaving the last label position empty and the axis rendering
-        # as blank spaces.
-        bar_labels = bin_labels[:n_bins]
+        # _compute_bins returns n_bins+1 edge labels: the left edge of every
+        # bin plus the final right edge.  All n+1 labels are passed to the
+        # x-axis so the axis has n+1 ordinal positions (indices 0..n_bins).
+        # The tick at index i lands at i/n_bins * plot_width, which equals the
+        # left edge of bar i.  The tick at index n_bins lands at plot_width,
+        # which equals the right edge of the last bar.  Bar width is therefore
+        # coords[i+1] - coords[i] == plot_width/n_bins, identical to tick
+        # spacing.  This is the continuous-axis alignment contract.
+        edge_labels = labels if labels is not None else bin_labels
 
         # Store before super().__init__ so representation can access it
         self._bin_counts = bin_counts
+        self._n_bins = n_bins
 
         super().__init__(
             y_data=[bin_counts],
-            x_labels=labels or bar_labels,
+            x_labels=edge_labels,
             width=width,
             height=height,
             title=title,
@@ -120,20 +128,23 @@ class Histogram(Chart):
 
     @property
     def representation(self) -> G:
-        """Render histogram as bars."""
+        """Render histogram bars aligned to the continuous bin-edge x-axis.
+
+        Each bar spans from x_axis.coordinates[i] to x_axis.coordinates[i+1],
+        so bar left edges sit on the bin-edge ticks and bar width equals the
+        tick spacing.
+        """
         from charted.html.element import Text
 
         g = G()
         plot_h = self.plot_height
-        plot_w = self.plot_width
         pad_x = self.left_padding
         pad_y = self.top_padding
 
+        # x_axis has n+1 coordinates (one per edge tick).  Bar i spans the
+        # pixel interval [coords[i], coords[i+1]].
+        coords = self.x_axis.coordinates
         n = len(self._bin_counts)
-        # Bars fill the entire plot width with no inter-bar gap.  Direct
-        # division avoids the ordinal x_offset shift that would push the last
-        # bar outside the plot when pad_x_labels=False.
-        bar_w = plot_w / n if n > 0 else 0
 
         value_labels = self._build_value_labels()
         label_row = value_labels[0] if value_labels else None
@@ -143,7 +154,15 @@ class Histogram(Chart):
         placed: list[tuple[float, float]] = []
 
         for i, (y_val, y_off) in enumerate(zip(self.y_values[0], self.y_offsets[0])):
-            x = pad_x + i * bar_w
+            # Guard: if we somehow have fewer coords than expected, fall back to
+            # even division so the chart never crashes on degenerate input.
+            if i + 1 < len(coords):
+                x = pad_x + coords[i]
+                bar_w = coords[i + 1] - coords[i]
+            else:
+                bar_w = self.plot_width / n if n > 0 else 0
+                x = pad_x + i * bar_w
+
             h = y_val + y_off if self.y_stacked else y_val
             g.add_child(
                 Rect(
