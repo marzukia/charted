@@ -4,11 +4,27 @@ Get up and running with Charted in 5 minutes.
 
 ## Installation
 
+**Library (use in your code):**
+
+```bash
+uv add charted
+```
+
+Or with pip:
+
 ```bash
 pip install charted
 ```
 
 **Requirements:** Python 3.10+
+
+To run the CLI or MCP server as a standalone tool (no project install needed), use `uvx` or `pipx`:
+
+```bash
+uvx charted ...
+# or
+pipx install charted
+```
 
 ## Your First Chart
 
@@ -135,7 +151,10 @@ chart = BarChart(
 Create charts without writing Python:
 
 ```bash
-# From CSV
+# Using uvx (no install needed)
+uvx charted create bar sales.svg --data sales.csv
+
+# Using python -m (if charted is installed in your project)
 python -m charted create bar sales.svg --data sales.csv
 
 # Batch process

@@ -9,6 +9,12 @@ Zero-dependency charts for Python and AI agents. SVG and PNG, 15 chart types, a 
 ## Quickstart
 
 ```sh
+uv add charted
+```
+
+Or with pip:
+
+```sh
 pip install charted
 ```
 
@@ -712,16 +718,40 @@ md = chart.to_markdown()
 
 ## Installation
 
+**Library (use in your code):**
+
+```sh
+uv add charted
+```
+
+Or with pip:
+
 ```sh
 pip install charted
 ```
 
+**CLI or MCP server (standalone tool, no project install needed):**
+
+```sh
+uvx charted ...
+# or
+pipx install charted
+```
+
+> Note: a `uvx`/`pipx`-installed package runs in its own isolated environment and cannot be imported into your project code. Use `uv add` or `pip install` when you want to `import charted` in your scripts.
+
 Optional extras (these add dependencies, the core library stays zero-dep):
 ```sh
-pip install 'charted[png]'     # PNG export via cairosvg
-pip install 'charted[mcp]'     # MCP server for AI agent integration
-pip install 'charted[duckdb]'  # generate charts from SQL queries
-pip install 'charted[dev]'     # dev tools including PNG visual testing
+uv add "charted[png]"     # PNG export via cairosvg
+uv add "charted[mcp]"     # MCP server for AI agent integration
+uv add "charted[duckdb]"  # generate charts from SQL queries
+uv add "charted[dev]"     # dev tools including PNG visual testing
+
+# pip equivalents
+pip install 'charted[png]'
+pip install 'charted[mcp]'
+pip install 'charted[duckdb]'
+pip install 'charted[dev]'
 ```
 
 ## PNG Export
@@ -744,17 +774,18 @@ PNG export requires `cairosvg`. If it's not installed, `save()` raises a helpful
 Charted includes an MCP server so AI agents (Claude Code, Cursor, etc.) can generate charts without writing Python:
 
 ```sh
-# Register with Claude Code
-claude mcp add charted -- charted-mcp
-
-# Or run standalone (no install step)
+# Run standalone (no install step, recommended)
 uvx --from 'charted[mcp]' charted-mcp
 
-# Or after installing the extra
+# Or install the extra and run directly
+pip install 'charted[mcp]'
 charted-mcp
+
+# Register with Claude Code
+claude mcp add charted -- uvx --from 'charted[mcp]' charted-mcp
 ```
 
-Exposes tools: `create_chart`, `list_chart_types`, `list_themes`, `chart_from_csv`. Requires `pip install 'charted[mcp]'`.
+Exposes tools: `create_chart`, `list_chart_types`, `list_themes`, `chart_from_csv`. The `charted[mcp]` extra is required.
 
 `create_chart` and `chart_from_csv` take an `output_format` of `svg`, `html`, `data_url`, or `png`. With `output_format="png"` the tool returns a rasterized PNG image, so an agent can show the chart inline in a chat UI instead of relaying raw SVG markup. The `mcp` extra includes `cairosvg`, so PNG output works out of the box with the `uvx` command above. PNG rasterization needs cairo's system libraries; on Debian/Ubuntu install them with `apt install libcairo2`.
 

@@ -47,7 +47,7 @@
       <h1 class="hero-headline">Charts worth&nbsp;publishing.</h1>
       <p class="hero-sub">Zero-dependency SVG charting for Python. No numpy, no pandas, no matplotlib. Pure stdlib. 15 chart types.</p>
       <div class="hero-install">
-        <code class="install-pill">pip install charted</code>
+        <code class="install-pill">uv add charted</code>
         <button class="copy-btn" onclick="copyInstall(this)" aria-label="Copy install command">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="5" y="5" width="9" height="9" rx="1.5"/>
@@ -330,7 +330,7 @@ chart.save(<span class="st">"combo.svg"</span>)</code></pre>
         </svg>
         <div>
           <strong>Zero runtime dependencies</strong>
-          <p>Pure Python stdlib. No numpy, pandas, or matplotlib. pip install and you're done.</p>
+          <p>Pure Python stdlib. No numpy, pandas, or matplotlib. Add with uv or pip and you're done.</p>
         </div>
       </div>
 
@@ -413,7 +413,7 @@ chart.save(<span class="st">"combo.svg"</span>)</code></pre>
   <div class="section-inner footer-inner">
     <div class="footer-top">
       <h2>Start in 30 seconds.</h2>
-      <code class="install-pill install-pill--dark">pip install charted</code>
+      <code class="install-pill install-pill--dark">uv add charted</code>
     </div>
     <nav class="footer-links">
       <a href="{{ pathto('quickstart', 1) }}">Docs</a>
@@ -428,7 +428,7 @@ chart.save(<span class="st">"combo.svg"</span>)</code></pre>
 
 <script>
 function copyInstall(btn) {
-  navigator.clipboard.writeText('pip install charted').then(function() {
+  navigator.clipboard.writeText('uv add charted').then(function() {
     btn.classList.add('copied');
     setTimeout(function() { btn.classList.remove('copied'); }, 1800);
   });
