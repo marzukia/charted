@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&amp;display=swap');
+      text { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; }
+    </style>
+    <!-- Background gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1a20"/>
+      <stop offset="100%" stop-color="#162838"/>
+    </linearGradient>
+    <!-- Teal glow -->
+    <radialGradient id="glow" cx="75%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5fab9e" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#5fab9e" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Chart bar gradient -->
+    <linearGradient id="bar1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5fab9e"/>
+      <stop offset="100%" stop-color="#3d8a7d"/>
+    </linearGradient>
+    <linearGradient id="bar2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7dd72"/>
+      <stop offset="100%" stop-color="#e8c84a"/>
+    </linearGradient>
+    <linearGradient id="bar3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f58b51"/>
+      <stop offset="100%" stop-color="#e07030"/>
+    </linearGradient>
+    <linearGradient id="bar4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#db504a"/>
+      <stop offset="100%" stop-color="#b83a35"/>
+    </linearGradient>
+    <linearGradient id="bar5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5fab9e" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#3d8a7d" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Subtle grid lines -->
+  <g stroke="#c9d4d9" stroke-opacity="0.05" stroke-width="1">
+    <line x1="0" y1="157" x2="1200" y2="157"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="472" x2="1200" y2="472"/>
+  </g>
+
+  <!-- Left panel: wordmark + tagline + chips -->
+  <text x="80" y="240" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="80" font-weight="800" fill="#e8f0f4" letter-spacing="-2">charted</text>
+
+  <!-- Teal accent underline -->
+  <rect x="80" y="252" width="320" height="4" rx="2" fill="#5fab9e"/>
+
+  <text x="80" y="310" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="22" font-weight="400" fill="#8aacb8" letter-spacing="-0.3">Charts worth publishing.</text>
+
+  <text x="80" y="356" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="16" font-weight="400" fill="#5a7888">Zero-dependency SVG charts for Python.</text>
+  <text x="80" y="378" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="16" font-weight="400" fill="#5a7888">15 chart types. No numpy. No matplotlib.</text>
+
+  <!-- Chips row -->
+  <rect x="80" y="408" width="130" height="30" rx="15" fill="none" stroke="#2a3d4a" stroke-width="1.5"/>
+  <text x="145" y="428" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="12" font-weight="500" fill="#5fab9e" text-anchor="middle">15 chart types</text>
+
+  <rect x="222" y="408" width="120" height="30" rx="15" fill="none" stroke="#2a3d4a" stroke-width="1.5"/>
+  <text x="282" y="428" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="12" font-weight="500" fill="#5fab9e" text-anchor="middle">0 dependencies</text>
+
+  <rect x="354" y="408" width="100" height="30" rx="15" fill="none" stroke="#2a3d4a" stroke-width="1.5"/>
+  <text x="404" y="428" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="12" font-weight="500" fill="#5fab9e" text-anchor="middle">SVG · PNG</text>
+
+  <!-- Divider -->
+  <line x1="620" y1="80" x2="620" y2="550" stroke="#2a3d4a" stroke-width="1"/>
+
+  <!-- Right panel: inline bar chart (dogfooded-style) -->
+  <!-- Chart frame -->
+  <rect x="670" y="100" width="460" height="430" rx="10"
+        fill="#162028" stroke="#243040" stroke-width="1"/>
+
+  <!-- Chart title -->
+  <text x="900" y="148" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="14" font-weight="600" fill="#c9d4d9" text-anchor="middle">Revenue by Region ($M)</text>
+
+  <!-- Y-axis gridlines inside chart -->
+  <g stroke="#c9d4d9" stroke-opacity="0.07" stroke-width="1">
+    <line x1="710" y1="200" x2="1100" y2="200"/>
+    <line x1="710" y1="280" x2="1100" y2="280"/>
+    <line x1="710" y1="360" x2="1100" y2="360"/>
+    <line x1="710" y1="440" x2="1100" y2="440"/>
+  </g>
+
+  <!-- Baseline -->
+  <line x1="710" y1="450" x2="1100" y2="450" stroke="#c9d4d9" stroke-opacity="0.2" stroke-width="1"/>
+
+  <!-- Bars: values roughly [4.2, 7.8, 6.1, 9.3, 5.5, 8.7], max=9.3, bar height space = 250px -->
+  <!-- Bar width = 42px, gap = 20px, starting at x=720 -->
+  <!-- Heights: 4.2/9.3*250=113, 7.8/9.3*250=210, 6.1/9.3*250=164, 9.3/9.3*250=250, 5.5/9.3*250=148, 8.7/9.3*250=234 -->
+
+  <!-- APAC: 4.2 -> h=113 -->
+  <rect x="720" y="337" width="42" height="113" rx="3" fill="url(#bar1)"/>
+  <!-- North Am: 7.8 -> h=210 -->
+  <rect x="782" y="240" width="42" height="210" rx="3" fill="url(#bar2)"/>
+  <!-- Europe: 6.1 -> h=164 -->
+  <rect x="844" y="286" width="42" height="164" rx="3" fill="url(#bar3)"/>
+  <!-- LatAm: 9.3 -> h=250 -->
+  <rect x="906" y="200" width="42" height="250" rx="3" fill="url(#bar4)"/>
+  <!-- MEA: 5.5 -> h=148 -->
+  <rect x="968" y="302" width="42" height="148" rx="3" fill="url(#bar5)"/>
+  <!-- ANZ: 8.7 -> h=234 -->
+  <rect x="1030" y="216" width="42" height="234" rx="3" fill="url(#bar1)"/>
+
+  <!-- X-axis labels -->
+  <text x="741" y="472" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" fill="#5a7888" text-anchor="middle">APAC</text>
+  <text x="803" y="472" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" fill="#5a7888" text-anchor="middle">N.Am</text>
+  <text x="865" y="472" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" fill="#5a7888" text-anchor="middle">EU</text>
+  <text x="927" y="472" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" fill="#5a7888" text-anchor="middle">LatAm</text>
+  <text x="989" y="472" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" fill="#5a7888" text-anchor="middle">MEA</text>
+  <text x="1051" y="472" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" fill="#5a7888" text-anchor="middle">ANZ</text>
+
+  <!-- Y axis labels -->
+  <text x="706" y="453" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="10" fill="#5a7888" text-anchor="end">0</text>
+  <text x="706" y="363" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="10" fill="#5a7888" text-anchor="end">3</text>
+  <text x="706" y="283" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="10" fill="#5a7888" text-anchor="end">6</text>
+  <text x="706" y="203" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="10" fill="#5a7888" text-anchor="end">9</text>
+
+  <!-- Bottom: domain -->
+  <text x="600" y="596" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="13" font-weight="500" fill="#3a5060" text-anchor="middle">charted.mrzk.io</text>
+</svg>
