@@ -98,6 +98,48 @@ body[data-theme="dark"] {
   --color-admonition-title--tip:                #5fab9e;
 }
 
+/* ── AUTO MODE (no explicit toggle): follow the OS preference ────────────────── */
+/* The light block above uses body:not([data-theme="dark"]) as the default, which
+   also matches Furo's "auto" theme. Without this, auto + OS-dark got charted's
+   LIGHT text/sidebar vars over a dark page (scuffed text, light sidebar). Re-apply
+   the dark palette when the OS is dark and the user has not forced light. */
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) {
+    --color-background-primary:    #0f1a20;
+    --color-background-secondary:  #162028;
+    --color-background-hover:      #1e2d37;
+    --color-background-border:     #243040;
+
+    --color-foreground-primary:    #e8f0f4;
+    --color-foreground-secondary:  #8aacb8;
+    --color-foreground-muted:      #5a7888;
+    --color-foreground-border:     #2a3d4a;
+
+    --color-brand-primary:         #5fab9e;
+    --color-brand-content:         #f7dd72;
+    --color-brand-visited:         #f58b51;
+
+    --color-sidebar-background:    #0f1a20;
+    --color-sidebar-background-border: #243040;
+    --color-sidebar-link-text:     #8aacb8;
+    --color-sidebar-link-text--top-level: #e8f0f4;
+    --color-sidebar-item-background--hover: #1e2d37;
+    --color-sidebar-item-background--current: #1e2d37;
+
+    --color-code-background:       #162028;
+    --color-code-foreground:       #c9d4d9;
+
+    --color-admonition-title-background--note:    #5fab9e14;
+    --color-admonition-title--note:               #5fab9e;
+    --color-admonition-title-background--warning: #f7dd7214;
+    --color-admonition-title--warning:            #f7dd72;
+    --color-admonition-title-background--danger:  #db504a14;
+    --color-admonition-title--danger:             #db504a;
+    --color-admonition-title-background--tip:     #5fab9e14;
+    --color-admonition-title--tip:                #5fab9e;
+  }
+}
+
 /* ── HEADINGS ───────────────────────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -554,7 +596,7 @@ dl.field-list > dt {
   font-size: clamp(1.4rem, 2.5vw, 1.8rem);
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #2e4756;
+  color: var(--color-foreground-primary);
   border: none;
   margin: 0 0 0.5rem;
   padding: 0;
@@ -562,7 +604,7 @@ dl.field-list > dt {
 
 .gallery-light-header p {
   font-size: 0.95rem;
-  color: #5a7080;
+  color: var(--color-foreground-secondary);
   max-width: 52ch;
   margin: 0 auto;
 }
@@ -570,7 +612,7 @@ dl.field-list > dt {
 .charted-gallery-card-light {
   display: flex;
   flex-direction: column;
-  border: 1px solid #e8edf0;
+  border: 1px solid var(--color-background-border);
   border-radius: 8px;
   overflow: hidden;
   transition: box-shadow 0.2s;
@@ -582,7 +624,7 @@ dl.field-list > dt {
 }
 
 .charted-gallery-card-light .charted-gallery-img-wrap {
-  background: #f4f7f8;
+  background: var(--color-background-secondary);
   border-radius: 0;
 }
 
@@ -613,7 +655,7 @@ dl.field-list > dt {
 
 .charted-gallery-meta-light p {
   font-size: 0.8rem;
-  color: #5a7080;
+  color: var(--color-foreground-secondary);
   line-height: 1.5;
   margin: 0;
 }
@@ -628,3 +670,17 @@ dl.field-list > dt {
 }
 
 .charted-gallery-meta-light a:hover { opacity: 1; }
+
+/* ── GALLERY CHART VARIANT SWAP ─────────────────────────────────────────────── */
+/* Each card ships both the light SVG and the dark SVG (#0f1a20 bg). Show the one
+   that matches the active theme. Selectors include img.<class> so they outrank the
+   generic ".charted-gallery-img-wrap img { display: block }" rule above. */
+.charted-gallery-card-light .charted-gallery-img-wrap img.gallery-img-dark { display: none; }
+
+body[data-theme="dark"] .charted-gallery-card-light .charted-gallery-img-wrap img.gallery-img-light { display: none; }
+body[data-theme="dark"] .charted-gallery-card-light .charted-gallery-img-wrap img.gallery-img-dark { display: block; }
+
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) .charted-gallery-card-light .charted-gallery-img-wrap img.gallery-img-light { display: none; }
+  body:not([data-theme="light"]) .charted-gallery-card-light .charted-gallery-img-wrap img.gallery-img-dark { display: block; }
+}

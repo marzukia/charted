@@ -15,7 +15,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_column.svg" alt="Column Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_column.svg" alt="Column Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_column.svg" alt="Column Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">ColumnChart</span>
@@ -26,7 +27,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_bar.svg" alt="Bar Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_bar.svg" alt="Bar Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_bar.svg" alt="Bar Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">BarChart</span>
@@ -37,7 +39,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_line.svg" alt="Line Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_line.svg" alt="Line Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_line.svg" alt="Line Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">LineChart</span>
@@ -48,7 +51,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_area.svg" alt="Area Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_area.svg" alt="Area Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_area.svg" alt="Area Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">AreaChart</span>
@@ -59,7 +63,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_scatter.svg" alt="Scatter Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_scatter.svg" alt="Scatter Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_scatter.svg" alt="Scatter Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">ScatterChart</span>
@@ -70,7 +75,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_bubble.svg" alt="Bubble Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_bubble.svg" alt="Bubble Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_bubble.svg" alt="Bubble Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">BubbleChart</span>
@@ -81,7 +87,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_pie.svg" alt="Pie Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_pie.svg" alt="Pie Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_pie.svg" alt="Pie Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">PieChart</span>
@@ -92,7 +99,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_radar.svg" alt="Radar Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_radar.svg" alt="Radar Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_radar.svg" alt="Radar Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">RadarChart</span>
@@ -103,7 +111,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_combo.svg" alt="Combo Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_combo.svg" alt="Combo Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_combo.svg" alt="Combo Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">ComboChart</span>
@@ -114,7 +123,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_heatmap.svg" alt="Heatmap" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_heatmap.svg" alt="Heatmap" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_heatmap.svg" alt="Heatmap" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">HeatmapChart</span>
@@ -125,7 +135,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_gantt.svg" alt="Gantt Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_gantt.svg" alt="Gantt Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_gantt.svg" alt="Gantt Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">GanttChart</span>
@@ -136,7 +147,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_histogram.svg" alt="Histogram" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_histogram.svg" alt="Histogram" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_histogram.svg" alt="Histogram" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">Histogram</span>
@@ -147,7 +159,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_polar.svg" alt="Polar Area Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_polar.svg" alt="Polar Area Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_polar.svg" alt="Polar Area Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">PolarAreaChart</span>
@@ -158,7 +171,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_boxplot.svg" alt="Box Plot" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_boxplot.svg" alt="Box Plot" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_boxplot.svg" alt="Box Plot" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">BoxPlot</span>
@@ -169,7 +183,8 @@ charted itself from real-ish datasets. No screenshots, no stubs.
 
        <div class="charted-gallery-card-light">
          <div class="charted-gallery-img-wrap">
-           <img src="_static/landing/gallery_light_sankey.svg" alt="Sankey Chart" loading="lazy" />
+           <img class="gallery-img-light" src="_static/landing/gallery_light_sankey.svg" alt="Sankey Chart" loading="lazy" />
+           <img class="gallery-img-dark" src="_static/landing/gallery_sankey.svg" alt="Sankey Chart" loading="lazy" />
          </div>
          <div class="charted-gallery-meta-light">
            <span class="charted-gallery-type-light">SankeyChart</span>
