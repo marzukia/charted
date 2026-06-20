@@ -86,6 +86,14 @@ html_css_files = [
     "css/custom.css",
 ]
 
+# Privacy-friendly self-hosted analytics (Umami)
+html_js_files = [
+    (
+        "https://umami.fungoid.xyz/script.js",
+        {"data-website-id": "3a85cc3e-3e7f-4bcb-8caf-8906c6fea252", "defer": "defer"},
+    ),
+]
+
 # Autodoc configuration
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
