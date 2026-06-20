@@ -89,7 +89,7 @@ html_css_files = [
 # Privacy-friendly self-hosted analytics (Umami)
 html_js_files = [
     (
-        "https://umami.fungoid.xyz/script.js",
+        "https://umami.junkyard.sh/script.js",
         {"data-website-id": "3a85cc3e-3e7f-4bcb-8caf-8906c6fea252", "defer": "defer"},
     ),
 ]
