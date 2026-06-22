@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://charted.mrzk.io/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://charted.mrzk.io/quickstart.html</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://charted.mrzk.io/getting_started.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://charted.mrzk.io/gallery.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/bar.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/column.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/line.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/area.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/scatter.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/bubble.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/pie.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/radar.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/combo.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/heatmap.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/gantt.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/histogram.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/polar_area.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/charts/boxplot.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://charted.mrzk.io/guides/cli.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://charted.mrzk.io/guides/theming.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://charted.mrzk.io/guides/configuration.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://charted.mrzk.io/guides/interactivity.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://charted.mrzk.io/api/charts.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://charted.mrzk.io/api/themes.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+</urlset>

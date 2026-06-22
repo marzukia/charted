@@ -36,6 +36,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
 html_static_path = ["_static"]
+html_extra_path = ["_extra"]
 html_title = "charted"
 html_logo = "_static/images/charted-icon.svg"
 html_favicon = "_static/images/charted-icon.svg"

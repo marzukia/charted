@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://charted.mrzk.io/sitemap.xml
