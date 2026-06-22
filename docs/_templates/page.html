@@ -2,6 +2,8 @@
 
 {% block extrahead %}
   {{ super() }}
+  <meta name="author" content="Andryo Marzuki" />
+  {% if pageurl %}<link rel="canonical" href="{{ pageurl }}" />{% endif %}
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://charted.mrzk.io/{{ pagename }}.html" />
   <meta property="og:title" content="{{ title|striptags }} | charted" />
