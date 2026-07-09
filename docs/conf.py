@@ -91,7 +91,7 @@ html_css_files = [
 html_js_files = [
     (
         "https://umami.junkyard.sh/script.js",
-        {"data-website-id": "3a85cc3e-3e7f-4bcb-8caf-8906c6fea252", "defer": "defer"},
+        {"data-website-id": "cadec7c2-783d-4021-b105-71c600526bfb", "defer": "defer"},
     ),
 ]
 
