@@ -471,9 +471,7 @@ class SankeyChart(Chart):
                     lx = node.x0 - label_pad
                     anchor = "end"
                 placed.append(
-                    _PlacedLabel(
-                        x=lx, y=cy, text=names[node.index], anchor=anchor
-                    )
+                    _PlacedLabel(x=lx, y=cy, text=names[node.index], anchor=anchor)
                 )
         return placed
 

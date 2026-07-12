@@ -43,6 +43,7 @@ def _read_toml(path: Path) -> dict[str, object]:
     with open(path, "rb") as f:
         return cast("dict[str, object]", tomllib.load(f))
 
+
 CONFIG_FILENAMES = [".chartedrc.toml", ".chartedrc", "charted.toml"]
 
 

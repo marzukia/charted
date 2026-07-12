@@ -70,7 +70,9 @@ def test_pie_high_contrast_outlines_wedges():
 
 def test_bar_polar_box_bubble_high_contrast_outlines():
     bar = BarChart(data=[3, 5, 2], labels=["a", "b", "c"], theme=HIGH_CONTRAST)
-    polar = PolarAreaChart(data=[10, 20, 30], labels=["a", "b", "c"], theme=HIGH_CONTRAST)
+    polar = PolarAreaChart(
+        data=[10, 20, 30], labels=["a", "b", "c"], theme=HIGH_CONTRAST
+    )
     box = BoxPlot(data=[[1, 2, 3, 4, 5], [2, 4, 6, 8, 10]], theme=HIGH_CONTRAST)
     bubble = BubbleChart(
         x_data=[1, 2, 3], y_data=[4, 5, 6], sizes=[10, 20, 30], theme=HIGH_CONTRAST
@@ -103,7 +105,9 @@ def test_column_category_patterns_emits_defs_and_refs():
 
 
 def test_pie_category_patterns():
-    patterned = PieChart(data=[30, 20, 50], labels=["a", "b", "c"], category_patterns=True)
+    patterned = PieChart(
+        data=[30, 20, 50], labels=["a", "b", "c"], category_patterns=True
+    )
     assert "<pattern" in patterned.svg
     assert "url(#chart-pattern" in patterned.svg
 

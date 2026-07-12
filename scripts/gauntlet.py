@@ -4,6 +4,7 @@
 Throws extreme / edge-case data at every chart type, renders each, captures
 failures, and writes a single self-contained HTML gallery.
 """
+
 from __future__ import annotations
 
 import html
@@ -38,7 +39,9 @@ DARK = Theme(
     legend_font_color="#e0e1dd",
 )
 
-LONG_LABEL = "Quarterly revenue from the Northern European distribution division (provisional)"
+LONG_LABEL = (
+    "Quarterly revenue from the Northern European distribution division (provisional)"
+)
 UNICODE_LABELS = ["日本語ラベル", "🚀 launch", "Ω≈ç√", "x"]
 
 
@@ -81,8 +84,15 @@ def detect_overflow(svg: str) -> list[str]:
         x, y = float(xm.group(1)), float(ym.group(1))
         text = re.sub(r"<[^>]+>", "", inner).strip()
         label = (text[:24] + "…") if len(text) > 24 else text
-        if x < minx - margin or x > maxx + margin or y < miny - margin or y > maxy + margin:
-            issues.append(f'text "{label}" at ({x:.0f},{y:.0f}) outside viewBox {vw:.0f}x{vh:.0f}')
+        if (
+            x < minx - margin
+            or x > maxx + margin
+            or y < miny - margin
+            or y > maxy + margin
+        ):
+            issues.append(
+                f'text "{label}" at ({x:.0f},{y:.0f}) outside viewBox {vw:.0f}x{vh:.0f}'
+            )
     return issues
 
 
@@ -126,92 +136,285 @@ def battery(name: str):
 @battery("BarChart")
 def _bar():
     return [
-        Case("Huge numbers [1e9, 999999999, 1]", lambda: BarChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"], value_labels=True, title="Huge numbers")),
-        Case("Tiny decimals [0.0001, 0.0002, 0.00015]", lambda: BarChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"], value_labels=True)),
-        Case("Extreme dynamic range [1,1000,1,5e6]", lambda: BarChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"], value_labels=True), suspect=True),
-        Case("All negative [-50,-30,-90]", lambda: BarChart([-50, -30, -90], ["a", "b", "c"], value_labels=True)),
-        Case("Mixed pos/neg [-40,60,-20,80]", lambda: BarChart([-40, 60, -20, 80], ["a", "b", "c", "d"], value_labels=True)),
+        Case(
+            "Huge numbers [1e9, 999999999, 1]",
+            lambda: BarChart(
+                [1_000_000_000, 999_999_999, 1],
+                ["a", "b", "c"],
+                value_labels=True,
+                title="Huge numbers",
+            ),
+        ),
+        Case(
+            "Tiny decimals [0.0001, 0.0002, 0.00015]",
+            lambda: BarChart(
+                [0.0001, 0.0002, 0.00015], ["a", "b", "c"], value_labels=True
+            ),
+        ),
+        Case(
+            "Extreme dynamic range [1,1000,1,5e6]",
+            lambda: BarChart(
+                [1, 1000, 1, 5_000_000], ["a", "b", "c", "d"], value_labels=True
+            ),
+            suspect=True,
+        ),
+        Case(
+            "All negative [-50,-30,-90]",
+            lambda: BarChart([-50, -30, -90], ["a", "b", "c"], value_labels=True),
+        ),
+        Case(
+            "Mixed pos/neg [-40,60,-20,80]",
+            lambda: BarChart(
+                [-40, 60, -20, 80], ["a", "b", "c", "d"], value_labels=True
+            ),
+        ),
         Case("All zeros [0,0,0]", lambda: BarChart([0, 0, 0], ["a", "b", "c"])),
-        Case("Single zero among values [10,0,30]", lambda: BarChart([10, 0, 30], ["a", "b", "c"], value_labels=True)),
-        Case("Single data point [42]", lambda: BarChart([42], ["only"], value_labels=True)),
-        Case("All identical [5,5,5,5]", lambda: BarChart([5, 5, 5, 5], ["a", "b", "c", "d"], value_labels=True)),
-        Case("200 points (label thinning)", lambda: BarChart(many(200), lbls(200)), suspect=True),
-        Case("Very long labels (80 char)", lambda: BarChart([3, 5, 2], [LONG_LABEL, LONG_LABEL, "short"]), suspect=True),
+        Case(
+            "Single zero among values [10,0,30]",
+            lambda: BarChart([10, 0, 30], ["a", "b", "c"], value_labels=True),
+        ),
+        Case(
+            "Single data point [42]",
+            lambda: BarChart([42], ["only"], value_labels=True),
+        ),
+        Case(
+            "All identical [5,5,5,5]",
+            lambda: BarChart([5, 5, 5, 5], ["a", "b", "c", "d"], value_labels=True),
+        ),
+        Case(
+            "200 points (label thinning)",
+            lambda: BarChart(many(200), lbls(200)),
+            suspect=True,
+        ),
+        Case(
+            "Very long labels (80 char)",
+            lambda: BarChart([3, 5, 2], [LONG_LABEL, LONG_LABEL, "short"]),
+            suspect=True,
+        ),
         Case("Unicode/emoji labels", lambda: BarChart([10, 20, 30, 5], UNICODE_LABELS)),
-        Case("Two series wildly diff magnitudes", lambda: BarChart([[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]], ["a", "b", "c"])),
-        Case("Mismatched label count (SHOULD error?)", lambda: BarChart([1, 2, 3], ["only_one"])),
-        Case("Dark theme variant", lambda: BarChart([5, 9, 3, 7], ["a", "b", "c", "d"], theme=DARK, value_labels=True, title="Dark bar"), suspect=True),
+        Case(
+            "Two series wildly diff magnitudes",
+            lambda: BarChart(
+                [[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]], ["a", "b", "c"]
+            ),
+        ),
+        Case(
+            "Mismatched label count (SHOULD error?)",
+            lambda: BarChart([1, 2, 3], ["only_one"]),
+        ),
+        Case(
+            "Dark theme variant",
+            lambda: BarChart(
+                [5, 9, 3, 7],
+                ["a", "b", "c", "d"],
+                theme=DARK,
+                value_labels=True,
+                title="Dark bar",
+            ),
+            suspect=True,
+        ),
     ]
 
 
 @battery("ColumnChart")
 def _col():
     return [
-        Case("Huge numbers", lambda: ColumnChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"], value_labels=True)),
-        Case("Tiny decimals", lambda: ColumnChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"])),
-        Case("Extreme dynamic range", lambda: ColumnChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"]), suspect=True),
-        Case("All negative", lambda: ColumnChart([-50, -30, -90], ["a", "b", "c"], value_labels=True)),
-        Case("Mixed pos/neg", lambda: ColumnChart([-40, 60, -20, 80], ["a", "b", "c", "d"], value_labels=True)),
+        Case(
+            "Huge numbers",
+            lambda: ColumnChart(
+                [1_000_000_000, 999_999_999, 1], ["a", "b", "c"], value_labels=True
+            ),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: ColumnChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"]),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: ColumnChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"]),
+            suspect=True,
+        ),
+        Case(
+            "All negative",
+            lambda: ColumnChart([-50, -30, -90], ["a", "b", "c"], value_labels=True),
+        ),
+        Case(
+            "Mixed pos/neg",
+            lambda: ColumnChart(
+                [-40, 60, -20, 80], ["a", "b", "c", "d"], value_labels=True
+            ),
+        ),
         Case("All zeros", lambda: ColumnChart([0, 0, 0], ["a", "b", "c"])),
-        Case("Single data point", lambda: ColumnChart([42], ["only"], value_labels=True)),
+        Case(
+            "Single data point", lambda: ColumnChart([42], ["only"], value_labels=True)
+        ),
         Case("All identical", lambda: ColumnChart([5, 5, 5, 5], ["a", "b", "c", "d"])),
         Case("200 points", lambda: ColumnChart(many(200), lbls(200)), suspect=True),
-        Case("Very long labels", lambda: ColumnChart([3, 5, 2], [LONG_LABEL, "short", "mid"])),
-        Case("Two-series stacked wildly diff", lambda: ColumnChart([[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]], ["a", "b", "c"], y_stacked=True)),
-        Case("Dark theme", lambda: ColumnChart([5, 9, 3, 7], ["a", "b", "c", "d"], theme=DARK, title="Dark column")),
+        Case(
+            "Very long labels",
+            lambda: ColumnChart([3, 5, 2], [LONG_LABEL, "short", "mid"]),
+        ),
+        Case(
+            "Two-series stacked wildly diff",
+            lambda: ColumnChart(
+                [[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]],
+                ["a", "b", "c"],
+                y_stacked=True,
+            ),
+        ),
+        Case(
+            "Dark theme",
+            lambda: ColumnChart(
+                [5, 9, 3, 7], ["a", "b", "c", "d"], theme=DARK, title="Dark column"
+            ),
+        ),
     ]
 
 
 @battery("LineChart")
 def _line():
     return [
-        Case("Huge numbers", lambda: LineChart([1_000_000_000, 999_999_999, 1], labels=["a", "b", "c"], markers=True)),
-        Case("Tiny decimals", lambda: LineChart([0.0001, 0.0002, 0.00015], labels=["a", "b", "c"])),
-        Case("Extreme dynamic range", lambda: LineChart([1, 1000, 1, 5_000_000], labels=["a", "b", "c", "d"]), suspect=True),
-        Case("All negative", lambda: LineChart([-50, -30, -90], labels=["a", "b", "c"])),
-        Case("Mixed pos/neg", lambda: LineChart([-40, 60, -20, 80], labels=["a", "b", "c", "d"])),
+        Case(
+            "Huge numbers",
+            lambda: LineChart(
+                [1_000_000_000, 999_999_999, 1], labels=["a", "b", "c"], markers=True
+            ),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: LineChart([0.0001, 0.0002, 0.00015], labels=["a", "b", "c"]),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: LineChart([1, 1000, 1, 5_000_000], labels=["a", "b", "c", "d"]),
+            suspect=True,
+        ),
+        Case(
+            "All negative", lambda: LineChart([-50, -30, -90], labels=["a", "b", "c"])
+        ),
+        Case(
+            "Mixed pos/neg",
+            lambda: LineChart([-40, 60, -20, 80], labels=["a", "b", "c", "d"]),
+        ),
         Case("All zeros", lambda: LineChart([0, 0, 0], labels=["a", "b", "c"])),
-        Case("Single data point", lambda: LineChart([42], labels=["only"]), suspect=True),
-        Case("All identical (flat line)", lambda: LineChart([5, 5, 5, 5], labels=["a", "b", "c", "d"])),
-        Case("300 points (crowding)", lambda: LineChart(many(300), labels=lbls(300)), suspect=True),
-        Case("Very long labels", lambda: LineChart([3, 5, 2], labels=[LONG_LABEL, "b", "c"])),
-        Case("Two series wildly diff", lambda: LineChart([[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]], labels=["a", "b", "c"])),
-        Case("Dark theme", lambda: LineChart([3, 7, 4, 9, 2], labels=lbls(5), theme=DARK, markers=True, title="Dark line")),
+        Case(
+            "Single data point", lambda: LineChart([42], labels=["only"]), suspect=True
+        ),
+        Case(
+            "All identical (flat line)",
+            lambda: LineChart([5, 5, 5, 5], labels=["a", "b", "c", "d"]),
+        ),
+        Case(
+            "300 points (crowding)",
+            lambda: LineChart(many(300), labels=lbls(300)),
+            suspect=True,
+        ),
+        Case(
+            "Very long labels",
+            lambda: LineChart([3, 5, 2], labels=[LONG_LABEL, "b", "c"]),
+        ),
+        Case(
+            "Two series wildly diff",
+            lambda: LineChart(
+                [[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]], labels=["a", "b", "c"]
+            ),
+        ),
+        Case(
+            "Dark theme",
+            lambda: LineChart(
+                [3, 7, 4, 9, 2],
+                labels=lbls(5),
+                theme=DARK,
+                markers=True,
+                title="Dark line",
+            ),
+        ),
     ]
 
 
 @battery("AreaChart")
 def _area():
     return [
-        Case("Huge numbers", lambda: AreaChart([1_000_000_000, 999_999_999, 1], labels=["a", "b", "c"])),
-        Case("Tiny decimals", lambda: AreaChart([0.0001, 0.0002, 0.00015], labels=["a", "b", "c"])),
-        Case("Extreme dynamic range", lambda: AreaChart([1, 1000, 1, 5_000_000], labels=["a", "b", "c", "d"]), suspect=True),
-        Case("All negative", lambda: AreaChart([-50, -30, -90], labels=["a", "b", "c"])),
-        Case("Mixed pos/neg", lambda: AreaChart([-40, 60, -20, 80], labels=["a", "b", "c", "d"])),
+        Case(
+            "Huge numbers",
+            lambda: AreaChart([1_000_000_000, 999_999_999, 1], labels=["a", "b", "c"]),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: AreaChart([0.0001, 0.0002, 0.00015], labels=["a", "b", "c"]),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: AreaChart([1, 1000, 1, 5_000_000], labels=["a", "b", "c", "d"]),
+            suspect=True,
+        ),
+        Case(
+            "All negative", lambda: AreaChart([-50, -30, -90], labels=["a", "b", "c"])
+        ),
+        Case(
+            "Mixed pos/neg",
+            lambda: AreaChart([-40, 60, -20, 80], labels=["a", "b", "c", "d"]),
+        ),
         Case("All zeros", lambda: AreaChart([0, 0, 0], labels=["a", "b", "c"])),
         Case("Single data point", lambda: AreaChart([42], labels=["only"])),
-        Case("All identical", lambda: AreaChart([5, 5, 5, 5], labels=["a", "b", "c", "d"])),
+        Case(
+            "All identical",
+            lambda: AreaChart([5, 5, 5, 5], labels=["a", "b", "c", "d"]),
+        ),
         Case("200 points", lambda: AreaChart(many(200), labels=lbls(200))),
-        Case("Two-series stacked wildly diff", lambda: AreaChart([[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]], labels=["a", "b", "c"])),
-        Case("Dark theme", lambda: AreaChart([3, 7, 4, 9, 2], labels=lbls(5), theme=DARK, title="Dark area")),
+        Case(
+            "Two-series stacked wildly diff",
+            lambda: AreaChart(
+                [[1, 2, 3], [1_000_000, 2_000_000, 3_000_000]], labels=["a", "b", "c"]
+            ),
+        ),
+        Case(
+            "Dark theme",
+            lambda: AreaChart(
+                [3, 7, 4, 9, 2], labels=lbls(5), theme=DARK, title="Dark area"
+            ),
+        ),
     ]
 
 
 @battery("PieChart")
 def _pie():
     return [
-        Case("Huge numbers", lambda: PieChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"])),
-        Case("Tiny decimals", lambda: PieChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"])),
-        Case("Extreme dynamic range", lambda: PieChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"])),
+        Case(
+            "Huge numbers",
+            lambda: PieChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"]),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: PieChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"]),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: PieChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"]),
+        ),
         Case("All zeros (SHOULD error)", lambda: PieChart([0, 0, 0], ["a", "b", "c"])),
-        Case("Single zero among values", lambda: PieChart([10, 0, 30], ["a", "b", "c"])),
-        Case("Contains negative (SHOULD error?)", lambda: PieChart([-50, 30, 90], ["a", "b", "c"])),
+        Case(
+            "Single zero among values", lambda: PieChart([10, 0, 30], ["a", "b", "c"])
+        ),
+        Case(
+            "Contains negative (SHOULD error?)",
+            lambda: PieChart([-50, 30, 90], ["a", "b", "c"]),
+        ),
         Case("Single data point", lambda: PieChart([42], ["only"])),
         Case("All identical", lambda: PieChart([5, 5, 5, 5], ["a", "b", "c", "d"])),
-        Case("Many slices (40)", lambda: PieChart(list(range(1, 41)), lbls(40)), suspect=True),
+        Case(
+            "Many slices (40)",
+            lambda: PieChart(list(range(1, 41)), lbls(40)),
+            suspect=True,
+        ),
         Case("Very long labels", lambda: PieChart([3, 5, 2], [LONG_LABEL, "b", "c"])),
         Case("Unicode labels", lambda: PieChart([10, 20, 30, 5], UNICODE_LABELS)),
-        Case("Dark theme", lambda: PieChart([5, 9, 3, 7], ["a", "b", "c", "d"], theme=DARK, title="Dark pie")),
+        Case(
+            "Dark theme",
+            lambda: PieChart(
+                [5, 9, 3, 7], ["a", "b", "c", "d"], theme=DARK, title="Dark pie"
+            ),
+        ),
     ]
 
 
@@ -219,66 +422,158 @@ def _pie():
 def _scatter():
     return [
         Case("Huge numbers", lambda: ScatterChart([1e9, 9.99e8, 1], [1e9, 1, 5e8])),
-        Case("Tiny decimals", lambda: ScatterChart([0.0001, 0.0002, 0.00015], [0.0003, 0.0001, 0.0002])),
-        Case("Extreme dynamic range x", lambda: ScatterChart([1, 1000, 1, 5_000_000], [1, 2, 3, 4]), suspect=True),
+        Case(
+            "Tiny decimals",
+            lambda: ScatterChart([0.0001, 0.0002, 0.00015], [0.0003, 0.0001, 0.0002]),
+        ),
+        Case(
+            "Extreme dynamic range x",
+            lambda: ScatterChart([1, 1000, 1, 5_000_000], [1, 2, 3, 4]),
+            suspect=True,
+        ),
         Case("All negative", lambda: ScatterChart([-50, -30, -90], [-10, -20, -30])),
-        Case("Mixed pos/neg (quadrants)", lambda: ScatterChart([-40, 60, -20, 80], [-40, 60, 20, -80])),
+        Case(
+            "Mixed pos/neg (quadrants)",
+            lambda: ScatterChart([-40, 60, -20, 80], [-40, 60, 20, -80]),
+        ),
         Case("All zeros", lambda: ScatterChart([0, 0, 0], [0, 0, 0])),
         Case("Single point", lambda: ScatterChart([42], [42]), suspect=True),
-        Case("All identical (collapsed)", lambda: ScatterChart([5, 5, 5, 5], [5, 5, 5, 5])),
+        Case(
+            "All identical (collapsed)",
+            lambda: ScatterChart([5, 5, 5, 5], [5, 5, 5, 5]),
+        ),
         Case("300 points", lambda: ScatterChart(many(300), many(300)[::-1])),
-        Case("Mismatched x/y len (SHOULD error)", lambda: ScatterChart([1, 2, 3], [1, 2])),
-        Case("Dark theme", lambda: ScatterChart([1, 2, 3, 4], [4, 1, 3, 2], theme=DARK, title="Dark scatter")),
+        Case(
+            "Mismatched x/y len (SHOULD error)", lambda: ScatterChart([1, 2, 3], [1, 2])
+        ),
+        Case(
+            "Dark theme",
+            lambda: ScatterChart(
+                [1, 2, 3, 4], [4, 1, 3, 2], theme=DARK, title="Dark scatter"
+            ),
+        ),
     ]
 
 
 @battery("BubbleChart")
 def _bubble():
     return [
-        Case("Huge numbers", lambda: BubbleChart([1e9, 9.99e8, 1], [1e9, 1, 5e8], [10, 20, 30])),
-        Case("Tiny decimals", lambda: BubbleChart([0.0001, 0.0002, 0.00015], [0.0003, 0.0001, 0.0002], [1, 2, 3])),
-        Case("Extreme size range", lambda: BubbleChart([1, 2, 3, 4], [1, 2, 3, 4], [1, 1000, 1, 5_000_000]), suspect=True),
-        Case("Negative sizes (SHOULD error?)", lambda: BubbleChart([1, 2, 3], [1, 2, 3], [-10, -20, -30])),
+        Case(
+            "Huge numbers",
+            lambda: BubbleChart([1e9, 9.99e8, 1], [1e9, 1, 5e8], [10, 20, 30]),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: BubbleChart(
+                [0.0001, 0.0002, 0.00015], [0.0003, 0.0001, 0.0002], [1, 2, 3]
+            ),
+        ),
+        Case(
+            "Extreme size range",
+            lambda: BubbleChart([1, 2, 3, 4], [1, 2, 3, 4], [1, 1000, 1, 5_000_000]),
+            suspect=True,
+        ),
+        Case(
+            "Negative sizes (SHOULD error?)",
+            lambda: BubbleChart([1, 2, 3], [1, 2, 3], [-10, -20, -30]),
+        ),
         Case("All zero sizes", lambda: BubbleChart([1, 2, 3], [1, 2, 3], [0, 0, 0])),
         Case("Single point", lambda: BubbleChart([42], [42], [10])),
         Case("All identical", lambda: BubbleChart([5, 5, 5], [5, 5, 5], [5, 5, 5])),
-        Case("Mismatched sizes len (SHOULD error)", lambda: BubbleChart([1, 2, 3], [1, 2, 3], [10, 20])),
-        Case("Dark theme", lambda: BubbleChart([1, 2, 3, 4], [4, 1, 3, 2], [5, 10, 15, 8], theme=DARK, title="Dark bubble")),
+        Case(
+            "Mismatched sizes len (SHOULD error)",
+            lambda: BubbleChart([1, 2, 3], [1, 2, 3], [10, 20]),
+        ),
+        Case(
+            "Dark theme",
+            lambda: BubbleChart(
+                [1, 2, 3, 4],
+                [4, 1, 3, 2],
+                [5, 10, 15, 8],
+                theme=DARK,
+                title="Dark bubble",
+            ),
+        ),
     ]
 
 
 @battery("RadarChart")
 def _radar():
     return [
-        Case("Huge numbers", lambda: RadarChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"])),
-        Case("Tiny decimals", lambda: RadarChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"])),
-        Case("Extreme dynamic range", lambda: RadarChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"]), suspect=True),
+        Case(
+            "Huge numbers",
+            lambda: RadarChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"]),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: RadarChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"]),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: RadarChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"]),
+            suspect=True,
+        ),
         Case("All negative", lambda: RadarChart([-50, -30, -90], ["a", "b", "c"])),
-        Case("Mixed pos/neg", lambda: RadarChart([-40, 60, -20, 80], ["a", "b", "c", "d"])),
+        Case(
+            "Mixed pos/neg",
+            lambda: RadarChart([-40, 60, -20, 80], ["a", "b", "c", "d"]),
+        ),
         Case("All zeros", lambda: RadarChart([0, 0, 0], ["a", "b", "c"])),
         Case("Single axis [42]", lambda: RadarChart([42], ["only"]), suspect=True),
         Case("Two axes", lambda: RadarChart([10, 20], ["a", "b"])),
         Case("All identical", lambda: RadarChart([5, 5, 5, 5], ["a", "b", "c", "d"])),
-        Case("Many axes (30)", lambda: RadarChart(list(range(1, 31)), lbls(30)), suspect=True),
+        Case(
+            "Many axes (30)",
+            lambda: RadarChart(list(range(1, 31)), lbls(30)),
+            suspect=True,
+        ),
         Case("Unicode labels", lambda: RadarChart([10, 20, 30, 5], UNICODE_LABELS)),
-        Case("Two series", lambda: RadarChart([[10, 20, 30], [30, 10, 20]], ["a", "b", "c"])),
-        Case("Dark theme", lambda: RadarChart([5, 9, 3, 7, 6], lbls(5), theme=DARK, title="Dark radar")),
+        Case(
+            "Two series",
+            lambda: RadarChart([[10, 20, 30], [30, 10, 20]], ["a", "b", "c"]),
+        ),
+        Case(
+            "Dark theme",
+            lambda: RadarChart(
+                [5, 9, 3, 7, 6], lbls(5), theme=DARK, title="Dark radar"
+            ),
+        ),
     ]
 
 
 @battery("PolarAreaChart")
 def _polar():
     return [
-        Case("Huge numbers", lambda: PolarAreaChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"])),
-        Case("Tiny decimals", lambda: PolarAreaChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"])),
-        Case("Extreme dynamic range", lambda: PolarAreaChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"]), suspect=True),
+        Case(
+            "Huge numbers",
+            lambda: PolarAreaChart([1_000_000_000, 999_999_999, 1], ["a", "b", "c"]),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: PolarAreaChart([0.0001, 0.0002, 0.00015], ["a", "b", "c"]),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: PolarAreaChart([1, 1000, 1, 5_000_000], ["a", "b", "c", "d"]),
+            suspect=True,
+        ),
         Case("All zeros", lambda: PolarAreaChart([0, 0, 0], ["a", "b", "c"])),
-        Case("Negative (SHOULD error?)", lambda: PolarAreaChart([-50, 30, 90], ["a", "b", "c"])),
+        Case(
+            "Negative (SHOULD error?)",
+            lambda: PolarAreaChart([-50, 30, 90], ["a", "b", "c"]),
+        ),
         Case("Single data point", lambda: PolarAreaChart([42], ["only"])),
-        Case("All identical", lambda: PolarAreaChart([5, 5, 5, 5], ["a", "b", "c", "d"])),
+        Case(
+            "All identical", lambda: PolarAreaChart([5, 5, 5, 5], ["a", "b", "c", "d"])
+        ),
         Case("Many slices (40)", lambda: PolarAreaChart(list(range(1, 41)), lbls(40))),
         Case("Unicode labels", lambda: PolarAreaChart([10, 20, 30, 5], UNICODE_LABELS)),
-        Case("Dark theme", lambda: PolarAreaChart([5, 9, 3, 7], ["a", "b", "c", "d"], theme=DARK, title="Dark polar")),
+        Case(
+            "Dark theme",
+            lambda: PolarAreaChart(
+                [5, 9, 3, 7], ["a", "b", "c", "d"], theme=DARK, title="Dark polar"
+            ),
+        ),
     ]
 
 
@@ -286,16 +581,30 @@ def _polar():
 def _hist():
     return [
         Case("Huge numbers", lambda: Histogram([1e9, 9.99e8, 1, 5e8, 3e8, 7e8])),
-        Case("Tiny decimals", lambda: Histogram([0.0001, 0.0002, 0.00015, 0.0003, 0.00012])),
-        Case("Extreme dynamic range", lambda: Histogram([1, 1000, 1, 5_000_000, 2, 3, 4]), suspect=True),
+        Case(
+            "Tiny decimals",
+            lambda: Histogram([0.0001, 0.0002, 0.00015, 0.0003, 0.00012]),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: Histogram([1, 1000, 1, 5_000_000, 2, 3, 4]),
+            suspect=True,
+        ),
         Case("All negative", lambda: Histogram([-50, -30, -90, -10, -70, -40])),
         Case("Mixed pos/neg", lambda: Histogram([-40, 60, -20, 80, 0, 10, -5])),
         Case("All zeros", lambda: Histogram([0, 0, 0, 0, 0])),
         Case("Single data point", lambda: Histogram([42]), suspect=True),
         Case("All identical", lambda: Histogram([5, 5, 5, 5, 5, 5])),
         Case("300 points normal-ish", lambda: Histogram(many(300))),
-        Case("Many bins requested (100)", lambda: Histogram(list(range(200)), bins=100)),
-        Case("Dark theme", lambda: Histogram([1, 2, 2, 3, 3, 3, 4, 4, 5], theme=DARK, title="Dark histogram")),
+        Case(
+            "Many bins requested (100)", lambda: Histogram(list(range(200)), bins=100)
+        ),
+        Case(
+            "Dark theme",
+            lambda: Histogram(
+                [1, 2, 2, 3, 3, 3, 4, 4, 5], theme=DARK, title="Dark histogram"
+            ),
+        ),
     ]
 
 
@@ -303,68 +612,258 @@ def _hist():
 def _box():
     return [
         Case("Huge numbers", lambda: BoxPlot([[1e9, 9.99e8, 1, 5e8, 3e8]], ["a"])),
-        Case("Tiny decimals", lambda: BoxPlot([[0.0001, 0.0002, 0.00015, 0.0003]], ["a"])),
-        Case("Extreme dynamic range", lambda: BoxPlot([[1, 1000, 1, 5_000_000, 2]], ["a"]), suspect=True),
+        Case(
+            "Tiny decimals", lambda: BoxPlot([[0.0001, 0.0002, 0.00015, 0.0003]], ["a"])
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: BoxPlot([[1, 1000, 1, 5_000_000, 2]], ["a"]),
+            suspect=True,
+        ),
         Case("All negative", lambda: BoxPlot([[-50, -30, -90, -10, -70]], ["a"])),
         Case("Mixed pos/neg", lambda: BoxPlot([[-40, 60, -20, 80, 0]], ["a"])),
         Case("All zeros", lambda: BoxPlot([[0, 0, 0, 0, 0]], ["a"])),
         Case("Single value per box", lambda: BoxPlot([[42]], ["a"]), suspect=True),
         Case("All identical", lambda: BoxPlot([[5, 5, 5, 5, 5]], ["a"])),
-        Case("Many groups (20)", lambda: BoxPlot([[i, i + 5, i + 10, i + 2, i + 8] for i in range(20)], lbls(20)), suspect=True),
-        Case("Mismatched labels (SHOULD error?)", lambda: BoxPlot([[1, 2, 3], [4, 5, 6]], ["only_one"])),
-        Case("Dark theme", lambda: BoxPlot([[1, 2, 3, 4, 5], [2, 4, 6, 8, 10]], ["a", "b"], theme=DARK, title="Dark box")),
+        Case(
+            "Many groups (20)",
+            lambda: BoxPlot(
+                [[i, i + 5, i + 10, i + 2, i + 8] for i in range(20)], lbls(20)
+            ),
+            suspect=True,
+        ),
+        Case(
+            "Mismatched labels (SHOULD error?)",
+            lambda: BoxPlot([[1, 2, 3], [4, 5, 6]], ["only_one"]),
+        ),
+        Case(
+            "Dark theme",
+            lambda: BoxPlot(
+                [[1, 2, 3, 4, 5], [2, 4, 6, 8, 10]],
+                ["a", "b"],
+                theme=DARK,
+                title="Dark box",
+            ),
+        ),
     ]
 
 
 @battery("HeatmapChart")
 def _heat():
     return [
-        Case("Huge numbers", lambda: HeatmapChart([[1e9, 999_999_999], [1, 5e8]], ["x1", "x2"], ["y1", "y2"])),
-        Case("Tiny decimals", lambda: HeatmapChart([[0.0001, 0.0002], [0.00015, 0.0003]], ["x1", "x2"], ["y1", "y2"])),
-        Case("Extreme dynamic range", lambda: HeatmapChart([[1, 1000], [1, 5_000_000]], ["x1", "x2"], ["y1", "y2"]), suspect=True),
-        Case("All negative", lambda: HeatmapChart([[-50, -30], [-90, -10]], ["x1", "x2"], ["y1", "y2"])),
-        Case("Mixed pos/neg", lambda: HeatmapChart([[-40, 60], [-20, 80]], ["x1", "x2"], ["y1", "y2"])),
-        Case("All zeros", lambda: HeatmapChart([[0, 0], [0, 0]], ["x1", "x2"], ["y1", "y2"])),
+        Case(
+            "Huge numbers",
+            lambda: HeatmapChart(
+                [[1e9, 999_999_999], [1, 5e8]], ["x1", "x2"], ["y1", "y2"]
+            ),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: HeatmapChart(
+                [[0.0001, 0.0002], [0.00015, 0.0003]], ["x1", "x2"], ["y1", "y2"]
+            ),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: HeatmapChart(
+                [[1, 1000], [1, 5_000_000]], ["x1", "x2"], ["y1", "y2"]
+            ),
+            suspect=True,
+        ),
+        Case(
+            "All negative",
+            lambda: HeatmapChart([[-50, -30], [-90, -10]], ["x1", "x2"], ["y1", "y2"]),
+        ),
+        Case(
+            "Mixed pos/neg",
+            lambda: HeatmapChart([[-40, 60], [-20, 80]], ["x1", "x2"], ["y1", "y2"]),
+        ),
+        Case(
+            "All zeros",
+            lambda: HeatmapChart([[0, 0], [0, 0]], ["x1", "x2"], ["y1", "y2"]),
+        ),
         Case("Single cell", lambda: HeatmapChart([[42]], ["x1"], ["y1"])),
-        Case("All identical", lambda: HeatmapChart([[5, 5], [5, 5]], ["x1", "x2"], ["y1", "y2"])),
-        Case("Large grid 20x20", lambda: HeatmapChart([[(i * j) % 50 for j in range(20)] for i in range(20)], lbls(20), lbls(20)), suspect=True),
-        Case("Very long labels", lambda: HeatmapChart([[1, 2], [3, 4]], [LONG_LABEL, "x2"], [LONG_LABEL, "y2"])),
-        Case("Ragged rows (SHOULD error?)", lambda: HeatmapChart([[1, 2, 3], [4, 5]], ["x1", "x2", "x3"], ["y1", "y2"])),
-        Case("Dark theme", lambda: HeatmapChart([[1, 2, 3], [4, 5, 6], [7, 8, 9]], lbls(3), lbls(3), theme=DARK, title="Dark heatmap")),
+        Case(
+            "All identical",
+            lambda: HeatmapChart([[5, 5], [5, 5]], ["x1", "x2"], ["y1", "y2"]),
+        ),
+        Case(
+            "Large grid 20x20",
+            lambda: HeatmapChart(
+                [[(i * j) % 50 for j in range(20)] for i in range(20)],
+                lbls(20),
+                lbls(20),
+            ),
+            suspect=True,
+        ),
+        Case(
+            "Very long labels",
+            lambda: HeatmapChart(
+                [[1, 2], [3, 4]], [LONG_LABEL, "x2"], [LONG_LABEL, "y2"]
+            ),
+        ),
+        Case(
+            "Ragged rows (SHOULD error?)",
+            lambda: HeatmapChart([[1, 2, 3], [4, 5]], ["x1", "x2", "x3"], ["y1", "y2"]),
+        ),
+        Case(
+            "Dark theme",
+            lambda: HeatmapChart(
+                [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+                lbls(3),
+                lbls(3),
+                theme=DARK,
+                title="Dark heatmap",
+            ),
+        ),
     ]
 
 
 @battery("GanttChart")
 def _gantt():
     return [
-        Case("Simple int ranges", lambda: GanttChart([(0, 5), (3, 8), (6, 10)], ["Design", "Build", "Ship"])),
-        Case("Huge int range", lambda: GanttChart([(0, 1_000_000_000), (1, 999_999_999)], ["a", "b"]), suspect=True),
-        Case("Tiny decimal ranges", lambda: GanttChart([(0.0001, 0.0002), (0.0002, 0.0003)], ["a", "b"])),
-        Case("Zero-length task (start==end)", lambda: GanttChart([(5, 5), (3, 8)], ["instant", "normal"])),
-        Case("Reversed (end<start, SHOULD error?)", lambda: GanttChart([(8, 3)], ["backwards"])),
+        Case(
+            "Simple int ranges",
+            lambda: GanttChart([(0, 5), (3, 8), (6, 10)], ["Design", "Build", "Ship"]),
+        ),
+        Case(
+            "Huge int range",
+            lambda: GanttChart([(0, 1_000_000_000), (1, 999_999_999)], ["a", "b"]),
+            suspect=True,
+        ),
+        Case(
+            "Tiny decimal ranges",
+            lambda: GanttChart([(0.0001, 0.0002), (0.0002, 0.0003)], ["a", "b"]),
+        ),
+        Case(
+            "Zero-length task (start==end)",
+            lambda: GanttChart([(5, 5), (3, 8)], ["instant", "normal"]),
+        ),
+        Case(
+            "Reversed (end<start, SHOULD error?)",
+            lambda: GanttChart([(8, 3)], ["backwards"]),
+        ),
         Case("Negative times", lambda: GanttChart([(-10, -5), (-5, 0)], ["a", "b"])),
         Case("Single task", lambda: GanttChart([(0, 5)], ["only"])),
-        Case("Date ranges", lambda: GanttChart([("2026-01-01", "2026-03-01"), ("2026-02-01", "2026-06-01")], ["Q1", "H1"])),
-        Case("Many tasks (40)", lambda: GanttChart([(i, i + 3) for i in range(40)], lbls(40)), suspect=True),
-        Case("Very long labels", lambda: GanttChart([(0, 5), (2, 7)], [LONG_LABEL, "short"])),
-        Case("Dark theme", lambda: GanttChart([(0, 5), (3, 8), (6, 10)], ["A", "B", "C"], theme=DARK, title="Dark gantt")),
+        Case(
+            "Date ranges",
+            lambda: GanttChart(
+                [("2026-01-01", "2026-03-01"), ("2026-02-01", "2026-06-01")],
+                ["Q1", "H1"],
+            ),
+        ),
+        Case(
+            "Many tasks (40)",
+            lambda: GanttChart([(i, i + 3) for i in range(40)], lbls(40)),
+            suspect=True,
+        ),
+        Case(
+            "Very long labels",
+            lambda: GanttChart([(0, 5), (2, 7)], [LONG_LABEL, "short"]),
+        ),
+        Case(
+            "Dark theme",
+            lambda: GanttChart(
+                [(0, 5), (3, 8), (6, 10)],
+                ["A", "B", "C"],
+                theme=DARK,
+                title="Dark gantt",
+            ),
+        ),
     ]
 
 
 @battery("ComboChart")
 def _combo():
     return [
-        Case("Bar + line basic", lambda: ComboChart([{"data": [1, 2, 3], "type": "column"}, {"data": [3, 2, 1], "type": "line"}], ["a", "b", "c"])),
-        Case("Huge numbers", lambda: ComboChart([{"data": [1e9, 9.99e8, 1], "type": "column"}, {"data": [1, 2, 3], "type": "line"}], ["a", "b", "c"])),
-        Case("Tiny decimals", lambda: ComboChart([{"data": [0.0001, 0.0002, 0.00015], "type": "column"}], ["a", "b", "c"])),
-        Case("Extreme dynamic range", lambda: ComboChart([{"data": [1, 1000, 1, 5_000_000], "type": "line"}], ["a", "b", "c", "d"]), suspect=True),
-        Case("Wildly diff via secondary axis", lambda: ComboChart([{"data": [1, 2, 3], "type": "column", "axis": "primary"}, {"data": [1e6, 2e6, 3e6], "type": "line", "axis": "secondary"}], ["a", "b", "c"]), suspect=True),
-        Case("All zeros", lambda: ComboChart([{"data": [0, 0, 0], "type": "column"}], ["a", "b", "c"])),
-        Case("Mixed pos/neg", lambda: ComboChart([{"data": [-40, 60, -20], "type": "column"}, {"data": [10, -5, 30], "type": "line"}], ["a", "b", "c"])),
-        Case("Single point", lambda: ComboChart([{"data": [42], "type": "column"}], ["only"])),
+        Case(
+            "Bar + line basic",
+            lambda: ComboChart(
+                [
+                    {"data": [1, 2, 3], "type": "column"},
+                    {"data": [3, 2, 1], "type": "line"},
+                ],
+                ["a", "b", "c"],
+            ),
+        ),
+        Case(
+            "Huge numbers",
+            lambda: ComboChart(
+                [
+                    {"data": [1e9, 9.99e8, 1], "type": "column"},
+                    {"data": [1, 2, 3], "type": "line"},
+                ],
+                ["a", "b", "c"],
+            ),
+        ),
+        Case(
+            "Tiny decimals",
+            lambda: ComboChart(
+                [{"data": [0.0001, 0.0002, 0.00015], "type": "column"}], ["a", "b", "c"]
+            ),
+        ),
+        Case(
+            "Extreme dynamic range",
+            lambda: ComboChart(
+                [{"data": [1, 1000, 1, 5_000_000], "type": "line"}],
+                ["a", "b", "c", "d"],
+            ),
+            suspect=True,
+        ),
+        Case(
+            "Wildly diff via secondary axis",
+            lambda: ComboChart(
+                [
+                    {"data": [1, 2, 3], "type": "column", "axis": "primary"},
+                    {"data": [1e6, 2e6, 3e6], "type": "line", "axis": "secondary"},
+                ],
+                ["a", "b", "c"],
+            ),
+            suspect=True,
+        ),
+        Case(
+            "All zeros",
+            lambda: ComboChart(
+                [{"data": [0, 0, 0], "type": "column"}], ["a", "b", "c"]
+            ),
+        ),
+        Case(
+            "Mixed pos/neg",
+            lambda: ComboChart(
+                [
+                    {"data": [-40, 60, -20], "type": "column"},
+                    {"data": [10, -5, 30], "type": "line"},
+                ],
+                ["a", "b", "c"],
+            ),
+        ),
+        Case(
+            "Single point",
+            lambda: ComboChart([{"data": [42], "type": "column"}], ["only"]),
+        ),
         Case("Empty series list (SHOULD error?)", lambda: ComboChart([], ["a", "b"])),
-        Case("Area type", lambda: ComboChart([{"data": [3, 7, 4, 9], "type": "area"}, {"data": [9, 4, 7, 3], "type": "line"}], lbls(4))),
-        Case("Dark theme", lambda: ComboChart([{"data": [1, 2, 3], "type": "column"}, {"data": [3, 2, 1], "type": "line"}], ["a", "b", "c"], theme=DARK, title="Dark combo")),
+        Case(
+            "Area type",
+            lambda: ComboChart(
+                [
+                    {"data": [3, 7, 4, 9], "type": "area"},
+                    {"data": [9, 4, 7, 3], "type": "line"},
+                ],
+                lbls(4),
+            ),
+        ),
+        Case(
+            "Dark theme",
+            lambda: ComboChart(
+                [
+                    {"data": [1, 2, 3], "type": "column"},
+                    {"data": [3, 2, 1], "type": "line"},
+                ],
+                ["a", "b", "c"],
+                theme=DARK,
+                title="Dark combo",
+            ),
+        ),
     ]
 
 
@@ -419,36 +918,56 @@ def build_html(results: dict[str, list[Result]]) -> str:
 </style></head><body>""")
 
     parts.append(
-        f'<header><h1>charted gauntlet</h1>'
-        f'<p>Extreme / edge-case stress test across 14 chart types. '
-        f'Branch fix/dark-theme-and-ytitle. {total} cases.</p></header>'
+        f"<header><h1>charted gauntlet</h1>"
+        f"<p>Extreme / edge-case stress test across 14 chart types. "
+        f"Branch fix/dark-theme-and-ytitle. {total} cases.</p></header>"
     )
 
     # summary
     parts.append('<div class="summary"><div class="stats">')
     parts.append(f'<div class="stat ok"><b>{rendered}</b>rendered</div>')
     parts.append(f'<div class="stat err"><b>{errored}</b>errored</div>')
-    parts.append(f'<div class="stat warn"><b>{len(overflow_cases)}</b>possible overflow</div>')
-    parts.append('</div>')
+    parts.append(
+        f'<div class="stat warn"><b>{len(overflow_cases)}</b>possible overflow</div>'
+    )
+    parts.append("</div>")
 
-    parts.append('<details open><summary>Errored cases ({})</summary><ul>'.format(len(error_cases)))
+    parts.append(
+        "<details open><summary>Errored cases ({})</summary><ul>".format(
+            len(error_cases)
+        )
+    )
     for t, r in error_cases:
         first_line = r.error.splitlines()[0] if r.error else ""
-        parts.append(f'<li><b>{esc(t)}</b> ({esc(r.desc)}): <span class="err">{esc(first_line)}</span></li>')
-    parts.append('</ul></details>')
+        parts.append(
+            f'<li><b>{esc(t)}</b> ({esc(r.desc)}): <span class="err">{esc(first_line)}</span></li>'
+        )
+    parts.append("</ul></details>")
 
-    parts.append('<details><summary>Possible visual overflow (text outside viewBox) ({})</summary><ul>'.format(len(overflow_cases)))
+    parts.append(
+        "<details><summary>Possible visual overflow (text outside viewBox) ({})</summary><ul>".format(
+            len(overflow_cases)
+        )
+    )
     for t, r in overflow_cases:
-        parts.append(f'<li><b>{esc(t)}</b> ({esc(r.desc)}): <span class="warn">{esc("; ".join(r.overflow[:3]))}</span></li>')
-    parts.append('</ul></details></div>')
+        parts.append(
+            f'<li><b>{esc(t)}</b> ({esc(r.desc)}): <span class="warn">{esc("; ".join(r.overflow[:3]))}</span></li>'
+        )
+    parts.append("</ul></details></div>")
 
     # nav
-    parts.append('<nav>' + ' '.join(f'<a href="#{esc(t)}">{esc(t)}</a>' for t in results) + '</nav>')
+    parts.append(
+        "<nav>"
+        + " ".join(f'<a href="#{esc(t)}">{esc(t)}</a>' for t in results)
+        + "</nav>"
+    )
 
     # sections
     for t, v in results.items():
         sec_err = sum(1 for r in v if r.error)
-        parts.append(f'<section id="{esc(t)}"><h2>{esc(t)} <small style="font-weight:400;font-size:13px;color:#666">({len(v)} cases, {sec_err} errored)</small></h2><div class="grid">')
+        parts.append(
+            f'<section id="{esc(t)}"><h2>{esc(t)} <small style="font-weight:400;font-size:13px;color:#666">({len(v)} cases, {sec_err} errored)</small></h2><div class="grid">'
+        )
         for r in v:
             cls = "card"
             badges = ""
@@ -460,17 +979,21 @@ def build_html(results: dict[str, list[Result]]) -> str:
                 badges += '<span class="badge o">OVERFLOW</span>'
             if r.suspect:
                 badges += '<span class="badge s">spot-checked</span>'
-            parts.append(f'<div class="{cls}"><div class="desc">{esc(r.desc)}{badges}</div>')
+            parts.append(
+                f'<div class="{cls}"><div class="desc">{esc(r.desc)}{badges}</div>'
+            )
             if r.error:
                 parts.append(f'<div class="errmsg">{esc(r.error)}</div>')
             else:
                 parts.append(f'<div class="svgwrap">{r.svg}</div>')
                 if r.overflow:
-                    parts.append('<div class="of">' + esc("; ".join(r.overflow[:4])) + '</div>')
-            parts.append('</div>')
-        parts.append('</div></section>')
+                    parts.append(
+                        '<div class="of">' + esc("; ".join(r.overflow[:4])) + "</div>"
+                    )
+            parts.append("</div>")
+        parts.append("</div></section>")
 
-    parts.append('</body></html>')
+    parts.append("</body></html>")
     return "".join(parts)
 
 

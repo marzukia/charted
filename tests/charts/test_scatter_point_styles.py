@@ -10,9 +10,7 @@ class TestPerPointStyles:
     def test_point_styles_default_is_backward_compatible(self):
         """Without point_styles, output is identical to before the feature."""
         a = ScatterChart(x_data=[0, 1, 2], y_data=[10, 20, 30]).html
-        b = ScatterChart(
-            x_data=[0, 1, 2], y_data=[10, 20, 30], point_styles=None
-        ).html
+        b = ScatterChart(x_data=[0, 1, 2], y_data=[10, 20, 30], point_styles=None).html
         assert a == b
 
     def test_point_style_overrides_shape(self):

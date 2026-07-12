@@ -70,68 +70,107 @@ def main():
     print("=== Python API: charted_query() ===\n")
 
     # 1. Bar chart: single series
-    path = charted_query(con, 'SELECT quarter, revenue FROM sales',
-                         chart_type='bar', title='Quarterly Revenue',
-                         output=f'{output_dir}/bar_revenue.svg')
+    path = charted_query(
+        con,
+        "SELECT quarter, revenue FROM sales",
+        chart_type="bar",
+        title="Quarterly Revenue",
+        output=f"{output_dir}/bar_revenue.svg",
+    )
     print(f"  Bar (single):    {path}")
 
     # 2. Bar chart: multi-series
-    path = charted_query(con, 'SELECT quarter, revenue, costs, profit FROM sales',
-                         chart_type='bar', title='Revenue vs Costs vs Profit',
-                         output=f'{output_dir}/bar_multi.svg')
+    path = charted_query(
+        con,
+        "SELECT quarter, revenue, costs, profit FROM sales",
+        chart_type="bar",
+        title="Revenue vs Costs vs Profit",
+        output=f"{output_dir}/bar_multi.svg",
+    )
     print(f"  Bar (multi):     {path}")
 
     # 3. Line chart
-    path = charted_query(con, 'SELECT month, new_york, london, tokyo FROM monthly_temps',
-                         chart_type='line', title='Monthly Temperatures (C)',
-                         output=f'{output_dir}/line_temps.svg')
+    path = charted_query(
+        con,
+        "SELECT month, new_york, london, tokyo FROM monthly_temps",
+        chart_type="line",
+        title="Monthly Temperatures (C)",
+        output=f"{output_dir}/line_temps.svg",
+    )
     print(f"  Line:            {path}")
 
     # 4. Pie chart
-    path = charted_query(con, 'SELECT company, share FROM market_share',
-                         chart_type='pie', title='Smartphone Market Share',
-                         output=f'{output_dir}/pie_market.svg')
+    path = charted_query(
+        con,
+        "SELECT company, share FROM market_share",
+        chart_type="pie",
+        title="Smartphone Market Share",
+        output=f"{output_dir}/pie_market.svg",
+    )
     print(f"  Pie:             {path}")
 
     # 5. Column chart
-    path = charted_query(con, 'SELECT quarter, profit FROM sales',
-                         chart_type='column', title='Quarterly Profit',
-                         output=f'{output_dir}/column_profit.svg')
+    path = charted_query(
+        con,
+        "SELECT quarter, profit FROM sales",
+        chart_type="column",
+        title="Quarterly Profit",
+        output=f"{output_dir}/column_profit.svg",
+    )
     print(f"  Column:          {path}")
 
     # 6. Area chart
-    path = charted_query(con, 'SELECT month, new_york, london FROM monthly_temps',
-                         chart_type='area', title='NY vs London Temps',
-                         output=f'{output_dir}/area_temps.svg')
+    path = charted_query(
+        con,
+        "SELECT month, new_york, london FROM monthly_temps",
+        chart_type="area",
+        title="NY vs London Temps",
+        output=f"{output_dir}/area_temps.svg",
+    )
     print(f"  Area:            {path}")
 
     # 7. Scatter chart
-    path = charted_query(con, 'SELECT temperature, humidity FROM sensor_data',
-                         chart_type='scatter', title='Temp vs Humidity',
-                         output=f'{output_dir}/scatter_sensor.svg')
+    path = charted_query(
+        con,
+        "SELECT temperature, humidity FROM sensor_data",
+        chart_type="scatter",
+        title="Temp vs Humidity",
+        output=f"{output_dir}/scatter_sensor.svg",
+    )
     print(f"  Scatter:         {path}")
 
     # 8. Histogram
-    path = charted_query(con, 'SELECT temperature FROM sensor_data',
-                         chart_type='histogram', title='Temperature Distribution',
-                         output=f'{output_dir}/histogram_temp.svg')
+    path = charted_query(
+        con,
+        "SELECT temperature FROM sensor_data",
+        chart_type="histogram",
+        title="Temperature Distribution",
+        output=f"{output_dir}/histogram_temp.svg",
+    )
     print(f"  Histogram:       {path}")
 
     # 9. SVG string (no file)
-    svg = charted_svg(con, 'SELECT company, share FROM market_share',
-                      chart_type='pie', title='Market Share')
+    svg = charted_svg(
+        con,
+        "SELECT company, share FROM market_share",
+        chart_type="pie",
+        title="Market Share",
+    )
     print(f"  SVG string:      {len(svg)} bytes")
 
     # 10. Complex query with CTE
-    path = charted_query(con,
+    path = charted_query(
+        con,
         """WITH ranked AS (
             SELECT quarter, profit,
                    ROW_NUMBER() OVER (ORDER BY profit DESC) as rank
             FROM sales
         )
         SELECT quarter, profit FROM ranked WHERE rank <= 4""",
-        chart_type='bar', title='Top 4 Quarters by Profit',
-        output=f'{output_dir}/bar_top_quarters.svg')
+        chart_type="bar",
+        title="Top 4 Quarters by Profit",
+        output=f"{output_dir}/bar_top_quarters.svg",
+    )
     print(f"  Bar (CTE):       {path}")
 
     print("\n=== SQL UDF: charted_from_arrays() ===\n")
@@ -183,7 +222,9 @@ def main():
             print(f"  FAIL {svg_file.name}")
             all_ok = False
 
-    print(f"\n{'All' if all_ok else 'Some'} {len(svg_files)} charts validated in {output_dir}/")
+    print(
+        f"\n{'All' if all_ok else 'Some'} {len(svg_files)} charts validated in {output_dir}/"
+    )
 
 
 if __name__ == "__main__":

@@ -1056,9 +1056,7 @@ def test_sankey_oversubscribed_column_labels_stay_in_frame(
     """
     names = ["src"] + [f"sink-{i:02d}" for i in range(n_sinks)]
     links = [("src", f"sink-{i:02d}", 1.0) for i in range(n_sinks)]
-    svg = SankeyChart(
-        nodes=names, links=links, width=400.0, height=height
-    ).to_svg()
+    svg = SankeyChart(nodes=names, links=links, width=400.0, height=height).to_svg()
     parsed = parse_svg(svg)
     _vx0, vy0, _vx1, vy1 = parsed.viewbox
     boxes = _sankey_label_boxes(svg)
@@ -1066,8 +1064,7 @@ def test_sankey_oversubscribed_column_labels_stay_in_frame(
     for box in boxes:
         _bx0, by0, _bx1, by1 = box
         assert by0 >= vy0 - 1.0 and by1 <= vy1 + 1.0, (
-            f"label box {box} escapes viewBox vertically "
-            f"[{vy0}, {vy1}]"
+            f"label box {box} escapes viewBox vertically [{vy0}, {vy1}]"
         )
 
 

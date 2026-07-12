@@ -229,9 +229,7 @@ class TestHeatmapColorbar:
 
     def test_custom_tick_count(self):
         """colorbar_ticks controls the number of intermediate labels."""
-        chart = HeatmapChart(
-            data=[[0, 100]], colorbar_ticks=3, value_format=".0f"
-        )
+        chart = HeatmapChart(data=[[0, 100]], colorbar_ticks=3, value_format=".0f")
         svg = chart.html
         for label in ("0", "50", "100"):
             assert f">{label}</text>" in svg

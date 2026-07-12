@@ -110,7 +110,5 @@ class TestBackwardCompatibility:
     def test_default_leaves_domain_unchanged(self):
         a = ColumnChart(data=[[10, 20, 30]], labels=["a", "b", "c"])
         b = ColumnChart(data=[[10, 20, 30]], labels=["a", "b", "c"])
-        assert (
-            a.y_axis.axis_dimension.max_value == b.y_axis.axis_dimension.max_value
-        )
+        assert a.y_axis.axis_dimension.max_value == b.y_axis.axis_dimension.max_value
         assert a.svg == b.svg

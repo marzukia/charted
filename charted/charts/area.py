@@ -55,7 +55,10 @@ def _clamp_path_y(path: str, lo: float, hi: float) -> str:
                 cy = clamp(vals[k + 1])
                 changed = changed or cy != vals[k + 1]
                 new_vals.extend([vals[k], cy])
-            out.append(cmd + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals)))
+            out.append(
+                cmd
+                + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals))
+            )
         elif cmd == "C":
             # x1 y1 x2 y2 x y (every odd index is a y)
             new_vals = []
@@ -66,14 +69,20 @@ def _clamp_path_y(path: str, lo: float, hi: float) -> str:
                     new_vals.append(cy)
                 else:
                     new_vals.append(v)
-            out.append(cmd + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals)))
+            out.append(
+                cmd
+                + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals))
+            )
         elif cmd == "V":
             new_vals = []
             for idx, v in enumerate(vals):
                 cy = clamp(v)
                 changed = changed or cy != v
                 new_vals.append(cy)
-            out.append(cmd + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals)))
+            out.append(
+                cmd
+                + " ".join(_match_token(nums, idx, v) for idx, v in enumerate(new_vals))
+            )
         else:  # H: x only, no y
             out.append(cmd + args.strip())
     if not changed:
@@ -237,7 +246,9 @@ class AreaChart(Chart):
                 # can still overshoot past the plot edge between them, so clamp
                 # the y of every coordinate in the generated path. This stays a
                 # no-op (byte-identical) when nothing overshoots.
-                top_d = _clamp_path_y(curve_path(self.curve, points), plot_top, plot_bottom)
+                top_d = _clamp_path_y(
+                    curve_path(self.curve, points), plot_top, plot_bottom
+                )
 
             if self.y_stacked:
                 # For stacked areas, close the band by tracing back along the

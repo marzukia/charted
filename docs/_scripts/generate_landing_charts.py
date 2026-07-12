@@ -551,8 +551,16 @@ chart = BarChart(
     title="P95 Latency by Service (ms)",
     data=[12, 38, 24, 67, 19, 88, 31, 45, 15, 72],
     labels=[
-        "auth", "search", "recommend", "media", "notify",
-        "ml-infer", "checkout", "payment", "cdn", "analytics",
+        "auth",
+        "search",
+        "recommend",
+        "media",
+        "notify",
+        "ml-infer",
+        "checkout",
+        "payment",
+        "cdn",
+        "analytics",
     ],
     width=560,
     height=360,
@@ -681,8 +689,14 @@ chart = ComboChart(
         },
     ],
     labels=[
-        "Q1 '23", "Q2 '23", "Q3 '23", "Q4 '23",
-        "Q1 '24", "Q2 '24", "Q3 '24", "Q4 '24",
+        "Q1 '23",
+        "Q2 '23",
+        "Q3 '23",
+        "Q4 '23",
+        "Q1 '24",
+        "Q2 '24",
+        "Q3 '24",
+        "Q4 '24",
     ],
     width=560,
     height=360,
@@ -793,8 +807,15 @@ print("gallery_light_boxplot.svg ok")
 # 15: SankeyChart — website conversion funnel
 # Balanced with explicit drop-off links (see dark gallery comment above).
 sankey_nodes = [
-    "Website", "Organic Search", "Paid Ads", "Referral",
-    "Signup", "Trial", "Paid Plan", "Churned", "Bounced",
+    "Website",
+    "Organic Search",
+    "Paid Ads",
+    "Referral",
+    "Signup",
+    "Trial",
+    "Paid Plan",
+    "Churned",
+    "Bounced",
 ]
 sankey_links = [
     ("Website", "Organic Search", 4500),

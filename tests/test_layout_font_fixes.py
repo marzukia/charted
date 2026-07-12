@@ -26,9 +26,10 @@ class TestFontFamilyFallback:
 
     def test_monospace_fonts_fall_back_to_monospace(self):
         # Monospace families get a monospace fallback, sans families sans-serif.
-        assert 'font-family="JetBrains Mono, monospace"' in G(
-            font_family="JetBrains Mono"
-        ).attributes
+        assert (
+            'font-family="JetBrains Mono, monospace"'
+            in G(font_family="JetBrains Mono").attributes
+        )
         assert 'font-family="Roboto, sans-serif"' in G(font_family="Roboto").attributes
 
 
@@ -54,7 +55,10 @@ class TestAreaStacked:
         stacked = AreaChart([[10, 20], [30, 40]], stacked=True)
         overlap = AreaChart([[10, 20], [30, 40]], stacked=False)
         # Stacking lifts the value-axis max toward the per-point totals.
-        assert stacked.y_axis.axis_dimension.max_value > overlap.y_axis.axis_dimension.max_value
+        assert (
+            stacked.y_axis.axis_dimension.max_value
+            > overlap.y_axis.axis_dimension.max_value
+        )
 
 
 class TestDarkThemeContrast:

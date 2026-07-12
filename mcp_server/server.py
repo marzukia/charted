@@ -42,9 +42,21 @@ async def list_tools() -> list[Tool]:
                     "chart_type": {
                         "type": "string",
                         "enum": [
-                            "bar", "column", "line", "scatter", "bubble",
-                            "pie", "polar_area", "radar", "area", "box",
-                            "histogram", "heatmap", "gantt", "combo", "auto",
+                            "bar",
+                            "column",
+                            "line",
+                            "scatter",
+                            "bubble",
+                            "pie",
+                            "polar_area",
+                            "radar",
+                            "area",
+                            "box",
+                            "histogram",
+                            "heatmap",
+                            "gantt",
+                            "combo",
+                            "auto",
                         ],
                         "description": (
                             "The type of chart to render. 'auto' inspects the "
@@ -208,9 +220,21 @@ async def list_tools() -> list[Tool]:
                     "chart_type": {
                         "type": "string",
                         "enum": [
-                            "bar", "column", "line", "scatter", "bubble",
-                            "pie", "polar_area", "radar", "area", "box",
-                            "histogram", "heatmap", "gantt", "combo", "auto",
+                            "bar",
+                            "column",
+                            "line",
+                            "scatter",
+                            "bubble",
+                            "pie",
+                            "polar_area",
+                            "radar",
+                            "area",
+                            "box",
+                            "histogram",
+                            "heatmap",
+                            "gantt",
+                            "combo",
+                            "auto",
                         ],
                         "default": "auto",
                         "description": (
@@ -293,14 +317,12 @@ def _png_data_url_to_image(data_url: str) -> ImageContent:
     picture the agent can show, not as raw markup.
     """
     prefix = "data:image/png;base64,"
-    b64 = data_url[len(prefix):] if data_url.startswith(prefix) else data_url
+    b64 = data_url[len(prefix) :] if data_url.startswith(prefix) else data_url
     return ImageContent(type="image", data=b64, mimeType="image/png")
 
 
 @app.call_tool()
-async def call_tool(
-    name: str, arguments: dict
-) -> list[TextContent | ImageContent]:
+async def call_tool(name: str, arguments: dict) -> list[TextContent | ImageContent]:
     """Dispatch a tool call to the appropriate handler."""
     try:
         if name == "create_chart":
@@ -348,10 +370,12 @@ async def call_tool(
             return [TextContent(type="text", text=result)]
 
         else:
-            return [TextContent(
-                type="text",
-                text=f"Unknown tool: {name}",
-            )]
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Unknown tool: {name}",
+                )
+            ]
     except Exception as e:
         return [TextContent(type="text", text=f"Error: {e}")]
 

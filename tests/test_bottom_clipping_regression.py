@@ -36,6 +36,7 @@ def _label_band_clearance(chart) -> float:
         max_h = max(lab.height for lab in chart.layout.x_labels)
     else:
         from charted.utils.defaults import DEFAULT_FONT_SIZE
+
         max_h = DEFAULT_FONT_SIZE
     descent_px = max_h * 0.3  # conservative descent estimate
     label_bottom = baseline_abs_y + descent_px
@@ -66,7 +67,10 @@ class TestXTickLabelBottomClipping:
 
     def test_gantt_standard_canvas_has_clearance(self):
         g = GanttChart(
-            data=[(date(2024, 1, 1), date(2024, 4, 1)), (date(2024, 3, 1), date(2024, 7, 1))],
+            data=[
+                (date(2024, 1, 1), date(2024, 4, 1)),
+                (date(2024, 3, 1), date(2024, 7, 1)),
+            ],
             labels=["Design", "Dev"],
         )
         assert _label_band_clearance(g) >= _BREATHING_ROOM, (

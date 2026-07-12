@@ -128,7 +128,13 @@ class LogScale(Scale):
         return 10**log_val
 
     def ticks(self) -> list[float]:
-        """Return the powers of ten spanning the domain (inclusive)."""
+        """Return tick positions for a log scale, including minor ticks.
+
+        For sub-decade ranges where no power of ten exists within the domain,
+        return minor ticks at m * 10^n for m in 1..9. This ensures useful
+        intermediate ticks for ranges like 28-55 (30, 40, 50) or 386-705
+        (400, 500, 600, 700).
+        """
         if self.max_value == self.min_value:
             # Single positive point / all-equal positive series: pad to the
             # bracketing decade so the axis has two distinct ticks.
@@ -137,15 +143,32 @@ class LogScale(Scale):
             if hi == lo:
                 hi = lo * 10
             return [int(lo) if lo >= 1 else lo, int(hi) if hi >= 1 else hi]
+
         lo = math.floor(self._log_min)
         hi = math.ceil(self._log_max)
+        ticks: list[float] = []
+
+        # Try to collect minor ticks (m * 10^n for m in 1..9)
+        for exp in range(lo, hi + 1):
+            base = 10**exp
+            for m in range(1, 10):
+                value = m * base
+                if self.min_value <= value <= self.max_value:
+                    # Present clean integers where possible.
+                    ticks.append(int(value) if exp >= 0 else value)
+
+        # If we found minor ticks, return them (filtered to domain)
+        if ticks:
+            return ticks
+
+        # Fallback: try powers of ten within domain (original behavior)
         powers: list[float] = []
         for exp in range(lo, hi + 1):
             value = 10**exp
-            if value < self.min_value or value > self.max_value:
-                continue
-            # Present clean integers where possible.
-            powers.append(int(value) if exp >= 0 else value)
+            if self.min_value <= value <= self.max_value:
+                powers.append(int(value) if exp >= 0 else value)
+
+        # Ultimate fallback: endpoints
         if not powers:
             powers = [self.min_value, self.max_value]
         return powers

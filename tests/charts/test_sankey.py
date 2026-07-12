@@ -284,15 +284,15 @@ class TestGalleryFunnelConservation:
     """
 
     NODES = [
-        'Website',
-        'Organic Search',
-        'Paid Ads',
-        'Referral',
-        'Signup',
-        'Trial',
-        'Paid Plan',
-        'Churned',
-        'Bounced',
+        "Website",
+        "Organic Search",
+        "Paid Ads",
+        "Referral",
+        "Signup",
+        "Trial",
+        "Paid Plan",
+        "Churned",
+        "Bounced",
     ]
 
     # Balanced funnel: each intermediate node's in-flow == out-flow.
@@ -303,19 +303,19 @@ class TestGalleryFunnelConservation:
     # Signup         (in=3550): 2800 -> Trial,   750 -> Bounced
     # Trial          (in=2800):  980 -> Paid Plan, 1820 -> Churned
     LINKS = [
-        ('Website', 'Organic Search', 4500),
-        ('Website', 'Paid Ads', 2200),
-        ('Website', 'Referral', 1300),
-        ('Organic Search', 'Signup', 1800),
-        ('Organic Search', 'Bounced', 2700),
-        ('Paid Ads', 'Signup', 1100),
-        ('Paid Ads', 'Bounced', 1100),
-        ('Referral', 'Signup', 650),
-        ('Referral', 'Bounced', 650),
-        ('Signup', 'Trial', 2800),
-        ('Signup', 'Bounced', 750),
-        ('Trial', 'Paid Plan', 980),
-        ('Trial', 'Churned', 1820),
+        ("Website", "Organic Search", 4500),
+        ("Website", "Paid Ads", 2200),
+        ("Website", "Referral", 1300),
+        ("Organic Search", "Signup", 1800),
+        ("Organic Search", "Bounced", 2700),
+        ("Paid Ads", "Signup", 1100),
+        ("Paid Ads", "Bounced", 1100),
+        ("Referral", "Signup", 650),
+        ("Referral", "Bounced", 650),
+        ("Signup", "Trial", 2800),
+        ("Signup", "Bounced", 750),
+        ("Trial", "Paid Plan", 980),
+        ("Trial", "Churned", 1820),
     ]
 
     def _layout(self):
@@ -333,7 +333,7 @@ class TestGalleryFunnelConservation:
             node_width=24,
             node_padding=8,
             iterations=6,
-            alignment='justify',
+            alignment="justify",
         )
 
     def test_intermediate_nodes_conserve_flow(self):
@@ -349,7 +349,7 @@ class TestGalleryFunnelConservation:
             in_sum = sum(lnk.width for lnk in in_links)
             out_sum = sum(lnk.width for lnk in out_links)
             assert math.isclose(in_sum, out_sum, rel_tol=1e-4, abs_tol=0.5), (
-                f'{node.name}: in_ribbons={in_sum:.2f} != out_ribbons={out_sum:.2f}'
+                f"{node.name}: in_ribbons={in_sum:.2f} != out_ribbons={out_sum:.2f}"
             )
 
     def test_intermediate_nodes_ribbons_fill_node_height(self):
@@ -363,12 +363,12 @@ class TestGalleryFunnelConservation:
             if in_links:
                 in_sum = sum(lnk.width for lnk in in_links)
                 assert math.isclose(in_sum, height, rel_tol=1e-4, abs_tol=0.5), (
-                    f'{node.name}: in_ribbons={in_sum:.2f} != node_height={height:.2f}'
+                    f"{node.name}: in_ribbons={in_sum:.2f} != node_height={height:.2f}"
                 )
             if out_links:
                 out_sum = sum(lnk.width for lnk in out_links)
                 assert math.isclose(out_sum, height, rel_tol=1e-4, abs_tol=0.5), (
-                    f'{node.name}: out_ribbons={out_sum:.2f} != node_height={height:.2f}'
+                    f"{node.name}: out_ribbons={out_sum:.2f} != node_height={height:.2f}"
                 )
 
     def test_gallery_sankey_chart_renders(self):
@@ -376,11 +376,11 @@ class TestGalleryFunnelConservation:
         chart = SankeyChart(
             nodes=self.NODES,
             links=self.LINKS,
-            title='Website Conversion Funnel',
+            title="Website Conversion Funnel",
             width=580,
             height=360,
         )
         svg = chart.to_svg()
-        assert '<svg' in svg
-        assert 'Bounced' in svg
-        assert 'Signup' in svg
+        assert "<svg" in svg
+        assert "Bounced" in svg
+        assert "Signup" in svg

@@ -184,7 +184,11 @@ class LayoutEngine:
             from .defaults import DEFAULT_FONT_SIZE
 
             max_label_height = max(
-                (lab.height if hasattr(lab, "height") and lab.height else DEFAULT_FONT_SIZE)
+                (
+                    lab.height
+                    if hasattr(lab, "height") and lab.height
+                    else DEFAULT_FONT_SIZE
+                )
                 for lab in self.x_labels
             )
             base = max(base, DEFAULT_PADDING + max_label_height)

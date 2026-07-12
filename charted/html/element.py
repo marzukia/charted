@@ -70,7 +70,9 @@ class Element(object):
                         else "sans-serif"
                     )
                     value = f"{v}, {generic}"
-                attributes_array.append(f'{k.replace("_", "-")}="{_escape_attr(value)}"')
+                attributes_array.append(
+                    f'{k.replace("_", "-")}="{_escape_attr(value)}"'
+                )
             string += " ".join(attributes_array)
         return string
 

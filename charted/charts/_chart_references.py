@@ -223,9 +223,7 @@ class ChartReferenceLayerMixin:
             # tick labels are right-anchored ending at left_padding - 6, so a
             # wide gutter (big numbers) would otherwise leave the title floating
             # far away from the axis.
-            tick_w = max(
-                (label.width for label in self.layout.y_labels), default=0.0
-            )
+            tick_w = max((label.width for label in self.layout.y_labels), default=0.0)
             ticks_left = self.left_padding - 6 - tick_w
             x = max(font_size, ticks_left - font_size)
             y = self.top_padding + self.plot_height / 2

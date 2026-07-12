@@ -46,8 +46,13 @@ def test_register():
 def test_charted_query_single_series():
     con = setup_con()
     with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as f:
-        path = charted_query(con, "SELECT label, a FROM test_data",
-                             chart_type="bar", title="Single", output=f.name)
+        path = charted_query(
+            con,
+            "SELECT label, a FROM test_data",
+            chart_type="bar",
+            title="Single",
+            output=f.name,
+        )
         content = Path(path).read_text()
         assert "<svg" in content
         Path(path).unlink()
@@ -56,8 +61,13 @@ def test_charted_query_single_series():
 def test_charted_query_multi_series():
     con = setup_con()
     with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as f:
-        path = charted_query(con, "SELECT label, a, b FROM test_data",
-                             chart_type="line", title="Multi", output=f.name)
+        path = charted_query(
+            con,
+            "SELECT label, a, b FROM test_data",
+            chart_type="line",
+            title="Multi",
+            output=f.name,
+        )
         content = Path(path).read_text()
         assert "<svg" in content
         Path(path).unlink()
@@ -65,8 +75,9 @@ def test_charted_query_multi_series():
 
 def test_charted_svg_returns_string():
     con = setup_con()
-    svg = charted_svg(con, "SELECT label, a FROM test_data",
-                      chart_type="pie", title="Pie Test")
+    svg = charted_svg(
+        con, "SELECT label, a FROM test_data", chart_type="pie", title="Pie Test"
+    )
     assert "<svg" in svg
     assert "Pie Test" in svg
 
@@ -103,7 +114,9 @@ def test_all_chart_types():
             query = "SELECT label, a FROM test_data"
 
         try:
-            svg = charted_svg(con, query, chart_type=chart_type, title=f"{chart_type} test")
+            svg = charted_svg(
+                con, query, chart_type=chart_type, title=f"{chart_type} test"
+            )
             assert "<svg" in svg, f"{chart_type}: no <svg> in output"
             print(f"  PASS: {chart_type}")
         except Exception as e:
@@ -196,5 +209,5 @@ if __name__ == "__main__":
     print("\nChart type coverage:")
     test_all_chart_types()
 
-    print(f"\n{'='*40}")
+    print(f"\n{'=' * 40}")
     print(f"Results: {passed} passed, {failed} failed out of {len(tests)} tests")

@@ -312,9 +312,7 @@ class TestScatterChartLegend:
 
     def test_legend_without_series_names_reserves_nothing(self):
         """With no series names there is nothing to label, so no band."""
-        chart = ScatterChart(
-            x_data=[0, 1, 2], y_data=[1, 2, 3], legend="right"
-        )
+        chart = ScatterChart(x_data=[0, 1, 2], y_data=[1, 2, 3], legend="right")
         assert chart.layout.legend_position == "none"
         assert chart.layout.legend_extent == 0.0
 

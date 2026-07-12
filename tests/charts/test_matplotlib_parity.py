@@ -200,7 +200,7 @@ class TestQuadrantLabels:
         """No quadrant labels by default."""
         chart = ScatterChart(x_data=[1, 2], y_data=[10, 20])
         svg = chart.svg
-        assert "opacity=\"0.6\"" not in svg
+        assert 'opacity="0.6"' not in svg
 
 
 class TestReferenceLines:

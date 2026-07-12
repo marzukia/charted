@@ -220,9 +220,7 @@ class Axis(G):
     _TARGET_TICKS = 10
 
     @classmethod
-    def _grid_step(
-        cls, value_range: float, denominators: Vector
-    ) -> float:
+    def _grid_step(cls, value_range: float, denominators: Vector) -> float:
         """Pick a tick step that does not explode the gridline list.
 
         ``calculate_axis_values`` historically walked the common divisors of the
@@ -634,9 +632,7 @@ class XAxis(Axis):
         # SVG rotate maps (px, py) -> (px*cos - py*sin, ...); we only need the
         # x component to bound the horizontal footprint.
         xs = [
-            px * cos - py * sin
-            for px in (left_x, right_x)
-            for py in (top_y, bottom_y)
+            px * cos - py * sin for px in (left_x, right_x) for py in (top_y, bottom_y)
         ]
         return coordinate + min(xs), coordinate + max(xs)
 
