@@ -46,37 +46,8 @@ class TestLogScale:
 
     def test_log_scale_ticks_are_powers(self):
         scale = LogScale(1, 1000)
-        # New behavior: returns all minor ticks (m * 10^n for m in 1..9)
-        expected = [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            20,
-            30,
-            40,
-            50,
-            60,
-            70,
-            80,
-            90,
-            100,
-            200,
-            300,
-            400,
-            500,
-            600,
-            700,
-            800,
-            900,
-            1000,
-        ]
+        # Fixed behavior: full-decade ranges return ONLY powers of ten
+        expected = [1, 10, 100, 1000]
         assert scale.ticks() == expected
 
     def test_log_scale_reverse_round_trips(self):

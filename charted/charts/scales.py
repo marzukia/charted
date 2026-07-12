@@ -134,6 +134,9 @@ class LogScale(Scale):
         return minor ticks at m * 10^n for m in 1..9. This ensures useful
         intermediate ticks for ranges like 28-55 (30, 40, 50) or 386-705
         (400, 500, 600, 700).
+
+        For full-decade ranges (e.g., 1-1000), return only powers of ten
+        to preserve existing behavior and avoid overly dense axes.
         """
         if self.max_value == self.min_value:
             # Single positive point / all-equal positive series: pad to the
@@ -146,32 +149,32 @@ class LogScale(Scale):
 
         lo = math.floor(self._log_min)
         hi = math.ceil(self._log_max)
-        ticks: list[float] = []
 
-        # Try to collect minor ticks (m * 10^n for m in 1..9)
-        for exp in range(lo, hi + 1):
-            base = 10**exp
-            for m in range(1, 10):
-                value = m * base
-                if self.min_value <= value <= self.max_value:
-                    # Present clean integers where possible.
-                    ticks.append(int(value) if exp >= 0 else value)
-
-        # If we found minor ticks, return them (filtered to domain)
-        if ticks:
-            return ticks
-
-        # Fallback: try powers of ten within domain (original behavior)
+        # First, collect powers of ten within the domain (original behavior)
         powers: list[float] = []
         for exp in range(lo, hi + 1):
             value = 10**exp
             if self.min_value <= value <= self.max_value:
                 powers.append(int(value) if exp >= 0 else value)
 
-        # Ultimate fallback: endpoints
-        if not powers:
-            powers = [self.min_value, self.max_value]
-        return powers
+        # If we have powers of ten, return only those (full-decade case)
+        if powers:
+            return powers
+
+        # No powers of ten in domain: this is a true sub-decade range.
+        # Return minor ticks (m * 10^n for m in 1..9) filtered to domain.
+        ticks: list[float] = []
+        for exp in range(lo, hi + 1):
+            base = 10**exp
+            for m in range(1, 10):
+                value = m * base
+                if self.min_value <= value <= self.max_value:
+                    ticks.append(int(value) if exp >= 0 else value)
+
+        # Ultimate fallback: endpoints (should rarely hit)
+        if not ticks:
+            ticks = [self.min_value, self.max_value]
+        return ticks
 
 
 def _to_epoch(value: TimeValue) -> float:
