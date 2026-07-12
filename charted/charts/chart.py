@@ -665,17 +665,30 @@ class Chart(
             tp = self.top_padding
             pw = self.plot_width
             ph = self.plot_height
-            children.append(
-                Path(
-                    d=[
-                        f"M{lp} {tp} v{ph}",
-                        f"M{lp} {tp + ph} h{pw}",
-                    ],
-                    stroke=AXIS_BORDER_COLOR,
-                    stroke_width=AXIS_BORDER_WIDTH,
-                    fill="none",
-                )
+            border_path = Path(
+                d=[
+                    f"M{lp} {tp} v{ph}",
+                    f"M{lp} {tp + ph} h{pw}",
+                ],
+                stroke=AXIS_BORDER_COLOR,
+                stroke_width=AXIS_BORDER_WIDTH,
+                fill="none",
             )
+            children.append(border_path)
+            
+            # Add top and right edges at gridline weight for full frame
+            # This frames the plot area when data peaks near the top edge
+            # Using gridline color (#CCCCCC) and width (1) for subtle framing
+            top_right_frame = Path(
+                d=[
+                    f"M{lp} {tp} h{pw}",  # Top edge
+                    f"M{lp + pw} {tp} v{ph}",  # Right edge
+                ],
+                stroke="#CCCCCC",
+                stroke_width=1,
+                fill="none",
+            )
+            children.append(top_right_frame)
         # Add reference lines (rendered inside the plot area)
         ref_lines = self._render_reference_lines()
         if ref_lines:
