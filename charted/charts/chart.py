@@ -675,7 +675,7 @@ class Chart(
                 fill="none",
             )
             children.append(border_path)
-            
+
             # Add top and right edges at gridline weight for full frame
             # This frames the plot area when data peaks near the top edge
             # Using gridline color (#CCCCCC) and width (1) for subtle framing
