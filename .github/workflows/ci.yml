@@ -53,3 +53,37 @@ jobs:
           files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+  # Deterministic size gate (harden-repo skill, 2026-10-20): line ratchet
+  # (size-ratchet.json budgets may only shrink) + AST top-level-unit gate vs
+  # the PR base (fetch-depth 0 so `base...HEAD` and `git show base:file`
+  # resolve). Pushes (GITHUB_BASE_REF empty) run the line ratchet only.
+  # Stdlib-only script; the dev install mirrors the test leg.
+  size:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          # Single pinned version: the gate script is stdlib-only (3.10+).
+          python-version: "3.13"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install --system -e '.[dev]'
+
+      - name: Run size gate
+        run: if [ -n "$GITHUB_BASE_REF" ]; then python scripts/size_ratchet.py --base "origin/${GITHUB_BASE_REF}"; else python scripts/size_ratchet.py; fi

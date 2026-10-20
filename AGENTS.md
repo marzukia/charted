@@ -349,3 +349,17 @@ Optional extras pull their own deps:
 - MCP server: not yet implemented
 
 Never add runtime deps to `[project.dependencies]` in pyproject.toml.
+
+## File size gate (harden-repo, 2026-10-20)
+
+- File size is a load-bearing signal, checked by `python3 scripts/size_ratchet.py`
+  (CI `size` job). >800 non-blank lines = must be in size-ratchet.json; ratcheted
+  files may only shrink. `--update` lowers budgets after a split - never to raise
+  one. .py files only; node_modules, dist/, build/, .venv, data/, examples/
+  excluded.
+- >2,000-line file: no NEW top-level units (top-level def / async def / class;
+  CI export gate vs the PR base ref). New code goes to a sibling module.
+  Test files (`tests/`, `*_test.py`): x3 budget.
+- Task rule: a change adding code to a >2,000-line file must name the target
+  module, not the god file. "Add X to charted/charts/chart.py" is an invalid
+  task.
