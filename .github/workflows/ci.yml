@@ -86,4 +86,4 @@ jobs:
         run: uv pip install --system -e '.[dev]'
 
       - name: Run size gate
-        run: python scripts/size_ratchet.py --base "${GITHUB_BASE_REF}"
+        run: if [ -n "$GITHUB_BASE_REF" ]; then python scripts/size_ratchet.py --base "origin/${GITHUB_BASE_REF}"; else python scripts/size_ratchet.py; fi
